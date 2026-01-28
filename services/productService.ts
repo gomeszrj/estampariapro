@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { Product } from '../types';
+import { GRADES } from '../constants';
 
 export const productService = {
     async getAll() {
@@ -64,11 +65,24 @@ const mapProductFromDB = (dbItem: any): Product => ({
     status: dbItem.status,
     imageUrl: dbItem.image_url,
     basePrice: dbItem.base_price,
+    description: dbItem.description,
+    allowedGrades: Array.isArray(dbItem.allowed_grades)
+        ? dbItem.allowed_grades.reduce((acc: any, gradeLabel: string) => {
+            // Legacy support: If DB has ["Masculino"], map to { "Masculino": ["P", "M", ...] }
+            const gradeConfig = GRADES.find(g => g.label === gradeLabel);
+            if (gradeConfig) acc[gradeLabel] = gradeConfig.sizes;
+            return acc;
+        }, {})
+        : dbItem.allowed_grades,
 });
 
 const mapProductToDB = (appItem: Partial<Product>) => {
     const dbItem: any = { ...appItem };
+    // Map camelCase to snake_case for DB
     if (appItem.imageUrl) { dbItem.image_url = appItem.imageUrl; delete dbItem.imageUrl; }
     if (appItem.basePrice) { dbItem.base_price = appItem.basePrice; delete dbItem.basePrice; }
+    if (appItem.allowedGrades) { dbItem.allowed_grades = appItem.allowedGrades; delete dbItem.allowedGrades; }
+    // description maps directly 1:1 if snake_case matches, but typically we keep simple fields as is. 
+    // If Supabase col is 'description', it passes through.
     return dbItem;
 };

@@ -17,9 +17,10 @@ import {
   Loader2,
   Filter,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Check
 } from 'lucide-react';
-import { FABRICS } from '../constants.tsx';
+import { FABRICS, GRADES } from '../constants.tsx';
 import { Product } from '../types.ts';
 import { productService } from '../services/productService.ts';
 
@@ -94,7 +95,17 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts }) => {
     }
   };
 
-  // Automatic Image Adjustment (Centering & 1:1 Cropping)
+  // Helper for Random SKU
+  const generateRandomSKU = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = 'PROD-';
+    for (let i = 0; i < 4; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  };
+
+  // Automatic Image Adjustment (Centering & 1:1 Contain - FULL VISIBILITY)
   const processImage = (file: File): Promise<string> => {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -102,18 +113,27 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts }) => {
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const size = Math.min(img.width, img.height);
-          canvas.width = 800;
-          canvas.height = 800;
+          const size = 800; // Fixed size
+          canvas.width = size;
+          canvas.height = size;
 
           const ctx = canvas.getContext('2d');
           if (ctx) {
+            // Fill white background
             ctx.fillStyle = '#FFFFFF';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            const sx = (img.width - size) / 2;
-            const sy = (img.height - size) / 2;
-            ctx.drawImage(img, sx, sy, size, size, 0, 0, 800, 800);
-            resolve(canvas.toDataURL('image/jpeg', 0.85));
+
+            // Calculate scale to FIT/CONTAIN
+            const scale = Math.min(size / img.width, size / img.height);
+            const w = img.width * scale;
+            const h = img.height * scale;
+
+            // Center the image
+            const x = (size - w) / 2;
+            const y = (size - h) / 2;
+
+            ctx.drawImage(img, x, y, w, h);
+            resolve(canvas.toDataURL('image/jpeg', 0.90));
           }
         };
         img.src = e.target?.result as string;
@@ -156,9 +176,6 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts }) => {
         p.sku?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    // Note: In this simplified schema, products don't have a direct 'fabric' property, 
-    // but the request asks for filtering. In a real ERP, we'd check variation compatibility.
-    // For now, we'll simulate by filtering category or assuming all uniforms share fabric compatibility.
     if (sortBy === 'price-asc') result.sort((a, b) => a.basePrice - b.basePrice);
     else if (sortBy === 'price-desc') result.sort((a, b) => b.basePrice - a.basePrice);
     return result;
@@ -169,7 +186,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts }) => {
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-3xl font-black text-slate-100 tracking-tight uppercase">Catálogo de Produtos</h2>
-          <p className="text-slate-500 font-medium">Fotos ajustadas automaticamente (1:1) para visual profissional.</p>
+          <p className="text-slate-500 font-medium">Fotos ajustadas automaticamente (Sem Cortes) para visual profissional.</p>
         </div>
         <div className="flex gap-3 w-full md:w-auto">
           <button
@@ -185,7 +202,19 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts }) => {
             )}
           </button>
           <button
-            onClick={() => setEditingProduct({ name: '', sku: '', basePrice: 0, category: 'Uniforme', imageUrl: '' })}
+            onClick={() => setEditingProduct({
+              name: '',
+              sku: generateRandomSKU(),
+              basePrice: 0,
+              category: 'Uniforme',
+              imageUrl: '',
+              description: '',
+              allowedGrades: {
+                'Masculino': GRADES.find(g => g.label === 'Masculino')?.sizes || [],
+                'Feminino': GRADES.find(g => g.label === 'Feminino')?.sizes || [],
+                'Infantil': GRADES.find(g => g.label === 'Infantil')?.sizes || []
+              }
+            })}
             className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl flex items-center justify-center gap-2 font-black transition-all shadow-lg shadow-indigo-500/20 active:scale-95 uppercase text-[10px] tracking-widest"
           >
             <Plus className="w-5 h-5" />
@@ -327,7 +356,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts }) => {
                     </div>
                   ) : editingProduct.imageUrl ? (
                     <>
-                      <img src={editingProduct.imageUrl} className="w-full h-full object-cover bg-white" alt="Preview" />
+                      <img src={editingProduct.imageUrl} className="w-full h-full object-contain bg-white" alt="Preview" />
                       <div className="absolute inset-0 bg-indigo-600/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
                         <Camera className="w-10 h-10 text-white mb-2" />
                         <span className="text-white text-[10px] font-black uppercase tracking-[0.3em]">Mudar Foto</span>
@@ -341,11 +370,12 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts }) => {
                   )}
                 </div>
                 <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" />
+                <p className="text-[10px] text-slate-500 mt-4 font-bold uppercase tracking-widest">Foto ajustada automaticamente (Sem Cortar)</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-2 col-span-full">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Descrição Comercial</label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nome do Modelo</label>
                   <input
                     placeholder="Ex: Camiseta Dry Masculina 2024"
                     className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-slate-100 focus:ring-2 focus:ring-indigo-500 font-bold outline-none"
@@ -353,6 +383,17 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts }) => {
                     onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
                   />
                 </div>
+
+                <div className="space-y-2 col-span-full">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Descrição Comercial</label>
+                  <textarea
+                    placeholder="Descreva detalhes como gola, acabamento, etc. (Aparecerá no Pedido)"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-slate-100 focus:ring-2 focus:ring-indigo-500 font-medium outline-none h-24 resize-none"
+                    value={editingProduct.description || ''}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
+                  />
+                </div>
+
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Preço Base (R$)</label>
                   <input
@@ -363,13 +404,92 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts }) => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Referência / SKU</label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex justify-between">
+                    <span>Referência / SKU</span>
+                    <button
+                      onClick={() => setEditingProduct({ ...editingProduct, sku: generateRandomSKU() })}
+                      className="text-indigo-400 hover:text-indigo-300 transition-colors"
+                    >
+                      Gerar Novo
+                    </button>
+                  </label>
                   <input
                     placeholder="EST-001"
                     className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-slate-100 focus:ring-2 focus:ring-indigo-500 uppercase font-bold"
                     value={editingProduct.sku}
                     onChange={(e) => setEditingProduct({ ...editingProduct, sku: e.target.value })}
+                    readOnly
                   />
+                </div>
+
+                <div className="space-y-4 col-span-full">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Grades e Tamanhos Disponíveis</label>
+                  <p className="text-[10px] text-slate-400"> Selecione quais tamanhos específicos estarão disponíveis para este modelo.</p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {GRADES.map(grade => {
+                      // Safety check for allowedGrades being an object
+                      const currentAllowed = editingProduct.allowedGrades || {};
+                      const selectedSizes = currentAllowed[grade.label] || [];
+                      const isGradeActive = selectedSizes.length > 0;
+
+                      const toggleGrade = () => {
+                        const newAllowed = { ...currentAllowed };
+                        if (isGradeActive) {
+                          delete newAllowed[grade.label];
+                        } else {
+                          newAllowed[grade.label] = [...grade.sizes];
+                        }
+                        setEditingProduct({ ...editingProduct, allowedGrades: newAllowed });
+                      };
+
+                      const toggleSize = (size: string) => {
+                        const newAllowed = { ...currentAllowed };
+                        const currentSizes = newAllowed[grade.label] || [];
+
+                        if (currentSizes.includes(size)) {
+                          newAllowed[grade.label] = currentSizes.filter((s: string) => s !== size);
+                          if (newAllowed[grade.label].length === 0) delete newAllowed[grade.label];
+                        } else {
+                          newAllowed[grade.label] = [...currentSizes, size];
+                        }
+                        setEditingProduct({ ...editingProduct, allowedGrades: newAllowed });
+                      };
+
+                      return (
+                        <div key={grade.label} className={`rounded-3xl border transition-all overflow-hidden ${isGradeActive ? 'bg-indigo-900/10 border-indigo-500/30' : 'bg-slate-950 border-slate-800'}`}>
+                          {/* Header */}
+                          <div className="px-5 py-4 flex items-center justify-between bg-slate-900/50 border-b border-slate-800/50">
+                            <span className="font-black text-xs uppercase tracking-wider text-slate-300">{grade.label}</span>
+                            <button
+                              onClick={toggleGrade}
+                              className={`text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all ${isGradeActive ? 'bg-indigo-600 text-white shadow-indigo-500/20 shadow-lg' : 'bg-slate-800 text-slate-500 hover:bg-slate-700 hover:text-white'}`}
+                            >
+                              {isGradeActive ? 'Todos' : 'Nenhum'}
+                            </button>
+                          </div>
+
+                          {/* Sizes Grid */}
+                          <div className="p-4 grid grid-cols-4 sm:grid-cols-5 gap-2">
+                            {grade.sizes.map(size => {
+                              const isSizeSelected = selectedSizes.includes(size);
+                              return (
+                                <button
+                                  key={size}
+                                  onClick={() => toggleSize(size)}
+                                  className={`py-2 rounded-xl text-[10px] font-black transition-all ${isSizeSelected
+                                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-900/20 scale-105'
+                                    : 'bg-slate-900 text-slate-600 hover:bg-slate-800 hover:text-slate-400'}`}
+                                >
+                                  {size}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 

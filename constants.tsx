@@ -11,9 +11,10 @@ export const FABRICS: Fabric[] = [
 ];
 
 export const GRADES: SizeGrade[] = [
-  { label: 'Infantil', sizes: ['1', '2', '4', '6', '8', '10'] },
-  { label: 'Masculino', sizes: ['P', 'M', 'G', 'GG', 'XG', 'XXG', 'ESP1', 'ESP2'] },
-  { label: 'Feminino', sizes: ['P', 'M', 'G', 'GG', 'XG', 'XXG', 'ESP1', 'ESP2'] },
+  { label: 'Infantil', sizes: ['1', '2', '4', '6', '8', '10', '12', '14'] },
+  { label: 'Masculino', sizes: ['PP', 'P', 'M', 'G', 'GG', 'XG', 'XXG', 'ESP1', 'ESP2'] },
+  { label: 'Feminino', sizes: ['PP', 'P', 'M', 'G', 'GG', 'XG', 'XXG', 'ESP1', 'ESP2'] },
+  { label: 'Unissex', sizes: ['UN'] }
 ];
 
 export const STATUS_CONFIG = {

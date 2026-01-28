@@ -19,10 +19,11 @@ import {
   Printer,
   FileCheck,
   Lock,
-  Check
+  Check,
+  ArrowUpDown
 } from 'lucide-react';
 import { parseOrderText, ParsedOrderItem } from '../services/aiService';
-import { FABRICS, STATUS_CONFIG } from '../constants';
+import { FABRICS, STATUS_CONFIG, GRADES } from '../constants';
 import { Order, OrderStatus, OrderType, Product, Client, OrderItem } from '../types';
 import { printServiceOrder, printInvoice } from '../utils/printUtils';
 import { orderService } from '../services/orderService';
@@ -53,19 +54,221 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
     if (!aiText) return;
     setIsAiProcessing(true);
     try {
-      const items = await parseOrderText(aiText);
-      setParsedItems(items);
-    } catch (e) {
+      // Safe access to products, defaulting to empty array if undefined
+      const safeProducts = Array.isArray(products) ? products : [];
+      const items = await parseOrderText(aiText, safeProducts.map(p => ({ id: p.id, name: p.name })));
+
+      if (!items || items.length === 0) {
+        alert("A IA não conseguiu identificar itens no texto. Tente reformular.");
+        return;
+      }
+
+      // 1. Sort Sizes Ascending (Kids -> Adult -> Special)
+      const getSizeWeight = (size: string) => {
+        const s = size.toUpperCase().trim();
+        // Numeric (Kids) first
+        if (!isNaN(parseInt(s))) return parseInt(s);
+        const weights: Record<string, number> = {
+          'PP': 100, 'P': 101, 'M': 102, 'G': 103, 'GG': 104,
+          'XG': 105, 'XXG': 106, 'G1': 107, 'G2': 108, 'G3': 109,
+          'ESP': 200, 'ESP1': 201, 'ESP2': 202
+        };
+        return weights[s] || 999;
+      };
+
+      // Grouping: Layout -> Product -> Grade -> Size
+      const groups: Record<number, Record<string, Record<string, Record<string, { quantity: number, names: string[], fabric: string }>>>> = {};
+
+      const teamName = items[0]?.teamName || "NOME DA EQUIPE";
+
+      items.forEach(item => {
+        const layout = item.layoutNumber || 9999;
+        const product = (item.product || 'Produto Personalizado').toUpperCase();
+        // Normalize Grade
+        let grade = (item.grade || 'MASCULINO').toUpperCase();
+        if (grade.includes('FEM')) grade = 'FEMININO';
+        else if (grade.includes('INF') || grade.includes('UX')) grade = 'INFANTIL';
+        else grade = 'MASCULINO'; // Default
+
+        const size = (item.size || 'UN').toUpperCase();
+        const fabric = item.fabric || '';
+
+        if (!groups[layout]) groups[layout] = {};
+        if (!groups[layout][product]) groups[layout][product] = {};
+        if (!groups[layout][product][grade]) groups[layout][product][grade] = {};
+        if (!groups[layout][product][grade][size]) {
+          groups[layout][product][grade][size] = { quantity: 0, names: [], fabric };
+        }
+
+        groups[layout][product][grade][size].quantity += item.quantity || 0;
+        if (item.names) groups[layout][product][grade][size].names.push(...item.names);
+        // Prefer explicit fabric if found later
+        if (fabric && !groups[layout][product][grade][size].fabric) {
+          groups[layout][product][grade][size].fabric = fabric;
+        }
+      });
+
+      let formattedOutput = '';
+
+      // Iterate Layouts
+      Object.keys(groups).sort((a, b) => parseInt(a) - parseInt(b)).forEach(layoutKey => {
+        const layoutNum = parseInt(layoutKey);
+        const layoutLabel = layoutNum === 9999 ? 'LAYOUT APROVADO' : `${layoutNum}`;
+        const layoutProducts = groups[layoutNum];
+
+        // Iterate Products
+        Object.keys(layoutProducts).sort().forEach(productName => {
+          // Try to find a dominant fabric for the header
+          let firstFabric = '';
+          Object.values(layoutProducts[productName]).forEach(g =>
+            Object.values(g).forEach(s => { if (s.fabric) firstFabric = s.fabric; })
+          );
+
+          const header = `${teamName.toUpperCase()}
+
+Conferência por tamanho – Nº Remessa
+
+Produto: ${productName}
+Tecido: ${firstFabric || '_______________________________'}
+Layout aprovado: ${layoutLabel}
+
+`;
+          formattedOutput += header;
+
+          // Subtotals
+          let totalMasc = 0;
+          let totalFem = 0;
+          let totalInf = 0;
+
+          const grades = layoutProducts[productName];
+
+          // --- MASCULINO ---
+          if (grades['MASCULINO']) {
+            formattedOutput += `MODELO MASCULINO\n\n`;
+            const sizes = grades['MASCULINO'];
+            let subtotal = 0;
+
+            Object.keys(sizes).sort((a, b) => getSizeWeight(a) - getSizeWeight(b)).forEach(size => {
+              const data = sizes[size];
+              subtotal += data.quantity;
+              formattedOutput += `${size} (${data.quantity} un)\n\n`;
+
+              // List Names
+              data.names.forEach(name => {
+                formattedOutput += `${name} – ${size}\n`;
+              });
+              // Fill placeholders
+              const missing = data.quantity - data.names.length;
+              for (let i = 0; i < missing; i++) {
+                formattedOutput += `Sem Nome – ${size}\n`;
+              }
+              formattedOutput += `\n`;
+            });
+            formattedOutput += `Subtotal Masculino: ${subtotal} peças\n\n`;
+            totalMasc = subtotal;
+          }
+
+          // --- FEMININO ---
+          if (grades['FEMININO']) {
+            formattedOutput += `MODELO FEMININO\n\n`;
+            const sizes = grades['FEMININO'];
+            let subtotal = 0;
+
+            Object.keys(sizes).sort((a, b) => getSizeWeight(a) - getSizeWeight(b)).forEach(size => {
+              const data = sizes[size];
+              subtotal += data.quantity;
+              formattedOutput += `${size} (${data.quantity} un)\n\n`;
+
+              data.names.forEach(name => {
+                formattedOutput += `${name} – ${size} / Feminina\n`;
+              });
+              const missing = data.quantity - data.names.length;
+              for (let i = 0; i < missing; i++) {
+                formattedOutput += `Sem Nome – ${size} / Feminina\n`;
+              }
+              formattedOutput += `\n`;
+            });
+            formattedOutput += `Subtotal Feminino: ${subtotal} peças\n\n`;
+            totalFem = subtotal;
+          }
+
+          // --- INFANTIL ---
+          if (grades['INFANTIL']) {
+            formattedOutput += `MODELO INFANTIL / IDADES\n\n`;
+            const sizes = grades['INFANTIL'];
+            let subtotal = 0;
+
+            Object.keys(sizes).sort((a, b) => getSizeWeight(a) - getSizeWeight(b)).forEach(size => {
+              const data = sizes[size];
+              subtotal += data.quantity;
+
+              const isSpecial = isNaN(parseInt(size));
+              const label = isSpecial ? `Infantil Especial (${data.quantity} un)` : `Infantil (${data.quantity} un)`;
+              formattedOutput += `${label}\n\n`;
+
+              const suffix = isSpecial ? `– ${size}` : `– ${size} anos`;
+
+              data.names.forEach(name => {
+                formattedOutput += `${name} ${suffix}\n`;
+              });
+              const missing = data.quantity - data.names.length;
+              for (let i = 0; i < missing; i++) {
+                formattedOutput += `Sem Nome ${suffix}\n`;
+              }
+              formattedOutput += `\n`;
+            });
+            formattedOutput += `Subtotal Infantil: ${subtotal} peças\n\n`;
+            totalInf = subtotal;
+          }
+
+          // --- TOTAIS ---
+          const grandTotal = totalMasc + totalFem + totalInf;
+          formattedOutput += `TOTAIS GERAIS\n\n`;
+          formattedOutput += `Quantidade total de camisas:\n`;
+          formattedOutput += `${totalMasc} (Masculino) + ${totalFem} (Feminino) + ${totalInf} (Infantil)\n`;
+          formattedOutput += `= ${grandTotal} camisas\n\n`;
+
+          // --- DISCLAIMER ---
+          formattedOutput += `ATENÇÃO\n\n`;
+          formattedOutput += `Esta lista precisa ser totalmente conferida (nomes, tamanhos, modelos e idades).\n`;
+          formattedOutput += `Após a aprovação, não nos responsabilizamos por erro de escrita, tamanho incorreto ou item faltante.\n\n`;
+          formattedOutput += `A produção será realizada exatamente conforme o layout aprovado informado acima.\n\n`;
+          formattedOutput += `--------------------------------------------------\n\n`;
+        });
+      });
+
+      setInternalNotes(prev => (prev ? prev + '\n\n' : '') + formattedOutput.trim());
+
+    } catch (e: any) {
       console.error(e);
+      // Improve error message for user
+      let msg = e?.message || "Erro desconhecido";
+
+      // Try to parse JSON error message if it looks like one
+      if (typeof msg === 'string' && (msg.startsWith('{') || msg.includes('429'))) {
+        if (msg.includes('429') || msg.includes('quota')) {
+          msg = "Limite de uso da IA excedido (Cota Grátis). Aguarde alguns segundos e tente novamente.";
+        }
+      }
+
+      if (msg.includes("API key")) {
+        alert("Erro de Chave API: Verifique se sua chave Gemini está configurada corretamente nos Ajustes.");
+      } else {
+        alert(`Erro ao processar com IA: ${msg}`);
+      }
     } finally {
       setIsAiProcessing(false);
     }
   };
 
   const updateItem = (index: number, field: keyof ParsedOrderItem, value: any) => {
-    const newItems = [...parsedItems];
-    newItems[index] = { ...newItems[index], [field]: value };
-    setParsedItems(newItems);
+    setParsedItems(prev => {
+      const newItems = [...prev];
+      if (newItems[index]) {
+        newItems[index] = { ...newItems[index], [field]: value };
+      }
+      return newItems;
+    });
   };
 
   const removeItem = (index: number) => {
@@ -139,22 +342,29 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
         clientName: clientName,
         status: OrderStatus.RECEIVED,
         orderType: orderType,
-        totalValue: parsedItems.reduce((acc, curr) => acc + (curr.quantity || 0) * 35, 0), // Calculate properly
+        totalValue: parsedItems.reduce((acc, curr) => {
+          const prod = products.find(p => p.name === curr.product);
+          const price = prod ? prod.basePrice : 35;
+          return acc + (curr.quantity || 0) * price;
+        }, 0), // Calculate properly based on product price
         createdAt: new Date().toISOString(),
         deliveryDate: deliveryDate,
         internalNotes: internalNotes,
         delayReason: delayReason,
-        items: parsedItems.map(item => ({
-          id: Math.random().toString(), // Service ignores this on insert usually or mapping needs care
-          productId: 'p-custom',
-          productName: item.product || 'Personalizado',
-          fabricId: 'f-custom',
-          fabricName: item.fabric || 'Não especificado',
-          gradeLabel: item.grade || 'Masculino',
-          size: item.size || 'M',
-          quantity: item.quantity || 0,
-          unitPrice: 35
-        }))
+        items: parsedItems.map(item => {
+          const prod = products.find(p => p.name === item.product);
+          return {
+            id: Math.random().toString(), // Service ignores this on insert usually or mapping needs care
+            productId: prod ? prod.id : 'p-custom',
+            productName: item.product || 'Personalizado',
+            fabricId: 'f-custom',
+            fabricName: item.fabric || 'Não especificado',
+            gradeLabel: item.grade || 'Masculino',
+            size: item.size || 'M',
+            quantity: item.quantity || 0,
+            unitPrice: prod ? prod.basePrice : 35
+          };
+        })
       };
 
       // If client doesn't exist, we might need to create it strictly.
@@ -344,52 +554,192 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                     </div>
                   ) : (
                     <div className="space-y-5">
-                      {parsedItems.map((item, idx) => (
-                        <div key={idx} className="bg-[#0f172a] p-8 rounded-[2.5rem] border border-slate-800 shadow-xl flex flex-wrap gap-6 items-end animate-in slide-in-from-right-4">
-                          <div className="flex-1 min-w-[200px]">
-                            <label className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em] mb-3 block">Produto</label>
-                            <input
-                              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-5 py-3.5 text-sm font-black text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none"
-                              value={item.product}
-                              onChange={(e) => updateItem(idx, 'product', e.target.value)}
-                            />
+                      {parsedItems.map((item, idx) => {
+                        // 1. Find Product (Case Insensitive for better UX)
+                        const selectedProduct = products.find(p => p.name.toLowerCase() === (item.product || '').toLowerCase());
+
+                        // 2. Resolve Allowed Grades (Handle Legacy Array vs New Record)
+                        let allowedGradesObj: Record<string, string[]> | undefined;
+
+                        if (selectedProduct?.allowedGrades) {
+                          if (Array.isArray(selectedProduct.allowedGrades)) {
+                            // Fallback runtime conversion if service didn't catch it
+                            allowedGradesObj = {};
+                            selectedProduct.allowedGrades.forEach((g: string) => {
+                              const cfg = GRADES.find(gconfig => gconfig.label === g);
+                              if (cfg && allowedGradesObj) allowedGradesObj[g] = cfg.sizes;
+                            });
+                          } else {
+                            // It is a Record
+                            allowedGradesObj = selectedProduct.allowedGrades as Record<string, string[]>;
+                          }
+                        }
+
+                        // 3. Define Options for Dropdowns
+                        // If product has restrictions, use keys. Else allow all GRADES.
+                        const allowedGradeLabels = allowedGradesObj ? Object.keys(allowedGradesObj) : GRADES.map(g => g.label);
+                        const allowedGradesList = GRADES.filter(g => allowedGradeLabels.includes(g.label));
+
+                        // 4. Resolve Sizes for currently Selected Grade
+                        const currentGradeLabel = item.grade || 'Masculino';
+                        const specificAllowedSizes = allowedGradesObj ? allowedGradesObj[currentGradeLabel] : null;
+
+                        // Fallback to strict constant lookup if no specific restriction, OR if custom product
+                        const currentGradeConfig = GRADES.find(g => g.label === currentGradeLabel);
+                        const availableSizes = specificAllowedSizes || (currentGradeConfig ? currentGradeConfig.sizes : []);
+
+                        return (
+                          <div key={idx} className="bg-[#0f172a] p-6 rounded-[2rem] border border-slate-800 shadow-xl space-y-6 animate-in slide-in-from-right-4 relative group">
+
+                            {/* Product Search - Full Width */}
+                            <div className="space-y-2">
+                              <label className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em] block ml-1">Produto</label>
+                              <div className="relative">
+                                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-600 w-5 h-5 pointer-events-none" />
+                                <input
+                                  list={`product-options-${idx}`}
+                                  className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-14 pr-5 py-4 text-base font-black text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-700 uppercase tracking-tight"
+                                  value={item.product}
+                                  placeholder="BUSQUE O CAMISA, REGATA, ETC..."
+                                  onChange={(e) => {
+                                    const newVal = e.target.value;
+                                    updateItem(idx, 'product', newVal);
+
+                                    // Auto-update grade if product has restrictions
+                                    const matchedProd = products.find(p => p.name.toLowerCase() === newVal.toLowerCase());
+
+                                    if (matchedProd?.allowedGrades) {
+                                      let validGrades: string[] = [];
+                                      if (Array.isArray(matchedProd.allowedGrades)) {
+                                        validGrades = matchedProd.allowedGrades;
+                                      } else {
+                                        validGrades = Object.keys(matchedProd.allowedGrades);
+                                      }
+
+                                      if (validGrades.length > 0 && !validGrades.includes(item.grade || '')) {
+                                        updateItem(idx, 'grade', validGrades[0]); // Switch to first valid grade
+                                        updateItem(idx, 'size', ''); // Reset size
+                                      }
+                                    }
+                                  }}
+                                />
+                                <datalist id={`product-options-${idx}`}>
+                                  {products.map(p => (
+                                    <option key={p.id} value={p.name} />
+                                  ))}
+                                </datalist>
+                              </div>
+                            </div>
+
+                            {/* Grade Logic - Buttons/Tabs */}
+                            <div className="space-y-2">
+                              <label className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em] block ml-1">Modelo / Grade</label>
+                              <div className="flex flex-wrap gap-3">
+                                {allowedGradesList.length > 0 ? allowedGradesList.map(g => {
+                                  const isActive = (item.grade || 'Masculino') === g.label;
+                                  return (
+                                    <button
+                                      type="button"
+                                      key={g.label}
+                                      onClick={() => {
+                                        updateItem(idx, 'grade', g.label);
+                                        updateItem(idx, 'size', ''); // Reset size
+                                      }}
+                                      className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${isActive
+                                        ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-900/20 scale-105'
+                                        : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700 hover:text-white cursor-pointer'
+                                        }`}
+                                    >
+                                      {g.label}
+                                    </button>
+                                  );
+                                }) : (
+                                  <p className="text-xs text-rose-500 font-bold py-2">Selecione um produto primeiro</p>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Size Logic - Grid of Buttons (PREMIUM UI) */}
+                            <div className="space-y-3 p-6 bg-slate-900/30 rounded-3xl border border-slate-800/50">
+                              <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] block text-center w-full mb-2">Selecione o Tamanho Disponível</label>
+
+                              <div className="flex flex-wrap gap-3 justify-center">
+                                {availableSizes.length > 0 ? availableSizes.map(s => {
+                                  const isSelected = item.size === s;
+                                  return (
+                                    <button
+                                      type="button"
+                                      key={s}
+                                      onClick={() => updateItem(idx, 'size', s)}
+                                      className={`min-w-[3.5rem] h-14 px-4 rounded-xl text-sm font-black transition-all border flex items-center justify-center ${isSelected
+                                        ? 'bg-white border-white text-indigo-900 shadow-xl shadow-white/10 scale-110 z-10'
+                                        : 'bg-slate-950 border-slate-800 text-slate-500 hover:bg-slate-800 hover:text-slate-300 hover:border-slate-700'
+                                        }`}
+                                    >
+                                      {s}
+                                    </button>
+                                  )
+                                }) : (
+                                  <div className="flex flex-col items-center justify-center py-4 text-slate-600 gap-2">
+                                    <AlertTriangle className="w-5 h-5 opacity-50" />
+                                    <span className="text-xs font-bold">Nenhum tamanho disponível para esta grade</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Footer: Fabric, Qty, Delete */}
+                            <div className="grid grid-cols-12 gap-6 items-end">
+                              <div className="col-span-12 md:col-span-6 space-y-2">
+                                <label className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em] block ml-1">Tecido</label>
+                                <div className="relative">
+                                  <select
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-sm font-bold text-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none appearance-none cursor-pointer hover:bg-slate-900 transition-all uppercase tracking-wide"
+                                    value={item.fabric}
+                                    onChange={(e) => updateItem(idx, 'fabric', e.target.value)}
+                                  >
+                                    <option value="">Padrão do Modelo</option>
+                                    {FABRICS.map(f => <option key={f.id} value={f.name}>{f.name}</option>)}
+                                  </select>
+                                  <ArrowUpDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 pointer-events-none" />
+                                </div>
+                              </div>
+
+                              <div className="col-span-8 md:col-span-4 space-y-2">
+                                <label className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em] block ml-1 text-center">Quantidade</label>
+                                <div className="flex items-center justify-center bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden">
+                                  <button
+                                    type="button"
+                                    onClick={() => updateItem(idx, 'quantity', Math.max(1, (item.quantity || 1) - 1))}
+                                    className="w-14 h-14 flex items-center justify-center text-slate-400 hover:bg-slate-900 hover:text-white transition-all active:bg-slate-800"
+                                  ><span className="text-xl font-bold">-</span></button>
+                                  <input
+                                    type="number"
+                                    className="flex-1 w-full bg-transparent h-14 text-center text-indigo-400 font-black outline-none text-lg"
+                                    value={item.quantity}
+                                    onChange={(e) => updateItem(idx, 'quantity', parseInt(e.target.value))}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => updateItem(idx, 'quantity', (item.quantity || 1) + 1)}
+                                    className="w-14 h-14 flex items-center justify-center text-slate-400 hover:bg-slate-900 hover:text-white transition-all active:bg-slate-800"
+                                  ><span className="text-xl font-bold">+</span></button>
+                                </div>
+                              </div>
+
+                              <div className="col-span-4 md:col-span-2">
+                                <button
+                                  onClick={() => removeItem(idx)}
+                                  className="w-full h-14 bg-rose-500/5 border border-rose-500/20 rounded-2xl text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center shadow-lg shadow-rose-900/10 group-hover/btn:scale-105"
+                                  title="Remover Item"
+                                >
+                                  <Trash2 className="w-5 h-5" />
+                                </button>
+                              </div>
+                            </div>
                           </div>
-                          <div className="w-48">
-                            <label className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em] mb-3 block">Tecido</label>
-                            <select
-                              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-5 py-3.5 text-sm text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none font-black"
-                              value={item.fabric}
-                              onChange={(e) => updateItem(idx, 'fabric', e.target.value)}
-                            >
-                              <option value="">Selecione</option>
-                              {FABRICS.map(f => <option key={f.id} value={f.name}>{f.name}</option>)}
-                            </select>
-                          </div>
-                          <div className="w-24">
-                            <label className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em] mb-3 block text-center">Tamanho</label>
-                            <input
-                              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-2 py-3.5 text-sm text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none text-center font-black"
-                              value={item.size}
-                              onChange={(e) => updateItem(idx, 'size', e.target.value)}
-                            />
-                          </div>
-                          <div className="w-24">
-                            <label className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em] mb-3 block text-center">Qtd</label>
-                            <input
-                              type="number"
-                              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-2 py-3.5 text-sm text-indigo-400 focus:ring-2 focus:ring-indigo-500 outline-none text-center font-black"
-                              value={item.quantity}
-                              onChange={(e) => updateItem(idx, 'quantity', parseInt(e.target.value))}
-                            />
-                          </div>
-                          <button
-                            onClick={() => removeItem(idx)}
-                            className="p-4 bg-slate-950 border border-slate-800 rounded-2xl text-slate-700 hover:text-rose-500 transition-all"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -397,7 +747,11 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                 <div className="mt-10 pt-10 border-t border-slate-800 flex items-center justify-between">
                   <div>
                     <p className="text-[10px] text-slate-600 uppercase font-black tracking-[0.4em] mb-2">Total do Pedido</p>
-                    <p className="text-5xl font-black text-slate-100 tracking-tighter">R$ {(parsedItems.reduce((acc, curr) => acc + (curr.quantity || 0) * 35, 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    <p className="text-5xl font-black text-slate-100 tracking-tighter">R$ {(parsedItems.reduce((acc, curr) => {
+                      const prod = products.find(p => p.name === curr.product);
+                      const price = prod ? prod.basePrice : 35;
+                      return acc + (curr.quantity || 0) * price;
+                    }, 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                   </div>
                   <div className="flex gap-5">
                     <button

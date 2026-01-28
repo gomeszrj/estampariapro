@@ -64,6 +64,8 @@ export interface Product {
   status: 'active' | 'inactive';
   imageUrl: string;
   basePrice: number;
+  description?: string; // New: Commercial description
+  allowedGrades?: Record<string, string[]>; // New: e.g. { 'Masculino': ['P', 'M'], 'Infantil': ['10', '12'] }
 }
 
 export interface Client {
