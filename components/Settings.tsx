@@ -13,8 +13,11 @@ const Settings: React.FC = () => {
     phone: '',
     email: '',
     website: '',
-    bank_info: '',
+    bank_info: '', // Note: component uses bankInfo in some places, unifying on bank_info where possible or keeping strict
     logo_url: '',
+    evolution_api_url: '',
+    evolution_api_key: '',
+    evolution_instance_name: '',
   });
 
   // Team State
@@ -36,14 +39,8 @@ const Settings: React.FC = () => {
     setIsLoadingSettings(true);
     try {
       const data = await settingsService.getSettings();
-      // If data is empty (first run), we might want to keep the defaults or strict empty.
-      // Based on previous code, let's set defaults if REALLY empty to help user?
-      // Or better, just trust the DB output. If empty, user fills it.
-      if (!data.name) {
-        // Optional: Pre-fill defaults if desired, or leave blank.
-        // Let's leave blank/persisted values to avoid magic resets.
-      }
-      setCompany(data);
+      // Ensure we merge with default keys if they are missing
+      setCompany(prev => ({ ...prev, ...data }));
     } catch (error) {
       console.error("Error loading settings", error);
     } finally {
@@ -91,8 +88,6 @@ const Settings: React.FC = () => {
       await settingsService.saveSettings(company);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-      // No need for window event usually if we are using DB, but if other components listen to it locally...
-      // printUtils will now fetch from DB, so manual event is less critical unless we want instant UI update elsewhere.
     } catch (error) {
       console.error("Error saving settings", error);
       alert("Erro ao salvar configurações.");
@@ -278,13 +273,13 @@ const Settings: React.FC = () => {
                       </label>
                       <textarea
                         name="bankInfo"
-                        value={company.bankInfo}
+                        // Handle potential property name mismatch safely
+                        value={company.bankInfo || company.bank_info || ''}
                         onChange={handleChange}
                         placeholder="Descreva aqui como o cliente deve realizar o pagamento..."
                         className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all h-32 resize-none"
                       />
                     </div>
-
 
                     <div className="col-span-full pt-10 border-t border-slate-800">
                       <h4 className="text-xl font-black text-slate-100 uppercase tracking-tight mb-8 flex items-center gap-3">
@@ -336,8 +331,8 @@ const Settings: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>
-
+          )}
+        </div>
       ) : (
         <div className="animate-in fade-in zoom-in-95 duration-300 grid grid-cols-1 lg:grid-cols-12 gap-10">
           {/* Add New User */}
@@ -435,9 +430,8 @@ const Settings: React.FC = () => {
             </div>
           </div>
         </div>
-      )
-      }
-    </div >
+      )}
+    </div>
   );
 };
 
