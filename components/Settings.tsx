@@ -281,51 +281,7 @@ const Settings: React.FC = () => {
                       />
                     </div>
 
-                    <div className="col-span-full pt-10 border-t border-slate-800">
-                      <h4 className="text-xl font-black text-slate-100 uppercase tracking-tight mb-8 flex items-center gap-3">
-                        <MessageSquare className="w-5 h-5 text-emerald-500" />
-                        Integração WhatsApp (Evolution API)
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-10">
-                        <div className="space-y-3 col-span-full">
-                          <label className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] flex items-center gap-2 ml-1">
-                            Base URL da API
-                          </label>
-                          <input
-                            name="evolution_api_url"
-                            value={company.evolution_api_url || ''}
-                            onChange={handleChange}
-                            placeholder="https://api.seuserver.com"
-                            className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-slate-100 font-bold focus:ring-2 focus:ring-emerald-500 outline-none transition-all placeholder:text-slate-800"
-                          />
-                        </div>
-                        <div className="space-y-3 col-span-full md:col-span-1">
-                          <label className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] flex items-center gap-2 ml-1">
-                            API Key (Global)
-                          </label>
-                          <input
-                            name="evolution_api_key"
-                            value={company.evolution_api_key || ''}
-                            onChange={handleChange}
-                            type="password"
-                            placeholder="*************"
-                            className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-slate-100 font-bold focus:ring-2 focus:ring-emerald-500 outline-none transition-all placeholder:text-slate-800"
-                          />
-                        </div>
-                        <div className="space-y-3 col-span-full md:col-span-1">
-                          <label className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] flex items-center gap-2 ml-1">
-                            Nome da Instância
-                          </label>
-                          <input
-                            name="evolution_instance_name"
-                            value={company.evolution_instance_name || ''}
-                            onChange={handleChange}
-                            placeholder="Ex: EstampariaPro"
-                            className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-slate-100 font-bold focus:ring-2 focus:ring-emerald-500 outline-none transition-all placeholder:text-slate-800"
-                          />
-                        </div>
-                      </div>
-                    </div>
+
 
                   </div>
                 </div>

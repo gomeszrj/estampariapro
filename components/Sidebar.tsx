@@ -24,7 +24,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
     { id: 'kanban', label: 'Fluxo', icon: Trello },
     { id: 'catalog', label: 'Catálogo', icon: Box },
     { id: 'clients', label: 'Clientes', icon: Users },
-    { id: 'crm', label: 'Atendimento', icon: MessageSquare },
+
     { id: 'finance', label: 'Financeiro', icon: TrendingUp },
   ];
 

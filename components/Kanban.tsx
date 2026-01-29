@@ -22,7 +22,12 @@ interface KanbanProps {
   setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
 }
 
-const KanbanCard = ({ order, onMove }: { order: Order; onMove: (id: string, newStatus: OrderStatus) => void }) => {
+interface KanbanCardProps {
+  order: Order;
+  onMove: (id: string, newStatus: OrderStatus) => void;
+}
+
+const KanbanCard: React.FC<KanbanCardProps> = ({ order, onMove }) => {
   const isLate = new Date(order.deliveryDate) < new Date() && order.status !== OrderStatus.FINISHED;
   const currentStatusIndex = statuses.indexOf(order.status);
 
@@ -100,7 +105,13 @@ const KanbanCard = ({ order, onMove }: { order: Order; onMove: (id: string, newS
   );
 };
 
-const KanbanColumn = ({ status, orders, onMove }: { status: OrderStatus; orders: Order[]; onMove: (id: string, newStatus: OrderStatus) => void }) => {
+interface KanbanColumnProps {
+  status: OrderStatus;
+  orders: Order[];
+  onMove: (id: string, newStatus: OrderStatus) => void;
+}
+
+const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, orders, onMove }) => {
   const config = STATUS_CONFIG[status] || { label: status, color: 'bg-slate-800 text-slate-400 border-slate-700' };
   const columnOrders = orders.filter((o: Order) => o.status === status);
 

@@ -82,6 +82,7 @@ async function runTest() {
             name: `Produto Teste ${timestamp}`,
             category: 'Uniforme',
             basePrice: 50.00,
+            imageUrl: 'https://placehold.co/400',
             status: 'active'
         });
         console.log('✅ Produto Criado:', newProduct.id, newProduct.name);
