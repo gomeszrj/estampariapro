@@ -123,8 +123,8 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
         sortedGrades.forEach(grade => {
           const products = layoutGrades[grade];
           Object.keys(products).sort().forEach(product => {
-            // Header: REGATA MASCULINA
-            formattedOutput += `${product} ${grade}\n\n`;
+            // Header: LAYOUT REGATA MASCULINA
+            formattedOutput += `LAYOUT ${product} ${grade}\n\n`;
 
             const sizes = products[product];
             Object.keys(sizes).sort((a, b) => getSizeWeight(a) - getSizeWeight(b)).forEach(size => {
@@ -138,7 +138,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
 
               formattedOutput += `TAMANHO - ${displaySizeHeader}\n\n`;
 
-              // List Names
+              // List Names (Single Spacing)
               data.names.forEach(name => {
                 const displayName = name.toUpperCase().trim();
                 // Format: 1 - NAME - SIZE
@@ -152,7 +152,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
               }
               formattedOutput += `\n`; // Space between sizes
             });
-            formattedOutput += `\n`; // Space between products
+            // formattedOutput += `\n`; // Space between products (already has newlines from sizes)
           });
         });
       });
@@ -351,33 +351,33 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
 
       {isAdding && (
         <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0f172a] rounded-[3rem] w-full max-w-7xl max-h-[95vh] overflow-hidden flex flex-col shadow-2xl border border-slate-800 animate-in zoom-in-95">
-            <div className="p-8 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
-                  <Edit3 className="w-6 h-6" />
+          <div className="bg-[#0f172a] rounded-[2rem] w-full max-w-7xl max-h-[95vh] overflow-hidden flex flex-col shadow-2xl border border-slate-800 animate-in zoom-in-95">
+            <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+                  <Edit3 className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black text-slate-100 uppercase tracking-tighter">
-                    {editingOrderId ? 'Edição de Pedido Existente' : 'Lançamento de Novo Pedido'}
+                  <h3 className="text-lg font-black text-slate-100 uppercase tracking-tighter">
+                    {editingOrderId ? 'Edição de Pedido' : 'Novo Pedido'}
                   </h3>
-                  <div className="flex gap-4 mt-1">
+                  <div className="flex gap-2 mt-1">
                     <button
                       onClick={() => setOrderType(OrderType.SALE)}
-                      className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg border transition-all ${orderType === OrderType.SALE ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}`}
-                    >VENDA DIRETA</button>
+                      className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border transition-all ${orderType === OrderType.SALE ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}`}
+                    >VENDA</button>
                     <button
                       onClick={() => setOrderType(OrderType.BUDGET)}
-                      className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg border transition-all ${orderType === OrderType.BUDGET ? 'bg-amber-600 border-amber-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}`}
+                      className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border transition-all ${orderType === OrderType.BUDGET ? 'bg-amber-600 border-amber-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}`}
                     >ORÇAMENTO</button>
                   </div>
-                  <div className="flex gap-2 mt-2">
-                    <span className="text-[9px] font-bold text-slate-500 uppercase self-center mr-2">Pagamento:</span>
+                  <div className="flex gap-1 mt-1.5">
+                    <span className="text-[8px] font-bold text-slate-500 uppercase self-center mr-1">Pgto:</span>
                     {Object.values(PaymentStatus).map(status => (
                       <button
                         key={status}
                         onClick={() => setPaymentStatus(status)}
-                        className={`text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-md border transition-all ${paymentStatus === status ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-900 border-slate-800 text-slate-600 hover:text-slate-400'}`}
+                        className={`text-[7px] font-black uppercase tracking-widest px-2 py-0.5 rounded border transition-all ${paymentStatus === status ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-900 border-slate-800 text-slate-600 hover:text-slate-400'}`}
                       >
                         {status}
                       </button>
@@ -385,19 +385,19 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                   </div>
                 </div>
               </div>
-              <button onClick={handleCloseModal} className="text-slate-400 hover:text-white bg-slate-800 p-3 rounded-full transition-colors">
-                <X className="w-6 h-6" />
+              <button onClick={handleCloseModal} className="text-slate-400 hover:text-white bg-slate-800 p-2 rounded-full transition-colors">
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-10 grid grid-cols-1 lg:grid-cols-12 gap-10">
-              <div className="lg:col-span-4 space-y-8 border-r border-slate-800/50 pr-4">
-                <div className="bg-indigo-500/5 p-6 rounded-[2rem] border border-indigo-500/10">
-                  <label className="block text-xs font-black text-indigo-400 mb-4 uppercase tracking-[0.2em] flex items-center gap-2">
-                    <Wand2 className="w-4 h-4" /> Inteligência Artificial
+            <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-4 space-y-5 border-r border-slate-800/50 pr-4">
+                <div className="bg-indigo-500/5 p-4 rounded-2xl border border-indigo-500/10">
+                  <label className="block text-[10px] font-black text-indigo-400 mb-2 uppercase tracking-[0.2em] flex items-center gap-2">
+                    <Wand2 className="w-3 h-3" /> Inteligência Artificial
                   </label>
                   <textarea
-                    className="w-full h-32 p-5 bg-slate-950 border border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-700 text-sm text-slate-300 font-medium"
+                    className="w-full h-20 p-3 bg-slate-950 border border-slate-800 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-700 text-xs text-slate-300 font-medium"
                     placeholder="Cole aqui a mensagem do cliente..."
                     value={aiText}
                     onChange={(e) => setAiText(e.target.value)}
@@ -405,24 +405,24 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                   <button
                     onClick={handleAiParse}
                     disabled={isAiProcessing || !aiText}
-                    className="w-full mt-4 py-4 bg-indigo-600 text-white rounded-2xl font-black flex items-center justify-center gap-3 disabled:opacity-50 hover:bg-indigo-700 transition-all uppercase text-[10px] tracking-[0.2em]"
+                    className="w-full mt-2 py-2.5 bg-indigo-600 text-white rounded-xl font-black flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-indigo-700 transition-all uppercase text-[9px] tracking-[0.2em]"
                   >
-                    {isAiProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-                    Extrair com IA
+                    {isAiProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                    Extrair
                   </button>
                 </div>
 
-                <div className="space-y-5">
-                  <label className={`block text-[10px] font-black uppercase tracking-widest ml-1 ${!clientName ? 'text-rose-500' : 'text-slate-600'}`}>Cabeçalho do Pedido {!clientName && '*'}</label>
+                <div className="space-y-3">
+                  <label className={`block text-[9px] font-black uppercase tracking-widest ml-1 ${!clientName ? 'text-rose-500' : 'text-slate-600'}`}>Cabeçalho {!clientName && '*'}</label>
                   <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 w-5 h-5" />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 w-4 h-4" />
                     <input
                       type="text"
                       list="client-options"
                       placeholder="Nome do Cliente"
                       value={clientName}
                       onChange={(e) => setClientName(e.target.value)}
-                      className={`w-full pl-12 pr-6 py-4 bg-slate-950 border rounded-2xl text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold transition-all ${!clientName ? 'border-rose-900/50 shadow-[0_0_10px_rgba(244,63,94,0.1)]' : 'border-slate-800'}`}
+                      className={`w-full pl-10 pr-4 py-3 bg-slate-950 border rounded-xl text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold transition-all ${!clientName ? 'border-rose-900/50 shadow-[0_0_10px_rgba(244,63,94,0.1)]' : 'border-slate-800'}`}
                     />
                     <datalist id="client-options">
                       {clients.map(client => (
@@ -431,41 +431,41 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                     </datalist>
                   </div>
                   <div className="relative">
-                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 w-5 h-5" />
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 w-4 h-4" />
                     <input
                       type="date"
                       value={deliveryDate}
                       onChange={(e) => setDeliveryDate(e.target.value)}
-                      className={`w-full pl-12 pr-6 py-4 bg-slate-950 border rounded-2xl text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 color-scheme-dark font-bold transition-all ${!deliveryDate ? 'border-rose-900/50 shadow-[0_0_10px_rgba(244,63,94,0.1)]' : 'border-slate-800'}`}
+                      className={`w-full pl-10 pr-4 py-3 bg-slate-950 border rounded-xl text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 color-scheme-dark font-bold transition-all ${!deliveryDate ? 'border-rose-900/50 shadow-[0_0_10px_rgba(244,63,94,0.1)]' : 'border-slate-800'}`}
                     />
                   </div>
                 </div>
 
-                <div className="space-y-4 pt-6 border-t border-slate-800/50">
+                <div className="space-y-2 pt-4 border-t border-slate-800/50">
                   <div className="flex justify-between items-center">
-                    <label className="block text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2 ml-1">
-                      <MessageSquare className="w-4 h-4" /> Informações Internas (Grade e Nomes)
+                    <label className="block text-[9px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2 ml-1">
+                      <MessageSquare className="w-3 h-3" /> Informações Internas
                     </label>
                   </div>
                   <textarea
                     value={internalNotes}
                     onChange={(e) => setInternalNotes(e.target.value)}
-                    placeholder="Ex: M - João 10, G - Maria 7..."
-                    className="w-full h-48 p-5 bg-slate-950 border border-slate-800 rounded-2xl text-sm text-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none font-medium resize-none shadow-inner"
+                    placeholder="Ex: M - João 10..."
+                    className="w-full h-32 p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none font-medium resize-none shadow-inner"
                   />
                 </div>
 
                 {isOrderLate && (
-                  <div className="space-y-4 pt-6 border-t border-slate-800/50">
-                    <label className="block text-[10px] font-black text-rose-500 uppercase tracking-widest flex items-center gap-2 ml-1">
-                      <AlertTriangle className="w-4 h-4" /> Justificativa de Atraso
+                  <div className="space-y-2 pt-4 border-t border-slate-800/50">
+                    <label className="block text-[9px] font-black text-rose-500 uppercase tracking-widest flex items-center gap-2 ml-1">
+                      <AlertTriangle className="w-3 h-3" /> Atraso
                     </label>
                     <input
                       type="text"
                       value={delayReason}
                       onChange={(e) => setDelayReason(e.target.value)}
-                      placeholder="Motivo do atraso..."
-                      className="w-full p-5 bg-rose-500/5 border border-rose-900/40 rounded-2xl text-sm text-slate-200 focus:ring-2 focus:ring-rose-500 outline-none"
+                      placeholder="Motivo..."
+                      className="w-full p-3 bg-rose-500/5 border border-rose-900/40 rounded-xl text-xs text-slate-200 focus:ring-2 focus:ring-rose-500 outline-none"
                     />
                   </div>
                 )}
@@ -528,18 +528,18 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                         const availableSizes = specificAllowedSizes || (currentGradeConfig ? currentGradeConfig.sizes : []);
 
                         return (
-                          <div key={idx} className="bg-[#0f172a] p-6 rounded-[2rem] border border-slate-800 shadow-xl space-y-6 animate-in slide-in-from-right-4 relative group">
+                          <div key={idx} className="bg-[#0f172a] p-4 rounded-[1.5rem] border border-slate-800 shadow-lg space-y-4 animate-in slide-in-from-right-4 relative group">
 
                             {/* Product Search - Full Width */}
-                            <div className="space-y-2">
-                              <label className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em] block ml-1">Produto</label>
+                            <div className="space-y-1">
+                              <label className="text-[8px] font-black text-slate-600 uppercase tracking-[0.3em] block ml-1">Produto</label>
                               <div className="relative">
-                                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-600 w-5 h-5 pointer-events-none" />
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 w-4 h-4 pointer-events-none" />
                                 <input
                                   list={`product-options-${idx}`}
-                                  className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-14 pr-5 py-4 text-base font-black text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-700 uppercase tracking-tight"
+                                  className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-3 text-sm font-black text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-700 uppercase tracking-tight"
                                   value={item.product}
-                                  placeholder="BUSQUE O CAMISA, REGATA, ETC..."
+                                  placeholder="BUSQUE O PRODUTO..."
                                   onChange={(e) => {
                                     const newVal = e.target.value;
                                     updateItem(idx, 'product', newVal);
@@ -571,9 +571,9 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                             </div>
 
                             {/* Grade Logic - Buttons/Tabs */}
-                            <div className="space-y-2">
-                              <label className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em] block ml-1">Modelo / Grade</label>
-                              <div className="flex flex-wrap gap-3">
+                            <div className="space-y-1">
+                              <label className="text-[8px] font-black text-slate-600 uppercase tracking-[0.3em] block ml-1">Modelo / Grade</label>
+                              <div className="flex flex-wrap gap-2">
                                 {allowedGradesList.length > 0 ? allowedGradesList.map(g => {
                                   const isActive = (item.grade || 'Masculino') === g.label;
                                   return (
@@ -584,7 +584,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                                         updateItem(idx, 'grade', g.label);
                                         updateItem(idx, 'size', ''); // Reset size
                                       }}
-                                      className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${isActive
+                                      className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border ${isActive
                                         ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-900/20 scale-105'
                                         : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700 hover:text-white cursor-pointer'
                                         }`}
@@ -593,16 +593,16 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                                     </button>
                                   );
                                 }) : (
-                                  <p className="text-xs text-rose-500 font-bold py-2">Selecione um produto primeiro</p>
+                                  <p className="text-[10px] text-rose-500 font-bold py-1">Selecione um produto primeiro</p>
                                 )}
                               </div>
                             </div>
 
                             {/* Size Logic - Grid of Buttons (PREMIUM UI) */}
-                            <div className="space-y-3 p-6 bg-slate-900/30 rounded-3xl border border-slate-800/50">
-                              <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] block text-center w-full mb-2">Selecione o Tamanho Disponível</label>
+                            <div className="space-y-2 p-3 bg-slate-900/30 rounded-2xl border border-slate-800/50">
+                              <label className="text-[8px] font-black text-slate-500 uppercase tracking-[0.3em] block text-center w-full mb-1">Tamanho</label>
 
-                              <div className="flex flex-wrap gap-3 justify-center">
+                              <div className="flex flex-wrap gap-2 justify-center">
                                 {availableSizes.length > 0 ? availableSizes.map(s => {
                                   const isSelected = item.size === s;
                                   return (
@@ -610,7 +610,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                                       type="button"
                                       key={s}
                                       onClick={() => updateItem(idx, 'size', s)}
-                                      className={`min-w-[3.5rem] h-14 px-4 rounded-xl text-sm font-black transition-all border flex items-center justify-center ${isSelected
+                                      className={`min-w-[2.5rem] h-10 px-3 rounded-lg text-xs font-black transition-all border flex items-center justify-center ${isSelected
                                         ? 'bg-white border-white text-indigo-900 shadow-xl shadow-white/10 scale-110 z-10'
                                         : 'bg-slate-950 border-slate-800 text-slate-500 hover:bg-slate-800 hover:text-slate-300 hover:border-slate-700'
                                         }`}
@@ -619,60 +619,60 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                                     </button>
                                   )
                                 }) : (
-                                  <div className="flex flex-col items-center justify-center py-4 text-slate-600 gap-2">
-                                    <AlertTriangle className="w-5 h-5 opacity-50" />
-                                    <span className="text-xs font-bold">Nenhum tamanho disponível para esta grade</span>
+                                  <div className="flex flex-col items-center justify-center py-2 text-slate-600 gap-1">
+                                    <AlertTriangle className="w-4 h-4 opacity-50" />
+                                    <span className="text-[10px] font-bold">Sem tamanho disponível</span>
                                   </div>
                                 )}
                               </div>
                             </div>
 
                             {/* Footer: Fabric, Qty, Delete */}
-                            <div className="grid grid-cols-12 gap-6 items-end">
-                              <div className="col-span-12 md:col-span-6 space-y-2">
-                                <label className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em] block ml-1">Tecido</label>
+                            <div className="grid grid-cols-12 gap-4 items-end">
+                              <div className="col-span-12 md:col-span-6 space-y-1">
+                                <label className="text-[8px] font-black text-slate-600 uppercase tracking-[0.3em] block ml-1">Tecido</label>
                                 <div className="relative">
                                   <select
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-sm font-bold text-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none appearance-none cursor-pointer hover:bg-slate-900 transition-all uppercase tracking-wide"
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none appearance-none cursor-pointer hover:bg-slate-900 transition-all uppercase tracking-wide"
                                     value={item.fabric}
                                     onChange={(e) => updateItem(idx, 'fabric', e.target.value)}
                                   >
-                                    <option value="">Padrão do Modelo</option>
+                                    <option value="">Padrão</option>
                                     {FABRICS.map(f => <option key={f.id} value={f.name}>{f.name}</option>)}
                                   </select>
-                                  <ArrowUpDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 pointer-events-none" />
+                                  <ArrowUpDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-600 pointer-events-none" />
                                 </div>
                               </div>
 
-                              <div className="col-span-8 md:col-span-4 space-y-2">
-                                <label className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em] block ml-1 text-center">Quantidade</label>
-                                <div className="flex items-center justify-center bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden">
+                              <div className="col-span-12 md:col-span-4 space-y-1">
+                                <label className="text-[8px] font-black text-slate-600 uppercase tracking-[0.3em] block ml-1 text-center">Qtd</label>
+                                <div className="flex items-center justify-center bg-slate-950 rounded-xl border border-slate-800 overflow-hidden h-10">
                                   <button
                                     type="button"
                                     onClick={() => updateItem(idx, 'quantity', Math.max(1, (item.quantity || 1) - 1))}
-                                    className="w-14 h-14 flex items-center justify-center text-slate-400 hover:bg-slate-900 hover:text-white transition-all active:bg-slate-800"
-                                  ><span className="text-xl font-bold">-</span></button>
+                                    className="w-10 h-full flex items-center justify-center text-slate-400 hover:bg-slate-900 hover:text-white transition-all active:bg-slate-800"
+                                  ><span className="text-lg font-bold">-</span></button>
                                   <input
                                     type="number"
-                                    className="flex-1 w-full bg-transparent h-14 text-center text-indigo-400 font-black outline-none text-lg"
+                                    className="flex-1 w-full bg-transparent h-full text-center text-indigo-400 font-black outline-none text-base"
                                     value={item.quantity}
                                     onChange={(e) => updateItem(idx, 'quantity', parseInt(e.target.value))}
                                   />
                                   <button
                                     type="button"
                                     onClick={() => updateItem(idx, 'quantity', (item.quantity || 1) + 1)}
-                                    className="w-14 h-14 flex items-center justify-center text-slate-400 hover:bg-slate-900 hover:text-white transition-all active:bg-slate-800"
-                                  ><span className="text-xl font-bold">+</span></button>
+                                    className="w-10 h-full flex items-center justify-center text-slate-400 hover:bg-slate-900 hover:text-white transition-all active:bg-slate-800"
+                                  ><span className="text-lg font-bold">+</span></button>
                                 </div>
                               </div>
 
-                              <div className="col-span-4 md:col-span-2">
+                              <div className="col-span-12 md:col-span-2">
                                 <button
                                   onClick={() => removeItem(idx)}
-                                  className="w-full h-14 bg-rose-500/5 border border-rose-500/20 rounded-2xl text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center shadow-lg shadow-rose-900/10 group-hover/btn:scale-105"
-                                  title="Remover Item"
+                                  className="w-full h-10 bg-rose-500/5 border border-rose-500/20 rounded-xl text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center shadow-lg shadow-rose-900/10 group-hover/btn:scale-105"
+                                  title="Remover"
                                 >
-                                  <Trash2 className="w-5 h-5" />
+                                  <Trash2 className="w-4 h-4" />
                                 </button>
                               </div>
                             </div>
