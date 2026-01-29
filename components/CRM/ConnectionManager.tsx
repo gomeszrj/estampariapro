@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { evolutionService, EvolutionStatus } from '../services/evolutionService';
+import { evolutionService, EvolutionStatus } from '../../services/evolutionService';
 import { Loader2, RefreshCw, LogOut, QrCode as QrIcon, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 export const ConnectionManager: React.FC = () => {
