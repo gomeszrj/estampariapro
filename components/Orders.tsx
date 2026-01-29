@@ -76,7 +76,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
         return weights[s] || 999;
       };
 
-      // Grouping: Layout -> Product -> Grade -> Size
+      // Grouping: Layout -> Grade (Group) -> Product (SubGroup) -> Size
       const groups: Record<number, Record<string, Record<string, Record<string, { quantity: number, names: string[], fabric: string }>>>> = {};
 
       const teamName = items[0]?.teamName || "NOME DA EQUIPE";
@@ -84,7 +84,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
       items.forEach(item => {
         const layout = item.layoutNumber || 9999;
         const product = (item.product || 'Produto Personalizado').toUpperCase();
-        // Normalize Grade
+
         let grade = (item.grade || 'MASCULINO').toUpperCase();
         if (grade.includes('FEM')) grade = 'FEMININO';
         else if (grade.includes('INF') || grade.includes('UX')) grade = 'INFANTIL';
@@ -94,17 +94,16 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
         const fabric = item.fabric || '';
 
         if (!groups[layout]) groups[layout] = {};
-        if (!groups[layout][product]) groups[layout][product] = {};
-        if (!groups[layout][product][grade]) groups[layout][product][grade] = {};
-        if (!groups[layout][product][grade][size]) {
-          groups[layout][product][grade][size] = { quantity: 0, names: [], fabric };
+        if (!groups[layout][grade]) groups[layout][grade] = {};
+        if (!groups[layout][grade][product]) groups[layout][grade][product] = {};
+        if (!groups[layout][grade][product][size]) {
+          groups[layout][grade][product][size] = { quantity: 0, names: [], fabric };
         }
 
-        groups[layout][product][grade][size].quantity += item.quantity || 0;
-        if (item.names) groups[layout][product][grade][size].names.push(...item.names);
-        // Prefer explicit fabric if found later
-        if (fabric && !groups[layout][product][grade][size].fabric) {
-          groups[layout][product][grade][size].fabric = fabric;
+        groups[layout][grade][product][size].quantity += item.quantity || 0;
+        if (item.names) groups[layout][grade][product][size].names.push(...item.names);
+        if (fabric && !groups[layout][grade][product][size].fabric) {
+          groups[layout][grade][product][size].fabric = fabric;
         }
       });
 
@@ -113,132 +112,78 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
       // Iterate Layouts
       Object.keys(groups).sort((a, b) => parseInt(a) - parseInt(b)).forEach(layoutKey => {
         const layoutNum = parseInt(layoutKey);
-        const layoutLabel = layoutNum === 9999 ? 'LAYOUT APROVADO' : `${layoutNum}`;
-        const layoutProducts = groups[layoutNum];
+        // Only show separate layout block if strictly needed, but per request effectively just listing content
+        const layoutGrades = groups[layoutNum];
 
-        // Iterate Products
-        Object.keys(layoutProducts).sort().forEach(productName => {
-          // Try to find a dominant fabric for the header
-          let firstFabric = '';
-          Object.values(layoutProducts[productName]).forEach(g =>
-            Object.values(g).forEach(s => { if (s.fabric) firstFabric = s.fabric; })
-          );
+        // Specific Order for Grades: Masculine -> Feminine -> Child
+        const gradeOrder = ['MASCULINO', 'FEMININO', 'INFANTIL'];
+        const sortedGrades = Object.keys(layoutGrades).sort((a, b) => {
+          return gradeOrder.indexOf(a) - gradeOrder.indexOf(b);
+        });
 
-          // CLEAN HEADER REMOVED AS REQUESTED
-          // const header = ...
-          // formattedOutput += header;
+        // Track Grand Totals for this layout (or overall if single layout)
+        let totalItems = 0;
+        let formulaParts: string[] = [];
 
-          // Subtotals
-          let totalMasc = 0;
-          let totalFem = 0;
-          let totalInf = 0;
+        sortedGrades.forEach(grade => {
+          formattedOutput += `##########################################\n`;
+          formattedOutput += `GRUPO: ${grade}\n`;
+          formattedOutput += `##########################################\n\n`;
 
-          const grades = layoutProducts[productName];
+          const products = layoutGrades[grade];
+          Object.keys(products).sort().forEach(product => {
+            formattedOutput += `==========================================\n`;
+            formattedOutput += `SUB-GRUPO: ${product}\n`;
+            formattedOutput += `==========================================\n\n`;
 
-          // Helper to clean "anos" duplication
-          const formatAgeSize = (size: string) => {
-            if (size.toLowerCase().includes('ano')) return size;
-            return `${size} anos`;
-          };
-
-          // --- MASCULINO ---
-          if (grades['MASCULINO']) {
-            formattedOutput += `══ MODELO MASCULINO ════════════════════════\n\n`;
-            const sizes = grades['MASCULINO'];
-            let subtotal = 0;
-
+            const sizes = products[product];
             Object.keys(sizes).sort((a, b) => getSizeWeight(a) - getSizeWeight(b)).forEach(size => {
               const data = sizes[size];
-              subtotal += data.quantity;
+              totalItems += data.quantity;
 
-              formattedOutput += `[ ${size} ] — ${data.quantity} un\n`;
+              // Helper to clean "anos" duplication just for the header line if needed, 
+              // but user example shows "10 ANOS" in header and "10 ANOS" in line.
+              const formatAgeSize = (s: string) => {
+                if (!isNaN(parseInt(s)) && !s.toLowerCase().includes('ano')) return `${s} ANOS`;
+                return s;
+              };
+              const displaySizeHeader = formatAgeSize(size);
+
+              // Add to formula: "1 (10 ANOS)"
+              formulaParts.push(`${data.quantity} (${displaySizeHeader})`);
+
+              formattedOutput += `------------------------------------------\n`;
+              formattedOutput += `${displaySizeHeader} (${data.quantity} un)\n`;
+
+              const itemSuffix = `(${product}/${grade})`;
 
               // List Names
               data.names.forEach(name => {
-                formattedOutput += `• ${name}\n`;
+                const displayName = name.toUpperCase().trim();
+                // User Example: NICOLLAS 💵 – 10 ANOS – (REGATA/MASCULINO) ✅
+                // We'll reproduce: NAME – SIZE – SUFFIX
+                formattedOutput += `${displayName} – ${displaySizeHeader} – ${itemSuffix}\n`;
               });
+
               // Fill placeholders
               const missing = data.quantity - data.names.length;
               for (let i = 0; i < missing; i++) {
-                formattedOutput += `• [Sem Nome]\n`;
+                formattedOutput += `[SEM NOME] – ${displaySizeHeader} – ${itemSuffix}\n`;
               }
               formattedOutput += `\n`;
             });
-            formattedOutput += `TOTAL MASCULINO: ${subtotal} peças\n\n`;
-            totalMasc = subtotal;
-          }
-
-          // --- FEMININO ---
-          if (grades['FEMININO']) {
-            formattedOutput += `══ MODELO FEMININO ═════════════════════════\n\n`;
-            const sizes = grades['FEMININO'];
-            let subtotal = 0;
-
-            Object.keys(sizes).sort((a, b) => getSizeWeight(a) - getSizeWeight(b)).forEach(size => {
-              const data = sizes[size];
-              subtotal += data.quantity;
-
-              formattedOutput += `[ ${size} ] — ${data.quantity} un / Feminina\n`;
-
-              data.names.forEach(name => {
-                formattedOutput += `• ${name}\n`;
-              });
-              const missing = data.quantity - data.names.length;
-              for (let i = 0; i < missing; i++) {
-                formattedOutput += `• [Sem Nome]\n`;
-              }
-              formattedOutput += `\n`;
-            });
-            formattedOutput += `TOTAL FEMININO: ${subtotal} peças\n\n`;
-            totalFem = subtotal;
-          }
-
-          // --- INFANTIL ---
-          if (grades['INFANTIL']) {
-            formattedOutput += `══ MODELO INFANTIL ═════════════════════════\n\n`;
-            const sizes = grades['INFANTIL'];
-            let subtotal = 0;
-
-            Object.keys(sizes).sort((a, b) => getSizeWeight(a) - getSizeWeight(b)).forEach(size => {
-              const data = sizes[size];
-              subtotal += data.quantity;
-
-              const isSpecial = isNaN(parseInt(size));
-              // Clean suffix to avoid "4 ANOS anos"
-              const displaySize = isSpecial ? size : formatAgeSize(size);
-
-              formattedOutput += `[ ${displaySize} ] — ${data.quantity} un\n`;
-
-              data.names.forEach(name => {
-                formattedOutput += `• ${name}\n`;
-              });
-              const missing = data.quantity - data.names.length;
-              for (let i = 0; i < missing; i++) {
-                formattedOutput += `• [Sem Nome]\n`;
-              }
-              formattedOutput += `\n`;
-            });
-            formattedOutput += `TOTAL INFANTIL: ${subtotal} peças\n\n`;
-            totalInf = subtotal;
-          }
-
-          // --- TOTAIS ---
-          const grandTotal = totalMasc + totalFem + totalInf;
-          formattedOutput += `════════════════════════════════════════════════\n`;
-          formattedOutput += `RESUMO FINAL\n`;
-          formattedOutput += `Masculino: ${totalMasc}\n`;
-          formattedOutput += `Feminino:  ${totalFem}\n`;
-          formattedOutput += `Infantil:  ${totalInf}\n`;
-          formattedOutput += `------------------------------------------------\n`;
-          formattedOutput += `TOTAL GERAL: ${grandTotal} camisas\n\n`;
-
-          // --- DISCLAIMER ---
-          formattedOutput += `⚠ ATENÇÃO\n`;
-          formattedOutput += `1. Confira nomes, tamanhos e modelos.\n`;
-          formattedOutput += `2. Não aceitamos reclamações posteriores à aprovação.\n`;
-          formattedOutput += `3. Produção será fiel a este espelho.\n`;
-          formattedOutput += `\n\n`;
+          });
         });
+
+        // Totals Section
+        formattedOutput += `==========================================\n`;
+        formattedOutput += `TOTAIS GERAIS DO PEDIDO (PEÇAS)\n`;
+        formattedOutput += `==========================================\n`;
+        formattedOutput += `Quantidade total de camisas:\n`;
+        if (formulaParts.length > 0) {
+          formattedOutput += `Fórmula: ${formulaParts.join(' + ')} \n`;
+        }
+        formattedOutput += `TOTAL GERAL: ${totalItems} peças\n\n`;
       });
 
       setInternalNotes(prev => (prev ? prev + '\n\n' : '') + formattedOutput.trim());
