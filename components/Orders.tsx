@@ -162,13 +162,13 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                 const displayName = name.toUpperCase().trim();
                 // User Example: NICOLLAS 💵 – 10 ANOS – (REGATA/MASCULINO) ✅
                 // We'll reproduce: NAME – SIZE – SUFFIX
-                formattedOutput += `${displayName} – ${displaySizeHeader} – ${itemSuffix}\n`;
+                formattedOutput += `${displayName} – ${displaySizeHeader} – ${itemSuffix}\n\n`;
               });
 
               // Fill placeholders
               const missing = data.quantity - data.names.length;
               for (let i = 0; i < missing; i++) {
-                formattedOutput += `[SEM NOME] – ${displaySizeHeader} – ${itemSuffix}\n`;
+                formattedOutput += `[SEM NOME] – ${displaySizeHeader} – ${itemSuffix}\n\n`;
               }
               formattedOutput += `\n`;
             });
