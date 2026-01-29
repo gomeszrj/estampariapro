@@ -308,8 +308,8 @@ export function printInvoice(order: Order) {
         <div class="border-box" style="display: flex;">
           <div class="cell" style="flex: 1;"><span class="label">Base Cálc. ICMS</span><span class="value">0,00</span></div>
           <div class="cell" style="flex: 1;"><span class="label">Valor ICMS</span><span class="value">0,00</span></div>
-          <div class="cell" style="flex: 1;"><span class="label">Vlr Total Prod.</span><span class="value">R$ ${order.totalValue.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span></div>
-          <div class="cell" style="flex: 1;"><span class="label">Vlr Total Nota</span><span class="value">R$ ${order.totalValue.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span></div>
+          <div class="cell" style="flex: 1;"><span class="label">Vlr Total Prod.</span><span class="value">R$ ${order.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>
+          <div class="cell" style="flex: 1;"><span class="label">Vlr Total Nota</span><span class="value">R$ ${order.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>
         </div>
 
         <div class="section-title">Itens da Nota Fiscal Eletrônica</div>
@@ -328,13 +328,13 @@ export function printInvoice(order: Order) {
           <tbody>
             ${order.items.map(item => `
               <tr>
-                <td style="color:#666;">P${item.id.slice(0,2)}</td>
+                <td style="color:#666;">P${item.id.slice(0, 2)}</td>
                 <td style="font-weight:700;">${item.productName} - ${item.fabricName} (${item.size})</td>
                 <td>61091000</td>
                 <td>UN</td>
                 <td style="text-align:right;">${item.quantity}</td>
-                <td style="text-align:right;">${(item.unitPrice).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                <td style="text-align:right; font-weight:800;">${(item.quantity * item.unitPrice).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                <td style="text-align:right;">${(item.unitPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                <td style="text-align:right; font-weight:800;">${(item.quantity * item.unitPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
               </tr>
             `).join('')}
           </tbody>

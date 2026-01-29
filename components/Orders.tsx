@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Plus,
@@ -107,12 +106,11 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
         }
       });
 
-      let formattedOutput = '';
+      let formattedOutput = 'LISTA DE CONFERENCIA\n\n';
 
       // Iterate Layouts
       Object.keys(groups).sort((a, b) => parseInt(a) - parseInt(b)).forEach(layoutKey => {
         const layoutNum = parseInt(layoutKey);
-        // Only show separate layout block if strictly needed, but per request effectively just listing content
         const layoutGrades = groups[layoutNum];
 
         // Specific Order for Grades: Masculine -> Feminine -> Child
@@ -121,69 +119,41 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
           return gradeOrder.indexOf(a) - gradeOrder.indexOf(b);
         });
 
-        // Track Grand Totals for this layout (or overall if single layout)
-        let totalItems = 0;
-        let formulaParts: string[] = [];
-
         sortedGrades.forEach(grade => {
-          formattedOutput += `##########################################\n`;
-          formattedOutput += `GRUPO: ${grade}\n`;
-          formattedOutput += `##########################################\n\n`;
-
           const products = layoutGrades[grade];
           Object.keys(products).sort().forEach(product => {
-            formattedOutput += `==========================================\n`;
-            formattedOutput += `SUB-GRUPO: ${product}\n`;
-            formattedOutput += `==========================================\n\n`;
+            // Header: REGATA MASCULINA
+            formattedOutput += `${product} ${grade}\n\n`;
 
             const sizes = products[product];
             Object.keys(sizes).sort((a, b) => getSizeWeight(a) - getSizeWeight(b)).forEach(size => {
               const data = sizes[size];
-              totalItems += data.quantity;
 
-              // Helper to clean "anos" duplication just for the header line if needed, 
-              // but user example shows "10 ANOS" in header and "10 ANOS" in line.
               const formatAgeSize = (s: string) => {
                 if (!isNaN(parseInt(s)) && !s.toLowerCase().includes('ano')) return `${s} ANOS`;
                 return s;
               };
               const displaySizeHeader = formatAgeSize(size);
 
-              // Add to formula: "1 (10 ANOS)"
-              formulaParts.push(`${data.quantity} (${displaySizeHeader})`);
-
-              formattedOutput += `------------------------------------------\n`;
-              formattedOutput += `${displaySizeHeader} (${data.quantity} un)\n`;
-
-              const itemSuffix = `(${product}/${grade})`;
+              formattedOutput += `TAMANHO - ${displaySizeHeader}\n\n`;
 
               // List Names
               data.names.forEach(name => {
                 const displayName = name.toUpperCase().trim();
-                // User Example: NICOLLAS 💵 – 10 ANOS – (REGATA/MASCULINO) ✅
-                // We'll reproduce: NAME – SIZE – SUFFIX
-                formattedOutput += `${displayName} – ${displaySizeHeader} – ${itemSuffix}\n\n`;
+                // Format: 1 - NAME - SIZE
+                formattedOutput += `1 - ${displayName} - ${displaySizeHeader}\n`;
               });
 
               // Fill placeholders
               const missing = data.quantity - data.names.length;
               for (let i = 0; i < missing; i++) {
-                formattedOutput += `[SEM NOME] – ${displaySizeHeader} – ${itemSuffix}\n\n`;
+                formattedOutput += `1 - [SEM NOME] - ${displaySizeHeader}\n`;
               }
-              formattedOutput += `\n`;
+              formattedOutput += `\n`; // Space between sizes
             });
+            formattedOutput += `\n`; // Space between products
           });
         });
-
-        // Totals Section
-        formattedOutput += `==========================================\n`;
-        formattedOutput += `TOTAIS GERAIS DO PEDIDO (PEÇAS)\n`;
-        formattedOutput += `==========================================\n`;
-        formattedOutput += `Quantidade total de camisas:\n`;
-        if (formulaParts.length > 0) {
-          formattedOutput += `Fórmula: ${formulaParts.join(' + ')} \n`;
-        }
-        formattedOutput += `TOTAL GERAL: ${totalItems} peças\n\n`;
       });
 
       setInternalNotes(prev => (prev ? prev + '\n\n' : '') + formattedOutput.trim());
@@ -276,9 +246,6 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
     }
   };
 
-  // ... import removed ...
-
-  // ... inside component ...
   const handleFinalize = async () => {
     if (!clientName || !deliveryDate || parsedItems.length === 0) return;
 
