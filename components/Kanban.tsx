@@ -125,9 +125,23 @@ const KanbanColumn = ({ status, orders, onMove }: { status: OrderStatus; orders:
 };
 
 // Fixed missing Kanban component and added default export to resolve App.tsx import error
+import { orderService } from '../services/orderService'; // Added import
+
+// ... existing code ...
+
 const Kanban: React.FC<KanbanProps> = ({ orders, setOrders }) => {
-  const handleMove = (id: string, newStatus: OrderStatus) => {
+  const handleMove = async (id: string, newStatus: OrderStatus) => {
+    // Optimistic Update
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
+
+    try {
+      await orderService.update(id, { status: newStatus });
+    } catch (error) {
+      console.error("Failed to update order status:", error);
+      alert("Erro ao salvar o novo status. Recarregue a página.");
+      // Rollback (optional, but good)
+      // For now, alerting is enough as strict rollback requires storing prev state
+    }
   };
 
   return (

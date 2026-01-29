@@ -489,11 +489,17 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 w-5 h-5" />
                     <input
                       type="text"
+                      list="client-options"
                       placeholder="Nome do Cliente"
                       value={clientName}
                       onChange={(e) => setClientName(e.target.value)}
                       className={`w-full pl-12 pr-6 py-4 bg-slate-950 border rounded-2xl text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold transition-all ${!clientName ? 'border-rose-900/50 shadow-[0_0_10px_rgba(244,63,94,0.1)]' : 'border-slate-800'}`}
                     />
+                    <datalist id="client-options">
+                      {clients.map(client => (
+                        <option key={client.id} value={client.name} />
+                      ))}
+                    </datalist>
                   </div>
                   <div className="relative">
                     <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 w-5 h-5" />
