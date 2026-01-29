@@ -111,7 +111,7 @@ export async function printServiceOrder(order: Order) {
         <div class="doc-wrapper">
           <header>
             <div class="logo-area">
-              ${company.logoUrl ? `<img src="${company.logoUrl}" class="logo-img">` : '<div style="font-weight:900; background:#000; color:#fff; padding:15px; border-radius:10px;">BRAND</div>'}
+              ${company.logo_url ? `<img src="${company.logo_url}" class="logo-img">` : '<div style="font-weight:900; background:#000; color:#fff; padding:15px; border-radius:10px;">BRAND</div>'}
               <div class="company-info">
                 <h1>${company.name || 'Estamparia Premium'}</h1>
                 <p>
@@ -291,7 +291,7 @@ export async function printInvoice(order: Order) {
         <!-- CABEÇALHO DANFE SIMULADO -->
         <div class="danfe-header">
           <div class="logo-box">
-             ${company.logoUrl ? `<img src="${company.logoUrl}" class="logo-img">` : '<div style="font-weight:900;">BRAND</div>'}
+             ${company.logo_url ? `<img src="${company.logo_url}" class="logo-img">` : '<div style="font-weight:900; background:#000; color:#fff; padding:15px; border-radius:10px;">BRAND</div>'}
           </div>
           <div class="emitter-box">
              <div class="label">Emitente</div>
@@ -369,7 +369,7 @@ export async function printInvoice(order: Order) {
             Pedido: #${order.orderNumber} | Entrega: ${new Date(order.deliveryDate).toLocaleDateString('pt-BR')}<br>
             Empresa Optante pelo Simples Nacional - Não gera crédito fiscal de IPI.<br><br>
             <strong>PAGAMENTO:</strong> ${company.bankInfo || 'Consultar financeiro.'}<br>
-            <strong>OBSERVAÇÕES:</strong> <div style="white-space: pre-wrap; display: inline-block;">${order.internalNotes || 'Nenhuma.'}</div>
+            <div style="font-weight:900; margin-top:5px; font-size:6pt; color:#999;">DOCUMENTO SEM VALOR FISCAL</div>
           </div>
         </div>
 
