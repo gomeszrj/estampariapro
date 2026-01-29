@@ -337,7 +337,6 @@ const Settings: React.FC = () => {
               </div>
             </div>
           </div>
-
       ) : (
         <div className="animate-in fade-in zoom-in-95 duration-300 grid grid-cols-1 lg:grid-cols-12 gap-10">
           {/* Add New User */}
