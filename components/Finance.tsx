@@ -37,15 +37,69 @@ const FinanceStat = ({ title, value, icon: Icon, color, trend }: any) => (
 );
 
 const Finance: React.FC<FinanceProps> = ({ orders }) => {
+  // 1. Calculate Aggregates
   const totalRevenue = orders.reduce((acc, curr) => acc + curr.totalValue, 0);
   const ticketMedio = orders.length > 0 ? totalRevenue / orders.length : 0;
   const pendingRevenue = orders.filter(o => o.status !== OrderStatus.FINISHED).reduce((acc, curr) => acc + curr.totalValue, 0);
 
-  const data = [
-    { name: 'Jan', value: totalRevenue * 0.7 },
-    { name: 'Fev', value: totalRevenue * 0.8 },
-    { name: 'Mar', value: totalRevenue },
-  ];
+  // 2. Group by Month (YYYY-MM)
+  const monthlyGroups: Record<string, number> = {};
+
+  orders.forEach(order => {
+    // Check if valid date
+    if (!order.createdAt) return;
+    const date = new Date(order.createdAt);
+    if (isNaN(date.getTime())) return;
+
+    // Key: YYYY-MM
+    const key = date.toISOString().slice(0, 7);
+    monthlyGroups[key] = (monthlyGroups[key] || 0) + order.totalValue;
+  });
+
+  // 3. Convert to Array and Sort
+  // Get last 6 months dynamic keys to ensure we show even empty months or just actual data?
+  // Let's simplified: Show actual data sorted chronologically
+  const sortedKeys = Object.keys(monthlyGroups).sort();
+
+  // Prepare data for Chart
+  // Format: { name: 'Jan', value: 1234 }
+  const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+
+  const data = sortedKeys.map(key => {
+    const [year, month] = key.split('-');
+    const mIndex = parseInt(month, 10) - 1;
+    return {
+      name: monthNames[mIndex], // or `${monthNames[mIndex]}/${year.slice(2)}` for clarity
+      fullName: `${monthNames[mIndex]}/${year}`,
+      value: monthlyGroups[key]
+    };
+  });
+
+  // If no data, show empty placeholder or keep empty
+  if (data.length === 0) {
+    const today = new Date();
+    data.push({ name: monthNames[today.getMonth()], fullName: 'Atual', value: 0 });
+  }
+
+  // 4. Calculate Trends (Current Month vs Previous Month)
+  const currentMonthKey = new Date().toISOString().slice(0, 7);
+  const currentMonthValue = monthlyGroups[currentMonthKey] || 0;
+
+  // Find previous month key
+  const d = new Date();
+  d.setMonth(d.getMonth() - 1);
+  const lastMonthKey = d.toISOString().slice(0, 7);
+  const lastMonthValue = monthlyGroups[lastMonthKey] || 0;
+
+  let trendPercentage = 0;
+  if (lastMonthValue > 0) {
+    trendPercentage = ((currentMonthValue - lastMonthValue) / lastMonthValue) * 100;
+  } else if (currentMonthValue > 0) {
+    trendPercentage = 100; // 100% growth if prev was 0
+  }
+
+  // Ensure 1 decimal
+  const formattedTrend = Number(trendPercentage.toFixed(1));
 
   return (
     <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
@@ -55,10 +109,10 @@ const Finance: React.FC<FinanceProps> = ({ orders }) => {
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <FinanceStat title="Faturamento Bruto" value={`R$ ${totalRevenue.toLocaleString('pt-BR')}`} icon={DollarSign} color="bg-indigo-600" trend={14.2} />
-        <FinanceStat title="Ticket Médio" value={`R$ ${ticketMedio.toLocaleString('pt-BR')}`} icon={TrendingUp} color="bg-emerald-600" trend={3.1} />
-        <FinanceStat title="Contas a Receber" value={`R$ ${pendingRevenue.toLocaleString('pt-BR')}`} icon={CreditCard} color="bg-amber-600" trend={-5.4} />
-        <FinanceStat title="Margem Bruta" value="42%" icon={PieChart} color="bg-purple-600" trend={1.2} />
+        <FinanceStat title="Faturamento Bruto" value={`R$ ${totalRevenue.toLocaleString('pt-BR')}`} icon={DollarSign} color="bg-indigo-600" trend={formattedTrend} />
+        <FinanceStat title="Ticket Médio" value={`R$ ${ticketMedio.toLocaleString('pt-BR')}`} icon={TrendingUp} color="bg-emerald-600" trend={0.0} />
+        <FinanceStat title="Contas a Receber" value={`R$ ${pendingRevenue.toLocaleString('pt-BR')}`} icon={CreditCard} color="bg-amber-600" trend={0.0} />
+        <FinanceStat title="Margem Bruta (Est.)" value="42%" icon={PieChart} color="bg-purple-600" trend={0.0} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -82,6 +136,8 @@ const Finance: React.FC<FinanceProps> = ({ orders }) => {
                 <Tooltip
                   contentStyle={{ backgroundColor: '#0f172a', borderRadius: '16px', border: '1px solid #1e293b', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.5)' }}
                   itemStyle={{ color: '#6366f1', fontWeight: 900 }}
+                  labelStyle={{ color: '#94a3b8' }}
+                  formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR')}`, 'Faturamento']}
                 />
                 <Area type="monotone" dataKey="value" stroke="#6366f1" strokeWidth={4} fillOpacity={1} fill="url(#colorValue)" />
               </AreaChart>
@@ -103,6 +159,7 @@ const Finance: React.FC<FinanceProps> = ({ orders }) => {
                 <Tooltip
                   cursor={{ fill: 'rgba(30, 41, 59, 0.4)' }}
                   contentStyle={{ backgroundColor: '#0f172a', borderRadius: '16px', border: '1px solid #1e293b' }}
+                  formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR')}`, 'Volume']}
                 />
                 <Bar dataKey="value" fill="#10b981" radius={[8, 8, 0, 0]} barSize={40} />
               </BarChart>
