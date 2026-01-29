@@ -124,16 +124,9 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
             Object.values(g).forEach(s => { if (s.fabric) firstFabric = s.fabric; })
           );
 
-          const header = `${teamName.toUpperCase()}
-
-Conferência por tamanho – Nº Remessa
-
-Produto: ${productName}
-Tecido: ${firstFabric || '_______________________________'}
-Layout aprovado: ${layoutLabel}
-
-`;
-          formattedOutput += header;
+          // CLEAN HEADER REMOVED AS REQUESTED
+          // const header = ...
+          // formattedOutput += header;
 
           // Subtotals
           let totalMasc = 0;
@@ -142,59 +135,67 @@ Layout aprovado: ${layoutLabel}
 
           const grades = layoutProducts[productName];
 
+          // Helper to clean "anos" duplication
+          const formatAgeSize = (size: string) => {
+            if (size.toLowerCase().includes('ano')) return size;
+            return `${size} anos`;
+          };
+
           // --- MASCULINO ---
           if (grades['MASCULINO']) {
-            formattedOutput += `MODELO MASCULINO\n\n`;
+            formattedOutput += `══ MODELO MASCULINO ════════════════════════\n\n`;
             const sizes = grades['MASCULINO'];
             let subtotal = 0;
 
             Object.keys(sizes).sort((a, b) => getSizeWeight(a) - getSizeWeight(b)).forEach(size => {
               const data = sizes[size];
               subtotal += data.quantity;
-              formattedOutput += `${size} (${data.quantity} un)\n\n`;
+
+              formattedOutput += `[ ${size} ] — ${data.quantity} un\n`;
 
               // List Names
               data.names.forEach(name => {
-                formattedOutput += `${name} – ${size}\n`;
+                formattedOutput += `• ${name}\n`;
               });
               // Fill placeholders
               const missing = data.quantity - data.names.length;
               for (let i = 0; i < missing; i++) {
-                formattedOutput += `Sem Nome – ${size}\n`;
+                formattedOutput += `• [Sem Nome]\n`;
               }
               formattedOutput += `\n`;
             });
-            formattedOutput += `Subtotal Masculino: ${subtotal} peças\n\n`;
+            formattedOutput += `TOTAL MASCULINO: ${subtotal} peças\n\n`;
             totalMasc = subtotal;
           }
 
           // --- FEMININO ---
           if (grades['FEMININO']) {
-            formattedOutput += `MODELO FEMININO\n\n`;
+            formattedOutput += `══ MODELO FEMININO ═════════════════════════\n\n`;
             const sizes = grades['FEMININO'];
             let subtotal = 0;
 
             Object.keys(sizes).sort((a, b) => getSizeWeight(a) - getSizeWeight(b)).forEach(size => {
               const data = sizes[size];
               subtotal += data.quantity;
-              formattedOutput += `${size} (${data.quantity} un)\n\n`;
+
+              formattedOutput += `[ ${size} ] — ${data.quantity} un / Feminina\n`;
 
               data.names.forEach(name => {
-                formattedOutput += `${name} – ${size} / Feminina\n`;
+                formattedOutput += `• ${name}\n`;
               });
               const missing = data.quantity - data.names.length;
               for (let i = 0; i < missing; i++) {
-                formattedOutput += `Sem Nome – ${size} / Feminina\n`;
+                formattedOutput += `• [Sem Nome]\n`;
               }
               formattedOutput += `\n`;
             });
-            formattedOutput += `Subtotal Feminino: ${subtotal} peças\n\n`;
+            formattedOutput += `TOTAL FEMININO: ${subtotal} peças\n\n`;
             totalFem = subtotal;
           }
 
           // --- INFANTIL ---
           if (grades['INFANTIL']) {
-            formattedOutput += `MODELO INFANTIL / IDADES\n\n`;
+            formattedOutput += `══ MODELO INFANTIL ═════════════════════════\n\n`;
             const sizes = grades['INFANTIL'];
             let subtotal = 0;
 
@@ -203,37 +204,40 @@ Layout aprovado: ${layoutLabel}
               subtotal += data.quantity;
 
               const isSpecial = isNaN(parseInt(size));
-              const label = isSpecial ? `Infantil Especial (${data.quantity} un)` : `Infantil (${data.quantity} un)`;
-              formattedOutput += `${label}\n\n`;
+              // Clean suffix to avoid "4 ANOS anos"
+              const displaySize = isSpecial ? size : formatAgeSize(size);
 
-              const suffix = isSpecial ? `– ${size}` : `– ${size} anos`;
+              formattedOutput += `[ ${displaySize} ] — ${data.quantity} un\n`;
 
               data.names.forEach(name => {
-                formattedOutput += `${name} ${suffix}\n`;
+                formattedOutput += `• ${name}\n`;
               });
               const missing = data.quantity - data.names.length;
               for (let i = 0; i < missing; i++) {
-                formattedOutput += `Sem Nome ${suffix}\n`;
+                formattedOutput += `• [Sem Nome]\n`;
               }
               formattedOutput += `\n`;
             });
-            formattedOutput += `Subtotal Infantil: ${subtotal} peças\n\n`;
+            formattedOutput += `TOTAL INFANTIL: ${subtotal} peças\n\n`;
             totalInf = subtotal;
           }
 
           // --- TOTAIS ---
           const grandTotal = totalMasc + totalFem + totalInf;
-          formattedOutput += `TOTAIS GERAIS\n\n`;
-          formattedOutput += `Quantidade total de camisas:\n`;
-          formattedOutput += `${totalMasc} (Masculino) + ${totalFem} (Feminino) + ${totalInf} (Infantil)\n`;
-          formattedOutput += `= ${grandTotal} camisas\n\n`;
+          formattedOutput += `════════════════════════════════════════════════\n`;
+          formattedOutput += `RESUMO FINAL\n`;
+          formattedOutput += `Masculino: ${totalMasc}\n`;
+          formattedOutput += `Feminino:  ${totalFem}\n`;
+          formattedOutput += `Infantil:  ${totalInf}\n`;
+          formattedOutput += `------------------------------------------------\n`;
+          formattedOutput += `TOTAL GERAL: ${grandTotal} camisas\n\n`;
 
           // --- DISCLAIMER ---
-          formattedOutput += `ATENÇÃO\n\n`;
-          formattedOutput += `Esta lista precisa ser totalmente conferida (nomes, tamanhos, modelos e idades).\n`;
-          formattedOutput += `Após a aprovação, não nos responsabilizamos por erro de escrita, tamanho incorreto ou item faltante.\n\n`;
-          formattedOutput += `A produção será realizada exatamente conforme o layout aprovado informado acima.\n\n`;
-          formattedOutput += `--------------------------------------------------\n\n`;
+          formattedOutput += `⚠ ATENÇÃO\n`;
+          formattedOutput += `1. Confira nomes, tamanhos e modelos.\n`;
+          formattedOutput += `2. Não aceitamos reclamações posteriores à aprovação.\n`;
+          formattedOutput += `3. Produção será fiel a este espelho.\n`;
+          formattedOutput += `\n\n`;
         });
       });
 
@@ -337,7 +341,7 @@ Layout aprovado: ${layoutLabel}
 
     try {
       const orderData = {
-        orderNumber: (orders.length + 21).toString().padStart(4, '0'), // Ideally generated by DB/Service trigger, but ok for now
+        orderNumber: (orders.length + 1).toString().padStart(4, '0'), // Ideally generated by DB/Service trigger, but ok for now
         clientId: clients.find(c => c.name.toLowerCase() === clientName.toLowerCase())?.id || null, // Will be handled if not found? Service doesn't create client on fly currently.
         clientName: clientName,
         status: OrderStatus.RECEIVED,
