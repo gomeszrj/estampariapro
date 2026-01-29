@@ -42,5 +42,31 @@ export const clientService = {
             .eq('id', id);
 
         if (error) throw error;
+    },
+
+    async deleteWithCascade(id: string) {
+        // 1. Get all order IDs for this client
+        const { data: orders } = await supabase
+            .from('orders')
+            .select('id')
+            .eq('client_id', id);
+
+        const orderIds = orders?.map(o => o.id) || [];
+
+        if (orderIds.length > 0) {
+            // 2. Delete Order Items first (if no cascade in DB)
+            await supabase.from('order_items').delete().in('order_id', orderIds);
+
+            // 3. Delete Orders
+            await supabase.from('orders').delete().eq('client_id', id);
+        }
+
+        // 4. Delete Client
+        const { error } = await supabase
+            .from('clients')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
     }
 };

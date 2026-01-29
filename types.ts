@@ -76,3 +76,21 @@ export interface Client {
   document?: string; // CPF or CNPJ
   address?: string;
 }
+
+export enum UserRole {
+  SALES = 'Vendedor',
+  SALES_MANAGER = 'Gerente de Venda',
+  DESIGNER_CREATIVE = 'Designer Criativo',
+  DESIGNER_FINAL = 'Designer Finalização',
+  PRODUCTION_OPERATOR = 'Operador Produção',
+  PRODUCTION_MANAGER = 'Gerente de Produção'
+}
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: UserRole;
+  active: boolean;
+  email?: string;
+  createdAt?: string;
+}
