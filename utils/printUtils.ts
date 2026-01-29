@@ -12,6 +12,14 @@ const getStatusLabel = (status: string) => {
   return statusMap[status] || status;
 };
 
+
+const getPaymentStatusLabel = (status: string | undefined) => {
+  if (!status) return 'PENDENTE';
+  if (status === 'Integral (100%)') return 'QUITADO (100%)';
+  if (status === 'Sinal (50%)') return 'PARCIAL (50%) - RESTA 50%';
+  return status;
+};
+
 export async function printServiceOrder(order: Order) {
   // Fetch latest settings from DB to ensure cross-device consistency
   let company;
@@ -100,6 +108,7 @@ export async function printServiceOrder(order: Order) {
           .sig-label { font-size: 7pt; font-weight: 700; text-transform: uppercase; color: #4b5563; }
 
           .footer-metadata { margin-top: 40px; text-align: center; font-size: 7pt; color: #9ca3af; border-top: 1px dashed #e5e7eb; padding-top: 15px; }
+          .disclaimer-box { border: 2px solid #000; padding: 10px; margin-top: 20px; text-align: center; font-weight: 900; font-size: 10pt; text-transform: uppercase; background: #eee; }
 
           @media print {
             body { padding: 0; }
@@ -149,6 +158,10 @@ export async function printServiceOrder(order: Order) {
               <div class="info-item">
                 <span class="info-label">Modalidade</span>
                 <span class="info-value">${order.orderType === OrderType.SALE ? 'VENDA EFETIVADA' : 'ORÇAMENTO COMERCIAL'}</span>
+                <div style="margin-top:8px;">
+                   <span class="info-label">Status Pagamento</span>
+                   <span class="info-value" style="color: #000;">${getPaymentStatusLabel(order.paymentStatus)}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -207,6 +220,12 @@ export async function printServiceOrder(order: Order) {
               <div class="sig-line"></div>
               <div class="sig-label">Aceite do Cliente</div>
             </div>
+          </div>
+
+          </div>
+
+          <div class="disclaimer-box">
+             ATENÇÃO: A LIBERAÇÃO / RETIRADA DESTE PEDIDO ESTÁ CONDICIONADA À PREVIA QUITAÇÃO (100%) DO VALOR TOTAL.
           </div>
 
           <div class="footer-metadata">
@@ -368,8 +387,12 @@ export async function printInvoice(order: Order) {
           <div style="font-size: 7pt; color: #4b5563; margin-top: 5px;">
             Pedido: #${order.orderNumber} | Entrega: ${new Date(order.deliveryDate).toLocaleDateString('pt-BR')}<br>
             Empresa Optante pelo Simples Nacional - Não gera crédito fiscal de IPI.<br><br>
-            <strong>PAGAMENTO:</strong> ${company.bankInfo || 'Consultar financeiro.'}<br>
-            <div style="font-weight:900; margin-top:5px; font-size:6pt; color:#999;">DOCUMENTO SEM VALOR FISCAL</div>
+             <strong>PAGAMENTO:</strong> ${company.bankInfo || 'Consultar financeiro.'}<br>
+             <strong>STATUS FINANCEIRO:</strong> ${getPaymentStatusLabel(order.paymentStatus)}<br>
+             <div style="margin-top:5px; font-weight:800; color:#000; font-size:8pt; border:2px solid #000; padding:5px; text-align:center;">
+                NOTA: A RETIRADA DO PEDIDO SÓ SERÁ AUTORIZADA MEDIANTE QUITAÇÃO INTEGRAL DO VALOR.
+             </div><br>
+             <div style="font-weight:900; margin-top:5px; font-size:6pt; color:#999;">DOCUMENTO SEM VALOR FISCAL</div>
           </div>
         </div>
 

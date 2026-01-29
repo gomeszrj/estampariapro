@@ -102,6 +102,7 @@ const mapOrderFromDB = (dbItem: any): Order => ({
     // So I need to select clients(name) in the query.
     // Updating query in getAll above.
     status: dbItem.status,
+    paymentStatus: dbItem.payment_status as any, // Cast or ensure Enum match
     orderType: dbItem.order_type,
     totalValue: dbItem.total_value,
     createdAt: dbItem.created_at,
@@ -118,6 +119,7 @@ const mapOrderToDB = (appItem: Partial<Order>) => {
     if (appItem.orderNumber) dbItem.order_number = appItem.orderNumber;
     if (appItem.clientId) dbItem.client_id = appItem.clientId;
     if (appItem.status) dbItem.status = appItem.status;
+    if (appItem.paymentStatus) dbItem.payment_status = appItem.paymentStatus;
     if (appItem.orderType) dbItem.order_type = appItem.orderType;
     if (appItem.totalValue) dbItem.total_value = appItem.totalValue;
     if (appItem.deliveryDate) dbItem.delivery_date = appItem.deliveryDate;

@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { parseOrderText, ParsedOrderItem } from '../services/aiService';
 import { FABRICS, STATUS_CONFIG, GRADES } from '../constants';
-import { Order, OrderStatus, OrderType, Product, Client, OrderItem } from '../types';
+import { Order, OrderStatus, OrderType, Product, Client, OrderItem, PaymentStatus } from '../types';
 import { printServiceOrder, printInvoice } from '../utils/printUtils';
 import { orderService } from '../services/orderService';
 import { clientService } from '../services/clientService';
@@ -47,6 +47,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
   const [internalNotes, setInternalNotes] = useState('');
   const [delayReason, setDelayReason] = useState('');
   const [orderType, setOrderType] = useState<OrderType>(OrderType.SALE);
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(PaymentStatus.PENDING);
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
 
   const handleAiParse = async () => {
@@ -213,6 +214,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
     setInternalNotes(order.internalNotes || '');
     setDelayReason(order.delayReason || '');
     setOrderType(order.orderType || OrderType.SALE);
+    setPaymentStatus(order.paymentStatus || PaymentStatus.PENDING);
     setParsedItems(order.items.length > 0 ? order.items.map(i => ({
       product: i.productName,
       grade: i.gradeLabel as any,
@@ -232,6 +234,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
     setDelayReason('');
     setParsedItems([]);
     setAiText('');
+    setPaymentStatus(PaymentStatus.PENDING);
   };
 
   const handleDelete = async (id: string) => {
@@ -258,6 +261,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
         clientName: clientName,
         status: OrderStatus.RECEIVED,
         orderType: orderType,
+        paymentStatus: paymentStatus, // Save payment status
         totalValue: parsedItems.reduce((acc, curr) => {
           const prod = products.find(p => p.name === curr.product);
           const price = prod ? prod.basePrice : 35;
@@ -306,6 +310,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
           internalNotes,
           delayReason,
           orderType,
+          paymentStatus,
           clientId: clientIdToUse
         });
       } else {
@@ -365,6 +370,18 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                       onClick={() => setOrderType(OrderType.BUDGET)}
                       className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg border transition-all ${orderType === OrderType.BUDGET ? 'bg-amber-600 border-amber-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}`}
                     >ORÇAMENTO</button>
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <span className="text-[9px] font-bold text-slate-500 uppercase self-center mr-2">Pagamento:</span>
+                    {Object.values(PaymentStatus).map(status => (
+                      <button
+                        key={status}
+                        onClick={() => setPaymentStatus(status)}
+                        className={`text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-md border transition-all ${paymentStatus === status ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-900 border-slate-800 text-slate-600 hover:text-slate-400'}`}
+                      >
+                        {status}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>

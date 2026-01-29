@@ -39,12 +39,21 @@ export interface OrderItem {
   unitPrice: number;
 }
 
+
+
+export enum PaymentStatus {
+  FULL = 'Integral (100%)',
+  HALF = 'Sinal (50%)',
+  PENDING = 'Pendente'
+}
+
 export interface Order {
   id: string;
   orderNumber: string;
   clientId: string;
   clientName: string;
   status: OrderStatus;
+  paymentStatus?: PaymentStatus;
   orderType: OrderType;
   items: OrderItem[];
   totalValue: number;
