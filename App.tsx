@@ -15,6 +15,7 @@ import { clientService } from './services/clientService.ts';
 import { productService } from './services/productService.ts';
 import { orderService } from './services/orderService.ts';
 import ApiSettingsModal from './components/ApiSettingsModal.tsx';
+import { SYSTEM_VERSION } from './constants';
 
 const AuthenticatedApp: React.FC = () => {
   const { session, user, signOut } = useAuth();
@@ -88,9 +89,14 @@ const AuthenticatedApp: React.FC = () => {
             </span>
           </div>
           <div className="flex items-center gap-8">
-            <button className="relative p-2.5 text-slate-400 hover:text-indigo-400 transition-all bg-slate-800/30 rounded-xl border border-slate-700/50">
+            <button className="relative p-2.5 text-slate-400 hover:text-indigo-400 transition-all bg-slate-800/30 rounded-xl border border-slate-700/50 group" title={`Sistema Atualizado: v${SYSTEM_VERSION}`}>
               <Bell className="w-5 h-5" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-indigo-500 rounded-full border-2 border-[#0f172a]"></span>
+              <div className="absolute top-2 right-2 w-2 h-2 bg-indigo-500 rounded-full border-2 border-[#0f172a]"></div>
+
+              {/* Optional: Expanded Badge on Hover or just tooltips. For now keeping it cleaner as per request 'near avatar' */}
+              <div className="absolute -bottom-8 right-0 bg-indigo-600 text-white text-[9px] font-black px-2 py-1 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                v{SYSTEM_VERSION}
+              </div>
             </button>
             <div className="flex items-center gap-4 pl-8 border-l border-slate-800">
               <div className="text-right hidden md:block">
