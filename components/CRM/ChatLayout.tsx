@@ -48,7 +48,7 @@ export const ChatLayout: React.FC = () => {
                                 <br /><br />
                                 URL do Webhook:<br />
                                 <span className="font-mono bg-black/30 px-1 py-0.5 rounded text-slate-300 select-all">
-                                    https://[SEU-PROJETO].supabase.co/functions/v1/webhook-evolution
+                                    https://mdpsrbmfzaosuvhamvbs.supabase.co/functions/v1/webhook-evolution
                                 </span>
                             </p>
                         </div>
