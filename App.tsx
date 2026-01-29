@@ -89,14 +89,12 @@ const AuthenticatedApp: React.FC = () => {
             </span>
           </div>
           <div className="flex items-center gap-8">
-            <button className="relative p-2.5 text-slate-400 hover:text-indigo-400 transition-all bg-slate-800/30 rounded-xl border border-slate-700/50 group" title={`Sistema Atualizado: v${SYSTEM_VERSION}`}>
-              <Bell className="w-5 h-5" />
-              <div className="absolute top-2 right-2 w-2 h-2 bg-indigo-500 rounded-full border-2 border-[#0f172a]"></div>
-
-              {/* Optional: Expanded Badge on Hover or just tooltips. For now keeping it cleaner as per request 'near avatar' */}
-              <div className="absolute -bottom-8 right-0 bg-indigo-600 text-white text-[9px] font-black px-2 py-1 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                v{SYSTEM_VERSION}
+            <button className="relative px-3 py-2 text-slate-400 hover:text-indigo-400 transition-all bg-slate-800/30 rounded-xl border border-slate-700/50 group flex items-center gap-3" title={`Sistema Atualizado: v${SYSTEM_VERSION}`}>
+              <div className="relative">
+                <Bell className="w-5 h-5" />
+                <div className="absolute top-0 right-0 w-2 h-2 bg-indigo-500 rounded-full border-2 border-[#0f172a]"></div>
               </div>
+              <span className="text-[10px] font-black text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded-lg border border-indigo-500/20">v{SYSTEM_VERSION}</span>
             </button>
             <div className="flex items-center gap-4 pl-8 border-l border-slate-800">
               <div className="text-right hidden md:block">
