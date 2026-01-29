@@ -72,9 +72,11 @@ export interface Product {
   category: string;
   status: 'active' | 'inactive';
   imageUrl: string;
+  backImageUrl?: string; // New: Back side image
   basePrice: number;
-  description?: string; // New: Commercial description
-  allowedGrades?: Record<string, string[]>; // New: e.g. { 'Masculino': ['P', 'M'], 'Infantil': ['10', '12'] }
+  description?: string; // Commercial description
+  allowedGrades?: Record<string, string[]>;
+  measurements?: Record<string, { height: number; width: number }>; // New: Size measurements e.g. { 'P': { height: 70, width: 50 } }
 }
 
 export interface Client {

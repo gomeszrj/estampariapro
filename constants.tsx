@@ -2,7 +2,8 @@
 import { Fabric, SizeGrade, OrderStatus } from './types';
 import React from 'react';
 
-export const SYSTEM_VERSION = '02.15';
+// Versioning Rule: Minor versions go 0-9. When reaching .10, increment major version (e.g., 2.9 -> 3.0)
+export const SYSTEM_VERSION = '03.0';
 
 export const FABRICS: Fabric[] = [
   { id: 'f1', name: 'Dry Fit Premium', type: 'premium', costPerMeter: 25.5, compatibility: 'Sublimação Total', leadTimeImpact: 0 },

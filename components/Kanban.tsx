@@ -5,6 +5,10 @@ import { STATUS_CONFIG } from '../constants';
 // Add missing Calendar icon import
 import { Clock, AlertCircle, MoreHorizontal, ChevronRight, ChevronLeft, ArrowRightCircle, Printer, Calendar } from 'lucide-react';
 import { printServiceOrder } from '../utils/printUtils';
+import { getWhatsAppLink, getStatusUpdateMessage } from '../utils/whatsappUtils';
+import { clientService } from '../services/clientService';
+import { orderService } from '../services/orderService';
+import { Client } from '../types';
 
 const statuses = [
   OrderStatus.RECEIVED,
@@ -124,23 +128,35 @@ const KanbanColumn = ({ status, orders, onMove }: { status: OrderStatus; orders:
   );
 };
 
-// Fixed missing Kanban component and added default export to resolve App.tsx import error
-import { orderService } from '../services/orderService'; // Added import
 
-// ... existing code ...
 
 const Kanban: React.FC<KanbanProps> = ({ orders, setOrders }) => {
+  // We need clients to look up phone numbers
+  const [clients, setClients] = React.useState<Client[]>([]);
+
+  React.useEffect(() => {
+    clientService.getAll().then(setClients).catch(console.error);
+  }, []);
+
   const handleMove = async (id: string, newStatus: OrderStatus) => {
     // Optimistic Update
+    const order = orders.find(o => o.id === id);
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
+
+    if (order) {
+      const client = clients.find(c => c.id === order.clientId || c.name === order.clientName);
+      if (client && client.whatsapp) {
+        const message = getStatusUpdateMessage(order, newStatus);
+        const link = getWhatsAppLink(client.whatsapp, message);
+        window.open(link, '_blank');
+      }
+    }
 
     try {
       await orderService.update(id, { status: newStatus });
     } catch (error) {
       console.error("Failed to update order status:", error);
       alert("Erro ao salvar o novo status. Recarregue a página.");
-      // Rollback (optional, but good)
-      // For now, alerting is enough as strict rollback requires storing prev state
     }
   };
 

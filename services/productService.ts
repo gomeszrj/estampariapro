@@ -64,26 +64,24 @@ const mapProductFromDB = (dbItem: any): Product => ({
     category: dbItem.category,
     status: dbItem.status,
     imageUrl: dbItem.image_url,
+    backImageUrl: dbItem.back_image_url,
     basePrice: dbItem.base_price,
     description: dbItem.description,
-    allowedGrades: Array.isArray(dbItem.allowed_grades)
-        ? dbItem.allowed_grades.reduce((acc: any, gradeLabel: string) => {
-            // Legacy support: If DB has ["Masculino"], map to { "Masculino": ["P", "M", ...] }
-            const gradeConfig = GRADES.find(g => g.label === gradeLabel);
-            if (gradeConfig) acc[gradeLabel] = gradeConfig.sizes;
-            return acc;
-        }, {})
-        : dbItem.allowed_grades,
+    allowedGrades: dbItem.allowed_grades,
+    measurements: dbItem.measurements
 });
 
 const mapProductToDB = (appItem: Partial<Product>) => {
     const dbItem: any = { ...appItem };
 
     // Map camelCase to snake_case for DB
-    // Check against undefined to allow 0 or empty strings
     if (appItem.imageUrl !== undefined) {
         dbItem.image_url = appItem.imageUrl;
         delete dbItem.imageUrl;
+    }
+    if (appItem.backImageUrl !== undefined) {
+        dbItem.back_image_url = appItem.backImageUrl;
+        delete dbItem.backImageUrl;
     }
     if (appItem.basePrice !== undefined) {
         dbItem.base_price = appItem.basePrice;
@@ -93,6 +91,6 @@ const mapProductToDB = (appItem: Partial<Product>) => {
         dbItem.allowed_grades = appItem.allowedGrades;
         delete dbItem.allowedGrades;
     }
-
+    // delete other camelCase props if they were copied
     return dbItem;
 };

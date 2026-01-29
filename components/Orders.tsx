@@ -21,6 +21,7 @@ import {
   Check,
   ArrowUpDown
 } from 'lucide-react';
+import { getWhatsAppLink, getStatusUpdateMessage } from '../utils/whatsappUtils';
 import { parseOrderText, ParsedOrderItem } from '../services/aiService';
 import { FABRICS, STATUS_CONFIG, GRADES } from '../constants';
 import { Order, OrderStatus, OrderType, Product, Client, OrderItem, PaymentStatus } from '../types';
@@ -123,25 +124,24 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
         sortedGrades.forEach(grade => {
           const products = layoutGrades[grade];
           Object.keys(products).sort().forEach(product => {
-            // Header: LAYOUT REGATA MASCULINA
-            formattedOutput += `LAYOUT ${product} ${grade}\n\n`;
+            // Header: LAYOUT REGATA MASCULINA - Single Line
+            formattedOutput += `LAYOUT ${product} ${grade}\n\n`; // Double newline after header for separation
 
             const sizes = products[product];
             Object.keys(sizes).sort((a, b) => getSizeWeight(a) - getSizeWeight(b)).forEach(size => {
               const data = sizes[size];
-
+              // ... existing size formatting ...
               const formatAgeSize = (s: string) => {
                 if (!isNaN(parseInt(s)) && !s.toLowerCase().includes('ano')) return `${s} ANOS`;
                 return s;
               };
               const displaySizeHeader = formatAgeSize(size);
 
-              formattedOutput += `TAMANHO - ${displaySizeHeader}\n\n`;
+              formattedOutput += `TAMANHO - ${displaySizeHeader}\n`; // Single newline after Size Header? User asked for single spacing list, but maybe header needs space. Let's keep one empty line before size group.
 
               // List Names (Single Spacing)
               data.names.forEach(name => {
                 const displayName = name.toUpperCase().trim();
-                // Format: 1 - NAME - SIZE
                 formattedOutput += `1 - ${displayName} - ${displaySizeHeader}\n`;
               });
 
@@ -150,7 +150,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
               for (let i = 0; i < missing; i++) {
                 formattedOutput += `1 - [SEM NOME] - ${displaySizeHeader}\n`;
               }
-              formattedOutput += `\n`; // Space between sizes
+              formattedOutput += `\n`; // Space between size groups
             });
             // formattedOutput += `\n`; // Space between products (already has newlines from sizes)
           });
@@ -352,19 +352,19 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
       {isAdding && (
         <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <div className="bg-[#0f172a] rounded-[2rem] w-full max-w-7xl max-h-[95vh] overflow-hidden flex flex-col shadow-2xl border border-slate-800 animate-in zoom-in-95">
-            <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+            <div className="px-6 py-3 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg">
-                  <Edit3 className="w-5 h-5" />
+                <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+                  <Edit3 className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-slate-100 uppercase tracking-tighter">
-                    {editingOrderId ? 'Edição de Pedido' : 'Novo Pedido'}
+                  <h3 className="text-sm font-black text-slate-100 uppercase tracking-tighter">
+                    {editingOrderId ? 'Edição' : 'Novo Pedido'}
                   </h3>
-                  <div className="flex gap-2 mt-1">
+                  <div className="flex gap-2 mt-0.5">
                     <button
                       onClick={() => setOrderType(OrderType.SALE)}
-                      className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border transition-all ${orderType === OrderType.SALE ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}`}
+                      className={`text-[7px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border transition-all ${orderType === OrderType.SALE ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}`}
                     >VENDA</button>
                     <button
                       onClick={() => setOrderType(OrderType.BUDGET)}
@@ -390,14 +390,14 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <div className="lg:col-span-4 space-y-5 border-r border-slate-800/50 pr-4">
-                <div className="bg-indigo-500/5 p-4 rounded-2xl border border-indigo-500/10">
-                  <label className="block text-[10px] font-black text-indigo-400 mb-2 uppercase tracking-[0.2em] flex items-center gap-2">
+            <div className="flex-1 overflow-y-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-4">
+              <div className="lg:col-span-4 space-y-3 border-r border-slate-800/50 pr-4">
+                <div className="bg-indigo-500/5 p-3 rounded-2xl border border-indigo-500/10">
+                  <label className="block text-[9px] font-black text-indigo-400 mb-1.5 uppercase tracking-[0.2em] flex items-center gap-2">
                     <Wand2 className="w-3 h-3" /> Inteligência Artificial
                   </label>
                   <textarea
-                    className="w-full h-20 p-3 bg-slate-950 border border-slate-800 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-700 text-xs text-slate-300 font-medium"
+                    className="w-full h-16 p-3 bg-slate-950 border border-slate-800 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-700 text-xs text-slate-300 font-medium"
                     placeholder="Cole aqui a mensagem do cliente..."
                     value={aiText}
                     onChange={(e) => setAiText(e.target.value)}
@@ -405,7 +405,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                   <button
                     onClick={handleAiParse}
                     disabled={isAiProcessing || !aiText}
-                    className="w-full mt-2 py-2.5 bg-indigo-600 text-white rounded-xl font-black flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-indigo-700 transition-all uppercase text-[9px] tracking-[0.2em]"
+                    className="w-full mt-2 py-2 bg-indigo-600 text-white rounded-xl font-black flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-indigo-700 transition-all uppercase text-[9px] tracking-[0.2em]"
                   >
                     {isAiProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
                     Extrair
@@ -732,6 +732,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
               <tr>
                 <th className="px-10 py-8">Nº Registro</th>
                 <th className="px-10 py-8">Modalidade</th>
+                <th className="px-10 py-8">Pgto</th>
                 <th className="px-10 py-8">Cliente</th>
                 <th className="px-10 py-8">Status Produção</th>
                 <th className="px-10 py-8">Valor Bruto</th>
@@ -749,6 +750,14 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                     <td className="px-10 py-8">
                       <span className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border ${order.orderType === OrderType.SALE ? 'bg-emerald-900/20 border-emerald-900/40 text-emerald-400' : 'bg-amber-900/20 border-amber-900/40 text-amber-400'}`}>
                         {order.orderType === OrderType.SALE ? 'Venda' : 'Orçamento'}
+                      </span>
+                    </td>
+                    <td className="px-10 py-8">
+                      <span className={`px-3 py-1 rounded text-[8px] font-black uppercase tracking-widest border ${!order.paymentStatus || order.paymentStatus === PaymentStatus.PENDING ? 'bg-slate-800 border-slate-700 text-slate-400' :
+                        order.paymentStatus === 'Sinal (50%)' ? 'bg-indigo-900/20 border-indigo-900/40 text-indigo-400' :
+                          'bg-emerald-900/20 border-emerald-900/40 text-emerald-400'
+                        }`}>
+                        {order.paymentStatus || 'PENDENTE'}
                       </span>
                     </td>
                     <td className="px-10 py-8">
@@ -788,7 +797,16 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                           <FileText className="w-5 h-5" />
                         </button>
                         <button
+                          onClick={async () => {
+                            // Find client to get phone - simplistic matching
+                            const client = clients.find(c => c.name.toLowerCase() === order.clientName.toLowerCase());
+                            const phone = client?.whatsapp || '';
+                            const message = getStatusUpdateMessage(order, order.status);
+                            const link = getWhatsAppLink(phone, message);
+                            window.open(link, '_blank');
+                          }}
                           className="text-slate-500 hover:text-indigo-400 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"
+                          title="Enviar Status via WhatsApp"
                         >
                           <Send className="w-5 h-5" />
                         </button>
