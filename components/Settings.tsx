@@ -104,14 +104,19 @@ const Settings: React.FC = () => {
     setCompany(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setCompany(prev => ({ ...prev, logoUrl: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
+      setIsLoadingSettings(true);
+      try {
+        const publicUrl = await settingsService.uploadLogo(file);
+        setCompany(prev => ({ ...prev, logo_url: publicUrl }));
+      } catch (error) {
+        console.error(error);
+        alert("Erro ao fazer upload da imagem. Tente novamente.");
+      } finally {
+        setIsLoadingSettings(false);
+      }
     }
   };
 
@@ -176,8 +181,8 @@ const Settings: React.FC = () => {
                     onClick={triggerUpload}
                     className="w-48 h-48 rounded-[2.5rem] bg-slate-950 border-2 border-dashed border-slate-800 flex items-center justify-center mb-6 overflow-hidden relative group cursor-pointer transition-all hover:border-indigo-500/50"
                   >
-                    {company.logoUrl ? (
-                      <img src={company.logoUrl} alt="Logo Empresa" className="w-full h-full object-contain p-4 bg-white" />
+                    {company.logo_url ? (
+                      <img src={company.logo_url} alt="Logo Empresa" className="w-full h-full object-contain p-4 bg-white" />
                     ) : (
                       <div className="flex flex-col items-center text-slate-600">
                         <Camera className="w-10 h-10 mb-2" />

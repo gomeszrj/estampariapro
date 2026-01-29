@@ -90,7 +90,7 @@ export async function printServiceOrder(order: Order) {
           .qty-col { text-align: center; font-weight: 800; font-size: 11pt; color: #1a1a1a; }
 
           /* Notes Area */
-          .notes-box { background: #fff; border: 1.5px solid #1a1a1a; border-radius: 12px; padding: 15px; min-height: 4cm; font-size: 10pt; line-height: 1.5; color: #111827; position: relative; }
+          .notes-box { background: #fff; border: 1.5px solid #1a1a1a; border-radius: 12px; padding: 15px; min-height: 4cm; font-size: 10pt; line-height: 1.5; color: #111827; position: relative; white-space: pre-wrap; }
           .notes-box::after { content: 'DETALHAMENTO TÉCNICO'; position: absolute; bottom: 10px; right: 15px; font-size: 6pt; font-weight: 800; color: #e5e7eb; }
 
           /* Footer Signature */
@@ -369,7 +369,7 @@ export async function printInvoice(order: Order) {
             Pedido: #${order.orderNumber} | Entrega: ${new Date(order.deliveryDate).toLocaleDateString('pt-BR')}<br>
             Empresa Optante pelo Simples Nacional - Não gera crédito fiscal de IPI.<br><br>
             <strong>PAGAMENTO:</strong> ${company.bankInfo || 'Consultar financeiro.'}<br>
-            <strong>OBSERVAÇÕES:</strong> ${order.internalNotes || 'Nenhuma.'}
+            <strong>OBSERVAÇÕES:</strong> <div style="white-space: pre-wrap; display: inline-block;">${order.internalNotes || 'Nenhuma.'}</div>
           </div>
         </div>
 

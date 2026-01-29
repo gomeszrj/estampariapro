@@ -66,5 +66,25 @@ export const settingsService = {
             .upsert(payload);
 
         if (error) throw error;
+    },
+
+    uploadLogo: async (file: File): Promise<string> => {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `logo-${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+            .from('company-assets')
+            .upload(filePath, file);
+
+        if (uploadError) {
+            throw uploadError;
+        }
+
+        const { data } = supabase.storage
+            .from('company-assets')
+            .getPublicUrl(filePath);
+
+        return data.publicUrl;
     }
 };
