@@ -1,18 +1,6 @@
 
 import { Order, OrderType } from '../types';
-
-interface CompanyData {
-  name: string;
-  cnpj: string;
-  address: string;
-  phone: string;
-  email: string;
-  website: string;
-  bankInfo: string;
-  logoUrl: string;
-}
-
-const getCompany = (): CompanyData => JSON.parse(localStorage.getItem('company_data') || '{}');
+import { settingsService } from '../services/settingsService';
 
 const getStatusLabel = (status: string) => {
   const statusMap: Record<string, string> = {
@@ -24,8 +12,25 @@ const getStatusLabel = (status: string) => {
   return statusMap[status] || status;
 };
 
-export function printServiceOrder(order: Order) {
-  const company = getCompany();
+export async function printServiceOrder(order: Order) {
+  // Fetch latest settings from DB to ensure cross-device consistency
+  let company;
+  try {
+    company = await settingsService.getSettings();
+  } catch (e) {
+    console.warn("Could not fetch company settings for print. Using defaults.", e);
+    company = {
+      name: 'Minha Estamparia',
+      cnpj: '',
+      address: '',
+      phone: '',
+      email: '',
+      website: '',
+      bank_info: '',
+      logo_url: ''
+    };
+  }
+
   const printWindow = window.open('', '_blank', 'width=1000,height=1200');
   if (!printWindow) return;
 
@@ -221,8 +226,25 @@ export function printServiceOrder(order: Order) {
   printWindow.document.close();
 }
 
-export function printInvoice(order: Order) {
-  const company = getCompany();
+export async function printInvoice(order: Order) {
+  // Fetch latest settings from DB
+  let company;
+  try {
+    company = await settingsService.getSettings();
+  } catch (e) {
+    console.warn("Could not fetch company settings for print. Using defaults.", e);
+    company = {
+      name: 'Empresa de Estamparia',
+      cnpj: '',
+      address: '',
+      phone: '',
+      email: '',
+      website: '',
+      bank_info: '',
+      logo_url: ''
+    };
+  }
+
   const printWindow = window.open('', '_blank', 'width=1000,height=1200');
   if (!printWindow) return;
 

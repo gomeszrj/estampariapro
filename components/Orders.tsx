@@ -757,14 +757,14 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                           {editable ? <Edit3 className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
                         </button>
                         <button
-                          onClick={() => printServiceOrder(order)}
+                          onClick={async () => await printServiceOrder(order)}
                           className="text-slate-500 hover:text-white p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"
                           title="OS Produção"
                         >
                           <Printer className="w-5 h-5" />
                         </button>
                         <button
-                          onClick={() => printInvoice(order)}
+                          onClick={async () => await printInvoice(order)}
                           className="text-slate-500 hover:text-emerald-400 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"
                           title="Visualizar DANFE"
                         >
