@@ -27,9 +27,10 @@ import { productService } from '../services/productService.ts';
 interface CatalogProps {
   products: Product[];
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
+  readOnly?: boolean;
 }
 
-const Catalog: React.FC<CatalogProps> = ({ products, setProducts }) => {
+const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly = false }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [fabricFilter, setFabricFilter] = useState('all');
   const [sortBy, setSortBy] = useState<'price-asc' | 'price-desc' | 'none'>('none');
@@ -162,8 +163,8 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts }) => {
   };
 
   const handleShareCatalog = () => {
-    const dummyLink = `https://estamparia.ai/catalogo/${Math.random().toString(36).substring(7)}`;
-    navigator.clipboard.writeText(dummyLink);
+    const link = `${window.location.origin}?view=public_catalog`;
+    navigator.clipboard.writeText(link);
     setShowShareNotification(true);
     setTimeout(() => setShowShareNotification(false), 3000);
   };
@@ -178,6 +179,11 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts }) => {
     }
     if (sortBy === 'price-asc') result.sort((a, b) => a.basePrice - b.basePrice);
     else if (sortBy === 'price-desc') result.sort((a, b) => b.basePrice - a.basePrice);
+
+    // In Public Mode, usually only show Active products? 
+    // Generally yes, but sticking to simple readOnly flag first.
+    // If strict requirement: if (readOnly) result = result.filter(p => p.status === 'active');
+
     return result;
   }, [products, searchTerm, sortBy]);
 
@@ -201,25 +207,27 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts }) => {
               </span>
             )}
           </button>
-          <button
-            onClick={() => setEditingProduct({
-              name: '',
-              sku: generateRandomSKU(),
-              basePrice: 0,
-              category: 'Uniforme',
-              imageUrl: '',
-              description: '',
-              allowedGrades: {
-                'Masculino': GRADES.find(g => g.label === 'Masculino')?.sizes || [],
-                'Feminino': GRADES.find(g => g.label === 'Feminino')?.sizes || [],
-                'Infantil': GRADES.find(g => g.label === 'Infantil')?.sizes || []
-              }
-            })}
-            className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl flex items-center justify-center gap-2 font-black transition-all shadow-lg shadow-indigo-500/20 active:scale-95 uppercase text-[10px] tracking-widest"
-          >
-            <Plus className="w-5 h-5" />
-            Novo Produto
-          </button>
+          {!readOnly && (
+            <button
+              onClick={() => setEditingProduct({
+                name: '',
+                sku: generateRandomSKU(),
+                basePrice: 0,
+                category: 'Uniforme',
+                imageUrl: '',
+                description: '',
+                allowedGrades: {
+                  'Masculino': GRADES.find(g => g.label === 'Masculino')?.sizes || [],
+                  'Feminino': GRADES.find(g => g.label === 'Feminino')?.sizes || [],
+                  'Infantil': GRADES.find(g => g.label === 'Infantil')?.sizes || []
+                }
+              })}
+              className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl flex items-center justify-center gap-2 font-black transition-all shadow-lg shadow-indigo-500/20 active:scale-95 uppercase text-[10px] tracking-widest"
+            >
+              <Plus className="w-5 h-5" />
+              Novo Produto
+            </button>
+          )}
         </div>
       </header>
 
@@ -278,20 +286,22 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts }) => {
                   {product.status === 'active' ? 'Ativo' : 'Pausado'}
                 </span>
               </div>
-              <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={() => handleEditClick(product)}
-                  className="p-3 bg-indigo-600 text-white rounded-2xl border border-indigo-500 hover:bg-indigo-500 transition-all shadow-xl"
-                >
-                  <Edit3 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleDeleteProduct(product.id)}
-                  className="p-3 bg-rose-600 text-white rounded-2xl border border-rose-500 hover:bg-rose-500 transition-all shadow-xl"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
+              {!readOnly && (
+                <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => handleEditClick(product)}
+                    className="p-3 bg-indigo-600 text-white rounded-2xl border border-indigo-500 hover:bg-indigo-500 transition-all shadow-xl"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteProduct(product.id)}
+                    className="p-3 bg-rose-600 text-white rounded-2xl border border-rose-500 hover:bg-rose-500 transition-all shadow-xl"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
             <div className="p-6 flex-1 flex flex-col justify-between">
               <div>
@@ -312,16 +322,21 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts }) => {
                     R$ {product.basePrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </span>
                 </div>
-                <button
-                  onClick={() => toggleStatus(product.id)}
-                  title={product.status === 'active' ? 'Pausar Venda' : 'Ativar Venda'}
-                  className={`w-12 h-12 rounded-xl border flex items-center justify-center transition-all ${product.status === 'active'
-                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'
-                    : 'bg-rose-500/10 border-rose-500/30 text-rose-500'
-                    }`}
-                >
-                  {product.status === 'active' ? <Eye className="w-5 h-5" /> : <X className="w-5 h-5" />}
-                </button>
+                {!readOnly ? (
+                  <button
+                    onClick={() => toggleStatus(product.id)}
+                    title={product.status === 'active' ? 'Pausar Venda' : 'Ativar Venda'}
+                    className={`w-12 h-12 rounded-xl border flex items-center justify-center transition-all ${product.status === 'active'
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'
+                      : 'bg-rose-500/10 border-rose-500/30 text-rose-500'
+                      }`}
+                  >
+                    {product.status === 'active' ? <Eye className="w-5 h-5" /> : <X className="w-5 h-5" />}
+                  </button>
+                ) : (
+                  /* Read Only View might show nothing or an "Order" button in future, for now empty */
+                  <div />
+                )}
               </div>
             </div>
           </div>

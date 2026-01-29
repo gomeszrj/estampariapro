@@ -28,8 +28,10 @@ const AuthenticatedApp: React.FC = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Show Login if no session
-  if (!session) {
+  const isPublicCatalog = new URLSearchParams(window.location.search).get('view') === 'public_catalog';
+
+  // Show Login if no session AND not in public catalog mode
+  if (!session && !isPublicCatalog) {
     return <Login />;
   }
 
@@ -37,14 +39,20 @@ const AuthenticatedApp: React.FC = () => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const [fetchedClients, fetchedProducts, fetchedOrders] = await Promise.all([
-          clientService.getAll(),
-          productService.getAll(),
-          orderService.getAll()
-        ]);
-        setClients(fetchedClients);
-        setProducts(fetchedProducts);
-        setOrders(fetchedOrders);
+        if (isPublicCatalog) {
+          // If public, ONLY load products to be faster and safer
+          const fetchedProducts = await productService.getAll();
+          setProducts(fetchedProducts);
+        } else {
+          const [fetchedClients, fetchedProducts, fetchedOrders] = await Promise.all([
+            clientService.getAll(),
+            productService.getAll(),
+            orderService.getAll()
+          ]);
+          setClients(fetchedClients);
+          setProducts(fetchedProducts);
+          setOrders(fetchedOrders);
+        }
       } catch (error) {
         console.error("Failed to load data:", error);
       } finally {
@@ -59,7 +67,7 @@ const AuthenticatedApp: React.FC = () => {
     const handleRefresh = () => loadData();
     window.addEventListener('refreshData', handleRefresh);
     return () => window.removeEventListener('refreshData', handleRefresh);
-  }, []);
+  }, [isPublicCatalog]);
 
   // Removed legacy LocalStorage effects
 
@@ -76,6 +84,29 @@ const AuthenticatedApp: React.FC = () => {
       default: return null;
     }
   };
+
+  if (isPublicCatalog) {
+    return (
+      <div className="min-h-screen bg-[#020617] flex flex-col">
+        <header className="h-20 bg-[#0f172a]/40 backdrop-blur-xl border-b border-slate-800/50 flex items-center justify-between px-10 sticky top-0 z-30">
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Visualização Pública</span>
+            <span className="text-xs font-black text-slate-100 bg-slate-800 px-4 py-1.5 rounded-full border border-slate-700 shadow-sm uppercase tracking-wider">
+              {companyName}
+            </span>
+          </div>
+          {session ? (
+            <a href="/" className="text-xs font-bold text-indigo-400 hover:text-indigo-300 uppercase tracking-widest">Voltar ao Painel</a>
+          ) : (
+            <a href="/" className="text-xs font-bold text-slate-500 hover:text-slate-300 uppercase tracking-widest">Login Administrativo</a>
+          )}
+        </header>
+        <div className="p-10 max-w-[1600px] mx-auto w-full flex-1">
+          <Catalog products={products} setProducts={() => { }} readOnly={true} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-[#020617]">
