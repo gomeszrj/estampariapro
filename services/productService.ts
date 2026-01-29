@@ -78,11 +78,21 @@ const mapProductFromDB = (dbItem: any): Product => ({
 
 const mapProductToDB = (appItem: Partial<Product>) => {
     const dbItem: any = { ...appItem };
+
     // Map camelCase to snake_case for DB
-    if (appItem.imageUrl) { dbItem.image_url = appItem.imageUrl; delete dbItem.imageUrl; }
-    if (appItem.basePrice) { dbItem.base_price = appItem.basePrice; delete dbItem.basePrice; }
-    if (appItem.allowedGrades) { dbItem.allowed_grades = appItem.allowedGrades; delete dbItem.allowedGrades; }
-    // description maps directly 1:1 if snake_case matches, but typically we keep simple fields as is. 
-    // If Supabase col is 'description', it passes through.
+    // Check against undefined to allow 0 or empty strings
+    if (appItem.imageUrl !== undefined) {
+        dbItem.image_url = appItem.imageUrl;
+        delete dbItem.imageUrl;
+    }
+    if (appItem.basePrice !== undefined) {
+        dbItem.base_price = appItem.basePrice;
+        delete dbItem.basePrice;
+    }
+    if (appItem.allowedGrades !== undefined) {
+        dbItem.allowed_grades = appItem.allowedGrades;
+        delete dbItem.allowedGrades;
+    }
+
     return dbItem;
 };
