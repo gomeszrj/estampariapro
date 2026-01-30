@@ -206,7 +206,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly = fal
       {/* Lightbox */}
       {viewingImage && createPortal(
         <div
-          className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4 cursor-zoom-out animate-in fade-in duration-300"
+          className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4 cursor-zoom-out"
           onClick={() => setViewingImage(null)}
         >
           <img
@@ -223,7 +223,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly = fal
 
       {/* Measurements Modal (Viewer) */}
       {viewingMeasurements && createPortal(
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in">
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
           <div className="bg-[#0f172a] border border-slate-800 rounded-[2rem] p-8 max-w-lg w-full relative shadow-2xl">
             <button onClick={() => setViewingMeasurements(null)} className="absolute top-4 right-4 text-slate-500 hover:text-white bg-slate-800 p-2 rounded-full">
               <X className="w-4 h-4" />
@@ -389,7 +389,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly = fal
 
                 {/* Edit/Delete Buttons */}
                 {!readOnly && (
-                  <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                  <div className="absolute top-4 right-4 flex gap-2 opacity-100 z-20">
                     <button
                       onClick={(e) => { e.stopPropagation(); handleEditClick(product); }}
                       className="p-3 bg-indigo-600 text-white rounded-2xl border border-indigo-500 hover:bg-indigo-500 transition-all shadow-xl"
@@ -466,7 +466,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly = fal
       {/* Editing Modal */}
       {editingProduct && createPortal(
         <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
-          <div className="bg-[#0f172a] rounded-[2.5rem] w-full max-w-2xl border border-slate-800 p-8 md:p-10 shadow-2xl animate-in zoom-in-95 overflow-y-auto max-h-[95vh]">
+          <div className="bg-[#0f172a] rounded-[2.5rem] w-full max-w-2xl border border-slate-800 p-8 md:p-10 shadow-2xl overflow-y-auto max-h-[95vh]">
             <div className="flex justify-between items-start mb-10">
               <div>
                 <h3 className="text-3xl font-black text-slate-100 tracking-tight uppercase">
