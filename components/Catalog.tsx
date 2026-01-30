@@ -59,7 +59,11 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly = fal
     }
   }, [editingProduct]);
 
-  const handleEditClick = (product: any) => setEditingProduct({ ...product });
+  const handleEditClick = (product: any) => {
+    // Deep clone to prevent reference issues
+    const deepClonedProduct = JSON.parse(JSON.stringify(product));
+    setEditingProduct(deepClonedProduct);
+  };
 
   const toggleStatus = async (id: string) => {
     const product = products.find(p => p.id === id);
@@ -206,7 +210,8 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly = fal
       {/* Lightbox */}
       {viewingImage && createPortal(
         <div
-          className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4 cursor-zoom-out"
+          style={{ isolation: 'isolate', zIndex: 2147483647 }}
+          className="fixed inset-0 bg-black/95 flex items-center justify-center p-4 cursor-zoom-out"
           onClick={() => setViewingImage(null)}
         >
           <img
@@ -223,7 +228,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly = fal
 
       {/* Measurements Modal (Viewer) */}
       {viewingMeasurements && createPortal(
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+        <div style={{ isolation: 'isolate', zIndex: 2147483647 }} className="fixed inset-0 bg-slate-950/80 flex items-center justify-center p-4">
           <div className="bg-[#0f172a] border border-slate-800 rounded-[2rem] p-8 max-w-lg w-full relative shadow-2xl">
             <button onClick={() => setViewingMeasurements(null)} className="absolute top-4 right-4 text-slate-500 hover:text-white bg-slate-800 p-2 rounded-full">
               <X className="w-4 h-4" />
@@ -465,7 +470,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly = fal
 
       {/* Editing Modal */}
       {editingProduct && createPortal(
-        <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
+        <div style={{ isolation: 'isolate', zIndex: 2147483647 }} className="fixed inset-0 bg-slate-950/95 flex items-center justify-center p-4">
           <div className="bg-[#0f172a] rounded-[2.5rem] w-full max-w-2xl border border-slate-800 p-8 md:p-10 shadow-2xl overflow-y-auto max-h-[95vh]">
             <div className="flex justify-between items-start mb-10">
               <div>
