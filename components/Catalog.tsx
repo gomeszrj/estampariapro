@@ -396,20 +396,21 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
                   {product.status === 'active' ? 'Ativo' : 'Pausado'}
                 </span>
               </div>
-              <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={() => handleEditClick(product)}
-                  className="p-3 bg-indigo-600 text-white rounded-2xl border border-indigo-500 hover:bg-indigo-500 transition-all shadow-xl"
-                >
-                  <Edit3 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleDeleteProduct(product.id)}
-                  className="p-3 bg-rose-600 text-white rounded-2xl border border-rose-500 hover:bg-rose-500 transition-all shadow-xl"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
+              {!readOnly && (
+                <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => handleEditClick(product)}
+                    className="p-3 bg-indigo-600 text-white rounded-2xl border border-indigo-500 hover:bg-indigo-500 transition-all shadow-xl"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteProduct(product.id)}
+                    className="p-3 bg-rose-600 text-white rounded-2xl border border-rose-500 hover:bg-rose-500 transition-all shadow-xl"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               )}
             </div>
             <div className="p-6 flex-1 flex flex-col justify-between">
@@ -446,6 +447,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
               </div>
             </div>
           </div>
+        ))}
       </div>
 
       {editingProduct && (
