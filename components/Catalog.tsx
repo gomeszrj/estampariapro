@@ -264,7 +264,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly = fal
         document.body
       )}
 
-      <div className="space-y-6 animate-in zoom-in-95 duration-500">
+      <div className="space-y-6">
         {/* Header */}
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
