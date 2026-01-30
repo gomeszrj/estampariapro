@@ -105,3 +105,24 @@ export interface TeamMember {
   email?: string;
   createdAt?: string;
 }
+
+export interface CatalogOrderItem {
+  productId: string;
+  productName: string;
+  size: string; // e.g., "P", "M", "G"
+  quantity: number;
+  notes?: string;
+  imageUrl?: string;
+}
+
+export interface CatalogOrder {
+  id: string;
+  clientId: string; // Link to Client
+  clientName: string;
+  clientPhone: string;
+  createdAt: string;
+  status: 'pending' | 'approved' | 'rejected';
+  items: CatalogOrderItem[];
+  totalEstimated: number;
+}
+

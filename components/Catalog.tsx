@@ -23,19 +23,36 @@ import {
 import { FABRICS, GRADES } from '../constants.tsx';
 import { Product } from '../types.ts';
 import { productService } from '../services/productService.ts';
+import { ShoppingCart, ShoppingBag, Ruler } from 'lucide-react';
+import { CatalogOrder, CatalogOrderItem } from '../types.ts';
+import { catalogOrderService } from '../services/catalogOrderService.ts';
+import { clientService } from '../services/clientService.ts';
 
 interface CatalogProps {
   products: Product[];
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
+  readOnly?: boolean;
 }
 
-const Catalog: React.FC<CatalogProps> = ({ products, setProducts }) => {
+const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [fabricFilter, setFabricFilter] = useState('all');
   const [sortBy, setSortBy] = useState<'price-asc' | 'price-desc' | 'none'>('none');
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [showShareNotification, setShowShareNotification] = useState(false);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
+
+  // Public Catalog State
+  const [cart, setCart] = useState<CatalogOrderItem[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [publicViewingProduct, setPublicViewingProduct] = useState<Product | null>(null);
+  const [selectedSize, setSelectedSize] = useState('');
+  const [quantity, setQuantity] = useState(1);
+  const [orderNotes, setOrderNotes] = useState('');
+  const [clientForm, setClientForm] = useState({ name: '', phone: '', email: '' });
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const [orderSuccess, setOrderSuccess] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ... import removed ...
@@ -162,8 +179,9 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts }) => {
   };
 
   const handleShareCatalog = () => {
-    const dummyLink = `https://estamparia.ai/catalogo/${Math.random().toString(36).substring(7)}`;
-    navigator.clipboard.writeText(dummyLink);
+    // Generate link based on current domain + query param
+    const link = `${window.location.origin}?view=public_catalog`;
+    navigator.clipboard.writeText(link);
     setShowShareNotification(true);
     setTimeout(() => setShowShareNotification(false), 3000);
   };
@@ -181,47 +199,143 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts }) => {
     return result;
   }, [products, searchTerm, sortBy]);
 
+  const addToCart = () => {
+    if (!publicViewingProduct || !selectedSize) return;
+
+    const newItem: CatalogOrderItem = {
+      productId: publicViewingProduct.id,
+      productName: publicViewingProduct.name,
+      imageUrl: publicViewingProduct.imageUrl,
+      size: selectedSize,
+      quantity: quantity,
+      notes: orderNotes
+    };
+
+    setCart([...cart, newItem]);
+    setPublicViewingProduct(null);
+    setQuantity(1);
+    setSelectedSize('');
+    setOrderNotes('');
+    setIsCartOpen(true);
+  };
+
+  const removeFromCart = (index: number) => {
+    const newCart = [...cart];
+    newCart.splice(index, 1);
+    setCart(newCart);
+  };
+
+  const handleFinishOrder = async () => {
+    if (!clientForm.name || !clientForm.phone || cart.length === 0) {
+      alert("Por favor, preencha nome, telefone e adicione itens.");
+      return;
+    }
+
+    setIsSubmittingOrder(true);
+    try {
+      // 1. Create or Find Client (Simplistic logic: we just create a generic client entry or use existing if we implemented search, 
+      // but for now we create a specific 'Lead' or check by phone. 
+      // To keep it simple and robust, we will just pass the client info to the order for now, 
+      // or create a new client record if email provided.)
+
+      let clientId = '';
+
+      // Try to create client, or if exists (by email/phone logic in service) get id. 
+      // For this MVP, we will create a new client entry or update.
+      const newClient = await clientService.create({
+        name: clientForm.name,
+        whatsapp: clientForm.phone,
+        email: clientForm.email || `temp_${Date.now()}@system.com`,
+        address: 'Cliente do Catálogo'
+      });
+      clientId = newClient.id;
+
+      // 2. Create Catalog Order
+      await catalogOrderService.create({
+        clientId,
+        clientName: clientForm.name,
+        clientPhone: clientForm.phone,
+        items: cart,
+        totalEstimated: 0 // Calculated by Admin later
+      });
+
+      setOrderSuccess(true);
+      setCart([]);
+      setClientForm({ name: '', phone: '', email: '' });
+      setTimeout(() => {
+        setOrderSuccess(false);
+        setIsCartOpen(false);
+      }, 5000);
+
+    } catch (error) {
+      console.error("Order error:", error);
+      alert("Erro ao enviar pedido. Tente novamente.");
+    } finally {
+      setIsSubmittingOrder(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in zoom-in-95 duration-500">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-3xl font-black text-slate-100 tracking-tight uppercase">Catálogo de Produtos</h2>
-          <p className="text-slate-500 font-medium">Fotos ajustadas automaticamente (Sem Cortes) para visual profissional.</p>
-        </div>
-        <div className="flex gap-3 w-full md:w-auto">
+      {!readOnly ? (
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h2 className="text-3xl font-black text-slate-100 tracking-tight uppercase">Catálogo de Produtos</h2>
+            <p className="text-slate-500 font-medium">Fotos ajustadas automaticamente (Sem Cortes) para visual profissional.</p>
+          </div>
+          <div className="flex gap-3 w-full md:w-auto">
+            <button
+              onClick={handleShareCatalog}
+              className="flex-1 md:flex-none bg-slate-800 hover:bg-slate-700 text-slate-200 px-6 py-3 rounded-2xl flex items-center justify-center gap-2 font-black transition-all border border-slate-700 uppercase text-[10px] tracking-widest relative overflow-hidden"
+            >
+              <Share2 className="w-4 h-4 text-indigo-400" />
+              Compartilhar Link
+              {showShareNotification && (
+                <span className="absolute inset-0 bg-emerald-600 text-white flex items-center justify-center animate-in slide-in-from-bottom duration-300">
+                  Link Copiado!
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setEditingProduct({
+                name: '',
+                sku: generateRandomSKU(),
+                basePrice: 0,
+                category: 'Uniforme',
+                imageUrl: '',
+                description: '',
+                allowedGrades: {
+                  'Masculino': GRADES.find(g => g.label === 'Masculino')?.sizes || [],
+                  'Feminino': GRADES.find(g => g.label === 'Feminino')?.sizes || [],
+                  'Infantil': GRADES.find(g => g.label === 'Infantil')?.sizes || []
+                }
+              })}
+              className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl flex items-center justify-center gap-2 font-black transition-all shadow-lg shadow-indigo-500/20 active:scale-95 uppercase text-[10px] tracking-widest"
+            >
+              <Plus className="w-5 h-5" />
+              Novo Produto
+            </button>
+          </div>
+        </header>) : (
+        /* ReadOnly Header (Public) */
+        <header className="flex justify-between items-center relative z-20">
+          <div>
+            <h2 className="text-2xl font-black text-slate-100 uppercase tracking-tight">Catálogo</h2>
+            <p className="text-xs text-slate-500 font-bold">Solicite seu orçamento online</p>
+          </div>
           <button
-            onClick={handleShareCatalog}
-            className="flex-1 md:flex-none bg-slate-800 hover:bg-slate-700 text-slate-200 px-6 py-3 rounded-2xl flex items-center justify-center gap-2 font-black transition-all border border-slate-700 uppercase text-[10px] tracking-widest relative overflow-hidden"
+            onClick={() => setIsCartOpen(true)}
+            className="relative bg-indigo-600 text-white p-3 rounded-2xl hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-500/20"
           >
-            <Share2 className="w-4 h-4 text-indigo-400" />
-            Compartilhar Link
-            {showShareNotification && (
-              <span className="absolute inset-0 bg-emerald-600 text-white flex items-center justify-center animate-in slide-in-from-bottom duration-300">
-                Link Copiado!
+            <ShoppingCart className="w-6 h-6" />
+            {cart.length > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border border-slate-900">
+                {cart.length}
               </span>
             )}
           </button>
-          <button
-            onClick={() => setEditingProduct({
-              name: '',
-              sku: generateRandomSKU(),
-              basePrice: 0,
-              category: 'Uniforme',
-              imageUrl: '',
-              description: '',
-              allowedGrades: {
-                'Masculino': GRADES.find(g => g.label === 'Masculino')?.sizes || [],
-                'Feminino': GRADES.find(g => g.label === 'Feminino')?.sizes || [],
-                'Infantil': GRADES.find(g => g.label === 'Infantil')?.sizes || []
-              }
-            })}
-            className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl flex items-center justify-center gap-2 font-black transition-all shadow-lg shadow-indigo-500/20 active:scale-95 uppercase text-[10px] tracking-widest"
-          >
-            <Plus className="w-5 h-5" />
-            Novo Produto
-          </button>
-        </div>
-      </header>
+        </header>
+      )}
 
       <div className="bg-[#0f172a] p-5 rounded-3xl border border-slate-800 shadow-sm flex flex-wrap gap-4 items-center">
         <div className="relative flex-1 min-w-[280px]">
@@ -262,7 +376,11 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts }) => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredAndSortedProducts.map((product) => (
-          <div key={product.id} className="bg-[#0f172a] rounded-[2.5rem] border border-slate-800 shadow-sm overflow-hidden group hover:border-indigo-500/50 transition-all flex flex-col relative">
+          <div
+            key={product.id}
+            onClick={() => readOnly && setPublicViewingProduct(product)}
+            className={`bg-[#0f172a] rounded-[2.5rem] border border-slate-800 shadow-sm overflow-hidden group hover:border-indigo-500/50 transition-all flex flex-col relative ${readOnly ? 'cursor-pointer' : ''}`}
+          >
             <div className="relative aspect-square overflow-hidden bg-white">
               <img
                 src={product.imageUrl}
@@ -497,6 +615,195 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts }) => {
                 <button onClick={() => setEditingProduct(null)} className="flex-1 py-4 bg-slate-900 text-slate-500 rounded-2xl font-black uppercase text-[10px] tracking-[0.3em] hover:text-white transition-all">Cancelar</button>
                 <button onClick={handleSaveProduct} className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-[0.3em] flex items-center justify-center gap-3 hover:bg-indigo-700 shadow-xl transition-all"><Save className="w-4 h-4" /> Confirmar Produto</button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Public Product Modal (Details & Measurements & Order) */}
+      {publicViewingProduct && (
+        <div className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-[#0f172a] rounded-[2.5rem] w-full max-w-4xl border border-slate-800 p-6 md:p-8 relative animate-in zoom-in-95 duration-300 shadow-2xl my-auto">
+            <button
+              onClick={() => setPublicViewingProduct(null)}
+              className="absolute top-4 right-4 bg-slate-800 text-slate-400 p-2 rounded-full hover:bg-slate-700 hover:text-white transition-all z-10"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            <div className="flex flex-col md:flex-row gap-8">
+              {/* Product Image */}
+              <div className="flex-1 bg-white rounded-3xl overflow-hidden shadow-inner aspect-square relative">
+                <img src={publicViewingProduct.imageUrl} className="w-full h-full object-contain" alt={publicViewingProduct.name} />
+                <div className="absolute bottom-4 left-4 bg-black/50 backdrop-blur-md px-3 py-1 rounded-xl text-white text-[10px] font-black uppercase tracking-widest">
+                  REF: {publicViewingProduct.sku}
+                </div>
+              </div>
+
+              {/* Details & Actions */}
+              <div className="flex-1 space-y-6">
+                <div>
+                  <h3 className="text-2xl font-black text-white uppercase tracking-tight leading-tight">{publicViewingProduct.name}</h3>
+                  <p className="text-indigo-400 font-bold text-sm mt-1 uppercase tracking-wider">{publicViewingProduct.category}</p>
+                </div>
+
+                <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800">
+                  <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-line">{publicViewingProduct.description || "Sem descrição disponível."}</p>
+                </div>
+
+                {/* Measurements Table (ReadOnly) */}
+                <div>
+                  <h4 className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <Ruler className="w-3 h-3" /> Tabela de Medidas (cm)
+                  </h4>
+                  <div className="grid grid-cols-3 gap-2">
+                    {/* Simple visual representation of Grades */}
+                    {Object.entries(publicViewingProduct.allowedGrades || {}).map(([gradeLabel, sizes]: any) => (
+                      <div key={gradeLabel} className="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                        <span className="text-[9px] text-slate-400 block mb-1 uppercase tracking-wider">{gradeLabel}</span>
+                        <div className="flex flex-wrap gap-1">
+                          {sizes.map((s: string) => (
+                            <span key={s} className="bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded text-[9px] font-bold">{s}</span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Order Selection */}
+                <div className="space-y-4 pt-4 border-t border-slate-800">
+                  <div>
+                    <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-2 block">Escolha o Tamanho</label>
+                    <div className="flex flex-wrap gap-2">
+                      {Object.values(publicViewingProduct.allowedGrades || {}).flat().filter((v, i, a) => a.indexOf(v) === i).map((size: any) => (
+                        <button
+                          key={size}
+                          onClick={() => setSelectedSize(size)}
+                          className={`px-4 py-2 rounded-xl text-xs font-black transition-all border ${selectedSize === size
+                            ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600'}`}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4">
+                    <div className="w-24">
+                      <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-2 block">Qtd.</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={quantity}
+                        onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value)))}
+                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white font-bold text-center outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-2 block">Observações (Opcional)</label>
+                      <input
+                        type="text"
+                        placeholder="Nome na estampa, cor..."
+                        value={orderNotes}
+                        onChange={(e) => setOrderNotes(e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={addToCart}
+                    disabled={!selectedSize}
+                    className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl shadow-emerald-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                  >
+                    <ShoppingCart className="w-5 h-5" />
+                    Adicionar ao Orçamento
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cart Drawer / Modal */}
+      {isCartOpen && (
+        <div className="fixed inset-0 bg-black/95 z-[99999] flex justify-end">
+          <div className="w-full max-w-md bg-slate-950 h-full border-l border-slate-800 p-6 flex flex-col animate-in slide-in-from-right duration-300">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
+                <ShoppingBag className="w-5 h-5 text-indigo-500" /> Seu Orçamento
+              </h2>
+              <button onClick={() => setIsCartOpen(false)} className="bg-slate-900 p-2 rounded-full text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+              {cart.length === 0 ? (
+                <div className="text-center py-10 text-slate-600">
+                  <ShoppingCart className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                  <p className="font-bold">Seu carrinho está vazio.</p>
+                </div>
+              ) : (
+                cart.map((item, idx) => (
+                  <div key={idx} className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800 flex gap-4 relative group">
+                    <img src={item.imageUrl} className="w-16 h-16 rounded-xl bg-white object-contain" alt="" />
+                    <div className="flex-1">
+                      <h4 className="font-bold text-slate-200 text-sm line-clamp-1">{item.productName}</h4>
+                      <div className="text-xs text-slate-500 mt-1 font-medium flex gap-3">
+                        <span className="bg-slate-800 px-1.5 rounded text-slate-300">Tam: {item.size}</span>
+                        <span>Qtd: {item.quantity}</span>
+                      </div>
+                      {item.notes && <p className="text-[10px] text-indigo-400 mt-1 italic">"{item.notes}"</p>}
+                    </div>
+                    <button onClick={() => removeFromCart(idx)} className="absolute top-2 right-2 text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-rose-500/10 rounded"><Trash2 className="w-3 h-3" /></button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="pt-6 border-t border-slate-800 mt-4 space-y-4">
+              <div className="bg-indigo-900/10 p-4 rounded-xl border border-indigo-500/20">
+                <p className="text-[10px] text-indigo-300 uppercase tracking-widest mb-3 font-black">Seus Dados</p>
+                <div className="space-y-3">
+                  <input
+                    placeholder="Seu Nome Completo"
+                    value={clientForm.name}
+                    onChange={(e) => setClientForm({ ...clientForm, name: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-indigo-500"
+                  />
+                  <input
+                    placeholder="Seu WhatsApp (com DDD)"
+                    value={clientForm.phone}
+                    onChange={(e) => setClientForm({ ...clientForm, phone: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-indigo-500"
+                  />
+                  <input
+                    placeholder="E-mail (Opcional)"
+                    value={clientForm.email}
+                    onChange={(e) => setClientForm({ ...clientForm, email: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              {orderSuccess ? (
+                <div className="bg-emerald-600 text-white p-4 rounded-2xl text-center animate-in zoom-in">
+                  <CheckCircle2 className="w-8 h-8 mx-auto mb-2" />
+                  <h3 className="font-black text-lg">Pedido Enviado!</h3>
+                  <p className="text-sm opacity-90">Em breve entraremos em contato.</p>
+                </div>
+              ) : (
+                <button
+                  onClick={handleFinishOrder}
+                  disabled={isSubmittingOrder}
+                  className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-indigo-900/20 disabled:opacity-70 disabled:animate-pulse"
+                >
+                  {isSubmittingOrder ? 'Enviando...' : 'Finalizar Solicitação'}
+                </button>
+              )}
             </div>
           </div>
         </div>

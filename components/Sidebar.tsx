@@ -9,7 +9,8 @@ import {
   Settings,
   TrendingUp,
   Box,
-  MessageSquare
+  MessageSquare,
+  Inbox
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -23,6 +24,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
     { id: 'orders', label: 'Pedidos', icon: ShoppingCart },
     { id: 'kanban', label: 'Fluxo', icon: Trello },
     { id: 'catalog', label: 'Catálogo', icon: Box },
+    { id: 'catalog-requests', label: 'Solicitações', icon: Inbox },
     { id: 'clients', label: 'Clientes', icon: Users },
 
     { id: 'finance', label: 'Financeiro', icon: TrendingUp },

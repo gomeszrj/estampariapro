@@ -9,6 +9,7 @@ import Finance from './components/Finance.tsx';
 import Clients from './components/Clients.tsx';
 import Login from './components/Login.tsx';
 import { ChatLayout } from './components/CRM/ChatLayout';
+import CatalogRequests from './components/CatalogRequests.tsx';
 import { Bell, User as UserIcon } from 'lucide-react';
 import { Order, Product, Client, OrderStatus, OrderType } from './types';
 import { AuthProvider, useAuth } from './contexts/AuthContext.tsx';
@@ -79,6 +80,7 @@ const AuthenticatedApp: React.FC = () => {
       case 'orders': return <Orders orders={orders} setOrders={setOrders} products={products} clients={clients} setClients={setClients} />;
       case 'kanban': return <Kanban orders={orders} setOrders={setOrders} />;
       case 'catalog': return <Catalog products={products} setProducts={setProducts} />;
+      case 'catalog-requests': return <CatalogRequests />;
       case 'settings': return <Settings />;
       case 'finance': return <Finance orders={orders} />;
       case 'clients': return <Clients clients={clients} setClients={setClients} orders={orders} />;
