@@ -410,6 +410,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
+              )}
             </div>
             <div className="p-6 flex-1 flex flex-col justify-between">
               <div>
@@ -430,20 +431,21 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
                     R$ {product.basePrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </span>
                 </div>
-                <button
-                  onClick={() => toggleStatus(product.id)}
-                  title={product.status === 'active' ? 'Pausar Venda' : 'Ativar Venda'}
-                  className={`w-12 h-12 rounded-xl border flex items-center justify-center transition-all ${product.status === 'active'
-                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'
-                    : 'bg-rose-500/10 border-rose-500/30 text-rose-500'
-                    }`}
-                >
-                  {product.status === 'active' ? <Eye className="w-5 h-5" /> : <X className="w-5 h-5" />}
-                </button>
+                {!readOnly && (
+                  <button
+                    onClick={() => toggleStatus(product.id)}
+                    title={product.status === 'active' ? 'Pausar Venda' : 'Ativar Venda'}
+                    className={`w-12 h-12 rounded-xl border flex items-center justify-center transition-all ${product.status === 'active'
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'
+                      : 'bg-rose-500/10 border-rose-500/30 text-rose-500'
+                      }`}
+                  >
+                    {product.status === 'active' ? <Eye className="w-5 h-5" /> : <X className="w-5 h-5" />}
+                  </button>
+                )}
               </div>
             </div>
           </div>
-        ))}
       </div>
 
       {editingProduct && (
@@ -618,97 +620,99 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
             </div>
           </div>
         </div>
-      )}
+      )
+      }
 
       {/* Public Product Modal (Details & Measurements & Order) */}
-      {publicViewingProduct && (
-        <div className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-[#0f172a] rounded-[2.5rem] w-full max-w-4xl border border-slate-800 p-6 md:p-8 relative animate-in zoom-in-95 duration-300 shadow-2xl my-auto">
-            <button
-              onClick={() => setPublicViewingProduct(null)}
-              className="absolute top-4 right-4 bg-slate-800 text-slate-400 p-2 rounded-full hover:bg-slate-700 hover:text-white transition-all z-10"
-            >
-              <X className="w-6 h-6" />
-            </button>
+      {
+        publicViewingProduct && (
+          <div className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-[#0f172a] rounded-[2.5rem] w-full max-w-4xl border border-slate-800 p-6 md:p-8 relative animate-in zoom-in-95 duration-300 shadow-2xl my-auto">
+              <button
+                onClick={() => setPublicViewingProduct(null)}
+                className="absolute top-4 right-4 bg-slate-800 text-slate-400 p-2 rounded-full hover:bg-slate-700 hover:text-white transition-all z-10"
+              >
+                <X className="w-6 h-6" />
+              </button>
 
-            <div className="flex flex-col md:flex-row gap-8">
-              {/* Product Image */}
-              <div className="flex-1 bg-white rounded-3xl overflow-hidden shadow-inner aspect-square relative">
-                <img src={publicViewingProduct.imageUrl} className="w-full h-full object-contain" alt={publicViewingProduct.name} />
-                <div className="absolute bottom-4 left-4 bg-black/50 backdrop-blur-md px-3 py-1 rounded-xl text-white text-[10px] font-black uppercase tracking-widest">
-                  REF: {publicViewingProduct.sku}
-                </div>
-              </div>
-
-              {/* Details & Actions */}
-              <div className="flex-1 space-y-6">
-                <div>
-                  <h3 className="text-2xl font-black text-white uppercase tracking-tight leading-tight">{publicViewingProduct.name}</h3>
-                  <p className="text-indigo-400 font-bold text-sm mt-1 uppercase tracking-wider">{publicViewingProduct.category}</p>
-                </div>
-
-                <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800">
-                  <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-line">{publicViewingProduct.description || "Sem descrição disponível."}</p>
-                </div>
-
-                {/* Measurements Table (ReadOnly) */}
-                <div>
-                  <h4 className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
-                    <Ruler className="w-3 h-3" /> Tabela de Medidas (cm)
-                  </h4>
-                  <div className="grid grid-cols-3 gap-2">
-                    {/* Simple visual representation of Grades */}
-                    {Object.entries(publicViewingProduct.allowedGrades || {}).map(([gradeLabel, sizes]: any) => (
-                      <div key={gradeLabel} className="bg-slate-900 p-3 rounded-xl border border-slate-800">
-                        <span className="text-[9px] text-slate-400 block mb-1 uppercase tracking-wider">{gradeLabel}</span>
-                        <div className="flex flex-wrap gap-1">
-                          {sizes.map((s: string) => (
-                            <span key={s} className="bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded text-[9px] font-bold">{s}</span>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+              <div className="flex flex-col md:flex-row gap-8">
+                {/* Product Image */}
+                <div className="flex-1 bg-white rounded-3xl overflow-hidden shadow-inner aspect-square relative">
+                  <img src={publicViewingProduct.imageUrl} className="w-full h-full object-contain" alt={publicViewingProduct.name} />
+                  <div className="absolute bottom-4 left-4 bg-black/50 backdrop-blur-md px-3 py-1 rounded-xl text-white text-[10px] font-black uppercase tracking-widest">
+                    REF: {publicViewingProduct.sku}
                   </div>
                 </div>
 
-                {/* Order Selection */}
-                <div className="space-y-4 pt-4 border-t border-slate-800">
+                {/* Details & Actions */}
+                <div className="flex-1 space-y-6">
                   <div>
-                    <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-2 block">Escolha o Tamanho</label>
-                    <div className="flex flex-wrap gap-2">
-                      {Object.values(publicViewingProduct.allowedGrades || {}).flat().filter((v, i, a) => a.indexOf(v) === i).map((size: any) => (
-                        <button
-                          key={size}
-                          onClick={() => setSelectedSize(size)}
-                          className={`px-4 py-2 rounded-xl text-xs font-black transition-all border ${selectedSize === size
-                            ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/20'
-                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600'}`}
-                        >
-                          {size}
-                        </button>
+                    <h3 className="text-2xl font-black text-white uppercase tracking-tight leading-tight">{publicViewingProduct.name}</h3>
+                    <p className="text-indigo-400 font-bold text-sm mt-1 uppercase tracking-wider">{publicViewingProduct.category}</p>
+                  </div>
+
+                  <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800">
+                    <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-line">{publicViewingProduct.description || "Sem descrição disponível."}</p>
+                  </div>
+
+                  {/* Measurements Table (ReadOnly) */}
+                  <div>
+                    <h4 className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
+                      <Ruler className="w-3 h-3" /> Tabela de Medidas (cm)
+                    </h4>
+                    <div className="grid grid-cols-3 gap-2">
+                      {/* Simple visual representation of Grades */}
+                      {Object.entries(publicViewingProduct.allowedGrades || {}).map(([gradeLabel, sizes]: any) => (
+                        <div key={gradeLabel} className="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                          <span className="text-[9px] text-slate-400 block mb-1 uppercase tracking-wider">{gradeLabel}</span>
+                          <div className="flex flex-wrap gap-1">
+                            {sizes.map((s: string) => (
+                              <span key={s} className="bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded text-[9px] font-bold">{s}</span>
+                            ))}
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </div>
 
-                  <div className="flex gap-4">
-                    <div className="w-24">
-                      <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-2 block">Qtd.</label>
-                      <input
-                        type="number"
-                        min="1"
-                        value={quantity}
-                        onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value)))}
-                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white font-bold text-center outline-none focus:border-indigo-500"
-                      />
+                  {/* Order Selection */}
+                  <div className="space-y-4 pt-4 border-t border-slate-800">
+                    <div>
+                      <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-2 block">Escolha o Tamanho</label>
+                      <div className="flex flex-wrap gap-2">
+                        {Object.values(publicViewingProduct.allowedGrades || {}).flat().filter((v, i, a) => a.indexOf(v) === i).map((size: any) => (
+                          <button
+                            key={size}
+                            onClick={() => setSelectedSize(size)}
+                            className={`px-4 py-2 rounded-xl text-xs font-black transition-all border ${selectedSize === size
+                              ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+                              : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600'}`}
+                          >
+                            {size}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-4">
+                      <div className="w-24">
+                        <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-2 block">Qtd.</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={quantity}
+                          onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value)))}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white font-bold text-center outline-none focus:border-indigo-500"
+                        />
+                      </div>
                     </div>
                     <div className="flex-1">
-                      <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-2 block">Observações (Opcional)</label>
-                      <input
-                        type="text"
-                        placeholder="Nome na estampa, cor..."
+                      <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-2 block">Lista de Nomes / Detalhes</label>
+                      <textarea
+                        placeholder={quantity > 1 ? "Ex: P: Maria, M: João..." : "Ex: Nome na estampa"}
                         value={orderNotes}
                         onChange={(e) => setOrderNotes(e.target.value)}
-                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-indigo-500"
+                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-indigo-500 min-h-[80px] resize-none"
                       />
                     </div>
                   </div>
@@ -726,88 +730,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
               </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Cart Drawer / Modal */}
-      {isCartOpen && (
-        <div className="fixed inset-0 bg-black/95 z-[99999] flex justify-end">
-          <div className="w-full max-w-md bg-slate-950 h-full border-l border-slate-800 p-6 flex flex-col animate-in slide-in-from-right duration-300">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-                <ShoppingBag className="w-5 h-5 text-indigo-500" /> Seu Orçamento
-              </h2>
-              <button onClick={() => setIsCartOpen(false)} className="bg-slate-900 p-2 rounded-full text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
-              {cart.length === 0 ? (
-                <div className="text-center py-10 text-slate-600">
-                  <ShoppingCart className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                  <p className="font-bold">Seu carrinho está vazio.</p>
-                </div>
-              ) : (
-                cart.map((item, idx) => (
-                  <div key={idx} className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800 flex gap-4 relative group">
-                    <img src={item.imageUrl} className="w-16 h-16 rounded-xl bg-white object-contain" alt="" />
-                    <div className="flex-1">
-                      <h4 className="font-bold text-slate-200 text-sm line-clamp-1">{item.productName}</h4>
-                      <div className="text-xs text-slate-500 mt-1 font-medium flex gap-3">
-                        <span className="bg-slate-800 px-1.5 rounded text-slate-300">Tam: {item.size}</span>
-                        <span>Qtd: {item.quantity}</span>
-                      </div>
-                      {item.notes && <p className="text-[10px] text-indigo-400 mt-1 italic">"{item.notes}"</p>}
-                    </div>
-                    <button onClick={() => removeFromCart(idx)} className="absolute top-2 right-2 text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-rose-500/10 rounded"><Trash2 className="w-3 h-3" /></button>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <div className="pt-6 border-t border-slate-800 mt-4 space-y-4">
-              <div className="bg-indigo-900/10 p-4 rounded-xl border border-indigo-500/20">
-                <p className="text-[10px] text-indigo-300 uppercase tracking-widest mb-3 font-black">Seus Dados</p>
-                <div className="space-y-3">
-                  <input
-                    placeholder="Seu Nome Completo"
-                    value={clientForm.name}
-                    onChange={(e) => setClientForm({ ...clientForm, name: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-indigo-500"
-                  />
-                  <input
-                    placeholder="Seu WhatsApp (com DDD)"
-                    value={clientForm.phone}
-                    onChange={(e) => setClientForm({ ...clientForm, phone: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-indigo-500"
-                  />
-                  <input
-                    placeholder="E-mail (Opcional)"
-                    value={clientForm.email}
-                    onChange={(e) => setClientForm({ ...clientForm, email: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-indigo-500"
-                  />
-                </div>
-              </div>
-
-              {orderSuccess ? (
-                <div className="bg-emerald-600 text-white p-4 rounded-2xl text-center animate-in zoom-in">
-                  <CheckCircle2 className="w-8 h-8 mx-auto mb-2" />
-                  <h3 className="font-black text-lg">Pedido Enviado!</h3>
-                  <p className="text-sm opacity-90">Em breve entraremos em contato.</p>
-                </div>
-              ) : (
-                <button
-                  onClick={handleFinishOrder}
-                  disabled={isSubmittingOrder}
-                  className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-indigo-900/20 disabled:opacity-70 disabled:animate-pulse"
-                >
-                  {isSubmittingOrder ? 'Enviando...' : 'Finalizar Solicitação'}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+        )}
     </div>
   );
 };
