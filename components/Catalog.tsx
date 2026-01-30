@@ -201,7 +201,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly = fal
   }, [products, searchTerm, sortBy]);
 
   return (
-    <div className="space-y-6 animate-in zoom-in-95 duration-500">
+    <>
       {/* Lightbox */}
       {viewingImage && (
         <div
@@ -261,200 +261,203 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly = fal
         </div>
       )}
 
-      {/* Header */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-3xl font-black text-slate-100 tracking-tight uppercase">Catálogo de Produtos</h2>
-          <p className="text-slate-500 font-medium">Fotos ajustadas automaticamente (Sem Cortes) para visual profissional.</p>
-        </div>
-        <div className="flex gap-3 w-full md:w-auto">
-          <button
-            onClick={handleShareCatalog}
-            className="flex-1 md:flex-none bg-slate-800 hover:bg-slate-700 text-slate-200 px-6 py-3 rounded-2xl flex items-center justify-center gap-2 font-black transition-all border border-slate-700 uppercase text-[10px] tracking-widest relative overflow-hidden"
-          >
-            <Share2 className="w-4 h-4 text-indigo-400" />
-            Compartilhar Link
-            {showShareNotification && (
-              <span className="absolute inset-0 bg-emerald-600 text-white flex items-center justify-center animate-in slide-in-from-bottom duration-300">
-                Link Copiado!
-              </span>
-            )}
-          </button>
-          {!readOnly && (
+      <div className="space-y-6 animate-in zoom-in-95 duration-500">
+        {/* Header */}
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h2 className="text-3xl font-black text-slate-100 tracking-tight uppercase">Catálogo de Produtos</h2>
+            <p className="text-slate-500 font-medium">Fotos ajustadas automaticamente (Sem Cortes) para visual profissional.</p>
+          </div>
+          <div className="flex gap-3 w-full md:w-auto">
             <button
-              onClick={() => setEditingProduct({
-                name: '',
-                sku: generateRandomSKU(),
-                basePrice: 0,
-                category: 'Uniforme',
-                imageUrl: '',
-                description: '',
-                allowedGrades: {
-                  'Masculino': GRADES.find(g => g.label === 'Masculino')?.sizes || [],
-                  'Feminino': GRADES.find(g => g.label === 'Feminino')?.sizes || [],
-                  'Infantil': GRADES.find(g => g.label === 'Infantil')?.sizes || []
-                }
-              })}
-              className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl flex items-center justify-center gap-2 font-black transition-all shadow-lg shadow-indigo-500/20 active:scale-95 uppercase text-[10px] tracking-widest"
+              onClick={handleShareCatalog}
+              className="flex-1 md:flex-none bg-slate-800 hover:bg-slate-700 text-slate-200 px-6 py-3 rounded-2xl flex items-center justify-center gap-2 font-black transition-all border border-slate-700 uppercase text-[10px] tracking-widest relative overflow-hidden"
             >
-              <Plus className="w-5 h-5" />
-              Novo Produto
+              <Share2 className="w-4 h-4 text-indigo-400" />
+              Compartilhar Link
+              {showShareNotification && (
+                <span className="absolute inset-0 bg-emerald-600 text-white flex items-center justify-center animate-in slide-in-from-bottom duration-300">
+                  Link Copiado!
+                </span>
+              )}
             </button>
-          )}
-        </div>
-      </header>
+            {!readOnly && (
+              <button
+                onClick={() => setEditingProduct({
+                  name: '',
+                  sku: generateRandomSKU(),
+                  basePrice: 0,
+                  category: 'Uniforme',
+                  imageUrl: '',
+                  description: '',
+                  allowedGrades: {
+                    'Masculino': GRADES.find(g => g.label === 'Masculino')?.sizes || [],
+                    'Feminino': GRADES.find(g => g.label === 'Feminino')?.sizes || [],
+                    'Infantil': GRADES.find(g => g.label === 'Infantil')?.sizes || []
+                  }
+                })}
+                className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl flex items-center justify-center gap-2 font-black transition-all shadow-lg shadow-indigo-500/20 active:scale-95 uppercase text-[10px] tracking-widest"
+              >
+                <Plus className="w-5 h-5" />
+                Novo Produto
+              </button>
+            )}
+          </div>
+        </header>
 
-      {/* Search & Filter */}
-      <div className="bg-[#0f172a] p-5 rounded-3xl border border-slate-800 shadow-sm flex flex-wrap gap-4 items-center">
-        <div className="relative flex-1 min-w-[280px]">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
-          <input
-            type="text"
-            placeholder="Buscar por nome ou referência..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-6 py-3.5 bg-slate-900 border border-slate-800 rounded-2xl text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold"
-          />
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-slate-500" />
-            <select
-              value={fabricFilter}
-              onChange={(e) => setFabricFilter(e.target.value)}
-              className="bg-slate-900 border border-slate-800 text-slate-300 rounded-xl px-4 py-3 text-xs font-black uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-indigo-500 outline-none appearance-none pr-8 relative"
-            >
-              <option value="all">Todos os Tecidos</option>
-              {FABRICS.map(f => <option key={f.id} value={f.name}>{f.name}</option>)}
-            </select>
+        {/* Search & Filter */}
+        <div className="bg-[#0f172a] p-5 rounded-3xl border border-slate-800 shadow-sm flex flex-wrap gap-4 items-center">
+          <div className="relative flex-1 min-w-[280px]">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Buscar por nome ou referência..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-12 pr-6 py-3.5 bg-slate-900 border border-slate-800 rounded-2xl text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold"
+            />
           </div>
 
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
-            className="bg-slate-900 border border-slate-800 text-slate-300 rounded-xl px-4 py-3 text-xs font-black uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-indigo-500 outline-none appearance-none pr-8 relative"
-          >
-            <option value="none">Ordenar por...</option>
-            <option value="price-asc">Menor Preço</option>
-            <option value="price-desc">Maior Preço</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Product Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredAndSortedProducts.map((product) => (
-          <div key={product.id} className="bg-[#0f172a] rounded-[2.5rem] border border-slate-800 shadow-sm overflow-visible group hover:border-indigo-500/50 transition-all flex flex-col relative perspective-1000">
-            {/* Image Container with Flip Effect */}
-            <div className="relative aspect-square w-full rounded-t-[2.5rem] bg-white cursor-zoom-in" onClick={() => setViewingImage(product.imageUrl)}>
-
-              {/* Front Image */}
-              <div className={`absolute inset-0 transition-all duration-500 backface-hidden ${product.backImageUrl ? 'group-hover:opacity-0 group-hover:rotate-y-180' : 'group-hover:scale-105'}`}>
-                <img
-                  src={product.imageUrl}
-                  alt={product.name}
-                  className={`w-full h-full object-contain p-4 ${product.status === 'inactive' ? 'grayscale opacity-40' : ''}`}
-                />
-              </div>
-
-              {/* Back Image (if exists) */}
-              {product.backImageUrl && (
-                <div className="absolute inset-0 transition-all duration-500 opacity-0 rotate-y-180 group-hover:opacity-100 group-hover:rotate-y-0 bg-white">
-                  <img
-                    src={product.backImageUrl}
-                    alt={`${product.name} Costas`}
-                    className={`w-full h-full object-contain p-4 ${product.status === 'inactive' ? 'grayscale opacity-40' : ''}`}
-                  />
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/50 backdrop-blur top-auto px-3 py-1 rounded-full text-[8px] font-black text-white uppercase tracking-widest border border-white/10 pointer-events-none">
-                    Costas
-                  </div>
-                </div>
-              )}
-
-              {/* Status Badge */}
-              <div className="absolute top-4 left-4 z-10 flex gap-2">
-                <span className={`px-3 py-1.5 rounded-xl text-[8px] font-black uppercase shadow-xl flex items-center gap-1.5 transition-all border ${product.status === 'active'
-                  ? 'bg-emerald-900/90 text-emerald-400 border-emerald-500/30'
-                  : 'bg-rose-900/90 text-rose-400 border-rose-500/30'
-                  }`}>
-                  {product.status === 'active' ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
-                  {product.status === 'active' ? 'Ativo' : 'Pausado'}
-                </span>
-              </div>
-
-              {/* Edit/Delete Buttons */}
-              {!readOnly && (
-                <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleEditClick(product); }}
-                    className="p-3 bg-indigo-600 text-white rounded-2xl border border-indigo-500 hover:bg-indigo-500 transition-all shadow-xl"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleDeleteProduct(product.id); }}
-                    className="p-3 bg-rose-600 text-white rounded-2xl border border-rose-500 hover:bg-rose-500 transition-all shadow-xl"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-slate-500" />
+              <select
+                value={fabricFilter}
+                onChange={(e) => setFabricFilter(e.target.value)}
+                className="bg-slate-900 border border-slate-800 text-slate-300 rounded-xl px-4 py-3 text-xs font-black uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-indigo-500 outline-none appearance-none pr-8 relative"
+              >
+                <option value="all">Todos os Tecidos</option>
+                {FABRICS.map(f => <option key={f.id} value={f.name}>{f.name}</option>)}
+              </select>
             </div>
 
-            {/* Content Info */}
-            <div className="p-6 flex-1 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-1.5 text-[9px] text-indigo-400 font-black mb-2 uppercase tracking-[0.2em]">
-                  <Tag className="w-3.5 h-3.5" />
-                  {product.category}
-                </div>
-                <h3 className={`text-xl font-black text-slate-100 line-clamp-1 group-hover:text-indigo-400 transition-colors tracking-tight uppercase ${product.status === 'inactive' ? 'text-slate-600' : ''}`}>
-                  {product.name}
-                </h3>
-                <p className="text-[10px] text-slate-500 font-black mt-2 uppercase tracking-widest">REF: {product.sku}</p>
-              </div>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="bg-slate-900 border border-slate-800 text-slate-300 rounded-xl px-4 py-3 text-xs font-black uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-indigo-500 outline-none appearance-none pr-8 relative"
+            >
+              <option value="none">Ordenar por...</option>
+              <option value="price-asc">Menor Preço</option>
+              <option value="price-desc">Maior Preço</option>
+            </select>
+          </div>
+        </div>
 
-              <div className="mt-6 pt-6 border-t border-slate-800/50 flex items-center justify-between">
-                <div>
-                  <p className="text-[8px] text-slate-600 font-black uppercase mb-0.5">Venda</p>
-                  <span className={`text-xl font-black tracking-tighter ${product.status === 'active' ? 'text-slate-100' : 'text-slate-600'}`}>
-                    R$ {product.basePrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+        {/* Product Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredAndSortedProducts.map((product) => (
+            <div key={product.id} className="bg-[#0f172a] rounded-[2.5rem] border border-slate-800 shadow-sm overflow-visible group hover:border-indigo-500/50 transition-all flex flex-col relative perspective-1000">
+              {/* Image Container with Flip Effect */}
+              <div className="relative aspect-square w-full rounded-t-[2.5rem] bg-white cursor-zoom-in" onClick={() => setViewingImage(product.imageUrl)}>
+
+                {/* Front Image */}
+                <div className={`absolute inset-0 transition-all duration-500 backface-hidden ${product.backImageUrl ? 'group-hover:opacity-0 group-hover:rotate-y-180' : 'group-hover:scale-105'}`}>
+                  <img
+                    src={product.imageUrl}
+                    alt={product.name}
+                    className={`w-full h-full object-contain p-4 ${product.status === 'inactive' ? 'grayscale opacity-40' : ''}`}
+                  />
+                </div>
+
+                {/* Back Image (if exists) */}
+                {product.backImageUrl && (
+                  <div className="absolute inset-0 transition-all duration-500 opacity-0 rotate-y-180 group-hover:opacity-100 group-hover:rotate-y-0 bg-white">
+                    <img
+                      src={product.backImageUrl}
+                      alt={`${product.name} Costas`}
+                      className={`w-full h-full object-contain p-4 ${product.status === 'inactive' ? 'grayscale opacity-40' : ''}`}
+                    />
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/50 backdrop-blur top-auto px-3 py-1 rounded-full text-[8px] font-black text-white uppercase tracking-widest border border-white/10 pointer-events-none">
+                      Costas
+                    </div>
+                  </div>
+                )}
+
+                {/* Status Badge */}
+                <div className="absolute top-4 left-4 z-10 flex gap-2">
+                  <span className={`px-3 py-1.5 rounded-xl text-[8px] font-black uppercase shadow-xl flex items-center gap-1.5 transition-all border ${product.status === 'active'
+                    ? 'bg-emerald-900/90 text-emerald-400 border-emerald-500/30'
+                    : 'bg-rose-900/90 text-rose-400 border-rose-500/30'
+                    }`}>
+                    {product.status === 'active' ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                    {product.status === 'active' ? 'Ativo' : 'Pausado'}
                   </span>
                 </div>
 
-                {/* Status Toggle */}
-                {!readOnly ? (
-                  <button
-                    onClick={() => toggleStatus(product.id)}
-                    title={product.status === 'active' ? 'Pausar Venda' : 'Ativar Venda'}
-                    className={`w-12 h-12 rounded-xl border flex items-center justify-center transition-all ${product.status === 'active'
-                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'
-                      : 'bg-rose-500/10 border-rose-500/30 text-rose-500'
-                      }`}
-                  >
-                    {product.status === 'active' ? <Eye className="w-5 h-5" /> : <X className="w-5 h-5" />}
-                  </button>
-                ) : (
-                  <div />
+                {/* Edit/Delete Buttons */}
+                {!readOnly && (
+                  <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleEditClick(product); }}
+                      className="p-3 bg-indigo-600 text-white rounded-2xl border border-indigo-500 hover:bg-indigo-500 transition-all shadow-xl"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDeleteProduct(product.id); }}
+                      className="p-3 bg-rose-600 text-white rounded-2xl border border-rose-500 hover:bg-rose-500 transition-all shadow-xl"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 )}
               </div>
 
-              {/* View Measurements Button */}
-              {product.measurements && Object.keys(product.measurements).length > 0 && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setViewingMeasurements(product);
-                  }}
-                  className="mt-4 text-[8px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 rounded-lg py-1 px-2 w-full hover:bg-indigo-500 hover:text-white transition-all flex items-center justify-center gap-1"
-                >
-                  <ExternalLink className="w-3 h-3" /> Ver Medidas
-                </button>
-              )}
+              {/* Content Info */}
+              <div className="p-6 flex-1 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-1.5 text-[9px] text-indigo-400 font-black mb-2 uppercase tracking-[0.2em]">
+                    <Tag className="w-3.5 h-3.5" />
+                    {product.category}
+                  </div>
+                  <h3 className={`text-xl font-black text-slate-100 line-clamp-1 group-hover:text-indigo-400 transition-colors tracking-tight uppercase ${product.status === 'inactive' ? 'text-slate-600' : ''}`}>
+                    {product.name}
+                  </h3>
+                  <p className="text-[10px] text-slate-500 font-black mt-2 uppercase tracking-widest">REF: {product.sku}</p>
+                </div>
+
+                <div className="mt-6 pt-6 border-t border-slate-800/50 flex items-center justify-between">
+                  <div>
+                    <p className="text-[8px] text-slate-600 font-black uppercase mb-0.5">Venda</p>
+                    <span className={`text-xl font-black tracking-tighter ${product.status === 'active' ? 'text-slate-100' : 'text-slate-600'}`}>
+                      R$ {product.basePrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+
+                  {/* Status Toggle */}
+                  {!readOnly ? (
+                    <button
+                      onClick={() => toggleStatus(product.id)}
+                      title={product.status === 'active' ? 'Pausar Venda' : 'Ativar Venda'}
+                      className={`w-12 h-12 rounded-xl border flex items-center justify-center transition-all ${product.status === 'active'
+                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'
+                        : 'bg-rose-500/10 border-rose-500/30 text-rose-500'
+                        }`}
+                    >
+                      {product.status === 'active' ? <Eye className="w-5 h-5" /> : <X className="w-5 h-5" />}
+                    </button>
+                  ) : (
+                    <div />
+                  )}
+                </div>
+
+                {/* View Measurements Button */}
+                {product.measurements && Object.keys(product.measurements).length > 0 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setViewingMeasurements(product);
+                    }}
+                    className="mt-4 text-[8px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 rounded-lg py-1 px-2 w-full hover:bg-indigo-500 hover:text-white transition-all flex items-center justify-center gap-1"
+                  >
+                    <ExternalLink className="w-3 h-3" /> Ver Medidas
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
+
       </div>
 
       {/* Editing Modal */}
@@ -731,7 +734,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly = fal
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 
