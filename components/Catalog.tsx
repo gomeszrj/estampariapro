@@ -1,5 +1,6 @@
 
 import React, { useState, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Plus,
   Search,
@@ -203,9 +204,9 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly = fal
   return (
     <>
       {/* Lightbox */}
-      {viewingImage && (
+      {viewingImage && createPortal(
         <div
-          className="fixed inset-0 bg-black/95 z-[60] flex items-center justify-center p-4 cursor-zoom-out animate-in fade-in duration-300"
+          className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4 cursor-zoom-out animate-in fade-in duration-300"
           onClick={() => setViewingImage(null)}
         >
           <img
@@ -216,12 +217,13 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly = fal
           <button className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors">
             <X className="w-8 h-8" />
           </button>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Measurements Modal (Viewer) */}
-      {viewingMeasurements && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4 animate-in fade-in">
+      {viewingMeasurements && createPortal(
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in">
           <div className="bg-[#0f172a] border border-slate-800 rounded-[2rem] p-8 max-w-lg w-full relative shadow-2xl">
             <button onClick={() => setViewingMeasurements(null)} className="absolute top-4 right-4 text-slate-500 hover:text-white bg-slate-800 p-2 rounded-full">
               <X className="w-4 h-4" />
@@ -258,7 +260,8 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly = fal
               * Medidas aproximadas, podem variar até 2cm.
             </p>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <div className="space-y-6 animate-in zoom-in-95 duration-500">
@@ -461,8 +464,8 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly = fal
       </div>
 
       {/* Editing Modal */}
-      {editingProduct && (
-        <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      {editingProduct && createPortal(
+        <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
           <div className="bg-[#0f172a] rounded-[2.5rem] w-full max-w-2xl border border-slate-800 p-8 md:p-10 shadow-2xl animate-in zoom-in-95 overflow-y-auto max-h-[95vh]">
             <div className="flex justify-between items-start mb-10">
               <div>
@@ -732,7 +735,8 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly = fal
               <button onClick={handleSaveProduct} className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-[0.3em] flex items-center justify-center gap-3 hover:bg-indigo-700 shadow-xl transition-all"><Save className="w-4 h-4" /> Confirmar Produto</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
