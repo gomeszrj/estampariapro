@@ -16,7 +16,7 @@ export const catalogOrderService = {
     async create(order: Omit<CatalogOrder, 'id' | 'createdAt' | 'status'>) {
         const dbOrder = {
             client_id: order.clientId,
-            client_name: order.clientName,
+            client_name: order.clientTeam ? `${order.clientName} (${order.clientTeam})` : order.clientName,
             client_phone: order.clientPhone,
             items: order.items, // JSONB
             total_estimated: order.totalEstimated,
@@ -57,7 +57,8 @@ export const catalogOrderService = {
 const mapCatalogOrderFromDB = (dbItem: any): CatalogOrder => ({
     id: dbItem.id,
     clientId: dbItem.client_id,
-    clientName: dbItem.client_name,
+    clientName: dbItem.client_name, // Will contain "Name (Team)"
+    clientTeam: '', // Extracted if needed, but for now we consume as is
     clientPhone: dbItem.client_phone,
     createdAt: dbItem.created_at,
     status: dbItem.status,

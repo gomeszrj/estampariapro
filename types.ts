@@ -119,6 +119,7 @@ export interface CatalogOrder {
   id: string;
   clientId: string; // Link to Client
   clientName: string;
+  clientTeam?: string; // UI Only
   clientPhone: string;
   createdAt: string;
   status: 'pending' | 'approved' | 'rejected';

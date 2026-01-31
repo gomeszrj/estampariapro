@@ -16,9 +16,10 @@ import {
   Trash2,
   Loader2,
   Filter,
-  CheckCircle2,
   AlertCircle,
-  Check
+  Check,
+  CheckCircle2,
+  Users
 } from 'lucide-react';
 import { FABRICS, GRADES } from '../constants.tsx';
 import { Product } from '../types.ts';
@@ -49,7 +50,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
   const [selectedSize, setSelectedSize] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [orderNotes, setOrderNotes] = useState('');
-  const [clientForm, setClientForm] = useState({ name: '', phone: '', email: '' });
+  const [clientForm, setClientForm] = useState({ name: '', phone: '', email: '', team: '' });
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
 
@@ -254,6 +255,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
       await catalogOrderService.create({
         clientId,
         clientName: clientForm.name,
+        clientTeam: clientForm.team,
         clientPhone: clientForm.phone,
         items: cart,
         totalEstimated: 0 // Calculated by Admin later
@@ -733,6 +735,155 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
             </div>
           </div>
         )}
+
+      {/* Cart Modal (Checkout) */}
+      {isCartOpen && (
+        <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-[9999] flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-[#0f172a] rounded-[2.5rem] w-full max-w-2xl border border-slate-800 p-8 shadow-2xl animate-in slide-in-from-bottom-10 duration-500 my-auto">
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h3 className="text-2xl font-black text-white uppercase tracking-tight">Seu Pedido</h3>
+                <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">{cart.length} Itens adicionados</p>
+              </div>
+              <button onClick={() => setIsCartOpen(false)} className="bg-slate-900 text-slate-400 p-3 rounded-xl hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-8">
+              {/* Client Form */}
+              <div className="space-y-4 bg-slate-900/50 p-6 rounded-3xl border border-slate-800/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400">
+                    <Users className="w-4 h-4" />
+                  </span>
+                  <h4 className="text-sm font-black text-slate-200 uppercase tracking-widest">Seus Dados</h4>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase font-black text-slate-500 tracking-widest ml-1">Seu Nome</label>
+                    <input
+                      placeholder="Ex: João da Silva"
+                      value={clientForm.name}
+                      onChange={(e) => setClientForm({ ...clientForm, name: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none font-bold"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase font-black text-slate-500 tracking-widest ml-1">Equipe / Turma</label>
+                    <input
+                      placeholder="Ex: 3º Ano B / Time de Futebol"
+                      value={clientForm.team || ''}
+                      onChange={(e) => setClientForm({ ...clientForm, team: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none font-bold"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase font-black text-slate-500 tracking-widest ml-1">WhatsApp</label>
+                    <input
+                      placeholder="(00) 00000-0000"
+                      value={clientForm.phone}
+                      onChange={(e) => setClientForm({ ...clientForm, phone: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none font-bold"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase font-black text-slate-500 tracking-widest ml-1">Email (Opcional)</label>
+                    <input
+                      placeholder="seu@email.com"
+                      value={clientForm.email}
+                      onChange={(e) => setClientForm({ ...clientForm, email: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none font-bold"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Cart Items */}
+              <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
+                {cart.length === 0 ? (
+                  <div className="text-center py-10 text-slate-500">
+                    <ShoppingBag className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                    <p className="font-bold text-sm">Seu carrinho está vazio.</p>
+                  </div>
+                ) : (
+                  cart.map((item, index) => (
+                    <div key={index} className="bg-slate-900/50 p-4 rounded-3xl border border-slate-800 flex gap-4 items-start group">
+                      <div className="w-20 h-20 bg-white rounded-2xl overflow-hidden flex-shrink-0">
+                        <img src={item.imageUrl} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h5 className="font-black text-slate-200 uppercase tracking-tight">{item.productName}</h5>
+                            <span className="bg-indigo-500/10 text-indigo-400 text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider">Tamanho: {item.size}</span>
+                          </div>
+                          <button onClick={() => removeFromCart(index)} className="text-slate-600 hover:text-rose-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                        </div>
+
+                        <div className="flex gap-4 items-end">
+                          <div className="space-y-1 w-20">
+                            <label className="text-[8px] uppercase font-black text-slate-600 tracking-widest">Qtd.</label>
+                            <input
+                              type="number"
+                              value={item.quantity}
+                              onChange={(e) => {
+                                const newCart = [...cart];
+                                newCart[index].quantity = Math.max(1, parseInt(e.target.value));
+                                setCart(newCart);
+                              }}
+                              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-1.5 text-center text-sm font-bold text-white focus:border-indigo-500 outline-none"
+                            />
+                          </div>
+                          <div className="flex-1 space-y-1">
+                            <label className="text-[8px] uppercase font-black text-slate-600 tracking-widest"><Edit3 className="w-3 h-3 inline mr-1" /> Lista de Nomes / Detalhes</label>
+                            <textarea
+                              value={item.notes}
+                              placeholder="Ex: João, Maria, Pedro..."
+                              onChange={(e) => {
+                                const newCart = [...cart];
+                                newCart[index].notes = e.target.value;
+                                setCart(newCart);
+                              }}
+                              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300 focus:border-indigo-500 outline-none resize-none min-h-[60px]"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Footer Actions */}
+              <div className="pt-6 border-t border-slate-800 flex gap-4">
+                <button onClick={() => setIsCartOpen(false)} className="flex-1 py-4 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white rounded-2xl font-black uppercase text-xs tracking-widest transition-all">
+                  Continuar Comprando
+                </button>
+                <button
+                  onClick={handleFinishOrder}
+                  disabled={isSubmittingOrder}
+                  className="flex-[2] py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-emerald-900/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all relative overflow-hidden"
+                >
+                  {isSubmittingOrder ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-5 h-5" />
+                      Finalizar Pedido
+                    </>
+                  )}
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
