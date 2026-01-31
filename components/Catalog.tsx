@@ -383,11 +383,11 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
             onClick={() => readOnly && setPublicViewingProduct(product)}
             className={`bg-[#0f172a] rounded-[2.5rem] border border-slate-800 shadow-sm overflow-hidden group hover:border-indigo-500/50 transition-all flex flex-col relative ${readOnly ? 'cursor-pointer' : ''}`}
           >
-            <div className="relative aspect-square overflow-hidden bg-white">
+            <div className="relative aspect-square overflow-hidden bg-black flex items-center justify-center">
               <img
                 src={product.imageUrl}
                 alt={product.name}
-                className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ${product.status === 'inactive' ? 'grayscale opacity-40' : ''}`}
+                className={`w-full h-full object-contain group-hover:scale-105 transition-transform duration-700 ${product.status === 'inactive' ? 'grayscale opacity-40' : ''}`}
               />
               <div className="absolute top-4 left-4 flex gap-2">
                 <span className={`px-3 py-1.5 rounded-xl text-[8px] font-black uppercase shadow-xl flex items-center gap-1.5 transition-all border ${product.status === 'active'
@@ -641,7 +641,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
 
               <div className="flex flex-col md:flex-row gap-8">
                 {/* Product Image */}
-                <div className="flex-1 bg-white rounded-3xl overflow-hidden shadow-inner aspect-square relative">
+                <div className="flex-1 bg-black rounded-3xl overflow-hidden shadow-inner aspect-square relative flex items-center justify-center">
                   <img src={publicViewingProduct.imageUrl} className="w-full h-full object-contain" alt={publicViewingProduct.name} />
                   <div className="absolute bottom-4 left-4 bg-black/50 backdrop-blur-md px-3 py-1 rounded-xl text-white text-[10px] font-black uppercase tracking-widest">
                     REF: {publicViewingProduct.sku}
@@ -837,16 +837,16 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
                             />
                           </div>
                           <div className="flex-1 space-y-1">
-                            <label className="text-[8px] uppercase font-black text-slate-600 tracking-widest"><Edit3 className="w-3 h-3 inline mr-1" /> Lista de Nomes / Detalhes</label>
+                            <label className="text-[8px] uppercase font-black text-slate-600 tracking-widest"><Edit3 className="w-3 h-3 inline mr-1" /> Lista de Conferência (Nomes/Tamanhos)</label>
                             <textarea
                               value={item.notes}
-                              placeholder="Ex: João, Maria, Pedro..."
+                              placeholder="Ex: 01 - João (M)&#10;02 - Maria (P)&#10;..."
                               onChange={(e) => {
                                 const newCart = [...cart];
                                 newCart[index].notes = e.target.value;
                                 setCart(newCart);
                               }}
-                              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300 focus:border-indigo-500 outline-none resize-none min-h-[60px]"
+                              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300 focus:border-indigo-500 outline-none resize-none min-h-[100px]"
                             />
                           </div>
                         </div>
@@ -858,8 +858,9 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
 
               {/* Footer Actions */}
               <div className="pt-6 border-t border-slate-800 flex gap-4">
-                <button onClick={() => setIsCartOpen(false)} className="flex-1 py-4 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white rounded-2xl font-black uppercase text-xs tracking-widest transition-all">
-                  Continuar Comprando
+                <button onClick={() => setIsCartOpen(false)} className="flex-1 py-4 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white rounded-2xl font-black uppercase text-xs tracking-widest transition-all flex items-center justify-center gap-2">
+                  <ShoppingBag className="w-4 h-4" />
+                  + Adicionar Mais Itens
                 </button>
                 <button
                   onClick={handleFinishOrder}
