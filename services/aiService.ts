@@ -166,3 +166,30 @@ export async function parseOrderText(text: string, availableProducts: { id: stri
 
   throw lastError || new Error("Falha em todos os serviços de IA.");
 }
+
+export async function generateProductDescription(productName: string, category: string): Promise<string> {
+  const apiKey = getConfig(CONFIG_KEYS.GEMINI_API_KEY);
+  if (!apiKey) throw new Error("API Key do Google Gemini não encontrada.");
+
+  const ai = new GoogleGenAI({ apiKey });
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.0-flash',
+      contents: `Estou cadastrando um produto na minha Estamparia.
+            Produto: ${productName}
+            Categoria: ${category}
+            
+            Crie uma descrição comercial curta, atraente e vendedora para este produto.
+            Destaque qualidade, conforto e personalização.
+            Máximo de 3 linhas. Tom profissional e moderno.
+            
+            Retorne APENAS o texto da descrição.`,
+    });
+
+    return response.text || "";
+  } catch (error) {
+    console.error("Erro ao gerar descrição:", error);
+    return "Erro ao gerar descrição automática.";
+  }
+}

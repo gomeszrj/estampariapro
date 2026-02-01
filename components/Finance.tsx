@@ -166,6 +166,57 @@ const Finance: React.FC<FinanceProps> = ({ orders }) => {
             </ResponsiveContainer>
           </div>
         </div>
+
+        {/* TOP CLIENTS TABLE (Full Width) */}
+        <div className="bg-[#0f172a] p-8 rounded-3xl border border-slate-800 shadow-sm col-span-1 lg:col-span-2">
+          <h3 className="text-lg font-bold mb-6 text-slate-100 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-amber-500" />
+            Top 5 Melhores Clientes
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-slate-800 text-[10px] font-black uppercase text-slate-500 tracking-widest">
+                  <th className="pb-4 pl-4">Cliente</th>
+                  <th className="pb-4 text-center">Pedidos</th>
+                  <th className="pb-4 text-right pr-4">Total Investido</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/50">
+                {orders.reduce((acc: any[], order) => {
+                  const existing = acc.find(c => c.name === order.clientName);
+                  if (existing) {
+                    existing.total += order.totalValue;
+                    existing.count += 1;
+                  } else {
+                    acc.push({ name: order.clientName, total: order.totalValue, count: 1 });
+                  }
+                  return acc;
+                }, [])
+                  .sort((a, b) => b.total - a.total)
+                  .slice(0, 5)
+                  .map((client, index) => (
+                    <tr key={index} className="hover:bg-slate-900/50 transition-colors">
+                      <td className="py-4 pl-4 flex items-center gap-3">
+                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${index === 0 ? 'bg-amber-500 text-amber-950' :
+                            index === 1 ? 'bg-slate-300 text-slate-900' :
+                              index === 2 ? 'bg-amber-800 text-amber-200' :
+                                'bg-slate-800 text-slate-400'
+                          }`}>
+                          {index + 1}
+                        </span>
+                        <span className="font-bold text-slate-200">{client.name}</span>
+                      </td>
+                      <td className="py-4 text-center text-xs font-bold text-slate-500">{client.count}</td>
+                      <td className="py-4 text-right pr-4 text-sm font-black text-indigo-400">
+                        {client.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   );

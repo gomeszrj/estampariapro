@@ -49,6 +49,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
   const [delayReason, setDelayReason] = useState('');
   const [orderType, setOrderType] = useState<OrderType>(OrderType.SALE);
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(PaymentStatus.PENDING);
+  const [customAmountPaid, setCustomAmountPaid] = useState<number | string>(''); // For UI input
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
 
   const handleAiParse = async () => {
@@ -222,8 +223,41 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
       quantity: i.quantity,
       fabric: i.fabricName
     })) : [{ product: '', grade: 'Masculino', size: 'G', quantity: 1 }]);
+
+    // Set Custom Amount if exists
+    setCustomAmountPaid(order.amountPaid ? order.amountPaid : '');
+
     setIsAdding(true);
   };
+
+  const handleAddNew = () => {
+    setOrderType(OrderType.SALE);
+
+    // Smart Scheduling Logic: 20 Business Days
+    // Helper to add business days
+    const addBusinessDays = (date: Date, days: number) => {
+      let count = 0;
+      const result = new Date(date);
+      while (count < days) {
+        result.setDate(result.getDate() + 1);
+        // 0 = Sunday, 6 = Saturday
+        if (result.getDay() !== 0 && result.getDay() !== 6) {
+          count++;
+        }
+      }
+      return result;
+    };
+
+    const activeOrdersCount = orders.filter(o => o.status !== OrderStatus.FINISHED && o.status !== OrderStatus.RECEIVED).length;
+    // Base 20 business days + 1 extra WORK day for every 10 active orders (reduced weight)
+    const extraDays = Math.floor(activeOrdersCount / 10);
+    const totalBusinessDays = 20 + extraDays;
+
+    const suggestedDate = addBusinessDays(new Date(), totalBusinessDays);
+
+    setDeliveryDate(suggestedDate.toISOString().split('T')[0]);
+    setIsAdding(true);
+  }
 
   const handleCloseModal = () => {
     setIsAdding(false);
@@ -235,6 +269,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
     setParsedItems([]);
     setAiText('');
     setPaymentStatus(PaymentStatus.PENDING);
+    setCustomAmountPaid('');
   };
 
   const handleDelete = async (id: string) => {
@@ -266,7 +301,11 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
           const prod = products.find(p => p.name === curr.product);
           const price = prod ? prod.basePrice : 35;
           return acc + (curr.quantity || 0) * price;
-        }, 0), // Calculate properly based on product price
+        }, 0),
+        amountPaid: paymentStatus === PaymentStatus.FULL
+          ? 999999 // Logic to calculate full later? Or just dont send amountPaid for FULL?
+          // Actually, let's just save EXACT amount if provided, or logic below
+          : (customAmountPaid ? parseFloat(customAmountPaid.toString()) : 0),
         createdAt: new Date().toISOString(),
         deliveryDate: deliveryDate,
         internalNotes: internalNotes,
@@ -317,7 +356,11 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
         await orderService.create({
           ...orderData,
           clientId: clientIdToUse,
-          orderNumber: orderData.orderNumber
+          orderNumber: orderData.orderNumber,
+          // If FULL, we might want to ensure amountPaid == totalValue in backend or just handle in UI
+          amountPaid: paymentStatus === PaymentStatus.FULL
+            ? orderData.totalValue
+            : (paymentStatus === PaymentStatus.HALF && !customAmountPaid ? orderData.totalValue / 2 : orderData.amountPaid)
         });
       }
 
@@ -341,7 +384,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
           <p className="text-slate-500 font-medium">Controle total sobre vendas e orçamentos comerciais.</p>
         </div>
         <button
-          onClick={() => { setOrderType(OrderType.SALE); setIsAdding(true); }}
+          onClick={handleAddNew}
           className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-2xl flex items-center gap-3 font-black transition-all shadow-2xl shadow-indigo-600/30 active:scale-95 uppercase text-[11px] tracking-widest"
         >
           <Plus className="w-5 h-5" />
@@ -383,6 +426,20 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                       </button>
                     ))}
                   </div>
+
+                  {/* Custom Partial Payment Input */}
+                  {(paymentStatus === PaymentStatus.HALF || paymentStatus === PaymentStatus.PENDING) && (
+                    <div className="mt-2 animate-in slide-in-from-top-2">
+                      <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider block mb-0.5">Valor Pago (R$)</label>
+                      <input
+                        type="number"
+                        placeholder="0,00"
+                        value={customAmountPaid}
+                        onChange={e => setCustomAmountPaid(e.target.value)}
+                        className="w-24 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-[10px] text-white font-mono focus:ring-1 focus:ring-indigo-500 outline-none"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
               <button onClick={handleCloseModal} className="text-slate-400 hover:text-white bg-slate-800 p-2 rounded-full transition-colors">
@@ -759,6 +816,11 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                         }`}>
                         {order.paymentStatus || 'PENDENTE'}
                       </span>
+                      {order.amountPaid && order.amountPaid > 0 && order.paymentStatus !== PaymentStatus.FULL && (
+                        <div className="mt-1 text-[9px] text-slate-500 font-mono">
+                          PG: R$ {order.amountPaid.toLocaleString('pt-BR')}
+                        </div>
+                      )}
                     </td>
                     <td className="px-10 py-8">
                       <div className="font-black text-slate-100 text-lg">{order.clientName}</div>

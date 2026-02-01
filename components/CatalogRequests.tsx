@@ -30,10 +30,16 @@ const CatalogRequests: React.FC = () => {
         if (!confirm(`Aprovar pedido de ${request.clientName} e gerar Pedido de Venda?`)) return;
 
         try {
+            // Extract Team from "Client Name (Team)" format
+            const nameMatch = request.clientName.match(/^(.*?)\s*\((.*?)\)$/);
+            const finalClientName = nameMatch ? nameMatch[1].trim() : request.clientName;
+            const clientTeam = nameMatch ? nameMatch[2].trim() : (request.clientTeam || '');
+
             // 1. Create Production Order
             await orderService.create({
                 clientId: request.clientId,
-                clientName: request.clientName,
+                clientName: finalClientName,
+                clientTeam: clientTeam, // Pass extracted team
                 createdAt: new Date().toISOString(),
                 deliveryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // Default 7 days
                 orderNumber: `CAT-${request.id.substring(0, 6).toUpperCase()}`,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, X, Key, Database, Brain, RefreshCw } from 'lucide-react';
+import { Save, X, Key, Database, Brain, RefreshCw, MessageCircle } from 'lucide-react';
 import { getConfig, CONFIG_KEYS } from '../utils/config';
 
 interface ApiSettingsModalProps {
@@ -8,6 +8,15 @@ interface ApiSettingsModalProps {
 }
 
 const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose }) => {
+    const [evolutionStore, setEvolutionStore] = useState({
+        url: localStorage.getItem('evolution_api_url') || '',
+        key: localStorage.getItem('evolution_api_key') || '',
+        instance: localStorage.getItem('evolution_instance_name') || 'GomeszSpeedPrint'
+    });
+
+    // The original `apiKey` state was likely a remnant or intended for a different purpose.
+    // The `geminiKey` is managed within the `keys` state object.
+    // Removing the separate `apiKey` state as it's not used in the new save logic for Gemini.
     const [keys, setKeys] = useState({
         supabaseUrl: '',
         supabaseKey: '',
@@ -30,11 +39,16 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose }) 
     const handleSave = () => {
         setLoading(true);
 
-        // Save to LocalStorage
+        // Save to LocalStorage (Standard Config)
         localStorage.setItem(CONFIG_KEYS.SUPABASE_URL, keys.supabaseUrl);
         localStorage.setItem(CONFIG_KEYS.SUPABASE_ANON_KEY, keys.supabaseKey);
         localStorage.setItem(CONFIG_KEYS.GEMINI_API_KEY, keys.geminiKey);
         localStorage.setItem(CONFIG_KEYS.OPENAI_API_KEY, keys.openaiKey);
+
+        // Save Evolution API Config
+        if (evolutionStore.url) localStorage.setItem('evolution_api_url', evolutionStore.url);
+        if (evolutionStore.key) localStorage.setItem('evolution_api_key', evolutionStore.key);
+        if (evolutionStore.instance) localStorage.setItem('evolution_instance_name', evolutionStore.instance);
 
         // Force reload to re-init services
         setTimeout(() => {
@@ -122,6 +136,47 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose }) 
                                     onChange={e => setKeys(prev => ({ ...prev, openaiKey: e.target.value }))}
                                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 text-xs font-mono focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                                     placeholder="sk-..."
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="h-px bg-slate-800/50"></div>
+
+                    {/* WhatsApp Evolution API Section */}
+                    <div className="space-y-4">
+                        <h4 className="text-xs font-black text-green-400 uppercase tracking-widest flex items-center gap-2">
+                            <MessageCircle className="w-4 h-4" /> WhatsApp Automação (Evolution API)
+                        </h4>
+                        <div className="space-y-3">
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">Base URL</label>
+                                <input
+                                    type="text"
+                                    value={evolutionStore.url}
+                                    onChange={(e) => setEvolutionStore({ ...evolutionStore, url: e.target.value })}
+                                    placeholder="https://api.seudominio.com"
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 text-xs font-mono focus:ring-2 focus:ring-green-500 outline-none transition-all"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">Global API Key</label>
+                                <input
+                                    type="password"
+                                    value={evolutionStore.key}
+                                    onChange={(e) => setEvolutionStore({ ...evolutionStore, key: e.target.value })}
+                                    placeholder="Global Key da Evolution"
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 text-xs font-mono focus:ring-2 focus:ring-green-500 outline-none transition-all"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">Instance Name</label>
+                                <input
+                                    type="text"
+                                    value={evolutionStore.instance}
+                                    onChange={(e) => setEvolutionStore({ ...evolutionStore, instance: e.target.value })}
+                                    placeholder="Nome da Instância"
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 text-xs font-mono focus:ring-2 focus:ring-green-500 outline-none transition-all"
                                 />
                             </div>
                         </div>

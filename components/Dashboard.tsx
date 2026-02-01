@@ -47,6 +47,22 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders }) => {
   });
   const [isSaving, setIsSaving] = useState(false);
 
+  // Financial Quick Stats
+  const revenueMonth = React.useMemo(() => {
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    return orders
+      .filter(o => o.createdAt.startsWith(currentMonth))
+      .reduce((acc, curr) => acc + curr.totalValue, 0);
+  }, [orders]);
+
+  const pendingRevenue = React.useMemo(() => {
+    return orders
+      .filter(o => o.status !== OrderStatus.FINISHED)
+      .reduce((acc, curr) => acc + curr.totalValue, 0);
+  }, [orders]);
+
+  const loadingRevenue = false;
+
   const counts = {
     received: orders.filter(o => o.status === OrderStatus.RECEIVED).length,
     finalization: orders.filter(o => o.status === OrderStatus.FINALIZATION).length,
@@ -110,10 +126,37 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders }) => {
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <SummaryCard title="Recebidos" count={counts.received.toString().padStart(2, '0')} icon={AlertCircle} color="bg-slate-800/50" textColor="text-slate-400" />
-        <SummaryCard title="Finalização" count={counts.finalization.toString().padStart(2, '0')} icon={LayoutTemplate} color="bg-indigo-500/10" textColor="text-indigo-400" />
-        <SummaryCard title="Produção" count={counts.production.toString().padStart(2, '0')} icon={Hammer} color="bg-amber-500/10" textColor="text-amber-500" />
-        <SummaryCard title="Finalizados" count={counts.finished.toString().padStart(2, '0')} icon={CheckCircle2} color="bg-emerald-500/10" textColor="text-emerald-500" />
+        <SummaryCard
+          title="Recebidos"
+          count={counts.received.toString().padStart(2, '0')}
+          icon={AlertCircle}
+          color="bg-slate-800/50"
+          textColor="text-slate-400"
+        />
+        <SummaryCard
+          title="Entregas (7 Dias)"
+          count={orders.filter(o => {
+            const diff = Math.ceil((new Date(o.deliveryDate).getTime() - new Date().getTime()) / (1000 * 3600 * 24));
+            return diff >= 0 && diff <= 7 && o.status !== OrderStatus.FINISHED;
+          }).length.toString().padStart(2, '0')}
+          icon={LayoutTemplate}
+          color="bg-indigo-500/10"
+          textColor="text-indigo-400"
+        />
+        <SummaryCard
+          title="Faturamento (Mês)"
+          count={`R$ ${loadingRevenue ? '...' : revenueMonth.toLocaleString('pt-BR')}`}
+          icon={Hammer}
+          color="bg-amber-500/10"
+          textColor="text-amber-500"
+        />
+        <SummaryCard
+          title="Fila de Produção"
+          count={`R$ ${loadingRevenue ? '...' : pendingRevenue.toLocaleString('pt-BR')}`}
+          icon={CheckCircle2}
+          color="bg-emerald-500/10"
+          textColor="text-emerald-500"
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-6">
@@ -150,6 +193,9 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders }) => {
                   <div>
                     <div className="flex items-center gap-3 mb-2">
                       <h4 className="font-black text-slate-100 text-xl group-hover:text-indigo-400 transition-colors tracking-tight">{item.clientName}</h4>
+                      {item.clientTeam && (
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 uppercase tracking-widest">{item.clientTeam}</span>
+                      )}
                       {new Date(item.deliveryDate) < new Date() && item.status !== OrderStatus.FINISHED && (
                         <span className="text-[8px] font-black px-2.5 py-1 rounded-lg bg-rose-500 text-white uppercase tracking-[0.2em] shadow-lg shadow-rose-500/20">Atrasado</span>
                       )}

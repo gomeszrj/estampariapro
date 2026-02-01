@@ -1,5 +1,5 @@
 
-import { Order, OrderType } from '../types';
+import { Order, OrderType, PaymentStatus } from '../types';
 import { settingsService } from '../services/settingsService';
 
 const getStatusLabel = (status: string) => {
@@ -12,34 +12,48 @@ const getStatusLabel = (status: string) => {
   return statusMap[status] || status;
 };
 
-
 const getPaymentStatusLabel = (status: string | undefined) => {
   if (!status) return 'PENDENTE';
   if (status === 'Integral (100%)') return 'QUITADO (100%)';
-  if (status === 'Sinal (50%)') return 'PARCIAL (50%) - RESTA 50%';
+  if (status === 'Sinal (50%)') return 'PARCIAL (SINAL)';
   return status;
 };
 
-export async function printServiceOrder(order: Order) {
-  // Fetch latest settings from DB to ensure cross-device consistency
-  let company;
+// Helper: Format Currency
+const formatMoney = (val: number) => {
+  return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+};
+
+async function getCompanySettings() {
   try {
-    company = await settingsService.getSettings();
+    const settings = await settingsService.getSettings();
+    // Return with fallbacks if empty (though service usually handles defaults, safer here)
+    return {
+      name: settings.name || 'Minha Estamparia',
+      cnpj: settings.cnpj || '',
+      address: settings.address || '',
+      phone: settings.phone || '',
+      email: settings.email || '',
+      logo_url: settings.logo_url || '',
+      bank_info: settings.bank_info || ''
+    };
   } catch (e) {
-    console.warn("Could not fetch company settings for print. Using defaults.", e);
-    company = {
+    console.warn("Could not fetch company settings.", e);
+    return {
       name: 'Minha Estamparia',
       cnpj: '',
       address: '',
       phone: '',
       email: '',
-      website: '',
-      bank_info: '',
-      logo_url: ''
+      logo_url: '',
+      bank_info: ''
     };
   }
+}
 
-  const printWindow = window.open('', '_blank', 'width=1000,height=1200');
+export async function printServiceOrder(order: Order) {
+  const company = await getCompanySettings();
+  const printWindow = window.open('', '_blank', 'width=1100,height=1200');
   if (!printWindow) return;
 
   const html = `
@@ -47,72 +61,82 @@ export async function printServiceOrder(order: Order) {
     <html lang="pt-BR">
       <head>
         <meta charset="UTF-8">
-        <title>ORDEM DE SERVIÇO #${order.orderNumber}</title>
+        <title>OS #${order.orderNumber} - PRODUCÃO</title>
         <style>
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+          @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700;900&display=swap');
           
+          :root { --primary: #000; --secondary: #4b5563; --border: #e5e7eb; }
           * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; }
           
           body { 
             font-family: 'Inter', sans-serif; 
-            padding: 1.2cm; 
+            padding: 0;
             color: #1a1a1a; 
             background: #fff; 
             line-height: 1.3; 
             font-size: 9pt; 
           }
 
-          .doc-wrapper { width: 100%; max-width: 19cm; margin: 0 auto; }
+          .doc-wrapper { width: 100%; max-width: 21cm; margin: 0 auto; padding: 1cm; min-height: 29.7cm; position: relative; }
 
-          /* Header Styling */
-          header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; border-bottom: 2pt solid #1a1a1a; padding-bottom: 20px; }
+          /* Header */
+          header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px; border-bottom: 3px solid #000; padding-bottom: 15px; }
           .logo-area { display: flex; align-items: center; gap: 15px; }
-          .logo-img { max-width: 3.5cm; max-height: 1.8cm; object-fit: contain; }
-          .company-info { max-width: 10cm; }
-          .company-info h1 { font-size: 14pt; font-weight: 800; text-transform: uppercase; letter-spacing: -0.5px; margin-bottom: 4px; color: #000; }
-          .company-info p { font-size: 7.5pt; color: #4b5563; line-height: 1.4; }
+          .logo-img { max-width: 4cm; max-height: 2cm; object-fit: contain; }
+          .company-info h1 { font-size: 16pt; font-weight: 900; text-transform: uppercase; letter-spacing: -0.5px; margin-bottom: 4px; }
+          .company-info p { font-size: 8pt; color: #666; }
           
           .os-badge { text-align: right; }
-          .os-label { font-size: 7pt; font-weight: 800; text-transform: uppercase; color: #6b7280; letter-spacing: 1px; }
-          .os-number { font-size: 24pt; font-weight: 800; color: #000; line-height: 1; margin-top: 2px; }
+          .os-label { font-size: 8pt; font-weight: 800; text-transform: uppercase; color: #666; letter-spacing: 2px; }
+          .os-number { font-size: 32pt; font-weight: 900; color: #000; letter-spacing: -2px; line-height: 1; }
+          .os-date { font-size: 9pt; font-weight: 600; color: #666; margin-top: 5px; }
 
-          /* Layout Sections */
+          /* Sections */
           .section { margin-bottom: 25px; }
-          .section-title { font-size: 8pt; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; margin-bottom: 12px; color: #374151; }
+          .section-title { 
+            font-size: 9pt; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; 
+            border-bottom: 1px solid #000; padding-bottom: 6px; margin-bottom: 12px; color: #000; 
+            display: flex; justify-content: space-between; align-items: flex-end;
+          }
           
-          .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-          .info-item { background: #f9fafb; padding: 10px 12px; border-radius: 8px; border: 1px solid #f3f4f6; }
-          .info-label { font-size: 6.5pt; font-weight: 700; text-transform: uppercase; color: #9ca3af; margin-bottom: 3px; display: block; }
-          .info-value { font-size: 9.5pt; font-weight: 700; color: #111827; }
+          .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+          .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
 
-          /* Item Table */
-          .table-container { margin-top: 10px; border-radius: 10px; overflow: hidden; border: 1px solid #e5e7eb; }
-          table { width: 100%; border-collapse: collapse; }
-          th { background: #1a1a1a; color: #fff; text-align: left; padding: 10px 12px; font-size: 7pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-          td { padding: 12px; border-bottom: 1px solid #e5e7eb; font-size: 9pt; vertical-align: middle; }
-          tr:last-child td { border-bottom: none; }
+          .box { border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; background: #f9fafb; position: relative; }
+          .box-label { font-size: 6.5pt; font-weight: 700; text-transform: uppercase; color: #9ca3af; display: block; margin-bottom: 4px; }
+          .box-value { font-size: 10pt; font-weight: 700; color: #111827; }
+          .box-value.large { font-size: 12pt; }
+
+          /* Table */
+          table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+          th { background: #000; color: #fff; text-align: left; padding: 8px 10px; font-size: 7.5pt; font-weight: 700; text-transform: uppercase; }
+          td { padding: 10px; border-bottom: 1px solid #e5e7eb; font-size: 9pt; vertical-align: middle; }
           
-          .product-name { font-weight: 700; color: #000; display: block; }
-          .fabric-badge { font-size: 7.5pt; color: #6b7280; margin-top: 2px; }
-          .size-badge { background: #000; color: #fff; padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 8pt; margin-right: 5px; }
-          .qty-col { text-align: center; font-weight: 800; font-size: 11pt; color: #1a1a1a; }
+          .prod-meta { display: flex; gap: 8px; margin-top: 4px; font-family: 'JetBrains Mono', monospace; font-size: 8pt; }
+          .tag { background: #e5e7eb; padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 7.5pt; }
 
-          /* Notes Area */
-          .notes-box { background: #fff; border: 1.5px solid #1a1a1a; border-radius: 12px; padding: 15px; min-height: 4cm; font-size: 10pt; line-height: 1.5; color: #111827; position: relative; white-space: pre-wrap; }
-          .notes-box::after { content: 'DETALHAMENTO TÉCNICO'; position: absolute; bottom: 10px; right: 15px; font-size: 6pt; font-weight: 800; color: #e5e7eb; }
+          /* Traveler Checkboxes */
+          .traveler-strip { 
+             display: flex; gap: 0; border: 2px solid #000; border-radius: 12px; overflow: hidden; margin: 20px 0; 
+             background: #fff; box-shadow: 4px 4px 0px rgba(0,0,0,0.1);
+          }
+          .traveler-step { 
+             flex: 1; border-right: 1px dashed #000; padding: 15px; text-align: center; position: relative; 
+          }
+          .traveler-step:last-child { border-right: none; }
+          .traveler-check { 
+             width: 25px; height: 25px; border: 2px solid #000; border-radius: 6px; margin: 0 auto 8px auto; 
+          }
+          .traveler-label { font-size: 7.5pt; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; }
+          .traveler-sig { height: 15px; border-bottom: 1px solid #ccc; margin-top: 10px; }
 
-          /* Footer Signature */
-          .signatures { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-top: 50px; }
-          .sig-block { text-align: center; }
-          .sig-line { border-top: 1px solid #000; margin-bottom: 6px; }
-          .sig-label { font-size: 7pt; font-weight: 700; text-transform: uppercase; color: #4b5563; }
-
-          .footer-metadata { margin-top: 40px; text-align: center; font-size: 7pt; color: #9ca3af; border-top: 1px dashed #e5e7eb; padding-top: 15px; }
-          .disclaimer-box { border: 2px solid #000; padding: 10px; margin-top: 20px; text-align: center; font-weight: 900; font-size: 10pt; text-transform: uppercase; background: #eee; }
-
+          /* Footer */
+          .footer-box { border-top: 1px dotted #ccc; margin-top: auto; padding-top: 10px; text-align: center; font-size: 8pt; color: #999; }
+          
           @media print {
             body { padding: 0; }
-            @page { margin: 1cm; }
+            @page { margin: 0; size: A4; }
+            .doc-wrapper { width: 100%; max-width: none; border: none; min-height: 100vh; padding: 1.5cm; }
           }
         </style>
       </head>
@@ -120,122 +144,100 @@ export async function printServiceOrder(order: Order) {
         <div class="doc-wrapper">
           <header>
             <div class="logo-area">
-              ${company.logo_url ? `<img src="${company.logo_url}" class="logo-img">` : '<div style="font-weight:900; background:#000; color:#fff; padding:15px; border-radius:10px;">BRAND</div>'}
-              <div class="company-info">
-                <h1>${company.name || 'Estamparia Premium'}</h1>
-                <p>
-                  CNPJ: ${company.cnpj || '00.000.000/0000-00'}<br>
-                  ${company.address || 'Localização Industrial - Matriz'}<br>
-                  CONTATO: ${company.phone || '-'} | ${company.email || ''}
-                </p>
-              </div>
+               ${company.logo_url ? `<img src="${company.logo_url}" class="logo-img">` : '<div style="font-weight:900; font-size:24pt;">LOGO</div>'}
+               <div class="company-info">
+                 <h1>${company.name}</h1>
+                 <p>CONTROLE DE PRODUÇÃO INTERNO</p>
+               </div>
             </div>
             <div class="os-badge">
-              <div class="os-label">Ordem de Serviço</div>
-              <div class="os-number">#${order.orderNumber}</div>
+               <div class="os-label">Ordem Serviço</div>
+               <div class="os-number">#${order.orderNumber}</div>
+               <div class="os-date">${new Date(order.createdAt).toLocaleDateString()}</div>
             </div>
           </header>
 
+          <div class="grid-2 section">
+             <div class="box">
+                <span class="box-label">Cliente</span>
+                <div class="box-value large">${order.clientName}</div>
+             </div>
+             <div class="box">
+                <span class="box-label">Prazo de Entrega</span>
+                <div class="box-value large">${new Date(order.deliveryDate).toLocaleDateString()}</div>
+             </div>
+          </div>
+
+          <!-- Production Traveler Strip -->
           <div class="section">
-            <div class="section-title">Informações do Cliente</div>
-            <div class="info-grid">
-              <div class="info-item" style="grid-column: span 2;">
-                <span class="info-label">Razão Social / Identificação</span>
-                <span class="info-value">${order.clientName}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Status Industrial</span>
-                <span class="info-value" style="color: #6366f1;">${getStatusLabel(order.status)}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Data de Lançamento</span>
-                <span class="info-value">${new Date(order.createdAt).toLocaleDateString('pt-BR')}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Entrega Programada</span>
-                <span class="info-value" style="font-size: 11pt; color: #000;">${new Date(order.deliveryDate).toLocaleDateString('pt-BR')}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Modalidade</span>
-                <span class="info-value">${order.orderType === OrderType.SALE ? 'VENDA EFETIVADA' : 'ORÇAMENTO COMERCIAL'}</span>
-                <div style="margin-top:8px;">
-                   <span class="info-label">Status Pagamento</span>
-                   <span class="info-value" style="color: #000;">${getPaymentStatusLabel(order.paymentStatus)}</span>
+             <div class="section-title">Fluxo de Produção (Checklist)</div>
+             <div class="traveler-strip">
+                <div class="traveler-step">
+                   <div class="traveler-check"></div>
+                   <div class="traveler-label">Corte</div>
                 </div>
-              </div>
-            </div>
+                <div class="traveler-step">
+                   <div class="traveler-check"></div>
+                   <div class="traveler-label">Estampa</div>
+                </div>
+                <div class="traveler-step">
+                   <div class="traveler-check"></div>
+                   <div class="traveler-label">Costura</div>
+                </div>
+                <div class="traveler-step">
+                   <div class="traveler-check"></div>
+                   <div class="traveler-label">Acabto.</div>
+                </div>
+                <div class="traveler-step">
+                   <div class="traveler-check"></div>
+                   <div class="traveler-label">Conferência</div>
+                </div>
+             </div>
           </div>
 
           <div class="section">
-            <div class="section-title">Listagem de Itens e Materiais</div>
-            <div class="table-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th width="30">#</th>
-                    <th>Descrição do Produto / Especificações</th>
-                    <th width="140">Material / Tecido</th>
-                    <th width="60" style="text-align:center;">Qtd</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${order.items.map((item, idx) => `
+            <div class="section-title">
+                Itens do Pedido
+                <span style="font-size:8pt; font-weight:400; text-transform:none; color:#666;">Total de Peças: ${order.items.reduce((acc, i) => acc + (i.quantity || 0), 0)}</span>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                   <th width="40" style="text-align:center;">QTD</th>
+                   <th>Produto / Detalhes</th>
+                   <th>Tamanho</th>
+                   <th>Tecido</th>
+                </tr>
+              </thead>
+              <tbody>
+                 ${order.items.map(item => `
                     <tr>
-                      <td style="color:#9ca3af; text-align:center;">${(idx + 1).toString().padStart(2, '0')}</td>
-                      <td>
-                        <span class="product-name">${item.productName}</span>
-                        <div style="margin-top:4px;">
-                          <span class="size-badge">${item.size}</span>
-                          <span style="font-size:7.5pt; color:#6b7280; font-weight:600; text-transform:uppercase;">${item.gradeLabel}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <span style="font-weight:700; color:#1f2937;">${item.fabricName}</span>
-                      </td>
-                      <td class="qty-col">${item.quantity}</td>
+                       <td style="text-align:center; font-weight:900; font-size:12pt; background:#f9fafb;">${item.quantity}</td>
+                       <td>
+                          <div style="font-weight:700;">${item.productName}</div>
+                          ${item.gradeLabel ? `<div style="font-size:7pt; color:#666;">MODELO: ${item.gradeLabel}</div>` : ''}
+                       </td>
+                       <td><span class="tag">${item.size}</span></td>
+                       <td>${item.fabricName || '-'}</td>
                     </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
+                 `).join('')}
+              </tbody>
+            </table>
           </div>
 
-          <div class="section">
-            <div class="section-title">Grade de Personalização (Nomes, Números e Notas)</div>
-            <div class="notes-box">
-              ${order.internalNotes || 'Nenhuma instrução adicional de personalização para este pedido.'}
-            </div>
+          <div class="section" style="margin-top:30px;">
+             <div class="section-title">Observações Técnicas / Personalização</div>
+             <div style="border: 2px dashed #ccc; padding: 20px; border-radius: 8px; min-height: 4cm; background:#fdfdfd; font-family: 'Inter', sans-serif; white-space: pre-wrap;">
+                ${order.internalNotes || 'Sem observações adicionais.'}
+             </div>
           </div>
 
-          <div class="signatures">
-            <div class="sig-block">
-              <div class="sig-line"></div>
-              <div class="sig-label">Conferência Industrial</div>
-            </div>
-            <div class="sig-block">
-              <div class="sig-line"></div>
-              <div class="sig-label">Responsável Produção</div>
-            </div>
-            <div class="sig-block">
-              <div class="sig-line"></div>
-              <div class="sig-label">Aceite do Cliente</div>
-            </div>
-          </div>
-
-          </div>
-
-          <div class="disclaimer-box">
-             ATENÇÃO: A LIBERAÇÃO / RETIRADA DESTE PEDIDO ESTÁ CONDICIONADA À PREVIA QUITAÇÃO (100%) DO VALOR TOTAL.
-          </div>
-
-          <div class="footer-metadata">
-            Este documento é de uso interno e confidencial da ${company.name || 'Estamparia'}.<br>
-            Emitido em ${new Date().toLocaleString('pt-BR')} via Estamparia.AI
+          <div class="footer-box">
+             Documento gerado em ${new Date().toLocaleString('pt-BR')} • Uso Interno • Estamparia Pro
           </div>
         </div>
-
         <script>
-          window.onload = () => { setTimeout(() => { window.print(); }, 500); }
+           window.onload = () => { setTimeout(() => { window.print(); }, 500); }
         </script>
       </body>
     </html>
@@ -246,163 +248,199 @@ export async function printServiceOrder(order: Order) {
 }
 
 export async function printInvoice(order: Order) {
-  // Fetch latest settings from DB
-  let company;
-  try {
-    company = await settingsService.getSettings();
-  } catch (e) {
-    console.warn("Could not fetch company settings for print. Using defaults.", e);
-    company = {
-      name: 'Empresa de Estamparia',
-      cnpj: '',
-      address: '',
-      phone: '',
-      email: '',
-      website: '',
-      bank_info: '',
-      logo_url: ''
-    };
-  }
-
+  const company = await getCompanySettings();
   const printWindow = window.open('', '_blank', 'width=1000,height=1200');
   if (!printWindow) return;
 
-  const accessKey = "3523 03" + (company.cnpj?.replace(/\D/g, '') || '00000000000000') + " 55 001 00000" + order.orderNumber + " 100 2345 6789";
+  // Calculations
+  const total = order.totalValue || 0;
+  // If amountPaid is undefined, check paymentStatus
+  // If FULL, paid = total. If HALF, use amountPaid or 50%.
+  let paid = order.amountPaid || 0;
+
+  // Fallback Logic for legacy data
+  if (!order.amountPaid) {
+    if (order.paymentStatus === PaymentStatus.FULL) paid = total;
+    if (order.paymentStatus === 'Sinal (50%)') paid = total / 2;
+  }
+
+  const remaining = total - paid;
+  const isPaidOff = remaining <= 0.1; // Float tolerance
 
   const html = `
     <!DOCTYPE html>
     <html lang="pt-BR">
       <head>
         <meta charset="UTF-8">
-        <title>DANFE #${order.orderNumber}</title>
+        <title>Recibo #${order.orderNumber}</title>
         <style>
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap');
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { font-family: 'Inter', sans-serif; font-size: 7.5pt; color: #000; padding: 1cm; background: #fff; line-height: 1.2; }
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
           
-          .border-box { border: 1px solid #000; margin-bottom: -1px; }
-          .cell { padding: 4px 6px; border-right: 1px solid #000; vertical-align: top; }
-          .cell:last-child { border-right: none; }
+          * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; }
+          body { font-family: 'Inter', sans-serif; font-size: 9pt; padding: 0; background: #fff; color: #1f2937; }
           
-          .label { font-size: 5.5pt; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; display: block; }
-          .value { font-size: 8pt; font-weight: 800; display: block; }
-          
-          .danfe-header { display: flex; border: 1.5px solid #000; margin-bottom: 5px; }
-          .logo-box { width: 3.5cm; border-right: 1.5px solid #000; padding: 8px; display: flex; align-items: center; justify-content: center; }
-          .logo-img { max-width: 100%; max-height: 1.5cm; object-fit: contain; }
-          .emitter-box { flex: 2; border-right: 1.5px solid #000; padding: 8px; }
-          .emitter-name { font-size: 9pt; font-weight: 800; text-transform: uppercase; margin-bottom: 4px; }
-          .danfe-label-box { width: 2.5cm; border-right: 1.5px solid #000; padding: 8px; text-align: center; }
-          .key-box { flex: 2; padding: 8px; }
+          .a4-page { 
+             width: 21cm; min-height: 29.7cm; margin: 0 auto; padding: 1.5cm; 
+             position: relative; 
+          }
 
-          .section-title { background: #f3f4f6; border: 1px solid #000; padding: 3px 8px; font-weight: 800; font-size: 6.5pt; text-transform: uppercase; margin-top: 6px; }
+          /* Header */
+          .header { text-align: center; margin-bottom: 40px; }
+          .brand { font-size: 20pt; font-weight: 900; text-transform: uppercase; letter-spacing: -1px; margin-bottom: 5px; }
+          .brand-sub { font-size: 8pt; color: #6b7280; text-transform: uppercase; letter-spacing: 2px; }
           
-          table { width: 100%; border-collapse: collapse; border: 1px solid #000; margin-top: 0; }
-          th { background: #f3f4f6; border: 1px solid #000; padding: 4px; font-size: 6pt; font-weight: 800; text-align: left; text-transform: uppercase; }
-          td { border: 1px solid #000; padding: 5px; font-size: 7.5pt; }
+          .divider { height: 4px; background: #000; margin: 20px auto; width: 50px; border-radius: 2px; }
+          
+          /* Details Box */
+          .receipt-box { border: 2px solid #000; border-radius: 20px; padding: 30px; margin-bottom: 30px; position: relative; }
+          .receipt-title { 
+             position: absolute; top: -12px; left: 30px; background: #fff; padding: 0 10px; 
+             font-weight: 900; font-size: 10pt; text-transform: uppercase; letter-spacing: 1px;
+          }
+          
+          .row { display: flex; justify-content: space-between; margin-bottom: 12px; }
+          .label { font-size: 8pt; color: #6b7280; font-weight: 600; text-transform: uppercase; }
+          .value { font-size: 10pt; font-weight: 700; color: #000; }
+          
+          /* Financial Highlight */
+          .finance-highlight { 
+             background: #f3f4f6; border-radius: 12px; padding: 20px; margin-top: 20px; 
+             display: flex; justify-content: space-between; align-items: center;
+          }
+          .fin-block { text-align: right; }
+          .fin-label { font-size: 7pt; font-weight: 700; text-transform: uppercase; color: #6b7280; }
+          .fin-val { font-size: 14pt; font-weight: 900; color: #000; }
+          .fin-val.green { color: #059669; }
+          .fin-val.red { color: #dc2626; }
 
-          .warning { border: 1.5px dashed #000; background: #fffbeb; color: #92400e; padding: 15px; text-align: center; font-weight: 800; font-size: 9pt; margin-top: 25px; border-radius: 8px; }
+          /* Table */
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th { text-align: left; font-size: 7pt; uppercase; color: #9ca3af; border-bottom: 1px solid #e5e7eb; padding: 8px 0; }
+          td { padding: 12px 0; border-bottom: 1px dashed #e5e7eb; font-size: 9pt; }
+          td.right { text-align: right; }
+          
+          /* Warning Footer */
+          .legal-footer { 
+             text-align: center; font-size: 7pt; color: #9ca3af; margin-top: 50px; line-height: 1.5;
+             border-top: 1px solid #e5e7eb; padding-top: 20px;
+          }
 
-          @media print { body { padding: 0; } }
+          @media print {
+            .a4-page { width: 100%; max-width: none; margin: 0; padding: 1cm; min-height: 100vh; }
+          }
         </style>
       </head>
       <body>
-        <!-- CABEÇALHO DANFE SIMULADO -->
-        <div class="danfe-header">
-          <div class="logo-box">
-             ${company.logo_url ? `<img src="${company.logo_url}" class="logo-img">` : '<div style="font-weight:900; background:#000; color:#fff; padding:15px; border-radius:10px;">BRAND</div>'}
-          </div>
-          <div class="emitter-box">
-             <div class="label">Emitente</div>
-             <div class="emitter-name">${company.name || 'Empresa de Estamparia'}</div>
-             <div style="font-size: 7pt; line-height: 1.4;">
-                ${company.address || 'Endereço não informado'}<br>
-                CNPJ: ${company.cnpj || '00.000.000/0000-00'} | IE: ISENTO
-             </div>
-          </div>
-          <div class="danfe-label-box">
-             <div style="font-weight:900; font-size:10pt;">DANFE</div>
-             <div style="font-size:5pt; margin-bottom: 5px;">Doc. Auxiliar da Nota Fiscal Eletrônica</div>
-             <div style="border: 1px solid #000; font-weight: 900; font-size: 11pt; padding: 2px;">1</div>
-             <div style="font-size:6.5pt; font-weight:800; margin-top: 5px;">Nº ${order.orderNumber}<br>SÉRIE 001</div>
-          </div>
-          <div class="key-box">
-             <div class="label">Chave de Acesso</div>
-             <div class="value" style="font-family: monospace; font-size: 7pt; letter-spacing: 0.5px;">${accessKey}</div>
-             <div class="label" style="margin-top: 8px;">Protocolo de Autorização</div>
-             <div class="value">13523000${order.orderNumber}999 - ${new Date().toLocaleString('pt-BR')}</div>
-          </div>
+        <div class="a4-page">
+           <div class="header">
+              <div class="brand">${company.name}</div>
+              <div class="brand-sub">Comprovante de Pedido & Pagamento</div>
+              <div class="divider"></div>
+           </div>
+
+           <div class="receipt-box">
+              <div class="receipt-title">Detalhes do Pedido #${order.orderNumber}</div>
+              
+              <div class="row">
+                 <div>
+                    <span class="label">Cliente</span><br>
+                    <span class="value">${order.clientName}</span>
+                 </div>
+                 <div style="text-align:right;">
+                    <span class="label">Data Emissão</span><br>
+                    <span class="value">${new Date().toLocaleDateString()}</span>
+                 </div>
+              </div>
+
+              <div class="row" style="margin-top:15px;">
+                 <div>
+                    <span class="label">Previsão Entrega</span><br>
+                    <span class="value">${new Date(order.deliveryDate).toLocaleDateString()}</span>
+                 </div>
+                 <div style="text-align:right;">
+                    <span class="label">Status Atual</span><br>
+                    <span class="value">${getStatusLabel(order.status)}</span>
+                 </div>
+              </div>
+           </div>
+
+           <!-- Financial Breakdown -->
+           <div class="receipt-box" style="border-color: ${isPaidOff ? '#059669' : '#000'}">
+              <div class="receipt-title" style="color: ${isPaidOff ? '#059669' : '#000'}">Resumo Financeiro</div>
+              
+              <div class="finance-highlight">
+                 <div class="fin-block" style="text-align:left;">
+                    <div class="fin-label">Valor Total</div>
+                    <div class="fin-val">${formatMoney(total)}</div>
+                 </div>
+                 
+                 <div class="fin-block">
+                    <div class="fin-label">Valor Pago</div>
+                    <div class="fin-val green">${formatMoney(paid)}</div>
+                 </div>
+
+                 <div class="fin-block">
+                    <div class="fin-label">Saldo Restante</div>
+                    <div class="fin-val ${remaining > 0 ? 'red' : 'green'}">
+                       ${formatMoney(remaining)}
+                    </div>
+                 </div>
+              </div>
+              
+              ${!isPaidOff ? `
+              <div style="margin-top:15px; font-size:8pt; background:#fee2e2; color:#b91c1c; padding:8px; border-radius:6px; font-weight:700; text-align:center;">
+                 Pendência Financeira: O pedido só será liberado mediante quitação do saldo.
+              </div>
+              ` : ''}
+              
+              <div style="margin-top:15px; font-size:8pt; padding:8px; background:#f3f4f6; border-radius:6px;">
+                  <strong>Forma Pgto Declarada:</strong> ${getPaymentStatusLabel(order.paymentStatus)}
+              </div>
+           </div>
+
+           <div style="margin-top:30px;">
+              <h3 style="font-size:9pt; font-weight:900; text-transform:uppercase; margin-bottom:10px;">Itens do Pedido</h3>
+              <table>
+                 <thead>
+                    <tr>
+                       <th>Descrição</th>
+                       <th width="50" style="text-align:center;">Qtd</th>
+                       <th width="80" style="text-align:right;">Unitário</th>
+                       <th width="80" style="text-align:right;">Subtotal</th>
+                    </tr>
+                 </thead>
+                 <tbody>
+                    ${order.items.map(item => `
+                       <tr>
+                          <td>
+                             <div style="font-weight:700;">${item.productName}</div>
+                             <div style="font-size:7.5pt; color:#6b7280;">${item.fabricName} • ${item.size}</div>
+                          </td>
+                          <td style="text-align:center;">${item.quantity}</td>
+                          <td class="right">${formatMoney(item.unitPrice || 0)}</td>
+                          <td class="right" style="font-weight:700;">${formatMoney((item.unitPrice || 0) * (item.quantity || 0))}</td>
+                       </tr>
+                    `).join('')}
+                 </tbody>
+                 <tfoot>
+                    <tr>
+                       <td colspan="3" class="right" style="padding-top:20px; font-weight:900; font-size:11pt;">TOTAL GERAL</td>
+                       <td class="right" style="padding-top:20px; font-weight:900; font-size:11pt;">${formatMoney(total)}</td>
+                    </tr>
+                 </tfoot>
+              </table>
+           </div>
+
+           <div class="legal-footer">
+              Este documento não possui valor fiscal (Danfe).<br>
+              Emitido por ${company.name} - CNPJ: ${company.cnpj || 'Não informado'}<br>
+              Endereço: ${company.address || '-'}<br>
+              ${company.email} | ${company.phone}
+           </div>
+
         </div>
-
-        <div class="border-box" style="display: flex;">
-          <div class="cell" style="flex: 2;"><span class="label">Natureza da Operação</span><span class="value">Venda de Produção Industrial</span></div>
-          <div class="cell" style="flex: 1;"><span class="label">Inscrição Estadual</span><span class="value">ISENTO</span></div>
-        </div>
-
-        <div class="section-title">Destinatário / Remetente</div>
-        <div class="border-box" style="display: flex;">
-          <div class="cell" style="flex: 2;"><span class="label">Nome / Razão Social</span><span class="value">${order.clientName}</span></div>
-          <div class="cell" style="flex: 1;"><span class="label">Data de Emissão</span><span class="value">${new Date().toLocaleDateString('pt-BR')}</span></div>
-        </div>
-
-        <div class="section-title">Cálculo do Imposto</div>
-        <div class="border-box" style="display: flex;">
-          <div class="cell" style="flex: 1;"><span class="label">Base Cálc. ICMS</span><span class="value">0,00</span></div>
-          <div class="cell" style="flex: 1;"><span class="label">Valor ICMS</span><span class="value">0,00</span></div>
-          <div class="cell" style="flex: 1;"><span class="label">Vlr Total Prod.</span><span class="value">R$ ${order.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>
-          <div class="cell" style="flex: 1;"><span class="label">Vlr Total Nota</span><span class="value">R$ ${order.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>
-        </div>
-
-        <div class="section-title">Itens da Nota Fiscal Eletrônica</div>
-        <table>
-          <thead>
-            <tr>
-              <th width="40">Cód</th>
-              <th>Descrição do Produto / Material</th>
-              <th width="50">NCM</th>
-              <th width="30">Un</th>
-              <th width="40" style="text-align:right;">Qtd</th>
-              <th width="60" style="text-align:right;">Unitário</th>
-              <th width="70" style="text-align:right;">Subtotal</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${order.items.map(item => `
-              <tr>
-                <td style="color:#666;">P${item.id.slice(0, 2)}</td>
-                <td style="font-weight:700;">${item.productName} - ${item.fabricName} (${item.size})</td>
-                <td>61091000</td>
-                <td>UN</td>
-                <td style="text-align:right;">${item.quantity}</td>
-                <td style="text-align:right;">${(item.unitPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                <td style="text-align:right; font-weight:800;">${(item.quantity * item.unitPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-
-        <div class="section-title">Informações Adicionais</div>
-        <div class="border-box" style="min-height: 2.5cm; padding: 10px;">
-          <div class="label">Dados Complementares</div>
-          <div style="font-size: 7pt; color: #4b5563; margin-top: 5px;">
-            Pedido: #${order.orderNumber} | Entrega: ${new Date(order.deliveryDate).toLocaleDateString('pt-BR')}<br>
-            Empresa Optante pelo Simples Nacional - Não gera crédito fiscal de IPI.<br><br>
-             <strong>PAGAMENTO:</strong> ${company.bankInfo || 'Consultar financeiro.'}<br>
-             <strong>STATUS FINANCEIRO:</strong> ${getPaymentStatusLabel(order.paymentStatus)}<br>
-             <div style="margin-top:5px; font-weight:800; color:#000; font-size:8pt; border:2px solid #000; padding:5px; text-align:center;">
-                NOTA: A RETIRADA DO PEDIDO SÓ SERÁ AUTORIZADA MEDIANTE QUITAÇÃO INTEGRAL DO VALOR.
-             </div><br>
-             <div style="font-weight:900; margin-top:5px; font-size:6pt; color:#999;">DOCUMENTO SEM VALOR FISCAL</div>
-          </div>
-        </div>
-
-        <div class="warning">
-           ESTE DOCUMENTO É UMA SIMULAÇÃO PARA CONFERÊNCIA INDUSTRIAL DE ALTO PADRÃO.<br>
-           NÃO POSSUI VALOR JURÍDICO-FISCAL.
-        </div>
-
         <script>
-          window.onload = () => { setTimeout(() => { window.print(); }, 500); }
+           window.onload = () => { setTimeout(() => { window.print(); }, 500); }
         </script>
       </body>
     </html>

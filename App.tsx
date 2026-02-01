@@ -10,6 +10,8 @@ import Clients from './components/Clients.tsx';
 import Login from './components/Login.tsx';
 import { ChatLayout } from './components/CRM/ChatLayout';
 import CatalogRequests from './components/CatalogRequests.tsx';
+import Inventory from './components/Inventory.tsx';
+import OrderTracker from './components/OrderTracker.tsx';
 import { Bell, User as UserIcon } from 'lucide-react';
 import { Order, Product, Client, OrderStatus, OrderType } from './types';
 import { AuthProvider, useAuth } from './contexts/AuthContext.tsx';
@@ -84,6 +86,7 @@ const AuthenticatedApp: React.FC = () => {
       case 'settings': return <Settings />;
       case 'finance': return <Finance orders={orders} />;
       case 'clients': return <Clients clients={clients} setClients={setClients} orders={orders} />;
+      case 'inventory': return <Inventory />;
       case 'crm': return <ChatLayout />;
       default: return null;
     }
@@ -110,6 +113,13 @@ const AuthenticatedApp: React.FC = () => {
         </div>
       </div>
     );
+  }
+
+  const isTrackerView = new URLSearchParams(window.location.search).get('view') === 'tracker';
+  const trackerOrderId = new URLSearchParams(window.location.search).get('order') || undefined;
+
+  if (isTrackerView) {
+    return <OrderTracker orderId={trackerOrderId} onBack={() => window.location.href = '/'} />;
   }
 
   return (

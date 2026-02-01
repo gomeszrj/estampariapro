@@ -58,6 +58,23 @@ export const orderService = {
         return mapOrderFromDB(data);
     },
 
+    async getByOrderNumber(orderNumber: string) {
+        // Remove # if present
+        const searchNum = orderNumber.replace('#', '');
+
+        const { data, error } = await supabase
+            .from('orders')
+            .select(`
+        *,
+        items:order_items(*)
+      `)
+            .eq('order_number', searchNum)
+            .single();
+
+        if (error) throw error;
+        return mapOrderFromDB(data);
+    },
+
     async update(id: string, updates: Partial<Order>) {
         // Note: Updating items is complex (sync/diff). For now we assume updating header fields mostly
         // Or we delete all items and re-insert if items match.
@@ -105,12 +122,14 @@ const mapOrderFromDB = (dbItem: any): Order => ({
     paymentStatus: dbItem.payment_status as any, // Cast or ensure Enum match
     orderType: dbItem.order_type,
     totalValue: dbItem.total_value,
+    amountPaid: dbItem.amount_paid,
     createdAt: dbItem.created_at,
     deliveryDate: dbItem.delivery_date,
     notes: dbItem.notes,
     internalNotes: dbItem.internal_notes,
     delayReason: dbItem.delay_reason,
     fiscalKey: dbItem.fiscal_key,
+    clientTeam: dbItem.client_team,
     items: dbItem.items?.map(mapOrderItemFromDB) || []
 });
 
@@ -122,11 +141,13 @@ const mapOrderToDB = (appItem: Partial<Order>) => {
     if (appItem.paymentStatus) dbItem.payment_status = appItem.paymentStatus;
     if (appItem.orderType) dbItem.order_type = appItem.orderType;
     if (appItem.totalValue) dbItem.total_value = appItem.totalValue;
+    if (appItem.amountPaid !== undefined) dbItem.amount_paid = appItem.amountPaid;
     if (appItem.deliveryDate) dbItem.delivery_date = appItem.deliveryDate;
     if (appItem.notes) dbItem.notes = appItem.notes;
     if (appItem.internalNotes) dbItem.internal_notes = appItem.internalNotes;
     if (appItem.delayReason) dbItem.delay_reason = appItem.delayReason;
     if (appItem.fiscalKey) dbItem.fiscal_key = appItem.fiscalKey;
+    if (appItem.clientTeam) dbItem.client_team = appItem.clientTeam;
     return dbItem;
 };
 

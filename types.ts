@@ -57,12 +57,14 @@ export interface Order {
   orderType: OrderType;
   items: OrderItem[];
   totalValue: number;
+  amountPaid?: number; // New: Custom partial payment amount
   createdAt: string;
   deliveryDate: string;
   notes?: string;
   internalNotes?: string;
   delayReason?: string;
   fiscalKey?: string; // Simulated NFe Access Key
+  clientTeam?: string; // New: Turma/Time
 }
 
 export interface Product {

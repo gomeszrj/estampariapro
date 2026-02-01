@@ -1,8 +1,9 @@
 
 import React, { useState } from 'react';
-import { Search, UserPlus, Edit2, Phone, Mail, Trash2, X, Save, User, ShoppingBag, CreditCard, Clock, Calendar, AlertTriangle, ArrowRight, Wallet } from 'lucide-react';
-import { Client, Order, OrderStatus } from '../types.ts';
+import { Search, UserPlus, Edit2, Phone, Mail, Trash2, X, Save, User, ShoppingBag, CreditCard, Clock, Calendar, AlertTriangle, ArrowRight, Wallet, Globe } from 'lucide-react';
+import { Client, Order, OrderStatus, CatalogOrder } from '../types.ts';
 import { clientService } from '../services/clientService.ts';
+import { catalogOrderService } from '../services/catalogOrderService.ts';
 
 interface ClientsProps {
   clients: Client[];
@@ -14,7 +15,8 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingClient, setEditingClient] = useState<any>(null);
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
-  const [profileTab, setProfileTab] = useState<'active' | 'history' | 'info'>('active');
+  const [profileTab, setProfileTab] = useState<'active' | 'history' | 'info' | 'catalog'>('active');
+  const [clientCatalogOrders, setClientCatalogOrders] = useState<CatalogOrder[]>([]);
 
   const filteredClients = clients.filter(c =>
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -25,9 +27,17 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
     return orders.filter(o => o.clientId === clientId).length;
   };
 
-  const handleViewProfile = (client: Client) => {
+  const handleViewProfile = async (client: Client) => {
     setViewingClient(client);
     setProfileTab('active');
+    // Fetch Catalog Requests
+    try {
+      const reqs = await catalogOrderService.getByClientId(client.id);
+      setClientCatalogOrders(reqs);
+    } catch (err) {
+      console.error("Failed to load catalog orders", err);
+      setClientCatalogOrders([]);
+    }
   };
 
   const getClientOrders = (clientId: string) => {
@@ -309,6 +319,12 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
                 Histórico ({historyOrders.length})
               </button>
               <button
+                onClick={() => setProfileTab('catalog')}
+                className={`pb-4 text-xs font-black uppercase tracking-widest transition-all border-b-2 ${profileTab === 'catalog' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
+              >
+                Solicitações Web ({clientCatalogOrders.length})
+              </button>
+              <button
                 onClick={() => setProfileTab('info')}
                 className={`pb-4 text-xs font-black uppercase tracking-widest transition-all border-b-2 ${profileTab === 'info' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
               >
@@ -365,6 +381,35 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
                       </div>
                       <div className="text-right">
                         <p className="font-black text-slate-300">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.totalValue)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {profileTab === 'catalog' && (
+                <div className="space-y-3">
+                  {clientCatalogOrders.length === 0 ? (
+                    <div className="text-center py-10 opacity-50 flex flex-col items-center">
+                      <Globe className="w-12 h-12 mb-3 text-slate-600" />
+                      <p className="text-slate-500 font-bold">Nenhuma solicitação web encontrada.</p>
+                    </div>
+                  ) : clientCatalogOrders.map((req: CatalogOrder) => (
+                    <div key={req.id} className="bg-[#0f172a] p-4 rounded-xl border border-slate-800 flex justify-between items-center hover:border-sky-500/50 transition-all group">
+                      <div>
+                        <div className="flex items-center gap-3 mb-1">
+                          <span className="font-black text-slate-200">WEB #{req.id.substring(0, 6).toUpperCase()}</span>
+                          <span className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider border ${req.status === 'pending' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' :
+                            req.status === 'approved' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
+                              'bg-rose-500/10 text-rose-500 border-rose-500/20'
+                            }`}>
+                            {req.status === 'pending' ? 'Pendente' : req.status === 'approved' ? 'Aprovado' : 'Rejeitado'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 font-medium">{new Date(req.createdAt).toLocaleDateString()} - {req.items.length} Itens</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest group-hover:text-sky-400 transition-colors">Origem: Catálogo Online</span>
                       </div>
                     </div>
                   ))}

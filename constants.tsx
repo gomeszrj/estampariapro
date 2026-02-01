@@ -3,7 +3,7 @@ import { Fabric, SizeGrade, OrderStatus } from './types';
 import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .10, increment major version (e.g., 2.9 -> 3.0)
-export const SYSTEM_VERSION = '04.3';
+export const SYSTEM_VERSION = '06.0';
 
 export const FABRICS: Fabric[] = [
   { id: 'f1', name: 'Dry Fit Premium', type: 'premium', costPerMeter: 25.5, compatibility: 'Sublimação Total', leadTimeImpact: 0 },
@@ -22,7 +22,7 @@ export const GRADES: SizeGrade[] = [
 
 export const STATUS_CONFIG = {
   [OrderStatus.RECEIVED]: { label: 'Recebido', color: 'bg-slate-800 text-slate-300 border-slate-700' },
-  [OrderStatus.FINALIZATION]: { label: 'Finalização', color: 'bg-indigo-900/30 text-indigo-400 border-indigo-900/50' },
+  [OrderStatus.FINALIZATION]: { label: 'Organização de Arquivos', color: 'bg-indigo-900/30 text-indigo-400 border-indigo-900/50' },
   [OrderStatus.IN_PRODUCTION]: { label: 'Produção', color: 'bg-amber-900/30 text-amber-400 border-amber-900/50' },
   [OrderStatus.FINISHED]: { label: 'Finalizado', color: 'bg-emerald-900/30 text-emerald-400 border-emerald-900/50' },
 };
