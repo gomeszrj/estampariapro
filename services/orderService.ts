@@ -1,5 +1,7 @@
 import { supabase } from './supabase';
-import { Order, OrderItem } from '../types';
+import { Order, OrderItem, OrderStatus } from '../types';
+import { productService } from './productService';
+import { inventoryService } from './inventoryService';
 
 export const orderService = {
     async getAll() {
@@ -76,9 +78,34 @@ export const orderService = {
     },
 
     async update(id: string, updates: Partial<Order>) {
-        // Note: Updating items is complex (sync/diff). For now we assume updating header fields mostly
-        // Or we delete all items and re-insert if items match.
-        // For this MVP, we'll implement header update. Full update requires more logic.
+        // Logic to handle Inventory Deduction
+        if (updates.status === OrderStatus.FINISHED) {
+            try {
+                const order = await this.getById(id);
+                // 1. Iterate over sold products
+                for (const item of order.items) {
+                    // 2. Get Recipe for each product
+                    const recipe = await productService.getRecipe(item.productId);
+
+                    // 3. Deduct each material
+                    for (const recipeItem of recipe) {
+                        const amountToDeduct = item.quantity * recipeItem.quantityRequired;
+
+                        // Fetch current stock (safe fetch)
+                        const inventoryItem = (await inventoryService.getAll()).find(i => i.id === recipeItem.inventoryItemId);
+
+                        if (inventoryItem) {
+                            const newQty = Math.max(0, inventoryItem.quantity - amountToDeduct);
+                            await inventoryService.updateQuantity(inventoryItem.id, newQty);
+                            console.log(`[Inventory] Deducted ${amountToDeduct} ${inventoryItem.unit} of ${inventoryItem.name}`);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to deduct inventory:", error);
+            }
+        }
+
         const dbUpdates = mapOrderToDB(updates as Order);
         const { data, error } = await supabase
             .from('orders')
@@ -88,9 +115,6 @@ export const orderService = {
             .single();
 
         if (error) throw error;
-
-        // If items are present in updates, we might need to handle them.
-        // Simplifying for now to just return the updated order header + existing items
         return this.getById(id);
     },
 

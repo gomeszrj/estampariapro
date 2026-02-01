@@ -28,12 +28,65 @@ import { ShoppingCart, ShoppingBag, Ruler } from 'lucide-react';
 import { CatalogOrder, CatalogOrderItem } from '../types.ts';
 import { catalogOrderService } from '../services/catalogOrderService.ts';
 import { clientService } from '../services/clientService.ts';
+import { InventoryItem, ProductRecipe } from '../types.ts';
+import { inventoryService } from '../services/inventoryService.ts';
+import { FlaskConical, Beaker } from 'lucide-react';
 
 interface CatalogProps {
   products: Product[];
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
   readOnly?: boolean;
 }
+
+const RecipeAdder = ({ inventory, onAdd }: { inventory: InventoryItem[], onAdd: (id: string, qty: number) => void }) => {
+  const [selectedId, setSelectedId] = useState('');
+  const [qty, setQty] = useState('');
+
+  const handleAdd = () => {
+    if (!selectedId || !qty) return;
+    onAdd(selectedId, Number(qty));
+    setSelectedId('');
+    setQty('');
+  };
+
+  const selectedItem = inventory.find(i => i.id === selectedId);
+
+  return (
+    <div className="flex gap-4 items-end">
+      <div className="flex-1 space-y-2">
+        <label className="text-[10px] font-bold text-slate-500 uppercase">Material</label>
+        <select
+          value={selectedId}
+          onChange={e => setSelectedId(e.target.value)}
+          className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-300 text-sm focus:outline-none focus:border-indigo-500"
+        >
+          <option value="">Selecione...</option>
+          {inventory.map(item => (
+            <option key={item.id} value={item.id}>{item.name} ({item.unit})</option>
+          ))}
+        </select>
+      </div>
+      <div className="w-32 space-y-2">
+        <label className="text-[10px] font-bold text-slate-500 uppercase">Qtd ({selectedItem?.unit || 'Un'})</label>
+        <input
+          type="number"
+          step="0.01"
+          placeholder="0.00"
+          value={qty}
+          onChange={e => setQty(e.target.value)}
+          className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-300 text-sm focus:outline-none focus:border-indigo-500"
+        />
+      </div>
+      <button
+        onClick={handleAdd}
+        disabled={!selectedId || !qty}
+        className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white p-3 rounded-xl transition-colors"
+      >
+        <Plus className="w-5 h-5" />
+      </button>
+    </div>
+  );
+};
 
 const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -43,6 +96,28 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
   const [showShareNotification, setShowShareNotification] = useState(false);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
+
+  // Recipe State
+  const [activeTab, setActiveTab] = useState<'details' | 'composition'>('details');
+  const [recipe, setRecipe] = useState<ProductRecipe[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [loadingRecipe, setLoadingRecipe] = useState(false);
+
+  // Load Inventory once
+  React.useEffect(() => {
+    inventoryService.getAll().then(setInventory).catch(console.error);
+  }, []);
+
+  // Load Recipe when editing
+  React.useEffect(() => {
+    if (editingProduct?.id && activeTab === 'composition') {
+      setLoadingRecipe(true);
+      productService.getRecipe(editingProduct.id)
+        .then(setRecipe)
+        .catch(console.error)
+        .finally(() => setLoadingRecipe(false));
+    }
+  }, [editingProduct, activeTab]);
 
   // AI Description Handler
   const handleGenerateDescription = async (e: React.MouseEvent) => {
@@ -484,214 +559,318 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
       {editingProduct && (
         <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <div className="bg-[#0f172a] rounded-[2.5rem] w-full max-w-2xl border border-slate-800 p-8 md:p-10 shadow-2xl animate-in zoom-in-95 overflow-y-auto max-h-[95vh]">
-            <div className="flex justify-between items-start mb-10">
+            <div className="flex justify-between items-start mb-6">
               <div>
                 <h3 className="text-3xl font-black text-slate-100 tracking-tight uppercase">
                   {editingProduct.id ? 'Ficha do Produto' : 'Cadastrar Modelo'}
                 </h3>
-                <p className="text-slate-500 font-medium">Imagens redimensionadas para 800x800px automaticamente.</p>
+                <p className="text-slate-500 font-medium">Gerencie os dados e a ficha técnica.</p>
               </div>
               <button onClick={() => setEditingProduct(null)} className="text-slate-500 hover:text-white bg-slate-800 p-2.5 rounded-full transition-all">
                 <X className="w-6 h-6" />
               </button>
             </div>
 
-            <div className="space-y-8">
-              <div className="flex flex-col items-center">
-                <div
-                  onClick={triggerFileInput}
-                  className="w-64 h-64 rounded-[2.5rem] bg-slate-900 border-2 border-dashed border-slate-800 flex flex-col items-center justify-center cursor-pointer overflow-hidden group relative transition-all hover:border-indigo-500/50 shadow-inner"
+            {/* Tabs */}
+            {editingProduct.id && (
+              <div className="flex gap-2 mb-8 bg-slate-900/50 p-1.5 rounded-xl border border-slate-800 inline-flex">
+                <button
+                  onClick={() => setActiveTab('details')}
+                  className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'details' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 hover:text-slate-300'}`}
                 >
-                  {isProcessingImage ? (
-                    <div className="flex flex-col items-center gap-3">
-                      <Loader2 className="w-10 h-10 text-indigo-500 animate-spin" />
-                      <span className="text-[9px] font-black uppercase text-indigo-400 tracking-widest">Ajustando Proporção...</span>
-                    </div>
-                  ) : editingProduct.imageUrl ? (
-                    <>
-                      <img src={editingProduct.imageUrl} className="w-full h-full object-contain bg-white" alt="Preview" />
-                      <div className="absolute inset-0 bg-indigo-600/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
-                        <Camera className="w-10 h-10 text-white mb-2" />
-                        <span className="text-white text-[10px] font-black uppercase tracking-[0.3em]">Mudar Foto</span>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-10 h-10 text-slate-700 mb-4" />
-                      <span className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] text-center px-8">Clique para upload</span>
-                    </>
-                  )}
-                </div>
-                <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" />
-                <p className="text-[10px] text-slate-500 mt-4 font-bold uppercase tracking-widest">Foto ajustada automaticamente (Sem Cortar)</p>
+                  Detalhes
+                </button>
+                <button
+                  onClick={() => setActiveTab('composition')}
+                  className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'composition' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 hover:text-slate-300'} flex items-center gap-2`}
+                >
+                  <FlaskConical className="w-3.5 h-3.5" />
+                  Composição
+                </button>
               </div>
+            )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-2 col-span-full">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nome do Modelo</label>
-                  <input
-                    placeholder="Ex: Camiseta Dry Masculina 2024"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-slate-100 focus:ring-2 focus:ring-indigo-500 font-bold outline-none"
-                    value={editingProduct.name}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
-                  />
+            <div className="min-h-[400px]">
+              {activeTab === 'details' ? (
+                <div className="space-y-8 animate-in fade-in slide-in-from-left-4 duration-500">
+                  <div className="flex flex-col items-center">
+                    <div
+                      onClick={triggerFileInput}
+                      className="w-64 h-64 rounded-[2.5rem] bg-slate-900 border-2 border-dashed border-slate-800 flex flex-col items-center justify-center cursor-pointer overflow-hidden group relative transition-all hover:border-indigo-500/50 shadow-inner"
+                    >
+                      {isProcessingImage ? (
+                        <div className="flex flex-col items-center gap-3">
+                          <Loader2 className="w-10 h-10 text-indigo-500 animate-spin" />
+                          <span className="text-[9px] font-black uppercase text-indigo-400 tracking-widest">Ajustando Proporção...</span>
+                        </div>
+                      ) : editingProduct.imageUrl ? (
+                        <>
+                          <img src={editingProduct.imageUrl} className="w-full h-full object-contain bg-white" alt="Preview" />
+                          <div className="absolute inset-0 bg-indigo-600/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
+                            <Camera className="w-10 h-10 text-white mb-2" />
+                            <span className="text-white text-[10px] font-black uppercase tracking-[0.3em]">Mudar Foto</span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-10 h-10 text-slate-700 mb-4" />
+                          <span className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] text-center px-8">Clique para upload</span>
+                        </>
+                      )}
+                    </div>
+                    <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" />
+                    <p className="text-[10px] text-slate-500 mt-4 font-bold uppercase tracking-widest">Foto ajustada automaticamente (Sem Cortar)</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-2 col-span-full">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nome do Modelo</label>
+                      <input
+                        placeholder="Ex: Camiseta Dry Masculina 2024"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-slate-100 focus:ring-2 focus:ring-indigo-500 font-bold outline-none"
+                        value={editingProduct.name}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="space-y-2 col-span-full">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Descrição Comercial</span>
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (!editingProduct.name) return alert("Preencha o nome do produto primeiro.");
+                            // Import dynamically or assume it's available via props/context if simpler,
+                            // but here we'll use the service directly.
+                            // We need to make sure we don't break the render with async inside click.
+                            const btn = e.currentTarget;
+                            btn.textContent = "Gerando...";
+                            btn.disabled = true;
+                            try {
+                              const { generateProductDescription } = await import('../services/aiService');
+                              const desc = await generateProductDescription(editingProduct.name, editingProduct.category);
+                              setEditingProduct(prev => prev ? ({ ...prev, description: desc }) : null);
+                            } catch (err) {
+                              alert("Erro ao gerar descrição.");
+                            } finally {
+                              btn.textContent = "✨ AI Gerar";
+                              btn.disabled = false;
+                            }
+                          }}
+                          className="text-[9px] font-black text-indigo-400 hover:text-indigo-300 uppercase tracking-widest flex items-center gap-1 bg-indigo-500/10 px-2 py-1 rounded-lg border border-indigo-500/20 transition-all"
+                        >
+                          ✨ AI Gerar
+                        </button>
+                      </div>
+                      <textarea
+                        placeholder="Descreva o produto..."
+                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-slate-100 focus:ring-2 focus:ring-indigo-500 font-medium outline-none h-24 resize-none"
+                        value={editingProduct.description || ''}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Preço Base (R$)</label>
+                      <input
+                        type="number"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-slate-100 focus:ring-2 focus:ring-indigo-500 font-black text-lg outline-none"
+                        value={editingProduct.basePrice}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, basePrice: parseFloat(e.target.value) })}
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-emerald-500 uppercase">Custo (R$)</label>
+                      <input
+                        type="number"
+                        className="w-full bg-slate-950 border border-emerald-900/50 rounded-2xl px-5 py-4 text-emerald-400 focus:ring-2 focus:ring-emerald-500 font-black text-lg outline-none"
+                        value={editingProduct.costPrice || ''}
+                        placeholder="0.00"
+                        onChange={(e) => setEditingProduct({ ...editingProduct, costPrice: parseFloat(e.target.value) })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex justify-between">
+                        <span>Referência / SKU</span>
+                        <button
+                          onClick={() => setEditingProduct({ ...editingProduct, sku: generateRandomSKU() })}
+                          className="text-indigo-400 hover:text-indigo-300 transition-colors"
+                        >
+                          Gerar Novo
+                        </button>
+                      </label>
+                      <input
+                        placeholder="EST-001"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-slate-100 focus:ring-2 focus:ring-indigo-500 uppercase font-bold"
+                        value={editingProduct.sku}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, sku: e.target.value })}
+                        readOnly
+                      />
+                    </div>
+
+                    <div className="space-y-4 col-span-full">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Grades e Tamanhos Disponíveis</label>
+                      <p className="text-[10px] text-slate-400"> Selecione quais tamanhos específicos estarão disponíveis para este modelo.</p>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {GRADES.map(grade => {
+                          // Safety check for allowedGrades being an object
+                          const currentAllowed = editingProduct.allowedGrades || {};
+                          const selectedSizes = currentAllowed[grade.label] || [];
+                          const isGradeActive = selectedSizes.length > 0;
+
+                          const toggleGrade = () => {
+                            const newAllowed = { ...currentAllowed };
+                            if (isGradeActive) {
+                              delete newAllowed[grade.label];
+                            } else {
+                              newAllowed[grade.label] = [...grade.sizes];
+                            }
+                            setEditingProduct({ ...editingProduct, allowedGrades: newAllowed });
+                          };
+
+                          const toggleSize = (size: string) => {
+                            const newAllowed = { ...currentAllowed };
+                            const currentSizes = newAllowed[grade.label] || [];
+
+                            if (currentSizes.includes(size)) {
+                              newAllowed[grade.label] = currentSizes.filter((s: string) => s !== size);
+                              if (newAllowed[grade.label].length === 0) delete newAllowed[grade.label];
+                            } else {
+                              newAllowed[grade.label] = [...currentSizes, size];
+                            }
+                            setEditingProduct({ ...editingProduct, allowedGrades: newAllowed });
+                          };
+
+                          return (
+                            <div key={grade.label} className={`rounded-3xl border transition-all overflow-hidden ${isGradeActive ? 'bg-indigo-900/10 border-indigo-500/30' : 'bg-slate-950 border-slate-800'}`}>
+                              {/* Header */}
+                              <div className="px-5 py-4 flex items-center justify-between bg-slate-900/50 border-b border-slate-800/50">
+                                <span className="font-black text-xs uppercase tracking-wider text-slate-300">{grade.label}</span>
+                                <button
+                                  onClick={toggleGrade}
+                                  className={`text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all ${isGradeActive ? 'bg-indigo-600 text-white shadow-indigo-500/20 shadow-lg' : 'bg-slate-800 text-slate-500 hover:bg-slate-700 hover:text-white'}`}
+                                >
+                                  {isGradeActive ? 'Todos' : 'Nenhum'}
+                                </button>
+                              </div>
+
+                              {/* Sizes Grid */}
+                              {selectedSizes.length > 0 && (
+                                <div className="col-span-full pt-2 grid grid-cols-1 gap-2">
+                                  {selectedSizes.map((size: string) => (
+                                    <div key={size} className="flex gap-2 items-center">
+                                      <span className="text-[9px] font-bold text-slate-400 w-6 text-center">{size}</span>
+                                      <input
+                                        placeholder="Alt.(cm)"
+                                        type="number"
+                                        value={editingProduct.measurements?.[size]?.height || ''}
+                                        onClick={(e) => e.stopPropagation()}
+                                        onChange={(e) => {
+                                          const newMeasurements = { ...editingProduct.measurements };
+                                          if (!newMeasurements[size]) newMeasurements[size] = {};
+                                          newMeasurements[size].height = parseFloat(e.target.value);
+                                          setEditingProduct({ ...editingProduct, measurements: newMeasurements });
+                                        }}
+                                        className="w-1/2 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-[9px] text-white text-center outline-none focus:border-indigo-500"
+                                      />
+                                      <input
+                                        placeholder="Larg.(cm)"
+                                        type="number"
+                                        value={editingProduct.measurements?.[size]?.width || ''}
+                                        onClick={(e) => e.stopPropagation()}
+                                        onChange={(e) => {
+                                          const newMeasurements = { ...editingProduct.measurements };
+                                          if (!newMeasurements[size]) newMeasurements[size] = {};
+                                          newMeasurements[size].width = parseFloat(e.target.value);
+                                          setEditingProduct({ ...editingProduct, measurements: newMeasurements });
+                                        }}
+                                        className="w-1/2 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-[9px] text-white text-center outline-none focus:border-indigo-500"
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                  </div>
                 </div>
+              ) : (
+                <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+                  <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl p-6 mb-6">
+                    <div className="flex items-start gap-4">
+                      <div className="bg-indigo-500/20 p-3 rounded-xl block">
+                        <Beaker className="w-8 h-8 text-indigo-400" />
+                      </div>
+                      <div>
+                        <h4 className="text-indigo-300 font-black uppercase tracking-widest text-sm mb-1">Receita de Produção</h4>
+                        <p className="text-slate-400 text-xs leading-relaxed max-w-sm">
+                          Defina quais materiais do estoque são consumidos para produzir <strong>1 unidade</strong> deste produto.
+                          O sistema irá dar baixa automaticamente no estoque ao finalizar a produção.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
 
-                <div className="space-y-2 col-span-full">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Descrição Comercial</span>
-                    <button
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        if (!editingProduct.name) return alert("Preencha o nome do produto primeiro.");
-                        // Import dynamically or assume it's available via props/context if simpler,
-                        // but here we'll use the service directly.
-                        // We need to make sure we don't break the render with async inside click.
-                        const btn = e.currentTarget;
-                        btn.textContent = "Gerando...";
-                        btn.disabled = true;
+                  {/* Recipe List */}
+                  <div className="space-y-3">
+                    {recipe.map((item) => (
+                      <div key={item.id} className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center justify-between group hover:border-indigo-500/30 transition-all">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center">
+                            <FlaskConical className="w-5 h-5 text-slate-500" />
+                          </div>
+                          <div>
+                            <p className="text-slate-200 font-bold">{item.inventoryItemName || 'Item Removido'}</p>
+                            <p className="text-xs text-slate-500 font-black uppercase tracking-wider">
+                              Consumo: <span className="text-indigo-400">{item.quantityRequired} {item.unit}</span> / un
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            if (!confirm('Remover regra?')) return;
+                            await productService.removeRecipeItem(item.id);
+                            setRecipe(prev => prev.filter(r => r.id !== item.id));
+                          }}
+                          className="text-slate-600 hover:text-rose-500 p-2 opacity-0 group-hover:opacity-100 transition-all"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    ))}
+
+                    {recipe.length === 0 && (
+                      <div className="text-center py-12 border-2 border-dashed border-slate-800 rounded-2xl">
+                        <p className="text-slate-600 font-medium">Nenhum material vinculado.</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Add New Item */}
+                  <div className="pt-6 border-t border-slate-800/50">
+                    <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-4">Adicionar Material</p>
+                    <RecipeAdder
+                      inventory={inventory}
+                      onAdd={async (itemId, qty) => {
                         try {
-                          const { generateProductDescription } = await import('../services/aiService');
-                          const desc = await generateProductDescription(editingProduct.name, editingProduct.category);
-                          setEditingProduct(prev => prev ? ({ ...prev, description: desc }) : null);
-                        } catch (err) {
-                          alert("Erro ao gerar descrição.");
-                        } finally {
-                          btn.textContent = "✨ AI Gerar";
-                          btn.disabled = false;
+                          const newItem = await productService.addRecipeItem(editingProduct.id, itemId, qty);
+                          // Refresh recipe to get the joined name/unit
+                          const updatedRecipe = await productService.getRecipe(editingProduct.id);
+                          setRecipe(updatedRecipe);
+                        } catch (e) {
+                          alert('Erro ao adicionar item à receita.');
                         }
                       }}
-                      className="text-[9px] font-black text-indigo-400 hover:text-indigo-300 uppercase tracking-widest flex items-center gap-1 bg-indigo-500/10 px-2 py-1 rounded-lg border border-indigo-500/20 transition-all"
-                    >
-                      ✨ AI Gerar
-                    </button>
-                  </div>
-                  <textarea
-                    placeholder="Descreva o produto..."
-                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-slate-100 focus:ring-2 focus:ring-indigo-500 font-medium outline-none h-24 resize-none"
-                    value={editingProduct.description || ''}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Preço Base (R$)</label>
-                  <input
-                    type="number"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-slate-100 focus:ring-2 focus:ring-indigo-500 font-black text-lg outline-none"
-                    value={editingProduct.basePrice}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, basePrice: parseFloat(e.target.value) })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex justify-between">
-                    <span>Referência / SKU</span>
-                    <button
-                      onClick={() => setEditingProduct({ ...editingProduct, sku: generateRandomSKU() })}
-                      className="text-indigo-400 hover:text-indigo-300 transition-colors"
-                    >
-                      Gerar Novo
-                    </button>
-                  </label>
-                  <input
-                    placeholder="EST-001"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-slate-100 focus:ring-2 focus:ring-indigo-500 uppercase font-bold"
-                    value={editingProduct.sku}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, sku: e.target.value })}
-                    readOnly
-                  />
-                </div>
-
-                <div className="space-y-4 col-span-full">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Grades e Tamanhos Disponíveis</label>
-                  <p className="text-[10px] text-slate-400"> Selecione quais tamanhos específicos estarão disponíveis para este modelo.</p>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {GRADES.map(grade => {
-                      // Safety check for allowedGrades being an object
-                      const currentAllowed = editingProduct.allowedGrades || {};
-                      const selectedSizes = currentAllowed[grade.label] || [];
-                      const isGradeActive = selectedSizes.length > 0;
-
-                      const toggleGrade = () => {
-                        const newAllowed = { ...currentAllowed };
-                        if (isGradeActive) {
-                          delete newAllowed[grade.label];
-                        } else {
-                          newAllowed[grade.label] = [...grade.sizes];
-                        }
-                        setEditingProduct({ ...editingProduct, allowedGrades: newAllowed });
-                      };
-
-                      const toggleSize = (size: string) => {
-                        const newAllowed = { ...currentAllowed };
-                        const currentSizes = newAllowed[grade.label] || [];
-
-                        if (currentSizes.includes(size)) {
-                          newAllowed[grade.label] = currentSizes.filter((s: string) => s !== size);
-                          if (newAllowed[grade.label].length === 0) delete newAllowed[grade.label];
-                        } else {
-                          newAllowed[grade.label] = [...currentSizes, size];
-                        }
-                        setEditingProduct({ ...editingProduct, allowedGrades: newAllowed });
-                      };
-
-                      return (
-                        <div key={grade.label} className={`rounded-3xl border transition-all overflow-hidden ${isGradeActive ? 'bg-indigo-900/10 border-indigo-500/30' : 'bg-slate-950 border-slate-800'}`}>
-                          {/* Header */}
-                          <div className="px-5 py-4 flex items-center justify-between bg-slate-900/50 border-b border-slate-800/50">
-                            <span className="font-black text-xs uppercase tracking-wider text-slate-300">{grade.label}</span>
-                            <button
-                              onClick={toggleGrade}
-                              className={`text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all ${isGradeActive ? 'bg-indigo-600 text-white shadow-indigo-500/20 shadow-lg' : 'bg-slate-800 text-slate-500 hover:bg-slate-700 hover:text-white'}`}
-                            >
-                              {isGradeActive ? 'Todos' : 'Nenhum'}
-                            </button>
-                          </div>
-
-                          {/* Sizes Grid */}
-                          {selectedSizes.length > 0 && (
-                            <div className="col-span-full pt-2 grid grid-cols-1 gap-2">
-                              {selectedSizes.map((size: string) => (
-                                <div key={size} className="flex gap-2 items-center">
-                                  <span className="text-[9px] font-bold text-slate-400 w-6 text-center">{size}</span>
-                                  <input
-                                    placeholder="Alt.(cm)"
-                                    type="number"
-                                    value={editingProduct.measurements?.[size]?.height || ''}
-                                    onClick={(e) => e.stopPropagation()}
-                                    onChange={(e) => {
-                                      const newMeasurements = { ...editingProduct.measurements };
-                                      if (!newMeasurements[size]) newMeasurements[size] = {};
-                                      newMeasurements[size].height = parseFloat(e.target.value);
-                                      setEditingProduct({ ...editingProduct, measurements: newMeasurements });
-                                    }}
-                                    className="w-1/2 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-[9px] text-white text-center outline-none focus:border-indigo-500"
-                                  />
-                                  <input
-                                    placeholder="Larg.(cm)"
-                                    type="number"
-                                    value={editingProduct.measurements?.[size]?.width || ''}
-                                    onClick={(e) => e.stopPropagation()}
-                                    onChange={(e) => {
-                                      const newMeasurements = { ...editingProduct.measurements };
-                                      if (!newMeasurements[size]) newMeasurements[size] = {};
-                                      newMeasurements[size].width = parseFloat(e.target.value);
-                                      setEditingProduct({ ...editingProduct, measurements: newMeasurements });
-                                    }}
-                                    className="w-1/2 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-[9px] text-white text-center outline-none focus:border-indigo-500"
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                    />
                   </div>
                 </div>
-
-              </div>
+              )}
             </div>
 
             <div className="pt-10 border-t border-slate-800 flex gap-4">

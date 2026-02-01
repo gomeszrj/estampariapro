@@ -17,12 +17,14 @@ import {
   Edit2,
   Check
 } from 'lucide-react';
-import { Order, OrderStatus } from '../types';
+import { Order, OrderStatus, Product } from '../types';
 import { printServiceOrder } from '../utils/printUtils';
+import { orderService } from '../services/orderService';
 
 interface DashboardProps {
   orders: Order[];
   setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
+  products: Product[];
 }
 
 const SummaryCard = ({ title, count, icon: Icon, color, textColor }: any) => (
@@ -37,7 +39,7 @@ const SummaryCard = ({ title, count, icon: Icon, color, textColor }: any) => (
   </div>
 );
 
-const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders }) => {
+const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [tempData, setTempData] = useState({
@@ -54,6 +56,24 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders }) => {
       .filter(o => o.createdAt.startsWith(currentMonth))
       .reduce((acc, curr) => acc + curr.totalValue, 0);
   }, [orders]);
+
+  // Profit Calculation
+  const profitMonth = React.useMemo(() => {
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const monthOrders = orders.filter(o => o.createdAt.startsWith(currentMonth));
+
+    let totalCost = 0;
+    monthOrders.forEach(order => {
+      order.items.forEach(item => {
+        const product = products.find(p => p.id === item.productId);
+        if (product && product.costPrice) {
+          totalCost += (item.quantity * product.costPrice);
+        }
+      });
+    });
+
+    return revenueMonth - totalCost;
+  }, [orders, products, revenueMonth]);
 
   const pendingRevenue = React.useMemo(() => {
     return orders
@@ -83,31 +103,34 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders }) => {
     setIsEditing(false);
   };
 
-  const handleSaveChanges = () => {
+  const handleSaveChanges = async () => {
     if (!selectedOrder) return;
     setIsSaving(true);
 
-    // Pequeno delay apenas para feedback visual de "Salvando"
-    setTimeout(() => {
-      setOrders(prev => prev.map(o =>
-        o.id === selectedOrder.id ? {
-          ...o,
-          delayReason: tempData.delayReason,
-          deliveryDate: tempData.deliveryDate,
-          internalNotes: tempData.internalNotes
-        } : o
-      ));
-
-      setSelectedOrder({
-        ...selectedOrder,
+    try {
+      const updates = {
         delayReason: tempData.delayReason,
         deliveryDate: tempData.deliveryDate,
         internalNotes: tempData.internalNotes
-      });
+      };
 
+      // 1. Update Supabase
+      await orderService.update(selectedOrder.id, updates);
+
+      // 2. Update Local State (Optimistic or Confirmed)
+      setOrders(prev => prev.map(o =>
+        o.id === selectedOrder.id ? { ...o, ...updates } : o
+      ));
+
+      setSelectedOrder({ ...selectedOrder, ...updates });
       setIsEditing(false);
+      alert("Alterações salvas com sucesso!");
+    } catch (error) {
+      console.error("Failed to update order", error);
+      alert("Erro ao salvar alterações. Tente novamente.");
+    } finally {
       setIsSaving(false);
-    }, 400);
+    }
   };
 
   return (
@@ -149,6 +172,13 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders }) => {
           icon={Hammer}
           color="bg-amber-500/10"
           textColor="text-amber-500"
+        />
+        <SummaryCard
+          title="Lucro (Mês)"
+          count={`R$ ${profitMonth.toLocaleString('pt-BR')}`}
+          icon={CheckCircle2}
+          color="bg-emerald-500/10"
+          textColor="text-emerald-500"
         />
         <SummaryCard
           title="Fila de Produção"

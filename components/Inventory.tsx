@@ -1,68 +1,165 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Plus, Search, AlertTriangle, TrendingDown, Trash2, Save, Package } from 'lucide-react';
-
-interface Material {
-    id: string;
-    name: string;
-    category: 'Fabric' | 'Ink' | 'Screen' | 'Other';
-    quantity: number;
-    unit: string;
-    minLevel: number;
-}
-
-const INITIAL_MATERIALS: Material[] = [
-    { id: '1', name: 'Dry Fit Premium - Branco', category: 'Fabric', quantity: 120, unit: 'm', minLevel: 50 },
-    { id: '2', name: 'Dry Fit Premium - Preto', category: 'Fabric', quantity: 45, unit: 'm', minLevel: 50 },
-    { id: '3', name: 'Tinta Sublimática Cyan', category: 'Ink', quantity: 2.5, unit: 'L', minLevel: 1 },
-    { id: '4', name: 'Tinta Sublimática Magenta', category: 'Ink', quantity: 0.8, unit: 'L', minLevel: 1 },
-    { id: '5', name: 'Papel Sublimático A3', category: 'Other', quantity: 200, unit: 'fls', minLevel: 100 },
-];
+import { Box, Plus, Search, AlertTriangle, TrendingDown, Trash2, Save, Package, Loader2, ShoppingCart, CheckCircle2, PackageCheck } from 'lucide-react';
+import { inventoryService } from '../services/inventoryService';
+import { orderService } from '../services/orderService';
+import { productService } from '../services/productService';
+import { InventoryItem, OrderStatus } from '../types';
 
 const Inventory: React.FC = () => {
-    const [materials, setMaterials] = useState<Material[]>(() => {
-        const saved = localStorage.getItem('erp_inventory');
-        return saved ? JSON.parse(saved) : INITIAL_MATERIALS;
-    });
-
+    const [materials, setMaterials] = useState<InventoryItem[]>([]);
+    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [activeTab, setActiveTab] = useState<'stock' | 'buying'>('stock');
     const [isAdding, setIsAdding] = useState(false);
-    const [newMaterial, setNewMaterial] = useState<Partial<Material>>({ category: 'Fabric', unit: 'und' });
+    const [newMaterial, setNewMaterial] = useState<Partial<InventoryItem>>({ category: 'Fabric', unit: 'und' });
+    const [isSaving, setIsSaving] = useState(false);
 
-    useEffect(() => {
-        localStorage.setItem('erp_inventory', JSON.stringify(materials));
-    }, [materials]);
+    // Purchasing State
+    const [buyingList, setBuyingList] = useState<{ item: InventoryItem, required: number, balance: number, toBuy: number }[]>([]);
+    const [calculating, setCalculating] = useState(false);
 
-    const handleAdd = () => {
-        if (!newMaterial.name || !newMaterial.quantity) return;
-        const item: Material = {
-            id: Math.random().toString(36).substr(2, 9),
-            name: newMaterial.name,
-            category: newMaterial.category as any,
-            quantity: Number(newMaterial.quantity),
-            unit: newMaterial.unit || 'und',
-            minLevel: Number(newMaterial.minLevel) || 10
-        };
-        setMaterials([...materials, item]);
-        setIsAdding(false);
-        setNewMaterial({ category: 'Fabric', unit: 'und' });
-    };
-
-    const handleDelete = (id: string) => {
-        if (confirm('Tem certeza que deseja remover este item?')) {
-            setMaterials(materials.filter(m => m.id !== id));
+    const loadData = async () => {
+        try {
+            const data = await inventoryService.getAll();
+            setMaterials(data);
+        } catch (error) {
+            console.error("Failed to load inventory:", error);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const handleUpdateQuantity = (id: string, delta: number) => {
-        setMaterials(materials.map(m =>
-            m.id === id ? { ...m, quantity: Math.max(0, Number((m.quantity + delta).toFixed(2))) } : m
-        ));
+    const calculateNeeds = async () => {
+        setCalculating(true);
+        try {
+            // 1. Fetch Active Orders
+            const orders = await orderService.getAll();
+            const activeOrders = orders.filter(o =>
+                o.status === OrderStatus.RECEIVED ||
+                o.status === OrderStatus.IN_PRODUCTION ||
+                o.status === OrderStatus.FINALIZATION
+            );
+
+            // 2. Map Requirements
+            const requirements: Record<string, number> = {}; // inventory_item_id -> total qty
+
+            for (const order of activeOrders) {
+                for (const item of order.items) {
+                    // We need product ID... Assuming item.productId exists?
+                    // Review OrderItem type: yes, it has productId.
+                    // But product might be custom or deleted? 
+                    // To be safe, we need recipes.
+                    if (item.productId) {
+                        try {
+                            const recipe = await productService.getRecipe(item.productId);
+                            if (recipe && recipe.length > 0) {
+                                recipe.forEach(r => {
+                                    const totalRequired = r.quantityRequired * item.quantity;
+                                    requirements[r.inventoryItemId] = (requirements[r.inventoryItemId] || 0) + totalRequired;
+                                });
+                            }
+                        } catch (e) {
+                            console.warn(`Could not fetch recipe for product ${item.productId}`);
+                        }
+                    }
+                }
+            }
+
+            // 3. Compare with Stock
+            const suggestions = materials.map(mat => {
+                const req = requirements[mat.id] || 0;
+                const balance = mat.quantity - req;
+                return {
+                    item: mat,
+                    required: req,
+                    balance: balance,
+                    toBuy: balance < 0 ? Math.abs(balance) : 0
+                };
+            }).filter(s => s.required > 0); // Only show items involved in production
+
+            setBuyingList(suggestions.sort((a, b) => b.toBuy - a.toBuy)); // Urgent first
+
+        } catch (error) {
+            console.error("Error calculating purchasing needs:", error);
+            alert("Erro ao calcular necessidades de compra.");
+        } finally {
+            setCalculating(false);
+        }
+    };
+
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    useEffect(() => {
+        if (activeTab === 'buying') {
+            calculateNeeds();
+        }
+    }, [activeTab]);
+
+    const handleAdd = async () => {
+        if (!newMaterial.name || !newMaterial.quantity) return;
+        setIsSaving(true);
+        try {
+            const created = await inventoryService.create({
+                name: newMaterial.name,
+                category: newMaterial.category as any,
+                quantity: Number(newMaterial.quantity),
+                unit: newMaterial.unit || 'und',
+                minLevel: Number(newMaterial.minLevel) || 10
+            });
+            setMaterials(prev => [...prev, created]);
+            setIsAdding(false);
+            setNewMaterial({ category: 'Fabric', unit: 'und' });
+        } catch (error) {
+            console.error("Failed to create item:", error);
+            alert("Erro ao criar item.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (confirm('Tem certeza que deseja remover este item do banco de dados?')) {
+            try {
+                await inventoryService.delete(id);
+                setMaterials(prev => prev.filter(m => m.id !== id));
+            } catch (error) {
+                console.error("Failed to delete item:", error);
+                alert("Erro ao excluir item.");
+            }
+        }
+    };
+
+    const handleUpdateQuantity = async (id: string, delta: number) => {
+        const item = materials.find(m => m.id === id);
+        if (!item) return;
+
+        const newQty = Math.max(0, Number((item.quantity + delta).toFixed(2)));
+
+        // Optimistic update
+        setMaterials(prev => prev.map(m => m.id === id ? { ...m, quantity: newQty } : m));
+
+        try {
+            await inventoryService.updateQuantity(id, newQty);
+        } catch (error) {
+            console.error("Failed to update quantity:", error);
+            loadData(); // Reload to be safe
+        }
     };
 
     const filtered = materials.filter(m =>
         m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         m.category.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    if (loading) {
+        return (
+            <div className="flex h-96 items-center justify-center">
+                <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col gap-6 animate-in slide-in-from-right-8 duration-700">
@@ -72,156 +169,222 @@ const Inventory: React.FC = () => {
                         <Box className="w-8 h-8 text-indigo-500" />
                         Controle de Estoque
                     </h2>
-                    <p className="text-slate-500 font-medium">Gerencie tecidos, tintas e insumos de produção.</p>
+                    <p className="text-slate-500 font-bold uppercase tracking-widest text-xs mt-2 ml-1">
+                        Gerencie seus materiais e insumos.
+                    </p>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
-                        <input
-                            type="text"
-                            placeholder="Buscar material..."
-                            value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
-                            className="bg-[#0f172a] border border-slate-800 rounded-xl pl-10 pr-4 py-3 text-sm font-bold text-slate-200 focus:outline-none focus:border-indigo-500 w-64 transition-all"
-                        />
-                    </div>
+                {/* TABS */}
+                <div className="bg-slate-900 p-1 rounded-xl flex border border-slate-800">
                     <button
-                        onClick={() => setIsAdding(true)}
-                        className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs flex items-center gap-2 shadow-lg shadow-indigo-600/20 transition-all hover:scale-105 active:scale-95"
+                        onClick={() => setActiveTab('stock')}
+                        className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === 'stock' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
                     >
-                        <Plus className="w-4 h-4" />
-                        Novo Item
+                        <Package className="w-4 h-4" /> Estoque
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('buying')}
+                        className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === 'buying' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                    >
+                        <ShoppingCart className="w-4 h-4" /> Sugestão de Compra
                     </button>
                 </div>
+
+                {activeTab === 'stock' && (
+                    <button
+                        onClick={() => setIsAdding(true)}
+                        className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-4 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-indigo-900/20 transition-all flex items-center gap-2 group"
+                    >
+                        <Plus className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                        Novo Item
+                    </button>
+                )}
             </header>
 
-            {isAdding && (
-                <div className="bg-[#0f172a] p-6 rounded-3xl border border-slate-800 animate-in slide-in-from-top-4 shadow-2xl">
-                    <h3 className="text-slate-100 font-black uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">Adicionar Novo Material</h3>
-                    <div className="grid grid-cols-5 gap-4 items-end">
-                        <div className="col-span-2 space-y-1">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase">Nome do Material</label>
-                            <input
-                                value={newMaterial.name || ''}
-                                onChange={e => setNewMaterial({ ...newMaterial, name: e.target.value })}
-                                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-slate-200 focus:outline-none focus:border-indigo-500"
-                                placeholder="Ex: Dry Fit Azul Agulha"
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase">Categoria</label>
-                            <select
-                                value={newMaterial.category}
-                                onChange={e => setNewMaterial({ ...newMaterial, category: e.target.value as any })}
-                                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-slate-200 focus:outline-none focus:border-indigo-500"
-                            >
-                                <option value="Fabric">Tecido</option>
-                                <option value="Ink">Tinta</option>
-                                <option value="Screen">Tela/Matriz</option>
-                                <option value="Other">Outro</option>
-                            </select>
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase">Qtd Inicial</label>
-                            <div className="flex gap-2">
-                                <input
-                                    type="number"
-                                    value={newMaterial.quantity || ''}
-                                    onChange={e => setNewMaterial({ ...newMaterial, quantity: Number(e.target.value) })}
-                                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-slate-200 focus:outline-none focus:border-indigo-500"
-                                    placeholder="0.00"
-                                />
-                                <input
-                                    value={newMaterial.unit}
-                                    onChange={e => setNewMaterial({ ...newMaterial, unit: e.target.value })}
-                                    className="w-16 bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-slate-200 text-center uppercase font-bold"
-                                    placeholder="UN"
-                                />
-                            </div>
-                        </div>
-                        <div className="flex gap-2">
-                            <button onClick={handleAdd} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2">
-                                <Save className="w-4 h-4" /> Salvar
-                            </button>
-                            <button onClick={() => setIsAdding(false)} className="px-4 bg-slate-800 hover:bg-slate-700 text-slate-400 py-2 rounded-xl font-bold uppercase tracking-widest text-xs">
-                                Cancelar
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filtered.map(item => {
-                    const isLow = item.quantity <= item.minLevel;
-                    const isCritical = item.quantity <= item.minLevel / 2;
-
-                    return (
-                        <div key={item.id} className={`bg-[#0f172a] border ${isCritical ? 'border-rose-900/50 shadow-rose-900/10' : isLow ? 'border-amber-900/50 shadow-amber-900/10' : 'border-slate-800'} rounded-[2rem] p-6 relative overflow-hidden group transition-all hover:translate-y-[-2px] hover:shadow-2xl`}>
-                            {/* Categories Badge */}
-                            <div className="absolute top-6 right-6">
-                                <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${item.category === 'Fabric' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
-                                        item.category === 'Ink' ? 'bg-pink-500/10 text-pink-400 border-pink-500/20' :
-                                            'bg-slate-500/10 text-slate-400 border-slate-500/20'
-                                    }`}>
-                                    {item.category === 'Fabric' ? 'Tecido' : item.category === 'Ink' ? 'Tinta' : item.category}
-                                </span>
-                            </div>
-
-                            <div className="pr-12">
-                                <h4 className="text-lg font-black text-slate-200 mb-1">{item.name}</h4>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-3xl font-black text-white tracking-tighter">{item.quantity}</span>
-                                    <span className="text-xs font-bold text-slate-500 uppercase mt-2">{item.unit}</span>
+            {activeTab === 'stock' ? (
+                // STOCK VIEW (Original Content)
+                <>
+                    {isAdding && (
+                        <div className="bg-slate-900 border border-slate-800 p-6 rounded-[2rem] animate-in slide-in-from-top-4 mb-4">
+                            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                                <div className="md:col-span-2 space-y-1">
+                                    <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest ml-1">Nome do Item</label>
+                                    <input
+                                        autoFocus
+                                        placeholder="Ex: Tinta Preta, Tecido Algodão..."
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none font-bold"
+                                        value={newMaterial.name || ''}
+                                        onChange={(e) => setNewMaterial({ ...newMaterial, name: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest ml-1">Categoria</label>
+                                    <select
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none font-bold"
+                                        value={newMaterial.category}
+                                        onChange={(e) => setNewMaterial({ ...newMaterial, category: e.target.value as any })}
+                                    >
+                                        <option value="Fabric">Tecido</option>
+                                        <option value="Ink">Tinta</option>
+                                        <option value="Screen">Tela</option>
+                                        <option value="Consumable">Consumível</option>
+                                        <option value="Other">Outro</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest ml-1">Qtd Inicial</label>
+                                    <input
+                                        type="number"
+                                        placeholder="0"
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none font-bold"
+                                        value={newMaterial.quantity || ''}
+                                        onChange={(e) => setNewMaterial({ ...newMaterial, quantity: parseFloat(e.target.value) })}
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest ml-1">Unidade</label>
+                                    <input
+                                        placeholder="kg, m, un..."
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none font-bold"
+                                        value={newMaterial.unit || ''}
+                                        onChange={(e) => setNewMaterial({ ...newMaterial, unit: e.target.value })}
+                                    />
                                 </div>
                             </div>
-
-                            {isLow && (
-                                <div className={`mt-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wide ${isCritical ? 'text-rose-500' : 'text-amber-500'}`}>
-                                    <AlertTriangle className="w-4 h-4" />
-                                    {isCritical ? 'Estoque Crítico' : 'Estoque Baixo'}
-                                </div>
-                            )}
-
-                            <div className="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between">
-                                <div className="flex items-center gap-1 bg-slate-900 rounded-xl p-1 border border-slate-800">
-                                    <button onClick={() => handleUpdateQuantity(item.id, -1)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
-                                        <TrendingDown className="w-4 h-4" />
-                                    </button>
-                                    <div className="w-px h-4 bg-slate-800"></div>
-                                    <button onClick={() => handleUpdateQuantity(item.id, 1)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
-                                        <Plus className="w-4 h-4" />
-                                    </button>
-                                </div>
-
-                                <button
-                                    onClick={() => handleDelete(item.id)}
-                                    className="w-10 h-10 flex items-center justify-center text-slate-600 hover:text-rose-400 hover:bg-rose-950/30 rounded-xl transition-all opacity-0 group-hover:opacity-100"
-                                >
-                                    <Trash2 className="w-4 h-4" />
+                            <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-slate-800">
+                                <button onClick={() => setIsAdding(false)} className="px-6 py-3 rounded-xl text-xs font-bold uppercase text-slate-500 hover:text-white">Cancelar</button>
+                                <button onClick={handleAdd} disabled={isSaving} className="px-8 py-3 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2">
+                                    <Save className="w-4 h-4" /> {isSaving ? 'Salvando...' : 'Salvar Item'}
                                 </button>
                             </div>
-
-                            {/* Progress Bar (Visual Inventory Level) */}
-                            <div className="absolute bottom-0 left-0 w-full h-1 bg-slate-800">
-                                <div
-                                    className={`h-full ${isCritical ? 'bg-rose-500' : isLow ? 'bg-amber-500' : 'bg-emerald-500'} transition-all duration-500`}
-                                    style={{ width: `${Math.min(100, (item.quantity / (item.minLevel * 3)) * 100)}%` }}
-                                ></div>
-                            </div>
                         </div>
-                    );
-                })}
+                    )}
 
-                {/* Empty State */}
-                {filtered.length === 0 && (
-                    <div className="col-span-full py-20 flex flex-col items-center justify-center border-2 border-dashed border-slate-800 rounded-[3rem] opacity-50">
-                        <Package className="w-16 h-16 text-slate-600 mb-4" />
-                        <p className="text-slate-500 font-bold uppercase tracking-widest">Nenhum material encontrado</p>
+                    <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 min-h-[500px]">
+                        <div className="flex items-center gap-4 mb-6 bg-slate-950/50 p-2 rounded-2xl border border-slate-800/50 w-full md:w-96">
+                            <Search className="w-5 h-5 text-slate-500 ml-2" />
+                            <input
+                                placeholder="Buscar material..."
+                                className="bg-transparent border-none outline-none text-slate-200 placeholder:text-slate-600 font-bold uppercase text-xs w-full"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {filtered.map((item) => (
+                                <div key={item.id} className="bg-slate-950 p-5 rounded-3xl border border-slate-800 group hover:border-indigo-500/30 transition-all shadow-lg hover:shadow-indigo-500/10 relative overflow-hidden">
+                                    {item.quantity <= (item.minLevel || 10) && (
+                                        <div className="absolute top-0 right-0 bg-rose-500/10 p-2 rounded-bl-2xl border-b border-l border-rose-500/20 flex items-center gap-1">
+                                            <AlertTriangle className="w-3 h-3 text-rose-500" />
+                                            <span className="text-[9px] font-black text-rose-400 uppercase tracking-widest">Baixo Estoque</span>
+                                        </div>
+                                    )}
+
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div>
+                                            <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-500/10 px-2 py-1 rounded-lg border border-indigo-500/20">{item.category}</span>
+                                            <h3 className="text-lg font-black text-slate-100 uppercase mt-2">{item.name}</h3>
+                                        </div>
+                                        <button
+                                            onClick={() => handleDelete(item.id)}
+                                            className="text-slate-700 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+
+                                    <div className="flex items-end justify-between bg-slate-900/50 p-4 rounded-2xl border border-slate-800/50">
+                                        <div>
+                                            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">Quantidade</p>
+                                            <p className={`text-2xl font-black ${item.quantity <= (item.minLevel || 10) ? 'text-rose-400' : 'text-slate-200'}`}>
+                                                {item.quantity} <span className="text-xs text-slate-500 font-bold">{item.unit}</span>
+                                            </p>
+                                        </div>
+                                        <div className="flex gap-1">
+                                            <button
+                                                onClick={() => handleUpdateQuantity(item.id, -1)}
+                                                className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-rose-500/20 hover:text-rose-400 text-slate-400 flex items-center justify-center transition-colors"
+                                            >
+                                                -
+                                            </button>
+                                            <button
+                                                onClick={() => handleUpdateQuantity(item.id, 1)}
+                                                className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-emerald-500/20 hover:text-emerald-400 text-slate-400 flex items-center justify-center transition-colors"
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                )}
-            </div>
+                </>
+            ) : (
+                // PURCHASING VIEW
+                <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 min-h-[500px] animate-in slide-in-from-right-4">
+                    <div className="mb-8">
+                        <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">Sugestão de Compra</h3>
+                        <p className="text-slate-400 text-sm max-w-2xl leading-relaxed">
+                            Baseado nos pedidos em aberto (Pendentes e Em Produção), este é o material que você precisa comprar para não faltar estoque.
+                        </p>
+                    </div>
+
+                    {calculating ? (
+                        <div className="flex h-64 items-center justify-center flex-col gap-4">
+                            <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+                            <p className="text-slate-500 text-xs font-black uppercase tracking-widest">Calculando necessidades...</p>
+                        </div>
+                    ) : buyingList.length === 0 ? (
+                        <div className="text-center py-20 border-2 border-dashed border-slate-800 rounded-3xl">
+                            <PackageCheck className="w-12 h-12 text-emerald-500 mx-auto mb-4 opacity-50" />
+                            <h4 className="text-slate-200 font-bold text-lg">Tudo certo!</h4>
+                            <p className="text-slate-500 text-sm">Você tem estoque suficiente para todos os pedidos atuais.</p>
+                        </div>
+                    ) : (
+                        <div className="overflow-hidden rounded-2xl border border-slate-800">
+                            <table className="w-full text-left">
+                                <thead className="bg-slate-950 text-slate-400 text-[10px] font-black uppercase tracking-widest">
+                                    <tr>
+                                        <th className="p-4">Material</th>
+                                        <th className="p-4 text-center">Em Estoque</th>
+                                        <th className="p-4 text-center text-amber-500">Necessário</th>
+                                        <th className="p-4 text-center text-rose-500">Falta (Comprar)</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-800 bg-slate-900/50">
+                                    {buyingList.map((row, i) => (
+                                        <tr key={i} className="hover:bg-slate-800/50 transition-colors">
+                                            <td className="p-4">
+                                                <p className="font-bold text-slate-200">{row.item.name}</p>
+                                                <span className="text-[9px] text-slate-500 font-black uppercase">{row.item.category}</span>
+                                            </td>
+                                            <td className="p-4 text-center font-mono text-slate-300 font-bold">
+                                                {row.item.quantity} {row.item.unit}
+                                            </td>
+                                            <td className="p-4 text-center font-mono text-amber-400 font-bold bg-amber-500/5">
+                                                {row.required.toFixed(1)} {row.item.unit}
+                                            </td>
+                                            <td className="p-4 text-center">
+                                                {row.toBuy > 0 ? (
+                                                    <span className="bg-rose-500 text-white px-3 py-1 rounded-lg font-black text-xs shadow-lg shadow-rose-500/20">
+                                                        -{row.toBuy.toFixed(1)} {row.item.unit}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-emerald-500 font-bold text-xs flex items-center justify-center gap-1">
+                                                        <CheckCircle2 className="w-3 h-3" /> OK
+                                                    </span>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 };

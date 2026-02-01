@@ -3,60 +3,60 @@ import { Order, OrderType, PaymentStatus } from '../types';
 import { settingsService } from '../services/settingsService';
 
 const getStatusLabel = (status: string) => {
-  const statusMap: Record<string, string> = {
-    'RECEIVED': 'AGUARDANDO',
-    'FINALIZATION': 'EM FINALIZAÇÃO',
-    'IN_PRODUCTION': 'EM PRODUÇÃO',
-    'FINISHED': 'CONCLUÍDO'
-  };
-  return statusMap[status] || status;
+   const statusMap: Record<string, string> = {
+      'RECEIVED': 'AGUARDANDO',
+      'FINALIZATION': 'EM FINALIZAÇÃO',
+      'IN_PRODUCTION': 'EM PRODUÇÃO',
+      'FINISHED': 'CONCLUÍDO'
+   };
+   return statusMap[status] || status;
 };
 
 const getPaymentStatusLabel = (status: string | undefined) => {
-  if (!status) return 'PENDENTE';
-  if (status === 'Integral (100%)') return 'QUITADO (100%)';
-  if (status === 'Sinal (50%)') return 'PARCIAL (SINAL)';
-  return status;
+   if (!status) return 'PENDENTE';
+   if (status === 'Integral (100%)') return 'QUITADO (100%)';
+   if (status === 'Sinal (50%)') return 'PARCIAL (SINAL)';
+   return status;
 };
 
 // Helper: Format Currency
 const formatMoney = (val: number) => {
-  return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+   return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 };
 
 async function getCompanySettings() {
-  try {
-    const settings = await settingsService.getSettings();
-    // Return with fallbacks if empty (though service usually handles defaults, safer here)
-    return {
-      name: settings.name || 'Minha Estamparia',
-      cnpj: settings.cnpj || '',
-      address: settings.address || '',
-      phone: settings.phone || '',
-      email: settings.email || '',
-      logo_url: settings.logo_url || '',
-      bank_info: settings.bank_info || ''
-    };
-  } catch (e) {
-    console.warn("Could not fetch company settings.", e);
-    return {
-      name: 'Minha Estamparia',
-      cnpj: '',
-      address: '',
-      phone: '',
-      email: '',
-      logo_url: '',
-      bank_info: ''
-    };
-  }
+   try {
+      const settings = await settingsService.getSettings();
+      // Return with fallbacks if empty (though service usually handles defaults, safer here)
+      return {
+         name: settings.name || 'Minha Estamparia',
+         cnpj: settings.cnpj || '',
+         address: settings.address || '',
+         phone: settings.phone || '',
+         email: settings.email || '',
+         logo_url: settings.logo_url || '',
+         bank_info: settings.bank_info || ''
+      };
+   } catch (e) {
+      console.warn("Could not fetch company settings.", e);
+      return {
+         name: 'Minha Estamparia',
+         cnpj: '',
+         address: '',
+         phone: '',
+         email: '',
+         logo_url: '',
+         bank_info: ''
+      };
+   }
 }
 
 export async function printServiceOrder(order: Order) {
-  const company = await getCompanySettings();
-  const printWindow = window.open('', '_blank', 'width=1100,height=1200');
-  if (!printWindow) return;
+   const company = await getCompanySettings();
+   const printWindow = window.open('', '_blank', 'width=1100,height=1200');
+   if (!printWindow) return;
 
-  const html = `
+   const html = `
     <!DOCTYPE html>
     <html lang="pt-BR">
       <head>
@@ -243,199 +243,265 @@ export async function printServiceOrder(order: Order) {
     </html>
   `;
 
-  printWindow.document.write(html);
-  printWindow.document.close();
+   printWindow.document.write(html);
+   printWindow.document.close();
 }
 
+
 export async function printInvoice(order: Order) {
-  const company = await getCompanySettings();
-  const printWindow = window.open('', '_blank', 'width=1000,height=1200');
-  if (!printWindow) return;
+   // Fetch latest settings
+   const company = await getCompanySettings();
+   const printWindow = window.open('', '_blank', 'width=1000,height=1200');
+   if (!printWindow) return;
 
-  // Calculations
-  const total = order.totalValue || 0;
-  // If amountPaid is undefined, check paymentStatus
-  // If FULL, paid = total. If HALF, use amountPaid or 50%.
-  let paid = order.amountPaid || 0;
+   // Access Key Generation (Simulated for visuals)
+   const code = order.orderNumber.toString().padStart(9, '0');
+   const accessKey = `3523 02${company.cnpj?.replace(/\D/g, '').substring(0, 14) || '12345678000199'} 55 001 ${code} 100 000 000 0`;
+   const barcodeHeight = 50;
 
-  // Fallback Logic for legacy data
-  if (!order.amountPaid) {
-    if (order.paymentStatus === PaymentStatus.FULL) paid = total;
-    if (order.paymentStatus === 'Sinal (50%)') paid = total / 2;
-  }
+   // Calculations
+   const total = order.totalValue || 0;
+   let paid = order.amountPaid || 0;
+   if (!order.amountPaid && order.paymentStatus === PaymentStatus.FULL) paid = total;
+   if (!order.amountPaid && order.paymentStatus === 'Sinal (50%)') paid = total / 2;
 
-  const remaining = total - paid;
-  const isPaidOff = remaining <= 0.1; // Float tolerance
+   const remaining = total - paid;
+   const isPaidOff = remaining <= 0.1;
 
-  const html = `
+   const html = `
     <!DOCTYPE html>
     <html lang="pt-BR">
       <head>
         <meta charset="UTF-8">
-        <title>Recibo #${order.orderNumber}</title>
+        <title>DANFE #${order.orderNumber}</title>
         <style>
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+          @import url('https://fonts.googleapis.com/css2?family=Libre+Barcode+128&family=Inter:wght@400;600;700;800&display=swap');
           
           * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; }
-          body { font-family: 'Inter', sans-serif; font-size: 9pt; padding: 0; background: #fff; color: #1f2937; }
+          body { font-family: 'Inter', sans-serif; font-size: 7pt; color: #000; padding: 0; background: #fff; line-height: 1.1; }
           
-          .a4-page { 
-             width: 21cm; min-height: 29.7cm; margin: 0 auto; padding: 1.5cm; 
-             position: relative; 
-          }
+          .a4-page { width: 21cm; margin: 0 auto; padding: 5mm; }
 
-          /* Header */
-          .header { text-align: center; margin-bottom: 40px; }
-          .brand { font-size: 20pt; font-weight: 900; text-transform: uppercase; letter-spacing: -1px; margin-bottom: 5px; }
-          .brand-sub { font-size: 8pt; color: #6b7280; text-transform: uppercase; letter-spacing: 2px; }
+          /* Utility Borders */
+          .box { border: 1px solid #000; border-radius: 4px; padding: 2px 4px; position: relative; }
+          .flex { display: flex; }
+          .col { flex-direction: column; }
+          .row { flex-direction: row; }
+          .u-upp { text-transform: uppercase; }
+          .u-bold { font-weight: 700; }
+          .u-center { text-align: center; }
+          .u-right { text-align: right; }
           
-          .divider { height: 4px; background: #000; margin: 20px auto; width: 50px; border-radius: 2px; }
-          
-          /* Details Box */
-          .receipt-box { border: 2px solid #000; border-radius: 20px; padding: 30px; margin-bottom: 30px; position: relative; }
-          .receipt-title { 
-             position: absolute; top: -12px; left: 30px; background: #fff; padding: 0 10px; 
-             font-weight: 900; font-size: 10pt; text-transform: uppercase; letter-spacing: 1px;
-          }
-          
-          .row { display: flex; justify-content: space-between; margin-bottom: 12px; }
-          .label { font-size: 8pt; color: #6b7280; font-weight: 600; text-transform: uppercase; }
-          .value { font-size: 10pt; font-weight: 700; color: #000; }
-          
-          /* Financial Highlight */
-          .finance-highlight { 
-             background: #f3f4f6; border-radius: 12px; padding: 20px; margin-top: 20px; 
-             display: flex; justify-content: space-between; align-items: center;
-          }
-          .fin-block { text-align: right; }
-          .fin-label { font-size: 7pt; font-weight: 700; text-transform: uppercase; color: #6b7280; }
-          .fin-val { font-size: 14pt; font-weight: 900; color: #000; }
-          .fin-val.green { color: #059669; }
-          .fin-val.red { color: #dc2626; }
+          .small-label { font-size: 5pt; font-weight: 700; text-transform: uppercase; color: #444; margin-bottom: 1px; display: block; }
+          .value { font-size: 7.5pt; font-weight: 700; color: #000; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-          /* Table */
-          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-          th { text-align: left; font-size: 7pt; uppercase; color: #9ca3af; border-bottom: 1px solid #e5e7eb; padding: 8px 0; }
-          td { padding: 12px 0; border-bottom: 1px dashed #e5e7eb; font-size: 9pt; }
-          td.right { text-align: right; }
-          
-          /* Warning Footer */
-          .legal-footer { 
-             text-align: center; font-size: 7pt; color: #9ca3af; margin-top: 50px; line-height: 1.5;
-             border-top: 1px solid #e5e7eb; padding-top: 20px;
-          }
+          /* COMPONENT: HEADER / CANHOTO */
+          .canhoto-strip { display: flex; align-items: stretch; border: 1px solid #000; border-radius: 5px; height: 26px; margin-bottom: 5px; }
+          .canhoto-msg { flex: 1; font-size: 5.5pt; padding: 2px; border-right: 1px solid #000; display: flex; align-items: center; }
+          .canhoto-nf { width: 120px; text-align: center; display: flex; flex-direction: column; justify-content: center; font-weight: 800; font-size: 8pt; }
+
+          /* COMPONENT: DANFE HEADER */
+          .danfe-grid { display: grid; grid-template-columns: 100px 1fr 100px; gap: 5px; border: 1px solid #000; border-radius: 5px; padding: 5px; margin-bottom: 5px; }
+          .logo-area { display: flex; align-items: center; justify-content: center; border-right: 1px solid #eee; padding-right: 5px; }
+          .emitter-data { padding: 0 5px; }
+          .danfe-control { text-align: center; display: flex; flex-direction: column; align-items: center; }
+
+          /* SECTIONS */
+          .section-label { font-size: 6pt; font-weight: 800; text-transform: uppercase; margin: 4px 0 1px 0; border-bottom: 1px solid #000; padding-bottom: 1px; }
+
+          table { width: 100%; border-collapse: collapse; margin-top: 2px; }
+          th { border: 1px solid #999; font-size: 5.5pt; padding: 2px; text-align: left; background: #f0f0f0; }
+          td { border: 1px solid #999; font-size: 6.5pt; padding: 3px; }
+
+          /* Barcode Font */
+          .barcode { font-family: 'Libre Barcode 128', cursive; font-size: 38pt; transform: scaleY(1.2); text-align: center; height: 50px; overflow: hidden; }
 
           @media print {
-            .a4-page { width: 100%; max-width: none; margin: 0; padding: 1cm; min-height: 100vh; }
+             @page { margin: 5mm; size: A4; }
+             .a4-page { width: 100%; max-width: none; border: none; }
           }
         </style>
       </head>
       <body>
         <div class="a4-page">
-           <div class="header">
-              <div class="brand">${company.name}</div>
-              <div class="brand-sub">Comprovante de Pedido & Pagamento</div>
-              <div class="divider"></div>
-           </div>
-
-           <div class="receipt-box">
-              <div class="receipt-title">Detalhes do Pedido #${order.orderNumber}</div>
-              
-              <div class="row">
-                 <div>
-                    <span class="label">Cliente</span><br>
-                    <span class="value">${order.clientName}</span>
-                 </div>
-                 <div style="text-align:right;">
-                    <span class="label">Data Emissão</span><br>
-                    <span class="value">${new Date().toLocaleDateString()}</span>
-                 </div>
+           
+           <!-- CANHOTO -->
+           <div class="canhoto-strip">
+              <div class="canhoto-msg">
+                 RECEBEMOS DE ${company.name.toUpperCase()} OS PRODUTOS/SERVIÇOS CONSTANTES DA NOTA FISCAL INDICADA AO LADO
               </div>
-
-              <div class="row" style="margin-top:15px;">
-                 <div>
-                    <span class="label">Previsão Entrega</span><br>
-                    <span class="value">${new Date(order.deliveryDate).toLocaleDateString()}</span>
-                 </div>
-                 <div style="text-align:right;">
-                    <span class="label">Status Atual</span><br>
-                    <span class="value">${getStatusLabel(order.status)}</span>
-                 </div>
+              <div class="canhoto-nf">
+                 NF-e<br>
+                 Nº ${order.orderNumber}
               </div>
            </div>
-
-           <!-- Financial Breakdown -->
-           <div class="receipt-box" style="border-color: ${isPaidOff ? '#059669' : '#000'}">
-              <div class="receipt-title" style="color: ${isPaidOff ? '#059669' : '#000'}">Resumo Financeiro</div>
-              
-              <div class="finance-highlight">
-                 <div class="fin-block" style="text-align:left;">
-                    <div class="fin-label">Valor Total</div>
-                    <div class="fin-val">${formatMoney(total)}</div>
-                 </div>
-                 
-                 <div class="fin-block">
-                    <div class="fin-label">Valor Pago</div>
-                    <div class="fin-val green">${formatMoney(paid)}</div>
-                 </div>
-
-                 <div class="fin-block">
-                    <div class="fin-label">Saldo Restante</div>
-                    <div class="fin-val ${remaining > 0 ? 'red' : 'green'}">
-                       ${formatMoney(remaining)}
-                    </div>
+           
+           <!-- DADOS DO EMITENTE E CONTROLE -->
+           <div class="danfe-grid">
+              <div class="logo-area">
+                 ${company.logo_url ? `<img src="${company.logo_url}" style="max-width:100%; max-height:80px;">` : 'LOGO'}
+              </div>
+              <div class="emitter-data">
+                 <div style="font-size:10pt; font-weight:800; margin-bottom:2px;">${company.name.toUpperCase()}</div>
+                 <div style="font-size:7pt;">
+                    ${company.address}<br>
+                    CNPJ: ${company.cnpj || '00.000.000/0000-00'}<br>
+                    IE: ISENTO | Fone: ${company.phone}
                  </div>
               </div>
-              
-              ${!isPaidOff ? `
-              <div style="margin-top:15px; font-size:8pt; background:#fee2e2; color:#b91c1c; padding:8px; border-radius:6px; font-weight:700; text-align:center;">
-                 Pendência Financeira: O pedido só será liberado mediante quitação do saldo.
-              </div>
-              ` : ''}
-              
-              <div style="margin-top:15px; font-size:8pt; padding:8px; background:#f3f4f6; border-radius:6px;">
-                  <strong>Forma Pgto Declarada:</strong> ${getPaymentStatusLabel(order.paymentStatus)}
+              <div class="danfe-control">
+                 <div style="font-size:14pt; font-weight:900; margin-bottom:5px;">DANFE</div>
+                 <div style="font-size:6pt; border:1px solid #000; padding:2px; padding-left:14px; padding-right:14px; margin-bottom:5px;">
+                    0 - ENTRADA<br>1 - SAÍDA <strong style="font-size:10pt; margin-left:4px;">1</strong>
+                 </div>
+                 <div style="font-size:7pt; font-weight:700;">Nº ${order.orderNumber}</div>
+                 <div style="font-size:6pt;">SÉRIE 1</div>
               </div>
            </div>
 
-           <div style="margin-top:30px;">
-              <h3 style="font-size:9pt; font-weight:900; text-transform:uppercase; margin-bottom:10px;">Itens do Pedido</h3>
-              <table>
-                 <thead>
-                    <tr>
-                       <th>Descrição</th>
-                       <th width="50" style="text-align:center;">Qtd</th>
-                       <th width="80" style="text-align:right;">Unitário</th>
-                       <th width="80" style="text-align:right;">Subtotal</th>
-                    </tr>
-                 </thead>
-                 <tbody>
-                    ${order.items.map(item => `
-                       <tr>
-                          <td>
-                             <div style="font-weight:700;">${item.productName}</div>
-                             <div style="font-size:7.5pt; color:#6b7280;">${item.fabricName} • ${item.size}</div>
-                          </td>
-                          <td style="text-align:center;">${item.quantity}</td>
-                          <td class="right">${formatMoney(item.unitPrice || 0)}</td>
-                          <td class="right" style="font-weight:700;">${formatMoney((item.unitPrice || 0) * (item.quantity || 0))}</td>
-                       </tr>
-                    `).join('')}
-                 </tbody>
-                 <tfoot>
-                    <tr>
-                       <td colspan="3" class="right" style="padding-top:20px; font-weight:900; font-size:11pt;">TOTAL GERAL</td>
-                       <td class="right" style="padding-top:20px; font-weight:900; font-size:11pt;">${formatMoney(total)}</td>
-                    </tr>
-                 </tfoot>
+           <!-- CHAVE DE ACESSO -->
+           <div class="box" style="margin-bottom: 5px; background: #f9f9f9;">
+              <span class="small-label">CHAVE DE ACESSO</span>
+              <div class="barcode">${accessKey.replace(/\s/g, '')}</div>
+              <div style="text-align:center; font-size:8pt; letter-spacing:1px; margin-top:-5px;">${accessKey}</div>
+           </div>
+
+           <div style="display:grid; grid-template-columns: 2fr 1fr; gap:5px; margin-bottom:5px;">
+               <div class="box">
+                  <span class="small-label">NATUREZA DA OPERAÇÃO</span>
+                  <span class="value">VENDA DE PRODUÇÃO DO ESTABELECIMENTO</span>
+               </div>
+               <div class="box">
+                  <span class="small-label">PROTOCOLO DE AUTORIZAÇÃO DE USO</span>
+                  <span class="value">13523000${order.orderNumber}999 - ${new Date().toLocaleString()}</span>
+               </div>
+           </div>
+
+           <!-- DESTINATÁRIO -->
+           <div class="section-label">DESTINATÁRIO / REMETENTE</div>
+           <div style="border:1px solid #000; border-radius:4px; margin-bottom:5px;">
+              <table style="border:none; margin:0;">
+                 <tr style="border-bottom:1px solid #ddd;">
+                    <td style="border:none; width:60%;"><span class="small-label">NOME / RAZÃO SOCIAL</span><div class="value">${order.clientName.toUpperCase()}</div></td>
+                    <td style="border:none;"><span class="small-label">CNPJ / CPF</span><div class="value">000.000.000-00</div></td>
+                    <td style="border:none;"><span class="small-label">DATA DA EMISSÃO</span><div class="value">${new Date().toLocaleDateString()}</div></td>
+                 </tr>
+                 <tr>
+                    <td style="border:none;"><span class="small-label">ENDEREÇO</span><div class="value">ENDEREÇO DO CLIENTE NÃO INFORMADO</div></td>
+                    <td style="border:none;"><span class="small-label">BAIRRO / DISTRITO</span><div class="value">-</div></td>
+                    <td style="border:none;"><span class="small-label">DATA DA SAÍDA</span><div class="value">${new Date(order.deliveryDate).toLocaleDateString()}</div></td>
+                 </tr>
               </table>
            </div>
 
-           <div class="legal-footer">
-              Este documento não possui valor fiscal (Danfe).<br>
-              Emitido por ${company.name} - CNPJ: ${company.cnpj || 'Não informado'}<br>
-              Endereço: ${company.address || '-'}<br>
-              ${company.email} | ${company.phone}
+           <!-- CÁLCULO DO IMPOSTO -->
+           <div class="section-label">CÁLCULO DO IMPOSTO</div>
+           <div style="border:1px solid #000; border-radius:4px; margin-bottom:5px; background:#f5f5f5;">
+               <table style="border:none; margin:0;">
+                  <tr>
+                     <td style="border:none;"><span class="small-label">BASE CÁLC. ICMS</span><div class="value">0,00</div></td>
+                     <td style="border:none;"><span class="small-label">VALOR DO ICMS</span><div class="value">0,00</div></td>
+                     <td style="border:none;"><span class="small-label">BASE CÁLC. ICMS ST</span><div class="value">0,00</div></td>
+                     <td style="border:none;"><span class="small-label">VALOR DO ICMS ST</span><div class="value">0,00</div></td>
+                     <td style="border:none;"><span class="small-label">V. TOTAL PRODUTOS</span><div class="value">R$ ${formatMoney(total).replace('R$', '')}</div></td>
+                  </tr>
+                  <tr style="border-top:1px solid #ccc;">
+                     <td style="border:none;"><span class="small-label">VALOR DO FRETE</span><div class="value">0,00</div></td>
+                     <td style="border:none;"><span class="small-label">VALOR DO SEGURO</span><div class="value">0,00</div></td>
+                     <td style="border:none;"><span class="small-label">DESCONTO</span><div class="value">0,00</div></td>
+                     <td style="border:none;"><span class="small-label">OUTRAS DESP.</span><div class="value">0,00</div></td>
+                     <td style="border:none;"><span class="small-label">V. TOTAL NOTA</span><div class="value">R$ ${formatMoney(total).replace('R$', '')}</div></td>
+                  </tr>
+               </table>
+           </div>
+
+           <!-- TRANSPORTADOR -->
+           <div class="section-label">TRANSPORTADOR / VOLUMES</div>
+           <div class="box" style="margin-bottom:5px;">
+               <div style="display:flex; justify-content:space-between;">
+                   <div><span class="small-label">RAZÃO SOCIAL</span><span class="value">O MESMO</span></div>
+                   <div><span class="small-label">FRETE POR CONTA</span><span class="value">9 - SEM FRETE</span></div>
+                   <div><span class="small-label">CÓDIGO ANTT</span><span class="value">-</span></div>
+                   <div><span class="small-label">PLACA DO VEÍCULO</span><span class="value">-</span></div>
+                   <div><span class="small-label">UF</span><span class="value">RJ</span></div>
+               </div>
+           </div>
+
+           <!-- DADOS DO PRODUTO -->
+           <div class="section-label">DADOS DO PRODUTO / SERVIÇO</div>
+           <table style="border:1px solid #000; margin-bottom:5px;">
+              <thead>
+                 <tr>
+                    <th width="50">CÓDIGO</th>
+                    <th>DESCRIÇÃO DO PRODUTO / SERVIÇO</th>
+                    <th width="40">NCM</th>
+                    <th width="30">CST</th>
+                    <th width="30">CFOP</th>
+                    <th width="30">UN</th>
+                    <th width="40">QTD</th>
+                    <th width="60">V.UNIT</th>
+                    <th width="60">V.TOTAL</th>
+                 </tr>
+              </thead>
+              <tbody>
+                 ${order.items.map(item => `
+                    <tr>
+                       <td>${item.id.substring(0, 6)}</td>
+                       <td>
+                          <span class="u-bold">${item.productName.toUpperCase()}</span>
+                          <div style="font-size:6pt;">${item.fabricName} - TAM: ${item.size}</div>
+                       </td>
+                       <td>610910</td>
+                       <td>0102</td>
+                       <td>5101</td>
+                       <td>UN</td>
+                       <td class="u-right">${item.quantity}</td>
+                       <td class="u-right">${(item.unitPrice || 0).toFixed(2)}</td>
+                       <td class="u-right">${((item.unitPrice || 0) * (item.quantity || 0)).toFixed(2)}</td>
+                    </tr>
+                 `).join('')}
+              </tbody>
+           </table>
+           
+           <!-- DADOS ADICIONAIS / CONTROLE FINANCEIRO -->
+           <div class="section-label">DADOS ADICIONAIS / CONTROLE FINANCEIRO</div>
+           <div style="display:grid; grid-template-columns: 2fr 1fr; gap:5px; height: 180px;">
+              <div class="box">
+                 <span class="small-label">INFORMAÇÕES COMPLEMENTARES</span>
+                 <div class="value" style="font-weight:400; white-space:pre-wrap; margin-top:5px;">
+PEDIDO INTERNO: #${order.orderNumber}
+PREVISÃO DE ENTREGA: ${new Date(order.deliveryDate).toLocaleDateString()}
+OBSERVAÇÕES: ${order.internalNotes || 'Nenhuma'}
+
+DADOS BANCÁRIOS PARA DEPÓSITO:
+${company.bank_info || 'Consultar setor financeiro.'}
+                 </div>
+              </div>
+              <div class="box" style="border: 2px solid #000; background: ${isPaidOff ? '#ecfdf5' : '#fff1f2'};">
+                 <span class="small-label" style="text-align:center; font-size:7pt;">RESUMO DE PAGAMENTO</span>
+                 <div style="margin-top:10px; display:flex; justify-content:space-between; border-bottom:1px dotted #ccc;">
+                    <span>TOTAL NF:</span>
+                    <strong>${formatMoney(total)}</strong>
+                 </div>
+                 <div style="margin-top:5px; display:flex; justify-content:space-between; color:#059669;">
+                    <span>VALOR PAGO:</span>
+                    <strong>${formatMoney(paid)}</strong>
+                 </div>
+                 <div style="margin-top:5px; display:flex; justify-content:space-between; font-size:11pt; font-weight:900; color:${remaining > 0 ? '#dc2626' : '#059669'};">
+                    <span>A PAGAR:</span>
+                    <strong>${formatMoney(remaining)}</strong>
+                 </div>
+
+                 ${remaining > 0 ? `
+                 <div style="margin-top:20px; font-size:6pt; text-align:center; font-weight:800; color:#dc2626;">
+                    * MERCADORIA SÓ SERÁ LIBERADA MEDIANTE QUITAÇÃO INTEGRAL
+                 </div>
+                 ` : `
+                 <div style="margin-top:20px; font-size:7pt; text-align:center; font-weight:800; color:#059669; border:1px solid #059669; padding:2px;">
+                    PEDIDO QUITADO
+                 </div>
+                 `}
+              </div>
            </div>
 
         </div>
@@ -446,6 +512,7 @@ export async function printInvoice(order: Order) {
     </html>
   `;
 
-  printWindow.document.write(html);
-  printWindow.document.close();
+   printWindow.document.write(html);
+   printWindow.document.close();
 }
+

@@ -10,7 +10,8 @@ import {
   TrendingUp,
   Box,
   MessageSquare,
-  Inbox
+  Inbox,
+  Bot
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -27,6 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
     { id: 'catalog-requests', label: 'Solicitações', icon: Inbox },
     { id: 'clients', label: 'Clientes', icon: Users },
     { id: 'inventory', label: 'Estoque', icon: Box },
+    { id: 'cloudbot', label: 'CloudBot Agent', icon: Bot }, // Changed ID to cloudbot
     { id: 'finance', label: 'Financeiro', icon: TrendingUp },
   ];
 

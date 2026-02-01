@@ -11,36 +11,55 @@ import {
   AreaChart,
   Area
 } from 'recharts';
-import { DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight, CreditCard, PieChart } from 'lucide-react';
-import { Order, OrderStatus } from '../types';
+import { DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight, CreditCard, PieChart, Wallet, Percent } from 'lucide-react';
+import { Order, OrderStatus, Product } from '../types';
 
 interface FinanceProps {
   orders: Order[];
+  products: Product[];
 }
 
 const FinanceStat = ({ title, value, icon: Icon, color, trend }: any) => (
-  <div className="bg-[#0f172a] p-6 rounded-3xl border border-slate-800 flex flex-col justify-between">
-    <div className="flex justify-between items-start mb-4">
-      <div className={`p-3 rounded-xl ${color}`}>
+  <div className="bg-[#0f172a] p-6 rounded-3xl border border-slate-800 flex flex-col justify-between relative overflow-hidden group hover:border-slate-700 transition-colors">
+    <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full opacity-5 ${color.replace('bg-', 'text-')} group-hover:scale-110 transition-transform`} />
+    <div className="flex justify-between items-start mb-4 relative">
+      <div className={`p-3 rounded-xl ${color} shadow-lg shadow-black/20`}>
         <Icon className="w-6 h-6 text-white" />
       </div>
-      <div className={`flex items-center gap-1 text-xs font-bold ${trend > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-        {trend > 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+      <div className={`flex items-center gap-1 text-xs font-bold ${trend > 0 ? 'text-emerald-400' : trend < 0 ? 'text-rose-400' : 'text-slate-500'}`}>
+        {trend !== 0 && (trend > 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />)}
         {Math.abs(trend)}%
       </div>
     </div>
-    <div>
-      <h3 className="text-slate-500 text-[11px] font-black uppercase tracking-widest mb-1">{title}</h3>
-      <p className="text-2xl font-black text-slate-100">{value}</p>
+    <div className="relative">
+      <h3 className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">{title}</h3>
+      <p className="text-2xl font-black text-slate-100 tracking-tight">{value}</p>
     </div>
   </div>
 );
 
-const Finance: React.FC<FinanceProps> = ({ orders }) => {
+const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
   // 1. Calculate Aggregates
   const totalRevenue = orders.reduce((acc, curr) => acc + curr.totalValue, 0);
   const ticketMedio = orders.length > 0 ? totalRevenue / orders.length : 0;
+
+  // Calculate Costs
+  let totalEstimatedCost = 0;
+  orders.forEach(order => {
+    order.items.forEach(item => {
+      const product = products.find(p => p.id === item.productId);
+      if (product && product.costPrice) {
+        totalEstimatedCost += (item.quantity * product.costPrice);
+      }
+    });
+  });
+
+  const estimatedProfit = totalRevenue - totalEstimatedCost;
+  const profitMargin = totalRevenue > 0 ? (estimatedProfit / totalRevenue) * 100 : 0;
+
   const pendingRevenue = orders.filter(o => o.status !== OrderStatus.FINISHED).reduce((acc, curr) => acc + curr.totalValue, 0);
+
+  // ... (rest of the logic) ...
 
   // 2. Group by Month (YYYY-MM)
   const monthlyGroups: Record<string, number> = {};
@@ -110,9 +129,9 @@ const Finance: React.FC<FinanceProps> = ({ orders }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <FinanceStat title="Faturamento Bruto" value={`R$ ${totalRevenue.toLocaleString('pt-BR')}`} icon={DollarSign} color="bg-indigo-600" trend={formattedTrend} />
-        <FinanceStat title="Ticket Médio" value={`R$ ${ticketMedio.toLocaleString('pt-BR')}`} icon={TrendingUp} color="bg-emerald-600" trend={0.0} />
-        <FinanceStat title="Contas a Receber" value={`R$ ${pendingRevenue.toLocaleString('pt-BR')}`} icon={CreditCard} color="bg-amber-600" trend={0.0} />
-        <FinanceStat title="Margem Bruta (Est.)" value="42%" icon={PieChart} color="bg-purple-600" trend={0.0} />
+        <FinanceStat title="Lucro Estimado" value={`R$ ${estimatedProfit.toLocaleString('pt-BR')}`} icon={Wallet} color="bg-emerald-600" trend={0.0} />
+        <FinanceStat title="Custo Estimado" value={`R$ ${totalEstimatedCost.toLocaleString('pt-BR')}`} icon={PieChart} color="bg-rose-600" trend={0.0} />
+        <FinanceStat title="Margem de Lucro" value={`${profitMargin.toFixed(1)}%`} icon={Percent} color="bg-amber-600" trend={0.0} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -199,9 +218,9 @@ const Finance: React.FC<FinanceProps> = ({ orders }) => {
                     <tr key={index} className="hover:bg-slate-900/50 transition-colors">
                       <td className="py-4 pl-4 flex items-center gap-3">
                         <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${index === 0 ? 'bg-amber-500 text-amber-950' :
-                            index === 1 ? 'bg-slate-300 text-slate-900' :
-                              index === 2 ? 'bg-amber-800 text-amber-200' :
-                                'bg-slate-800 text-slate-400'
+                          index === 1 ? 'bg-slate-300 text-slate-900' :
+                            index === 2 ? 'bg-amber-800 text-amber-200' :
+                              'bg-slate-800 text-slate-400'
                           }`}>
                           {index + 1}
                         </span>

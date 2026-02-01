@@ -53,6 +53,50 @@ export const productService = {
     async toggleStatus(id: string, currentStatus: string) {
         const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
         return this.update(id, { status: newStatus as any });
+    },
+
+    // Recipes
+    async getRecipe(productId: string) {
+        const { data, error } = await supabase
+            .from('product_recipes')
+            .select(`
+                *,
+                inventory_items (name, unit)
+            `)
+            .eq('product_id', productId);
+
+        if (error) throw error;
+        return data.map((item: any) => ({
+            id: item.id,
+            productId: item.product_id,
+            inventoryItemId: item.inventory_item_id,
+            inventoryItemName: item.inventory_items?.name,
+            quantityRequired: item.quantity_required,
+            unit: item.inventory_items?.unit
+        }));
+    },
+
+    async addRecipeItem(productId: string, inventoryItemId: string, quantity: number) {
+        const { data, error } = await supabase
+            .from('product_recipes')
+            .insert([{
+                product_id: productId,
+                inventory_item_id: inventoryItemId,
+                quantity_required: quantity
+            }])
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    },
+
+    async removeRecipeItem(recipeId: string) {
+        const { error } = await supabase
+            .from('product_recipes')
+            .delete()
+            .eq('id', recipeId);
+        if (error) throw error;
     }
 };
 
@@ -66,6 +110,7 @@ const mapProductFromDB = (dbItem: any): Product => ({
     imageUrl: dbItem.image_url,
     backImageUrl: dbItem.back_image_url,
     basePrice: dbItem.base_price,
+    costPrice: dbItem.cost_price || 0,
     description: dbItem.description,
     allowedGrades: dbItem.allowed_grades,
     measurements: dbItem.measurements
@@ -86,6 +131,10 @@ const mapProductToDB = (appItem: Partial<Product>) => {
     if (appItem.basePrice !== undefined) {
         dbItem.base_price = appItem.basePrice;
         delete dbItem.basePrice;
+    }
+    if (appItem.costPrice !== undefined) {
+        dbItem.cost_price = appItem.costPrice;
+        delete dbItem.costPrice;
     }
     if (appItem.allowedGrades !== undefined) {
         dbItem.allowed_grades = appItem.allowedGrades;

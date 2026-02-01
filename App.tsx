@@ -11,6 +11,7 @@ import Login from './components/Login.tsx';
 import { ChatLayout } from './components/CRM/ChatLayout';
 import CatalogRequests from './components/CatalogRequests.tsx';
 import Inventory from './components/Inventory.tsx';
+import { CloudBot } from './components/CloudBot';
 import OrderTracker from './components/OrderTracker.tsx';
 import { Bell, User as UserIcon } from 'lucide-react';
 import { Order, Product, Client, OrderStatus, OrderType } from './types';
@@ -76,17 +77,25 @@ const AuthenticatedApp: React.FC = () => {
   // Removed legacy LocalStorage effects
 
 
+  const [botDraft, setBotDraft] = useState<{ clientName: string; items: any[]; briefing: string } | null>(null);
+
+  const handleBotOrder = (data: { clientName: string; items: any[]; briefing: string }) => {
+    setBotDraft(data);
+    setActiveView('orders');
+  };
+
   const renderContent = () => {
     switch (activeView) {
-      case 'dashboard': return <Dashboard orders={orders} setOrders={setOrders} />;
-      case 'orders': return <Orders orders={orders} setOrders={setOrders} products={products} clients={clients} setClients={setClients} />;
+      case 'dashboard': return <Dashboard orders={orders} setOrders={setOrders} products={products} />;
+      case 'orders': return <Orders orders={orders} setOrders={setOrders} products={products} clients={clients} setClients={setClients} botDraft={botDraft} onDraftUsed={() => setBotDraft(null)} />;
       case 'kanban': return <Kanban orders={orders} setOrders={setOrders} />;
       case 'catalog': return <Catalog products={products} setProducts={setProducts} />;
       case 'catalog-requests': return <CatalogRequests />;
       case 'settings': return <Settings />;
-      case 'finance': return <Finance orders={orders} />;
+      case 'finance': return <Finance orders={orders} products={products} />;
       case 'clients': return <Clients clients={clients} setClients={setClients} orders={orders} />;
       case 'inventory': return <Inventory />;
+      case 'cloudbot': return <CloudBot onCreateOrder={handleBotOrder} />;
       case 'crm': return <ChatLayout />;
       default: return null;
     }

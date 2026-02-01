@@ -76,6 +76,7 @@ export interface Product {
   imageUrl: string;
   backImageUrl?: string; // New: Back side image
   basePrice: number;
+  costPrice?: number; // New: Cost Price for Profit Calculation
   description?: string; // Commercial description
   allowedGrades?: Record<string, string[]>;
   measurements?: Record<string, { height: number; width: number }>; // New: Size measurements e.g. { 'P': { height: 70, width: 50 } }
@@ -127,5 +128,23 @@ export interface CatalogOrder {
   status: 'pending' | 'approved' | 'rejected';
   items: CatalogOrderItem[];
   totalEstimated: number;
+}
+
+export interface InventoryItem {
+  id: string;
+  name: string;
+  category: 'Fabric' | 'Ink' | 'Screen' | 'Other';
+  quantity: number;
+  unit: string;
+  minLevel: number;
+}
+
+export interface ProductRecipe {
+  id: string;
+  productId: string;
+  inventoryItemId: string;
+  inventoryItemName?: string; // For UI display
+  quantityRequired: number;
+  unit?: string; // For UI display
 }
 
