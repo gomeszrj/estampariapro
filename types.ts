@@ -44,6 +44,7 @@ export interface OrderItem {
 export enum PaymentStatus {
   FULL = 'Integral (100%)',
   HALF = 'Sinal (50%)',
+  DEPOSIT = 'Sinal / Parcial', // Custom amount
   PENDING = 'Pendente'
 }
 

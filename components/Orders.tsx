@@ -390,7 +390,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
           // If FULL, we might want to ensure amountPaid == totalValue in backend or just handle in UI
           amountPaid: paymentStatus === PaymentStatus.FULL
             ? orderData.totalValue
-            : (paymentStatus === PaymentStatus.HALF && !customAmountPaid ? orderData.totalValue / 2 : orderData.amountPaid)
+            : ((paymentStatus === PaymentStatus.HALF || paymentStatus === PaymentStatus.DEPOSIT) && !customAmountPaid ? orderData.totalValue / 2 : orderData.amountPaid)
         });
       }
 
@@ -493,7 +493,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                           >
                             {Object.values(PaymentStatus).map(s => <option key={s} value={s}>{s}</option>)}
                           </select>
-                          {(paymentStatus === PaymentStatus.HALF || paymentStatus === PaymentStatus.PENDING) && (
+                          {(paymentStatus === PaymentStatus.HALF || paymentStatus === PaymentStatus.DEPOSIT || paymentStatus === PaymentStatus.PENDING) && (
                             <input
                               type="number"
                               placeholder="R$ Pago"
@@ -782,7 +782,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                       </td>
                       <td className="px-10 py-8">
                         <span className={`px-3 py-1 rounded text-[8px] font-black uppercase tracking-widest border ${!order.paymentStatus || order.paymentStatus === PaymentStatus.PENDING ? 'bg-slate-800 border-slate-700 text-slate-400' :
-                          order.paymentStatus === 'Sinal (50%)' ? 'bg-indigo-900/20 border-indigo-900/40 text-indigo-400' :
+                          order.paymentStatus === 'Sinal (50%)' || order.paymentStatus === 'Sinal / Parcial' ? 'bg-indigo-900/20 border-indigo-900/40 text-indigo-400' :
                             'bg-emerald-900/20 border-emerald-900/40 text-emerald-400'
                           }`}>
                           {order.paymentStatus || 'PENDENTE'}
