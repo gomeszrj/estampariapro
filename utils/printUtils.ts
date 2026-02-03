@@ -471,7 +471,6 @@ export async function printInvoice(order: Order) {
                  <div class="value" style="font-weight:400; white-space:pre-wrap; margin-top:5px;">
 PEDIDO INTERNO: #${order.orderNumber}
 PREVISÃO DE ENTREGA: ${new Date(order.deliveryDate).toLocaleDateString()}
-OBSERVAÇÕES: ${order.internalNotes || 'Nenhuma'}
 
 DADOS BANCÁRIOS PARA DEPÓSITO:
 ${company.bank_info || 'Consultar setor financeiro.'}
