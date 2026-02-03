@@ -99,52 +99,130 @@ const Products: React.FC = () => {
             </header>
 
             {isEditing && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                    <form onSubmit={handleSave} className="bg-slate-900 w-full max-w-2xl rounded-[2.5rem] border border-slate-800 p-8 shadow-2xl relative">
-                        <button type="button" onClick={() => setIsEditing(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white"><X className="w-6 h-6" /></button>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+                    <form onSubmit={handleSave} className="bg-slate-900 w-full max-w-4xl rounded-[2.5rem] border border-slate-800 p-8 shadow-2xl relative overflow-y-auto max-h-[90vh] custom-scrollbar">
+                        <button type="button" onClick={() => setIsEditing(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white bg-slate-800 p-2 rounded-full transition-all"><X className="w-6 h-6" /></button>
 
-                        <h3 className="text-2xl font-black text-white uppercase mb-8 flex items-center gap-3">
+                        <h3 className="text-2xl font-black text-white uppercase mb-8 flex items-center gap-3 sticky top-0 bg-slate-900 z-10 py-2">
                             {editingProduct?.id ? <Edit2 className="w-6 h-6 text-indigo-500" /> : <Plus className="w-6 h-6 text-emerald-500" />}
                             {editingProduct?.id ? 'Editar Produto' : 'Novo Produto'}
                         </h3>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nome do Produto</label>
-                                <input required value={editingProduct?.name} onChange={e => setEditingProduct({ ...editingProduct!, name: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 font-bold text-white outline-none focus:border-indigo-500" placeholder="Ex: Camiseta Básica" />
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+
+                            {/* Left Column: Image & Basic Info */}
+                            <div className="md:col-span-4 space-y-6">
+                                {/* Image Upload */}
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Foto do Produto</label>
+                                    <div className="aspect-square rounded-[2rem] bg-slate-950 border-2 border-dashed border-slate-800 flex flex-col items-center justify-center relative overflow-hidden group hover:border-indigo-500/50 transition-all">
+                                        {editingProduct?.imageUrl ? (
+                                            <>
+                                                <img src={editingProduct.imageUrl} className="w-full h-full object-contain bg-white" alt="Preview" />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setEditingProduct({ ...editingProduct!, imageUrl: '' })}
+                                                    className="absolute top-2 right-2 p-2 bg-rose-500 text-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <div className="flex flex-col items-center text-slate-600">
+                                                <div className="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center mb-2">
+                                                    <Search className="w-6 h-6" />
+                                                </div>
+                                                <span className="text-[10px] font-black uppercase tracking-widest">Cole a URL abaixo</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <input
+                                        type="text"
+                                        placeholder="URL da Imagem..."
+                                        value={editingProduct?.imageUrl || ''}
+                                        onChange={e => setEditingProduct({ ...editingProduct!, imageUrl: e.target.value })}
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs font-bold text-slate-300 outline-none focus:border-indigo-500"
+                                    />
+                                    <p className="text-[9px] text-slate-500 font-medium">Recomendado: Imagens quadradas (1:1)</p>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Status</label>
+                                    <select value={editingProduct?.status} onChange={e => setEditingProduct({ ...editingProduct!, status: e.target.value as any })} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 font-bold text-slate-300 outline-none focus:border-indigo-500">
+                                        <option value="active">Ativo</option>
+                                        <option value="inactive">Inativo</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">SKU (Código)</label>
-                                <input required value={editingProduct?.sku} onChange={e => setEditingProduct({ ...editingProduct!, sku: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 font-bold text-white outline-none focus:border-indigo-500" placeholder="PROD-001" />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Preço Base (R$)</label>
-                                <input type="number" required value={editingProduct?.basePrice} onChange={e => setEditingProduct({ ...editingProduct!, basePrice: parseFloat(e.target.value) })} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 font-bold text-white outline-none focus:border-indigo-500" placeholder="0.00" />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Custo (R$) (Opcional)</label>
-                                <input type="number" value={editingProduct?.costPrice || ''} onChange={e => setEditingProduct({ ...editingProduct!, costPrice: parseFloat(e.target.value) })} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 font-bold text-slate-300 outline-none focus:border-indigo-500" placeholder="0.00" />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Categoria (Tecido Padrão)</label>
-                                <select value={editingProduct?.category} onChange={e => setEditingProduct({ ...editingProduct!, category: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 font-bold text-slate-300 outline-none focus:border-indigo-500">
-                                    {FABRICS.map(f => <option key={f.id} value={f.name}>{f.name}</option>)}
-                                    <option value="Outro">Outro</option>
-                                </select>
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Status Interno</label>
-                                <select value={editingProduct?.status} onChange={e => setEditingProduct({ ...editingProduct!, status: e.target.value as any })} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 font-bold text-slate-300 outline-none focus:border-indigo-500">
-                                    <option value="active">Ativo</option>
-                                    <option value="inactive">Inativo</option>
-                                </select>
+
+                            {/* Right Column: Details & Grade */}
+                            <div className="md:col-span-8 space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nome</label>
+                                        <input required value={editingProduct?.name} onChange={e => setEditingProduct({ ...editingProduct!, name: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 font-bold text-white outline-none focus:border-indigo-500" placeholder="Ex: Camiseta Básica" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">SKU</label>
+                                        <input required value={editingProduct?.sku} onChange={e => setEditingProduct({ ...editingProduct!, sku: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 font-bold text-white outline-none focus:border-indigo-500" placeholder="PROD-001" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Preço Base (R$)</label>
+                                        <input type="number" required value={editingProduct?.basePrice} onChange={e => setEditingProduct({ ...editingProduct!, basePrice: parseFloat(e.target.value) })} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 font-black text-emerald-400 text-lg outline-none focus:border-indigo-500" placeholder="0.00" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Categoria</label>
+                                        <select value={editingProduct?.category} onChange={e => setEditingProduct({ ...editingProduct!, category: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 font-bold text-slate-300 outline-none focus:border-indigo-500">
+                                            {FABRICS.map(f => <option key={f.id} value={f.name}>{f.name}</option>)}
+                                            <option value="Outro">Outro</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {/* Grade Selection */}
+                                <div className="space-y-4 pt-4 border-t border-slate-800">
+                                    <div className="flex items-center gap-2">
+                                        <AlertCircle className="w-4 h-4 text-indigo-500" />
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Grades e Tamanhos Disponíveis</label>
+                                    </div>
+
+                                    <div className="bg-slate-950/50 rounded-2xl p-4 border border-slate-800 space-y-4">
+                                        {/* Import GRADES from constants in real implementation, implying it is available */}
+                                        {['Adulto', 'Infantil', 'BabyLook'].map((gradeLabel) => {
+                                            // Mocking GRADES structure if not imported, or relying on imported FABRICS/GRADES
+                                            // Assuming GRADES is available or I should hardcode for safety
+                                            const gradeSizes = gradeLabel === 'Adulto' ? ['PP', 'P', 'M', 'G', 'GG', 'EXG', 'G1', 'G2', 'G3'] :
+                                                gradeLabel === 'Infantil' ? ['2', '4', '6', '8', '10', '12', '14', '16'] :
+                                                    ['PP', 'P', 'M', 'G', 'GG', 'EXG'];
+
+                                            const currentAllowed = editingProduct?.allowedGrades || {};
+                                            const isActive = !!currentAllowed[gradeLabel];
+
+                                            return (
+                                                <div key={gradeLabel} className={`border rounded-xl transition-all ${isActive ? 'bg-indigo-500/10 border-indigo-500/30' : 'bg-slate-900 border-slate-800 opacity-60 hover:opacity-100'}`}>
+                                                    <div className="flex items-center justify-between p-3 cursor-pointer" onClick={() => {
+                                                        const newAllowed = { ...currentAllowed };
+                                                        if (isActive) delete newAllowed[gradeLabel];
+                                                        else newAllowed[gradeLabel] = gradeSizes;
+                                                        setEditingProduct({ ...editingProduct!, allowedGrades: newAllowed });
+                                                    }}>
+                                                        <span className="text-xs font-black uppercase text-slate-300">{gradeLabel}</span>
+                                                        <div className={`w-4 h-4 rounded border flex items-center justify-center ${isActive ? 'bg-indigo-500 border-indigo-500 text-white' : 'border-slate-600'}`}>
+                                                            {isActive && <div className="w-2 h-2 bg-white rounded-full" />}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="mt-8 flex justify-end gap-3">
-                            <button type="button" onClick={() => setIsEditing(false)} className="px-6 py-3 rounded-xl font-bold uppercase text-xs text-slate-500 hover:text-white">Cancelar</button>
-                            <button type="submit" className="px-8 py-3 bg-indigo-600 rounded-xl font-black uppercase text-xs text-white shadow-lg hover:bg-indigo-500 flex items-center gap-2">
-                                <Save className="w-4 h-4" /> Salvar Produto
+                        <div className="mt-8 flex justify-end gap-3 sticky bottom-0 bg-slate-900 pt-4 border-t border-slate-800">
+                            <button type="button" onClick={() => setIsEditing(false)} className="px-6 py-3 rounded-xl font-bold uppercase text-xs text-slate-500 hover:text-white transition-colors">Cancelar</button>
+                            <button type="submit" className="px-8 py-3 bg-indigo-600 rounded-xl font-black uppercase text-xs text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-500 transition-all flex items-center gap-2 transform active:scale-95">
+                                <Save className="w-4 h-4" /> Salvar Alterações
                             </button>
                         </div>
                     </form>

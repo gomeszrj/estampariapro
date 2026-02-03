@@ -460,7 +460,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
               sku: '',
               category: 'Dry-Fit',
               basePrice: 0,
-              imageUrl: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&auto=format&fit=crop&q=60',
+              imageUrl: '',
               allowedGrades: GRADES.reduce((acc, g) => ({ ...acc, [g.label]: g.sizes }), {}),
               measurements: {},
               description: ''
@@ -506,88 +506,102 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
 
       {/* Product Grid */}
       <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 animate-in slide-in-from-bottom duration-1000 delay-200">
-        {filteredProducts.map((product) => (
-          <div
-            key={product.id}
-            onClick={() => setEditingProduct({ ...product })}
-            className="group relative bg-slate-900/40 rounded-[2rem] border border-slate-800/50 overflow-hidden hover:border-indigo-500/30 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-500 cursor-pointer flex flex-col"
-          >
-            {/* Image Aspect Ratio Container */}
-            <div className="aspect-[4/5] relative overflow-hidden bg-slate-950">
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60 z-10" />
-              <img
-                src={product.imageUrl}
-                alt={product.name}
-                className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
-              />
+        {filteredProducts.length > 0 ? (
+          filteredProducts.map((product) => (
+            <div
+              key={product.id}
+              onClick={() => setEditingProduct({ ...product })}
+              className="group relative bg-slate-900/40 rounded-[2rem] border border-slate-800/50 overflow-hidden hover:border-indigo-500/30 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-500 cursor-pointer flex flex-col"
+            >
+              {/* Image Aspect Ratio Container */}
+              <div className="aspect-[4/5] relative overflow-hidden bg-slate-950">
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60 z-10" />
+                {product.imageUrl ? (
+                  <img
+                    src={product.imageUrl}
+                    alt={product.name}
+                    className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-slate-900 text-slate-700">
+                    <Tag className="w-12 h-12 opacity-20" />
+                  </div>
+                )}
 
-              {/* Floating ROI Badge - Only logic, can be hidden for customer */}
-              {!readOnly && (
-                <div className="absolute top-4 right-4 z-20 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[10px] font-black text-white tracking-widest">R$ {product.basePrice.toFixed(0)}</span>
-                </div>
-              )}
-              {/* ReadOnly Price Badge */}
-              {readOnly && (
-                <div className="absolute bottom-4 right-4 z-20 bg-indigo-600/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-indigo-500/50 shadow-lg">
-                  <span className="text-xs font-black text-white tracking-widest">R$ {product.basePrice.toFixed(0)}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Content using Flex Grow to push footer down */}
-            <div className="p-5 relative z-20 flex-1 flex flex-col">
-              <div className="mb-4">
-                <span className="inline-block px-2 py-1 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-2">
-                  {product.category}
-                </span>
-                <h3 className="text-lg md:text-xl font-black text-slate-100 uppercase tracking-tight leading-tight group-hover:text-indigo-400 transition-colors line-clamp-2">
-                  {product.name}
-                </h3>
+                {/* Floating ROI Badge - Only logic, can be hidden for customer */}
+                {!readOnly && (
+                  <div className="absolute top-4 right-4 z-20 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[10px] font-black text-white tracking-widest">R$ {product.basePrice.toFixed(0)}</span>
+                  </div>
+                )}
+                {/* ReadOnly Price Badge */}
+                {readOnly && (
+                  <div className="absolute bottom-4 right-4 z-20 bg-indigo-600/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-indigo-500/50 shadow-lg">
+                    <span className="text-xs font-black text-white tracking-widest">R$ {product.basePrice.toFixed(0)}</span>
+                  </div>
+                )}
               </div>
 
-              {/* Store Status Toggle */}
-              <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between" onClick={e => e.stopPropagation()}>
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${product.published ? 'bg-emerald-500 animate-pulse' : 'bg-slate-700'}`}></div>
-                  <span className={`text-[10px] font-black uppercase tracking-widest ${product.published ? 'text-emerald-500' : 'text-slate-500'}`}>
-                    {product.published ? 'Na Loja' : 'Oculto'}
+              {/* Content using Flex Grow to push footer down */}
+              <div className="p-5 relative z-20 flex-1 flex flex-col">
+                <div className="mb-4">
+                  <span className="inline-block px-2 py-1 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-2">
+                    {product.category}
                   </span>
+                  <h3 className="text-lg md:text-xl font-black text-slate-100 uppercase tracking-tight leading-tight group-hover:text-indigo-400 transition-colors line-clamp-2">
+                    {product.name}
+                  </h3>
                 </div>
-                <button
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    // Ideally, togglePublished would be a service call.
-                    // For now, I'll update the 'published' field in update call or new method.
-                    try {
-                      const newStatus = !product.published;
-                      await productService.update(product.id, { published: newStatus });
-                      setProducts(prev => prev.map(p => p.id === product.id ? { ...p, published: newStatus } : p));
-                    } catch (error) {
-                      console.error("Error updating published status", error);
-                    }
-                  }}
-                  className={`text-[10px] uppercase font-bold px-3 py-1 rounded-lg transition-colors border ${product.published ? 'border-rose-500/30 text-rose-400 hover:bg-rose-500/10' : 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10'}`}
-                >
-                  {product.published ? 'Ocultar' : 'Publicar'}
-                </button>
-              </div>
 
-              <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                  Editar Visual
-                </span>
-                <div
-                  onClick={() => setEditingProduct({ ...product })}
-                  className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center hover:bg-indigo-600 transition-colors cursor-pointer"
-                >
-                  <Edit3 className="w-4 h-4 text-white" />
+                {/* Store Status Toggle */}
+                <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between" onClick={e => e.stopPropagation()}>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${product.published ? 'bg-emerald-500 animate-pulse' : 'bg-slate-700'}`}></div>
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${product.published ? 'text-emerald-500' : 'text-slate-500'}`}>
+                      {product.published ? 'Na Loja' : 'Oculto'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      // Ideally, togglePublished would be a service call.
+                      // For now, I'll update the 'published' field in update call or new method.
+                      try {
+                        const newStatus = !product.published;
+                        await productService.update(product.id, { published: newStatus });
+                        setProducts(prev => prev.map(p => p.id === product.id ? { ...p, published: newStatus } : p));
+                      } catch (error) {
+                        console.error("Error updating published status", error);
+                      }
+                    }}
+                    className={`text-[10px] uppercase font-bold px-3 py-1 rounded-lg transition-colors border ${product.published ? 'border-rose-500/30 text-rose-400 hover:bg-rose-500/10' : 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10'}`}
+                  >
+                    {product.published ? 'Ocultar' : 'Publicar'}
+                  </button>
+                </div>
+
+                <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                    Editar Visual
+                  </span>
+                  <div
+                    onClick={() => setEditingProduct({ ...product })}
+                    className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center hover:bg-indigo-600 transition-colors cursor-pointer"
+                  >
+                    <Edit3 className="w-4 h-4 text-white" />
+                  </div>
                 </div>
               </div>
             </div>
+          ))
+        ) : (
+          <div className="col-span-full py-20 flex flex-col items-center justify-center text-slate-500 border-2 border-dashed border-slate-800 rounded-[2rem]">
+            <Search className="w-12 h-12 mb-4 opacity-50" />
+            <p className="font-bold uppercase tracking-widest text-sm">Nenhum produto encontrado</p>
+            <p className="text-xs mt-2">Tente ajustar os filtros ou adicionar um novo item.</p>
           </div>
-        ))}
+        )}
       </div>
 
       {/* Cart Modal - Full Screen Mobile */}
