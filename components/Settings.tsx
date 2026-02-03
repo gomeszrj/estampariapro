@@ -87,6 +87,7 @@ const Settings: React.FC = () => {
     try {
       await settingsService.saveSettings(company);
       setSaved(true);
+      window.dispatchEvent(new Event('settingsUpdated'));
       setTimeout(() => setSaved(false), 3000);
     } catch (error) {
       console.error("Error saving settings", error);

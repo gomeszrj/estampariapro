@@ -24,8 +24,14 @@ import { settingsService } from '../services/settingsService';
 const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
   const [cloudBotEnabled, setCloudBotEnabled] = React.useState(false);
 
-  React.useEffect(() => {
+  const loadSettings = () => {
     settingsService.getSettings().then(s => setCloudBotEnabled(!!s.cloudbot_enabled));
+  };
+
+  React.useEffect(() => {
+    loadSettings();
+    window.addEventListener('settingsUpdated', loadSettings);
+    return () => window.removeEventListener('settingsUpdated', loadSettings);
   }, []);
   const menuItems = [
     { id: 'dashboard', label: 'Agenda', icon: LayoutDashboard },
