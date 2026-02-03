@@ -102,7 +102,7 @@ const RecipeAdder = ({ inventory, onAdd }: { inventory: InventoryItem[], onAdd: 
   );
 };
 
-const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) => {
+const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [fabricFilter, setFabricFilter] = useState('all');
   const [sortBy, setSortBy] = useState<'price-asc' | 'price-desc' | 'none'>('none');
@@ -422,11 +422,11 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
       {/* Header */}
       <div className="max-w-7xl mx-auto mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-6 animate-in slide-in-from-top duration-700">
         <div>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 mb-2">
-            GERENCIAR PRODUTOS <span className="text-indigo-600">.</span>
+          <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 mb-2">
+            CONTROLE DE LOJA <span className="text-emerald-500">.</span>
           </h1>
           <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">
-            {readOnly ? 'Visualização Interna' : 'Cadastre, edite e gerencie seu estoque'}
+            Gerencie o que aparece (ou não) na sua Mini Loja Pública
           </p>
         </div>
 
@@ -547,12 +547,42 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
                 </h3>
               </div>
 
-              <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
+              {/* Store Status Toggle */}
+              <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${product.published ? 'bg-emerald-500 animate-pulse' : 'bg-slate-700'}`}></div>
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${product.published ? 'text-emerald-500' : 'text-slate-500'}`}>
+                    {product.published ? 'Na Loja' : 'Oculto'}
+                  </span>
+                </div>
+                <button
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    // Ideally, togglePublished would be a service call.
+                    // For now, I'll update the 'published' field in update call or new method.
+                    try {
+                      const newStatus = !product.published;
+                      await productService.update(product.id, { published: newStatus });
+                      setProducts(prev => prev.map(p => p.id === product.id ? { ...p, published: newStatus } : p));
+                    } catch (error) {
+                      console.error("Error updating published status", error);
+                    }
+                  }}
+                  className={`text-[10px] uppercase font-bold px-3 py-1 rounded-lg transition-colors border ${product.published ? 'border-rose-500/30 text-rose-400 hover:bg-rose-500/10' : 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10'}`}
+                >
+                  {product.published ? 'Ocultar' : 'Publicar'}
+                </button>
+              </div>
+
+              <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between">
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                  {readOnly ? 'Adicionar' : 'Gerenciar'}
+                  Editar Visual
                 </span>
-                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center group-hover:bg-indigo-600 transition-colors">
-                  {readOnly ? <Plus className="w-4 h-4 text-white" /> : <Edit3 className="w-4 h-4 text-white" />}
+                <div
+                  onClick={() => setEditingProduct({ ...product })}
+                  className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center hover:bg-indigo-600 transition-colors cursor-pointer"
+                >
+                  <Edit3 className="w-4 h-4 text-white" />
                 </div>
               </div>
             </div>
@@ -1061,4 +1091,4 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
   );
 };
 
-export default Catalog;
+export default StoreControl;

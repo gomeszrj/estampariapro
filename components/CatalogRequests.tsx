@@ -87,6 +87,8 @@ const CatalogRequests: React.FC = () => {
         }
     };
 
+    const [viewingRequest, setViewingRequest] = useState<CatalogOrder | null>(null);
+
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             <header>
@@ -104,7 +106,11 @@ const CatalogRequests: React.FC = () => {
                     </div>
                 ) : (
                     requests.map(request => (
-                        <div key={request.id} className="bg-[#0f172a] p-6 rounded-3xl border border-slate-800 flex flex-col md:flex-row gap-6 relative overflow-hidden group">
+                        <div
+                            key={request.id}
+                            onClick={() => setViewingRequest(request)}
+                            className="bg-[#0f172a] p-6 rounded-3xl border border-slate-800 flex flex-col md:flex-row gap-6 relative overflow-hidden group cursor-pointer hover:border-indigo-500/50 transition-all"
+                        >
                             {/* Status Stripe */}
                             <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${request.status === 'approved' ? 'bg-emerald-500' :
                                 request.status === 'rejected' ? 'bg-rose-500' : 'bg-amber-500'
@@ -113,7 +119,7 @@ const CatalogRequests: React.FC = () => {
                             <div className="flex-1 space-y-4">
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <h3 className="font-black text-lg text-slate-200 uppercase">{request.clientName}</h3>
+                                        <h3 className="font-black text-lg text-slate-200 uppercase group-hover:text-indigo-400 transition-colors">{request.clientName}</h3>
                                         <p className="text-xs text-indigo-400 font-bold flex items-center gap-2">
                                             {request.clientPhone}
                                             <span className="w-1 h-1 bg-slate-600 rounded-full" />
@@ -129,36 +135,127 @@ const CatalogRequests: React.FC = () => {
                                 </div>
 
                                 <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800 space-y-2">
-                                    {request.items.map((item, idx) => (
+                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-2">Resumo do Pedido ({request.items.length} itens)</p>
+                                    {request.items.slice(0, 2).map((item, idx) => (
                                         <div key={idx} className="flex items-center gap-4 text-sm text-slate-300">
                                             <span className="font-bold bg-slate-800 px-2 py-0.5 rounded text-xs text-slate-400">{item.quantity}x</span>
-                                            <span className="flex-1">{item.productName} (Tam: {item.size})</span>
-                                            {item.notes && <span className="text-[10px] italic text-slate-500">"{item.notes}"</span>}
+                                            <span className="flex-1 truncate">{item.productName}</span>
                                         </div>
                                     ))}
+                                    {request.items.length > 2 && (
+                                        <p className="text-[10px] text-slate-500 italic">+ {request.items.length - 2} outros itens...</p>
+                                    )}
                                 </div>
                             </div>
 
-                            {request.status === 'pending' && (
-                                <div className="flex flex-col justify-center gap-3 w-full md:w-auto border-t md:border-t-0 md:border-l border-slate-800 pt-4 md:pt-0 md:pl-6">
-                                    <button
-                                        onClick={() => handleApprove(request)}
-                                        className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20 transition-all"
-                                    >
-                                        <CheckCircle2 className="w-4 h-4" /> Aprovar
-                                    </button>
-                                    <button
-                                        onClick={() => handleReject(request.id)}
-                                        className="bg-slate-800 hover:bg-rose-900/50 hover:text-rose-400 text-slate-400 px-6 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 transition-all"
-                                    >
-                                        <XCircle className="w-4 h-4" /> Rejeitar
-                                    </button>
-                                </div>
-                            )}
+                            <div className="flex items-center justify-center px-4">
+                                <Clock className="w-6 h-6 text-slate-700 group-hover:text-indigo-500 transition-colors" />
+                            </div>
                         </div>
                     ))
                 )}
             </div>
+
+            {/* Request Detail Modal */}
+            {viewingRequest && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-[#0f172a] w-full max-w-3xl rounded-[2.5rem] border border-slate-800 shadow-2xl flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-10 duration-300">
+                        {/* Header */}
+                        <div className="p-8 border-b border-slate-800 flex justify-between items-start">
+                            <div>
+                                <h2 className="text-3xl font-black text-white uppercase tracking-tight mb-2">
+                                    Detalhes da Solicitação
+                                </h2>
+                                <div className="flex items-center gap-4">
+                                    <span className="text-indigo-400 font-bold text-sm uppercase tracking-wide bg-indigo-500/10 px-3 py-1 rounded-lg border border-indigo-500/20">
+                                        {viewingRequest.clientName}
+                                    </span>
+                                    <span className="text-slate-500 font-bold text-sm">
+                                        {new Date(viewingRequest.createdAt).toLocaleString('pt-BR')}
+                                    </span>
+                                </div>
+                                {(viewingRequest.clientTeam || viewingRequest.clientPhone) && (
+                                    <div className="mt-3 flex gap-4 text-xs text-slate-400 font-medium">
+                                        <span>📞 {viewingRequest.clientPhone}</span>
+                                        {viewingRequest.clientTeam && <span>🏆 {viewingRequest.clientTeam}</span>}
+                                    </div>
+                                )}
+                            </div>
+                            <button onClick={() => setViewingRequest(null)} className="p-3 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors">
+                                <XCircle className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 overflow-y-auto p-8 space-y-6">
+
+                            <div className="bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden">
+                                <table className="w-full text-left">
+                                    <thead className="bg-slate-900 border-b border-slate-800 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                                        <tr>
+                                            <th className="p-4">Qtd</th>
+                                            <th className="p-4">Produto</th>
+                                            <th className="p-4">Tamanho</th>
+                                            <th className="p-4">Notas</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-800">
+                                        {viewingRequest.items.map((item, idx) => (
+                                            <tr key={idx} className="hover:bg-slate-800/20">
+                                                <td className="p-4 font-bold text-white">{item.quantity}</td>
+                                                <td className="p-4 text-slate-300 font-medium">{item.productName}</td>
+                                                <td className="p-4 text-slate-400 font-mono text-xs">{item.size || '-'}</td>
+                                                <td className="p-4 text-slate-500 italic text-xs">{item.notes || '-'}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Total Estimation (Optional if we add prices later) */}
+                            <div className="flex justify-end">
+                                <div className="text-right">
+                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total de Itens</p>
+                                    <p className="text-2xl font-black text-white">{viewingRequest.items.reduce((acc, i) => acc + i.quantity, 0)}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Footer Actions */}
+                        <div className="p-6 border-t border-slate-800 bg-slate-900/30 flex justify-end gap-4 rounded-b-[2.5rem]">
+                            <button
+                                onClick={() => setViewingRequest(null)}
+                                className="px-6 py-4 rounded-xl font-bold uppercase text-xs text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                            >
+                                Fechar
+                            </button>
+
+                            {viewingRequest.status === 'pending' && (
+                                <>
+                                    <button
+                                        onClick={() => {
+                                            handleReject(viewingRequest.id);
+                                            setViewingRequest(null);
+                                        }}
+                                        className="px-6 py-4 rounded-xl font-black uppercase text-xs text-rose-400 hover:bg-rose-950 border border-transparent hover:border-rose-900 transition-colors flex items-center gap-2"
+                                    >
+                                        <XCircle className="w-4 h-4" /> Rejeitar
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            handleApprove(viewingRequest);
+                                            setViewingRequest(null);
+                                        }}
+                                        className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black uppercase text-xs tracking-widest shadow-xl shadow-emerald-900/20 hover:scale-105 transition-all flex items-center gap-2"
+                                    >
+                                        <CheckCircle2 className="w-4 h-4" /> Aprovar Pedido
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

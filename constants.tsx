@@ -21,8 +21,8 @@ export const GRADES: SizeGrade[] = [
 ];
 
 export const STATUS_CONFIG = {
-  [OrderStatus.RECEIVED]: { label: 'Recebido', color: 'bg-slate-800 text-slate-300 border-slate-700' },
-  [OrderStatus.FINALIZATION]: { label: 'Organização de Arquivos', color: 'bg-indigo-900/30 text-indigo-400 border-indigo-900/50' },
-  [OrderStatus.IN_PRODUCTION]: { label: 'Produção', color: 'bg-amber-900/30 text-amber-400 border-amber-900/50' },
-  [OrderStatus.FINISHED]: { label: 'Finalizado', color: 'bg-emerald-900/30 text-emerald-400 border-emerald-900/50' },
+  [OrderStatus.RECEIVED]: { label: 'Recebido / Separando', color: 'bg-slate-800 text-slate-300 border-slate-700' },
+  [OrderStatus.FINALIZATION]: { label: 'Em Arte / Aprovação', color: 'bg-indigo-900/30 text-indigo-400 border-indigo-900/50' },
+  [OrderStatus.IN_PRODUCTION]: { label: 'Em Produção', color: 'bg-amber-900/30 text-amber-400 border-amber-900/50' },
+  [OrderStatus.FINISHED]: { label: 'Pronto / Entregue', color: 'bg-emerald-900/30 text-emerald-400 border-emerald-900/50' },
 };

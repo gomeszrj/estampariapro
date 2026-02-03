@@ -81,6 +81,7 @@ export interface Product {
   description?: string; // Commercial description
   allowedGrades?: Record<string, string[]>;
   measurements?: Record<string, { height: number; width: number }>; // New: Size measurements e.g. { 'P': { height: 70, width: 50 } }
+  published?: boolean; // Controls visibility in Public Store
 }
 
 export interface Client {

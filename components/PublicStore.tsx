@@ -57,7 +57,7 @@ const PublicStore: React.FC = () => {
                 productService.getAll(),
                 settingsService.getSettings()
             ]);
-            setProducts(prods.filter(p => p.status === 'active')); // Only active products
+            setProducts(prods.filter(p => p.status === 'active' && p.published)); // Only active and published products
             setCompany(settings);
         } catch (error) {
             console.error("Error loading store data", error);
