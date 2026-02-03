@@ -420,7 +420,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
     <div className="min-h-screen bg-[#0f172a] text-slate-100 p-4 md:p-8 font-sans selection:bg-indigo-500/30">
 
       {/* Header */}
-      <div className="max-w-7xl mx-auto mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-6 animate-in slide-in-from-top duration-700">
+      <div className="max-w-7xl mx-auto mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div>
           <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 mb-2">
             CONTROLE DE LOJA <span className="text-emerald-500">.</span>
@@ -505,7 +505,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
       </div>
 
       {/* Product Grid */}
-      <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 animate-in slide-in-from-bottom duration-1000 delay-200">
+      <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
         {filteredProducts.length > 0 ? (
           filteredProducts.map((product) => (
             <div

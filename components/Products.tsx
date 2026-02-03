@@ -242,34 +242,65 @@ const Products: React.FC = () => {
 
                 <div className="overflow-hidden rounded-2xl border border-slate-800">
                     <table className="w-full text-left">
-                        <thead className="bg-slate-950 text-slate-400 text-[10px] font-black uppercase tracking-widest">
+                        <thead className="bg-slate-950 text-slate-400 text-[10px] font-black uppercase tracking-widest sticky top-0 z-10">
                             <tr>
-                                <th className="p-4 pl-6">SKU</th>
-                                <th className="p-4">Produto</th>
+                                <th className="p-4 pl-6 w-24">Foto</th>
+                                <th className="p-4">SKU / Produto</th>
                                 <th className="p-4">Categoria</th>
                                 <th className="p-4 text-center">Preço Base</th>
+                                <th className="p-4 text-center">Grade</th>
                                 <th className="p-4 text-center">Status</th>
                                 <th className="p-4 text-right pr-6">Ações</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-800 bg-slate-900/50">
                             {filtered.map(product => (
-                                <tr key={product.id} className="hover:bg-slate-800/50 transition-colors group">
-                                    <td className="p-4 pl-6 font-mono text-xs text-slate-500 font-bold">{product.sku}</td>
-                                    <td className="p-4 font-bold text-slate-200">{product.name}</td>
-                                    <td className="p-4 text-xs font-bold text-slate-500 uppercase">{product.category}</td>
+                                <tr key={product.id} className="hover:bg-slate-800/80 transition-colors group">
+                                    <td className="p-4 pl-6">
+                                        <div className="w-12 h-12 rounded-lg bg-slate-800 border border-slate-700 overflow-hidden">
+                                            {product.imageUrl ? (
+                                                <img src={product.imageUrl} alt="" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-slate-600">
+                                                    <div className="w-4 h-4 bg-slate-700 rounded-sm" />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="p-4">
+                                        <div className="flex flex-col">
+                                            <span className="font-mono text-[9px] text-indigo-400 font-bold mb-1">{product.sku}</span>
+                                            <span className="font-bold text-slate-200 text-sm">{product.name}</span>
+                                        </div>
+                                    </td>
+                                    <td className="p-4">
+                                        <span className="px-2 py-1 rounded bg-slate-800 text-[10px] uppercase font-bold text-slate-400 border border-slate-700">
+                                            {product.category}
+                                        </span>
+                                    </td>
                                     <td className="p-4 text-center font-bold text-emerald-400">R$ {product.basePrice.toFixed(2)}</td>
                                     <td className="p-4 text-center">
+                                        <div className="flex justify-center gap-1">
+                                            {Object.keys(product.allowedGrades || {}).length > 0 ? (
+                                                <span className="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-[10px] font-black">
+                                                    {Object.keys(product.allowedGrades || {}).length}
+                                                </span>
+                                            ) : (
+                                                <span className="text-slate-600">-</span>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="p-4 text-center">
                                         <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${product.status === 'active' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-slate-800 text-slate-500'}`}>
-                                            {product.status}
+                                            {product.status === 'active' ? 'Ativo' : 'Inativo'}
                                         </span>
                                     </td>
                                     <td className="p-4 text-right pr-6">
                                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button onClick={() => { setEditingProduct(product); setIsEditing(true); }} className="p-2 hover:bg-indigo-500/20 rounded-lg text-slate-400 hover:text-indigo-400 transition-colors">
+                                            <button onClick={() => { setEditingProduct(product); setIsEditing(true); }} className="p-2 hover:bg-indigo-500/20 rounded-lg text-slate-400 hover:text-indigo-400 transition-colors" title="Editar">
                                                 <Edit2 className="w-4 h-4" />
                                             </button>
-                                            <button onClick={() => handleDelete(product.id)} className="p-2 hover:bg-rose-500/20 rounded-lg text-slate-400 hover:text-rose-400 transition-colors">
+                                            <button onClick={() => handleDelete(product.id)} className="p-2 hover:bg-rose-500/20 rounded-lg text-slate-400 hover:text-rose-400 transition-colors" title="Excluir">
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
                                         </div>
