@@ -584,3 +584,4 @@ const PublicStore: React.FC = () => {
 };
 
 export default PublicStore;
+// Standard Luxury Edition v15.0
