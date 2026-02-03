@@ -20,7 +20,8 @@ export const catalogOrderService = {
             client_phone: order.clientPhone,
             items: order.items, // JSONB
             total_estimated: order.totalEstimated,
-            status: 'pending' // Default
+            status: 'pending', // Default
+            notes: order.notes
         };
 
         const { data, error } = await supabase
@@ -63,5 +64,6 @@ const mapCatalogOrderFromDB = (dbItem: any): CatalogOrder => ({
     createdAt: dbItem.created_at,
     status: dbItem.status,
     items: dbItem.items as CatalogOrderItem[],
-    totalEstimated: dbItem.total_estimated
+    totalEstimated: dbItem.total_estimated,
+    notes: dbItem.notes
 });

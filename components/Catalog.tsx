@@ -935,38 +935,52 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
                               </div>
 
                               {selectedSizes.length > 0 && (
-                                <div className="col-span-full pt-2 grid grid-cols-1 gap-2 p-2">
-                                  {selectedSizes.map((size: string) => (
-                                    <div key={size} className="flex gap-2 items-center">
-                                      <span className="text-[9px] font-bold text-slate-400 w-6 text-center">{size}</span>
-                                      <input
-                                        placeholder="Alt.(cm)"
-                                        type="number"
-                                        value={editingProduct.measurements?.[size]?.height || ''}
-                                        onClick={(e) => e.stopPropagation()}
-                                        onChange={(e) => {
-                                          const newMeasurements = { ...editingProduct.measurements };
-                                          if (!newMeasurements[size]) newMeasurements[size] = {};
-                                          newMeasurements[size].height = parseFloat(e.target.value);
-                                          setEditingProduct({ ...editingProduct, measurements: newMeasurements });
-                                        }}
-                                        className="w-1/2 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-[9px] text-white text-center outline-none focus:border-indigo-500"
-                                      />
-                                      <input
-                                        placeholder="Larg.(cm)"
-                                        type="number"
-                                        value={editingProduct.measurements?.[size]?.width || ''}
-                                        onClick={(e) => e.stopPropagation()}
-                                        onChange={(e) => {
-                                          const newMeasurements = { ...editingProduct.measurements };
-                                          if (!newMeasurements[size]) newMeasurements[size] = {};
-                                          newMeasurements[size].width = parseFloat(e.target.value);
-                                          setEditingProduct({ ...editingProduct, measurements: newMeasurements });
-                                        }}
-                                        className="w-1/2 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-[9px] text-white text-center outline-none focus:border-indigo-500"
-                                      />
-                                    </div>
-                                  ))}
+                                <div className="col-span-full pt-2 p-2">
+                                  <div className="flex items-center gap-2 mb-2 px-1">
+                                    <Ruler className="w-3 h-3 text-indigo-400" />
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400">Tabela de Medidas (cm)</span>
+                                  </div>
+                                  <div className="grid grid-cols-1 gap-2">
+                                    {selectedSizes.map((size: string) => (
+                                      <div key={size} className="flex gap-2 items-center bg-slate-900/30 p-1.5 rounded-lg border border-slate-800/50">
+                                        <span className="text-[10px] font-black text-slate-300 w-8 text-center bg-slate-800 py-1 rounded">{size}</span>
+                                        <div className="flex-1 grid grid-cols-2 gap-2">
+                                          <div className="relative">
+                                            <input
+                                              placeholder="0"
+                                              type="number"
+                                              value={editingProduct.measurements?.[size]?.height || ''}
+                                              onClick={(e) => e.stopPropagation()}
+                                              onChange={(e) => {
+                                                const newMeasurements = { ...editingProduct.measurements };
+                                                if (!newMeasurements[size]) newMeasurements[size] = { height: 0, width: 0 };
+                                                newMeasurements[size].height = parseFloat(e.target.value);
+                                                setEditingProduct({ ...editingProduct, measurements: newMeasurements });
+                                              }}
+                                              className="w-full bg-slate-950 border border-slate-700/50 rounded-lg px-2 py-1.5 text-[10px] text-white text-center outline-none focus:border-indigo-500 focus:bg-indigo-900/10 transition-colors"
+                                            />
+                                            <span className="absolute right-2 top-1.5 text-[8px] text-slate-600 font-bold pointer-events-none">ALT</span>
+                                          </div>
+                                          <div className="relative">
+                                            <input
+                                              placeholder="0"
+                                              type="number"
+                                              value={editingProduct.measurements?.[size]?.width || ''}
+                                              onClick={(e) => e.stopPropagation()}
+                                              onChange={(e) => {
+                                                const newMeasurements = { ...editingProduct.measurements };
+                                                if (!newMeasurements[size]) newMeasurements[size] = { height: 0, width: 0 };
+                                                newMeasurements[size].width = parseFloat(e.target.value);
+                                                setEditingProduct({ ...editingProduct, measurements: newMeasurements });
+                                              }}
+                                              className="w-full bg-slate-950 border border-slate-700/50 rounded-lg px-2 py-1.5 text-[10px] text-white text-center outline-none focus:border-indigo-500 focus:bg-indigo-900/10 transition-colors"
+                                            />
+                                            <span className="absolute right-2 top-1.5 text-[8px] text-slate-600 font-bold pointer-events-none">LARG</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
                               )}
                             </div>

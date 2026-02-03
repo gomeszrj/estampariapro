@@ -129,6 +129,7 @@ export interface CatalogOrder {
   status: 'pending' | 'approved' | 'rejected';
   items: CatalogOrderItem[];
   totalEstimated: number;
+  notes?: string;
 }
 
 export interface InventoryItem {
