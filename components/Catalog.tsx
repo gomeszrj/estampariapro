@@ -509,7 +509,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
         {filteredProducts.map((product) => (
           <div
             key={product.id}
-            onClick={() => readOnly ? setViewingMeasurements(product) : setEditingProduct({ ...product })} // Open Detail Modal on ReadOnly
+            onClick={() => setEditingProduct({ ...product })}
             className="group relative bg-slate-900/40 rounded-[2rem] border border-slate-800/50 overflow-hidden hover:border-indigo-500/30 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-500 cursor-pointer flex flex-col"
           >
             {/* Image Aspect Ratio Container */}
@@ -585,7 +585,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
                       Voltar ao Catálogo
                     </button>
                   </div>
-                ) :
+                ) : (
                   cart.map((item, index) => {
                     // Get all unique sizes from allowedGrades
                     const allSizes = Object.values(item.allowedGrades || {}).flat().filter((v: any, i, a) => a.indexOf(v) === i) as string[];
@@ -667,7 +667,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
                         )}
                       </div>
                     )
-                  })}
+                  }))}
 
               </div>
 

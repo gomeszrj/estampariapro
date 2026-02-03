@@ -13,6 +13,7 @@ import CatalogRequests from './components/CatalogRequests.tsx';
 import Inventory from './components/Inventory.tsx';
 import { CloudBot } from './components/CloudBot';
 import OrderTracker from './components/OrderTracker.tsx';
+import PublicStore from './components/PublicStore.tsx';
 import { Bell, User as UserIcon, Share2 } from 'lucide-react';
 import { Order, Product, Client, OrderStatus, OrderType } from './types';
 import { AuthProvider, useAuth } from './contexts/AuthContext.tsx';
@@ -102,26 +103,7 @@ const AuthenticatedApp: React.FC = () => {
   };
 
   if (isPublicCatalog) {
-    return (
-      <div className="min-h-screen bg-[#020617] flex flex-col">
-        <header className="h-20 bg-[#0f172a]/40 backdrop-blur-xl border-b border-slate-800/50 flex items-center justify-between px-10 sticky top-0 z-30">
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Visualização Pública</span>
-            <span className="text-xs font-black text-slate-100 bg-slate-800 px-4 py-1.5 rounded-full border border-slate-700 shadow-sm uppercase tracking-wider">
-              {companyName}
-            </span>
-          </div>
-          {session ? (
-            <a href="/" className="text-xs font-bold text-indigo-400 hover:text-indigo-300 uppercase tracking-widest">Voltar ao Painel</a>
-          ) : (
-            <a href="/" className="text-xs font-bold text-slate-500 hover:text-slate-300 uppercase tracking-widest">Login Administrativo</a>
-          )}
-        </header>
-        <div className="p-10 max-w-[1600px] mx-auto w-full flex-1">
-          <Catalog products={products} setProducts={() => { }} readOnly={true} />
-        </div>
-      </div>
-    );
+    return <PublicStore />;
   }
 
   const isTrackerView = new URLSearchParams(window.location.search).get('view') === 'tracker';
