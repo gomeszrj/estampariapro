@@ -37,7 +37,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
     { id: 'dashboard', label: 'Agenda', icon: LayoutDashboard },
     { id: 'orders', label: 'Pedidos', icon: ShoppingCart },
     { id: 'kanban', label: 'Fluxo', icon: Trello },
-    { id: 'catalog', label: 'Catálogo', icon: Box },
+    { id: 'catalog', label: 'Cadastrar Produto', icon: Box },
     { id: 'catalog-requests', label: 'Solicitações', icon: Inbox },
     { id: 'clients', label: 'Clientes', icon: Users },
     { id: 'inventory', label: 'Estoque', icon: Box },

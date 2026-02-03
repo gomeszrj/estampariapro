@@ -423,10 +423,10 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
       <div className="max-w-7xl mx-auto mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-6 animate-in slide-in-from-top duration-700">
         <div>
           <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 mb-2">
-            CATÁLOGO <span className="text-indigo-600">.</span>
+            GERENCIAR PRODUTOS <span className="text-indigo-600">.</span>
           </h1>
           <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">
-            {readOnly ? 'Selecione e monte seu pedido' : 'Gerencie seus produtos e preços'}
+            {readOnly ? 'Visualização Interna' : 'Cadastre, edite e gerencie seu estoque'}
           </p>
         </div>
 
@@ -678,7 +678,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
                     <span className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400">
                       <Users className="w-4 h-4" />
                     </span>
-                    <h4 className="text-sm font-black text-slate-200 uppercase tracking-widest">Seus Dados</h4>
+                    <h1 className="text-4xl font-black text-slate-800 uppercase tracking-tighter">Gerenciar Produtos</h1>
                   </div>
 
                   <div className="grid grid-cols-1 gap-4">
