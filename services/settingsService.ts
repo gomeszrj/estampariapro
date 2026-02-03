@@ -13,6 +13,7 @@ export interface CompanySettings {
     evolution_api_url?: string;
     evolution_api_key?: string;
     evolution_instance_name?: string;
+    cloudbot_enabled?: boolean;
 }
 
 export const settingsService = {
@@ -36,7 +37,8 @@ export const settingsService = {
                     logo_url: '',
                     evolution_api_url: '',
                     evolution_api_key: '',
-                    evolution_instance_name: ''
+                    evolution_instance_name: '',
+                    cloudbot_enabled: false
                 };
             }
             throw error;
@@ -53,7 +55,8 @@ export const settingsService = {
             logo_url: data.logo_url || '',
             evolution_api_url: data.evolution_api_url || '',
             evolution_api_key: data.evolution_api_key || '',
-            evolution_instance_name: data.evolution_instance_name || ''
+            evolution_instance_name: data.evolution_instance_name || '',
+            cloudbot_enabled: data.cloudbot_enabled || false
         };
     },
 
@@ -70,7 +73,8 @@ export const settingsService = {
             logo_url: settings.logo_url,
             evolution_api_url: settings.evolution_api_url,
             evolution_api_key: settings.evolution_api_key,
-            evolution_instance_name: settings.evolution_instance_name
+            evolution_instance_name: settings.evolution_instance_name,
+            cloudbot_enabled: settings.cloudbot_enabled
         };
 
         const { error } = await supabase

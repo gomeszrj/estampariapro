@@ -13,7 +13,7 @@ import CatalogRequests from './components/CatalogRequests.tsx';
 import Inventory from './components/Inventory.tsx';
 import { CloudBot } from './components/CloudBot';
 import OrderTracker from './components/OrderTracker.tsx';
-import { Bell, User as UserIcon } from 'lucide-react';
+import { Bell, User as UserIcon, Share2 } from 'lucide-react';
 import { Order, Product, Client, OrderStatus, OrderType } from './types';
 import { AuthProvider, useAuth } from './contexts/AuthContext.tsx';
 import { clientService } from './services/clientService.ts';
@@ -33,7 +33,7 @@ const AuthenticatedApp: React.FC = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const isPublicCatalog = new URLSearchParams(window.location.search).get('view') === 'public_catalog';
+  const isPublicCatalog = new URLSearchParams(window.location.search).get('view') === 'public_catalog' || window.location.pathname === '/catalogo';
 
   // Show Login if no session AND not in public catalog mode
   if (!session && !isPublicCatalog) {
@@ -141,6 +141,9 @@ const AuthenticatedApp: React.FC = () => {
             <span className="text-xs font-black text-slate-100 bg-slate-800 px-4 py-1.5 rounded-full border border-slate-700 shadow-sm uppercase tracking-wider">
               {companyName}
             </span>
+            <a href="/catalogo" target="_blank" className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 ml-4 border border-indigo-500/30 px-3 py-1 rounded-lg uppercase tracking-widest flex items-center gap-2 hover:bg-indigo-500/10 transition-all">
+              <Share2 className="w-3 h-3" /> Catálogo Público
+            </a>
           </div>
           <div className="flex items-center gap-8">
             <button className="relative px-3 py-2 text-slate-400 hover:text-indigo-400 transition-all bg-slate-800/30 rounded-xl border border-slate-700/50 group flex items-center gap-3" title={`Sistema Atualizado: v${SYSTEM_VERSION}`}>

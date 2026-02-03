@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Send, Bot, User, Sparkles, BrainCircuit, RefreshCw, Save, MessageSquare } from 'lucide-react';
 import { agentService, ChatMessage, AgentContext } from '../services/agentService';
 import { productService } from '../services/productService';
+import { orderService } from '../services/orderService';
 import { Product } from '../types';
 
 interface CloudBotProps {
@@ -61,12 +62,47 @@ export const CloudBot: React.FC<CloudBotProps> = ({ onCreateOrder }) => {
                     items: result.updatedContext.draftOrderItems || [],
                     briefing: briefing
                 });
+            } else if (result.action === 'CHECK_ORDER_STATUS') {
+                // Execute Metadata Action
+                await handleAction(result.action, result.actionMetadata, result.updatedContext);
             }
 
         } catch (e) {
             console.error(e);
         } finally {
             setIsThinking(false);
+        }
+    };
+
+    const handleAction = async (action: string, metadata: any, currentContext: AgentContext) => {
+        if (action === 'CHECK_ORDER_STATUS' && metadata?.orderNumber) {
+            const order = await orderService.getByOrderNumber(metadata.orderNumber);
+            let info = '';
+            if (order) {
+                info = `Pedido #${order.orderNumber} encontrado. Status: ${order.status}. Total: R$ ${order.totalValue.toFixed(2)}. Cliente: ${order.clientName}.`;
+            } else {
+                info = `Pedido #${metadata.orderNumber} não encontrado.`;
+            }
+
+            // Re-think with new info
+            const newContext = { ...currentContext, orderStatusInfo: info };
+            setContext(newContext);
+
+            // Recursive call or just immediate follow-up?
+            // Simplest: Add a system note to history and call think again?
+            // Better: Call think with updated context and a standard "result found" prompt invisible to user?
+            // Actually agentService.think takes (message, context).
+            // We can pass a hidden system prompt as message or just re-call
+
+            const result2 = await agentService.think("SYSTEM_INFO: " + info, newContext, products);
+
+            const botMsg2: ChatMessage = {
+                id: (Date.now() + 2).toString(),
+                role: 'assistant',
+                content: result2.reply,
+                timestamp: new Date()
+            };
+            setMessages(prev => [...prev, botMsg2]);
         }
     };
 
@@ -135,6 +171,18 @@ export const CloudBot: React.FC<CloudBotProps> = ({ onCreateOrder }) => {
                 <div className="flex items-center gap-3 mb-2">
                     <BrainCircuit className="w-6 h-6 text-purple-400" />
                     <h3 className="font-black text-slate-100 uppercase tracking-widest text-sm">Cérebro do Agente</h3>
+                </div>
+
+                {/* QR Code / Status Section */}
+                <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl flex items-center gap-4">
+                    <div className="w-16 h-16 bg-white p-1 rounded-lg">
+                        {/* Placeholder QR */}
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=ExampleConnection" alt="QR Code" className="w-full h-full opacity-50" />
+                    </div>
+                    <div>
+                        <h4 className="font-black text-slate-200 uppercase text-xs mb-1">WhatsApp Conectado</h4>
+                        <p className="text-[10px] text-slate-500 leading-tight">Digitalize o QR Code para conectar uma nova sessão.</p>
+                    </div>
                 </div>
 
                 {/* Context Cards */}

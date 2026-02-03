@@ -125,6 +125,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [clientForm, setClientForm] = useState({ name: '', team: '', phone: '', email: '' });
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // --- Helpers for Recipe ---
   const loadRecipe = async (productId: string) => {
@@ -146,11 +147,11 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
   const handleAddRecipeItem = async (inventoryItemId: string, qty: number) => {
     if (!editingProduct) return;
     try {
-      const newItem = await productService.addRecipeItem({
-        productId: editingProduct.id,
+      const newItem = await productService.addRecipeItem(
+        editingProduct.id,
         inventoryItemId,
-        quantityRequired: qty
-      });
+        qty
+      );
       if (newItem) setRecipeItems(prev => [...prev, newItem]);
     } catch (e) {
       console.error("Error adding recipe item", e);
@@ -369,7 +370,17 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
 
     setIsSubmittingOrder(true);
     try {
+      // 1. Create Client
+      const newClient = await clientService.create({
+        name: clientForm.name,
+        whatsapp: clientForm.phone,
+        email: clientForm.email || `temp_${Date.now()}@system.com`,
+        address: 'Cliente do Catálogo'
+      });
+
+      // 2. Create Order
       const orderData: Omit<CatalogOrder, 'id' | 'createdAt'> = {
+        clientId: newClient.id,
         clientName: clientForm.team ? `${clientForm.name} (${clientForm.team})` : clientForm.name,
         clientPhone: clientForm.phone,
         clientTeam: clientForm.team,
@@ -381,7 +392,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
           notes: item.notes
         })),
         status: 'pending',
-        totalEstimate: 0 // Will be calculated by admin
+        totalEstimated: 0 // Will be calculated by admin
       };
 
       await catalogOrderService.create(orderData);
@@ -498,7 +509,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
         {filteredProducts.map((product) => (
           <div
             key={product.id}
-            onClick={() => readOnly ? handleDirectAddToCart(product) : setEditingProduct({ ...product })} // Direct Add on ReadOnly
+            onClick={() => readOnly ? setViewingMeasurements(product) : setEditingProduct({ ...product })} // Open Detail Modal on ReadOnly
             className="group relative bg-slate-900/40 rounded-[2rem] border border-slate-800/50 overflow-hidden hover:border-indigo-500/30 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-500 cursor-pointer flex flex-col"
           >
             {/* Image Aspect Ratio Container */}
@@ -574,7 +585,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
                       Voltar ao Catálogo
                     </button>
                   </div>
-                ) : (
+                ) :
                   cart.map((item, index) => {
                     // Get all unique sizes from allowedGrades
                     const allSizes = Object.values(item.allowedGrades || {}).flat().filter((v: any, i, a) => a.indexOf(v) === i) as string[];
@@ -657,7 +668,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, setProducts, readOnly }) =>
                       </div>
                     )
                   })}
-                  )}
+
               </div>
 
               {/* Client Form */}

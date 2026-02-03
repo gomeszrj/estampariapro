@@ -19,7 +19,14 @@ interface SidebarProps {
   setActiveView: (view: string) => void;
 }
 
+import { settingsService } from '../services/settingsService';
+
 const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
+  const [cloudBotEnabled, setCloudBotEnabled] = React.useState(false);
+
+  React.useEffect(() => {
+    settingsService.getSettings().then(s => setCloudBotEnabled(!!s.cloudbot_enabled));
+  }, []);
   const menuItems = [
     { id: 'dashboard', label: 'Agenda', icon: LayoutDashboard },
     { id: 'orders', label: 'Pedidos', icon: ShoppingCart },
@@ -28,7 +35,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
     { id: 'catalog-requests', label: 'Solicitações', icon: Inbox },
     { id: 'clients', label: 'Clientes', icon: Users },
     { id: 'inventory', label: 'Estoque', icon: Box },
-    { id: 'cloudbot', label: 'CloudBot Agent', icon: Bot }, // Changed ID to cloudbot
+    ...(cloudBotEnabled ? [{ id: 'cloudbot', label: 'CloudBot Agent', icon: Bot }] : []),
     { id: 'finance', label: 'Financeiro', icon: TrendingUp },
   ];
 

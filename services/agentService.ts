@@ -2,6 +2,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { getConfig, CONFIG_KEYS } from "../utils/config";
 import { Order, Client, Fabric, Product } from "../types";
+import { orderService } from "./orderService";
 
 // State Machine for the Conversation
 export type AgentState =
@@ -27,6 +28,7 @@ export interface AgentContext {
     draftOrderItems: any[];
     currentGoal?: string; // 'get_size', 'get_payment'
     personality?: string; // 'Friendly', 'Professional', 'Objective'
+    orderStatusInfo?: string; // injected info about an order
 }
 
 export class AgentService {
@@ -41,39 +43,44 @@ export class AgentService {
     }
 
     // The "Brain" - Decides what to do next
-    async think(message: string, context: AgentContext, productCatalog: Product[]): Promise<{ reply: string, updatedContext: AgentContext, action?: 'CREATE_ORDER' }> {
+    async think(message: string, context: AgentContext, productCatalog: Product[]): Promise<{ reply: string, updatedContext: AgentContext, action?: 'CREATE_ORDER' | 'CHECK_ORDER_STATUS', actionMetadata?: any }> {
         if (!this.ai) return { reply: "Erro: Cérebro offline (API Key).", updatedContext: context };
 
         const productsList = productCatalog.map(p => `${p.name} (R$ ${p.basePrice})`).join(", ");
 
         const systemPrompt = `
-      Você é o CloudBot, o vendedor de elite da Estamparia Gomes.
-      Sua missão: Atender o cliente, entender o pedido, negociar e fechar a venda de forma autônoma.
-      
+      Você é o CloudBot, o ATENDENTE DO WHATSAPP da Estamparia Gomes.
+      Sua missão: "Desenrolar" o atendimento. Resolver dúvidas, fechar vendas e informar status de pedidos com agilidade.
+
       # CONTEXTO ATUAL
       Cliente: ${context.clientName || 'Desconhecido'}
-      Intenção: ${context.detectedIntent || 'Indefinida'}
+      Intenção Detectada: ${context.detectedIntent || 'Indefinida'}
       Itens no Rascunho: ${JSON.stringify(context.draftOrderItems)}
-      
+      Info de Pedido (Status): ${context.orderStatusInfo || 'Nenhuma consulta feita ainda.'}
+
       # CATÁLOGO DISPONÍVEL
       ${productsList}
-      
-      # SUAS DIRETRIZES (PERSONALIDADE)
-      - Você é HUMANO, amigável mas profissional. Nada de "Sou uma IA".
-      - Adapte-se: Se o cliente for curto, seja curto. Se for detalhista, explique bem.
-      - Foco no Fechamento: Não enrole. Guie o cliente para fechar o pedido.
-      
+
+      # SUAS DIRETRIZES
+      1. **Personalidade**: Você é prático, educado e resolve. Fala como gente, não como robô. Use emojis com moderação.
+      2. **Vendas**: Se o cliente quer comprar, guie para fechar o pedido (pergunte tamanho, cor, quando precisa).
+      3. **Status de Pedido**: 
+         - Se o cliente perguntar "cadê meu pedido?" ou "status", PERGUNTE o número do pedido ou CPF/Telefone se não souber.
+         - Se você TIVER o número (ex: #1234), retorne a ação "CHECK_ORDER_STATUS".
+         - Se já tiver a informação em 'Info de Pedido', responda o cliente com o status atualizado.
+
       # INSTRUÇÕES DE RACIOCÍNIO
       1. Analise a última mensagem.
-      2. Atualize o contexto (Nome, Itens, Data de Entrega).
-      3. Se o cliente confirmou o pedido, dispare a ação 'CREATE_ORDER'.
+      2. Se identificar uma intenção clara (ex: "ver status"), atualize o 'detectedIntent'.
+      3. Se o cliente fornecer um número de pedido (ex: "é o 1050"), retorne action="CHECK_ORDER_STATUS" e coloque o ID no metadata.
       4. Gere a resposta verbal para o cliente.
-      
+
       Retorne APENAS um JSON no formato:
       {
         "reply": "Texto da resposta para o WhatsApp",
         "updatedContext": { ...campos atualizados... },
-        "action": "NONE" | "CREATE_ORDER" | "CHECK_STOCK"
+        "action": "NONE" | "CREATE_ORDER" | "CHECK_ORDER_STATUS",
+        "actionMetadata": { "orderNumber": "1234" }
       }
     `;
 

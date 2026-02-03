@@ -380,7 +380,8 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
           delayReason,
           orderType,
           paymentStatus,
-          clientId: clientIdToUse
+          clientId: clientIdToUse,
+          amountPaid: orderData.amountPaid
         });
       } else {
         await orderService.create({
