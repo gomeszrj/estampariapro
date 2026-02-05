@@ -3,7 +3,11 @@ export enum OrderStatus {
   RECEIVED = 'RECEIVED',
   FINALIZATION = 'FINALIZATION',
   IN_PRODUCTION = 'IN_PRODUCTION',
-  FINISHED = 'FINISHED'
+  FINISHED = 'FINISHED',
+  // Loja Virtual Flow
+  STORE_REQUEST = 'STORE_REQUEST',       // Solicitação recebida
+  STORE_CONFERENCE = 'STORE_CONFERENCE', // Em conferência
+  STORE_CHECKED = 'STORE_CHECKED'        // Pedido conferido (Ready for Sales Approval)
 }
 
 export enum OrderType {
@@ -37,6 +41,7 @@ export interface OrderItem {
   size: string;
   quantity: number;
   unitPrice: number;
+  notes?: string;
 }
 
 
@@ -55,6 +60,7 @@ export interface Order {
   clientName: string;
   status: OrderStatus;
   paymentStatus?: PaymentStatus;
+  origin?: 'manual' | 'store'; // New: Origin of the order
   orderType: OrderType;
   items: OrderItem[];
   totalValue: number;
@@ -65,7 +71,7 @@ export interface Order {
   internalNotes?: string;
   delayReason?: string;
   fiscalKey?: string; // Simulated NFe Access Key
-  clientTeam?: string; // New: Turma/Time
+  clientTeam?: string; // Turma/Time (from Store)
 }
 
 export interface Product {
@@ -151,3 +157,14 @@ export interface ProductRecipe {
   unit?: string; // For UI display
 }
 
+
+export interface Transaction {
+  id: string;
+  type: 'income' | 'expense';
+  category: 'sale' | 'material' | 'rent' | 'utility' | 'salary' | 'other';
+  amount: number;
+  description: string;
+  date: string;
+  orderId?: string; // Optional link to an Order
+  createdAt: string;
+}

@@ -186,24 +186,30 @@ const PublicStore: React.FC = () => {
     const ProductModal = ({ product }: { product: Product }) => {
         // Defaults
         const hasGrades = product.allowedGrades && Object.keys(product.allowedGrades).length > 0;
-        const initialGrade = hasGrades ? Object.keys(product.allowedGrades!)[0] : '';
+        const availableGroups = hasGrades ? Object.keys(product.allowedGrades!) : [];
+        const initialGroup = availableGroups.length > 0 ? availableGroups[0] : '';
 
-        const [selectedGrade, setSelectedGrade] = useState(initialGrade);
+        const [selectedGroup, setSelectedGroup] = useState(initialGroup);
         const [selectedSize, setSelectedSize] = useState('');
         const [qty, setQty] = useState(1);
         const [notes, setNotes] = useState('');
 
-        // Determine available sizes based on grade
-        const sizes = hasGrades
-            ? product.allowedGrades![selectedGrade]
-            : GRADES.flatMap(g => g.sizes); // Fallback to all sizes
+        // Determine available sizes based on selected group
+        const sizes = (hasGrades && selectedGroup)
+            ? product.allowedGrades![selectedGroup] || []
+            : GRADES.flatMap(g => g.sizes);
+
+        // Get measurements for selected size
+        const currentMeasurement = (selectedGroup && selectedSize && product.measurements)
+            ? product.measurements[`${selectedGroup}-${selectedSize}`]
+            : null;
 
         return (
             <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
                 {/* Backdrop Close */}
                 <div className="absolute inset-0" onClick={() => setViewingProduct(null)} />
 
-                <div className="bg-[#0f172a] w-full max-w-5xl h-[90vh] md:h-auto md:max-h-[85vh] rounded-t-[2.5rem] md:rounded-3xl border border-slate-800 flex flex-col md:flex-row shadow-2xl overflow-hidden relative z-10">
+                <div className="bg-[#0f172a] w-full max-w-5xl h-[90vh] md:h-auto md:max-h-[90vh] rounded-t-[2.5rem] md:rounded-3xl border border-slate-800 flex flex-col md:flex-row shadow-2xl overflow-hidden relative z-10">
 
                     {/* Close Button */}
                     <button
@@ -214,7 +220,7 @@ const PublicStore: React.FC = () => {
                     </button>
 
                     {/* Left: Image */}
-                    <div className="w-full md:w-1/2 bg-[#020617] relative flex items-center justify-center p-8 shrink-0 h-1/3 md:h-auto border-b md:border-b-0 md:border-r border-slate-800">
+                    <div className="w-full md:w-1/2 bg-[#020617] relative flex items-center justify-center p-8 shrink-0 h-1/3 md:h-full border-b md:border-b-0 md:border-r border-slate-800">
                         <img
                             src={product.imageUrl}
                             alt={product.name}
@@ -223,36 +229,36 @@ const PublicStore: React.FC = () => {
                     </div>
 
                     {/* Right: Info */}
-                    <div className="flex-1 flex flex-col bg-[#0f172a] overflow-hidden">
-                        <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
+                    <div className="flex-1 flex flex-col bg-[#0f172a] overflow-hidden min-h-0">
+                        <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 custom-scrollbar">
 
                             <div>
                                 <span className="text-indigo-400 font-bold text-xs uppercase tracking-widest mb-2 block">{product.category}</span>
-                                <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight mb-3">{product.name}</h2>
+                                <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight leading-tight mb-3">{product.name}</h2>
                                 <p className="text-slate-400 text-sm leading-relaxed">{product.description || "Design exclusivo e acabamento de alta performance."}</p>
                             </div>
 
-                            <div className="flex items-center gap-4 pb-6 border-b border-slate-800/50">
-                                <span className="text-4xl font-bold text-white">R$ {product.basePrice.toFixed(2)}</span>
-                                <span className="text-sm text-slate-500 font-medium">Preço base unitário</span>
+                            <div className="flex items-center gap-4 pb-4 border-b border-slate-800/50">
+                                <span className="text-3xl font-bold text-white">R$ {product.basePrice.toFixed(2)}</span>
+                                <span className="text-xs text-slate-500 font-medium uppercase tracking-wider">Valor Unitário</span>
                             </div>
 
                             <div className="space-y-6">
-                                {/* Grade Selector */}
-                                {hasGrades && Object.keys(product.allowedGrades!).length > 1 && (
-                                    <div className="space-y-2">
+                                {/* Grade Tabs */}
+                                {hasGrades && availableGroups.length > 0 && (
+                                    <div className="space-y-3">
                                         <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Modelo</label>
-                                        <div className="flex bg-slate-900/50 p-1 rounded-lg w-fit border border-slate-800">
-                                            {Object.keys(product.allowedGrades!).map(grade => (
+                                        <div className="flex items-center gap-4 border-b border-slate-800">
+                                            {availableGroups.map(group => (
                                                 <button
-                                                    key={grade}
-                                                    onClick={() => { setSelectedGrade(grade); setSelectedSize(''); }}
-                                                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${selectedGrade === grade
-                                                        ? 'bg-slate-800 text-white shadow-sm'
-                                                        : 'text-slate-400 hover:text-white'
+                                                    key={group}
+                                                    onClick={() => { setSelectedGroup(group); setSelectedSize(''); }}
+                                                    className={`pb-2 text-sm font-bold uppercase tracking-wider transition-all border-b-2 ${selectedGroup === group
+                                                            ? 'text-indigo-400 border-indigo-400'
+                                                            : 'text-slate-500 border-transparent hover:text-slate-300'
                                                         }`}
                                                 >
-                                                    {grade}
+                                                    {group}
                                                 </button>
                                             ))}
                                         </div>
@@ -261,16 +267,22 @@ const PublicStore: React.FC = () => {
 
                                 {/* Size Selector */}
                                 <div className="space-y-3">
-                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center justify-between">
-                                        Tamanho
-                                        {product.measurements && <span className="text-indigo-400 cursor-pointer hover:underline text-[10px] flex items-center gap-1"><Info className="w-3 h-3" /> Tabela de Medidas</span>}
-                                    </label>
-                                    <div className="flex flex-wrap gap-2">
+                                    <div className="flex justify-between items-end">
+                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Tamanho</label>
+                                        {currentMeasurement && (
+                                            <div className="flex items-center gap-2 text-[10px] text-indigo-300 bg-indigo-500/10 px-2 py-1 rounded">
+                                                <Ruler className="w-3 h-3" />
+                                                <span>A: {currentMeasurement.height}cm x L: {currentMeasurement.width}cm</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-4 lg:grid-cols-5 gap-2">
                                         {sizes.map(size => (
                                             <button
                                                 key={size}
                                                 onClick={() => setSelectedSize(size)}
-                                                className={`min-w-[3.5rem] h-12 px-3 rounded-lg border flex items-center justify-center font-bold text-sm transition-all ${selectedSize === size
+                                                className={`h-10 rounded-lg border flex items-center justify-center font-bold text-sm transition-all ${selectedSize === size
                                                     ? 'bg-indigo-600 border-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.3)]'
                                                     : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600 hover:text-white'
                                                     }`}
@@ -283,19 +295,19 @@ const PublicStore: React.FC = () => {
 
                                 {/* Personalization */}
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Personalização</label>
+                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Personalização (Opcional)</label>
                                     <textarea
                                         value={notes}
                                         onChange={e => setNotes(e.target.value)}
-                                        placeholder="Nome atrás, número, etc..."
-                                        className="w-full bg-[#1e293b] border border-slate-700/50 rounded-xl p-4 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all resize-none h-24"
+                                        placeholder="Nome atrás, número, detalhes..."
+                                        className="w-full bg-[#1e293b] border border-slate-700/50 rounded-xl p-4 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all resize-none h-20"
                                     />
                                 </div>
                             </div>
                         </div>
 
                         {/* Footer Totals */}
-                        <div className="p-6 md:p-8 bg-[#1e293b]/30 border-t border-slate-800 backdrop-blur-sm">
+                        <div className="p-6 md:p-8 bg-[#1e293b]/50 border-t border-slate-800 backdrop-blur-sm shrink-0">
                             <div className="flex items-center gap-4">
                                 <div className="flex items-center bg-slate-900 rounded-xl border border-slate-800">
                                     <button onClick={() => setQty(Math.max(1, qty - 1))} className="w-12 h-12 flex items-center justify-center text-slate-400 hover:text-white transition-colors"><Minus className="w-4 h-4" /></button>

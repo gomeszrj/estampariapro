@@ -4,6 +4,7 @@ import { inventoryService } from '../services/inventoryService';
 import { orderService } from '../services/orderService';
 import { productService } from '../services/productService';
 import { InventoryItem, OrderStatus } from '../types';
+import { financeService } from '../services/financeService';
 
 const Inventory: React.FC = () => {
     const [materials, setMaterials] = useState<InventoryItem[]>([]);
@@ -13,6 +14,64 @@ const Inventory: React.FC = () => {
     const [isAdding, setIsAdding] = useState(false);
     const [newMaterial, setNewMaterial] = useState<Partial<InventoryItem>>({ category: 'Fabric', unit: 'und' });
     const [isSaving, setIsSaving] = useState(false);
+
+    // Purchase Modal State
+    const [isPurchasing, setIsPurchasing] = useState(false);
+    const [purchaseItem, setPurchaseItem] = useState<InventoryItem | null>(null);
+    const [purchaseQty, setPurchaseQty] = useState<string>('');
+    const [purchaseCost, setPurchaseCost] = useState<string>('');
+    const [purchaseDesc, setPurchaseDesc] = useState('');
+
+    const openPurchaseModal = (item: InventoryItem) => {
+        setPurchaseItem(item);
+        setPurchaseQty('');
+        setPurchaseCost('');
+        setPurchaseDesc(`Compra de ${item.name}`);
+        setIsPurchasing(true);
+    };
+
+    const handleConfirmPurchase = async () => {
+        if (!purchaseItem || !purchaseQty || !purchaseCost) return;
+
+        const qty = parseFloat(purchaseQty);
+        const cost = parseFloat(purchaseCost); // Total Cost
+
+        if (isNaN(qty) || isNaN(cost) || qty <= 0) {
+            alert("Por favor, insira valores válidos.");
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            // 1. Update Inventory
+            const newQty = purchaseItem.quantity + qty;
+            await inventoryService.updateQuantity(purchaseItem.id, newQty);
+
+            // 2. Create Expense Transaction
+            await financeService.create({
+                type: 'expense',
+                category: 'material',
+                amount: cost,
+                description: purchaseDesc || `Compra de ${purchaseItem.name} (${qty}${purchaseItem.unit})`,
+                date: new Date().toISOString()
+            });
+
+            // 3. Update Local State
+            setMaterials(prev => prev.map(m => m.id === purchaseItem.id ? { ...m, quantity: newQty } : m));
+
+            // 4. Close
+            setIsPurchasing(false);
+            setPurchaseItem(null);
+            alert("Compra registrada com sucesso! Estoque e Financeiro atualizados.");
+
+        } catch (error) {
+            console.error("Purchase failed:", error);
+            alert("Erro ao registrar compra.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
 
     // Purchasing State
     const [buyingList, setBuyingList] = useState<{ item: InventoryItem, required: number, balance: number, toBuy: number }[]>([]);
@@ -161,8 +220,72 @@ const Inventory: React.FC = () => {
         );
     }
 
+
     return (
-        <div className="flex flex-col gap-6 animate-in slide-in-from-right-8 duration-700">
+        <div className="flex flex-col gap-6 animate-in slide-in-from-right-8 duration-700 relative">
+            {/* Purchase Modal */}
+            {isPurchasing && purchaseItem && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-300">
+                        <div className="flex justify-between items-center mb-6">
+                            <div>
+                                <h3 className="text-xl font-black text-white uppercase flex items-center gap-2">
+                                    <ShoppingCart className="w-5 h-5 text-emerald-500" />
+                                    Registrar Compra
+                                </h3>
+                                <p className="text-slate-500 text-xs font-bold uppercase mt-1">{purchaseItem.name}</p>
+                            </div>
+                            <button onClick={() => setIsPurchasing(false)} className="bg-slate-800 p-2 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white transition-colors">
+                                <Plus className="w-5 h-5 rotate-45" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest ml-1">Quantidade a Adicionar ({purchaseItem.unit})</label>
+                                <input
+                                    type="number"
+                                    autoFocus
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-lg"
+                                    placeholder="0"
+                                    value={purchaseQty}
+                                    onChange={e => setPurchaseQty(e.target.value)}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest ml-1">Custo Total (R$)</label>
+                                <input
+                                    type="number"
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-emerald-400 focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-lg"
+                                    placeholder="0.00"
+                                    value={purchaseCost}
+                                    onChange={e => setPurchaseCost(e.target.value)}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest ml-1">Descrição / Fornecedor</label>
+                                <input
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-sm"
+                                    placeholder="Ex: Tinta Epson, Loja do Silk..."
+                                    value={purchaseDesc}
+                                    onChange={e => setPurchaseDesc(e.target.value)}
+                                />
+                            </div>
+
+                            <button
+                                onClick={handleConfirmPurchase}
+                                disabled={isSaving}
+                                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase tracking-widest py-4 rounded-xl shadow-lg shadow-emerald-900/20 active:scale-95 transition-all mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isSaving ? 'Salvando...' : 'Confirmar Compra'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <header className="flex justify-between items-end">
                 <div>
                     <h2 className="text-3xl font-black text-slate-100 tracking-tight uppercase flex items-center gap-3">
@@ -286,12 +409,21 @@ const Inventory: React.FC = () => {
                                             <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-500/10 px-2 py-1 rounded-lg border border-indigo-500/20">{item.category}</span>
                                             <h3 className="text-lg font-black text-slate-100 uppercase mt-2">{item.name}</h3>
                                         </div>
-                                        <button
-                                            onClick={() => handleDelete(item.id)}
-                                            className="text-slate-700 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => openPurchaseModal(item)}
+                                                className="text-emerald-500 hover:text-emerald-400 transition-colors opacity-0 group-hover:opacity-100 bg-emerald-500/10 p-2 rounded-lg"
+                                                title="Registrar Compra"
+                                            >
+                                                <ShoppingCart className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(item.id)}
+                                                className="text-slate-700 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100 bg-rose-500/10 p-2 rounded-lg"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <div className="flex items-end justify-between bg-slate-900/50 p-4 rounded-2xl border border-slate-800/50">
@@ -322,6 +454,7 @@ const Inventory: React.FC = () => {
                     </div>
                 </>
             ) : (
+
                 // PURCHASING VIEW
                 <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 min-h-[500px] animate-in slide-in-from-right-4">
                     <div className="mb-8">

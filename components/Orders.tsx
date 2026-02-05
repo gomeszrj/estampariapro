@@ -20,7 +20,10 @@ import {
   Lock,
   Check,
   ArrowUpDown,
-  Bot
+  Bot,
+  ThumbsUp,
+  ArrowRight,
+  ClipboardList
 } from 'lucide-react';
 import { getWhatsAppLink, getStatusUpdateMessage } from '../utils/whatsappUtils';
 import { parseOrderText, ParsedOrderItem } from '../services/aiService';
@@ -46,9 +49,25 @@ interface OrdersProps {
 
 const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, setClients, botDraft, onDraftUsed }) => {
   const [activeTab, setActiveTab] = useState<'details' | 'items' | 'briefing'>('details');
-  const [viewMode, setViewMode] = useState<'list' | 'board'>('list'); // NEW Toggle
+  const [activeContext, setActiveContext] = useState<'production' | 'store'>('production'); // New: Switch between ERP and Store
+  const [viewMode, setViewMode] = useState<'list' | 'board'>('list');
   const [isAdding, setIsAdding] = useState(false);
   const [isAiProcessing, setIsAiProcessing] = useState(false);
+
+  // Filter Orders based on Context
+  const contextOrders = orders.filter(o => {
+    if (activeContext === 'store') {
+      return o.origin === 'store' && (o.status === OrderStatus.STORE_REQUEST || o.status === OrderStatus.STORE_CONFERENCE || o.status === OrderStatus.STORE_CHECKED);
+    }
+    // Production Context: Show everything else (Manual orders OR Store orders that have been Approved/Moved to Production)
+    return o.origin !== 'store' || (o.status !== OrderStatus.STORE_REQUEST && o.status !== OrderStatus.STORE_CONFERENCE && o.status !== OrderStatus.STORE_CHECKED);
+  });
+
+  // ... (keep existing effects)
+
+
+
+
   const [isSaving, setIsSaving] = useState(false);
   const [aiText, setAiText] = useState('');
   const [parsedItems, setParsedItems] = useState<ParsedOrderItem[]>([]);
@@ -229,7 +248,10 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
   };
 
   const canEditOrder = (status: OrderStatus) => {
-    return status === OrderStatus.RECEIVED || status === OrderStatus.FINALIZATION;
+    return status === OrderStatus.RECEIVED ||
+      status === OrderStatus.FINALIZATION ||
+      status === OrderStatus.STORE_REQUEST ||
+      status === OrderStatus.STORE_CONFERENCE;
   };
 
   const handleEditClick = (order: Order) => {
@@ -409,14 +431,33 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
 
   return (
     <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-      <header className="flex justify-between items-center">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h2 className="text-3xl font-black text-slate-100 tracking-tight uppercase">Gestão de Pedidos</h2>
-          <p className="text-slate-500 font-medium">Controle total sobre vendas e orçamentos comerciais.</p>
+          <p className="text-slate-500 font-medium whitespace-nowrap">Controle total sobre vendas e {activeContext === 'store' ? 'solicitações da loja.' : 'produção.'}</p>
         </div>
+
+        <div className="flex items-center gap-4 bg-slate-900/50 p-1.5 rounded-2xl border border-slate-800">
+          <button
+            onClick={() => setActiveContext('production')}
+            className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeContext === 'production' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-white hover:bg-slate-800'}`}
+          >
+            Produção
+          </button>
+          <button
+            onClick={() => setActiveContext('store')}
+            className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${activeContext === 'store' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-white hover:bg-slate-800'}`}
+          >
+            Solicitações Loja
+            {orders.filter(o => o.origin === 'store' && o.status === OrderStatus.STORE_REQUEST).length > 0 && (
+              <span className="bg-rose-500 text-white w-5 h-5 flex items-center justify-center rounded-full text-[9px]">{orders.filter(o => o.origin === 'store' && o.status === OrderStatus.STORE_REQUEST).length}</span>
+            )}
+          </button>
+        </div>
+
         <button
           onClick={handleAddNew}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-2xl flex items-center gap-3 font-black transition-all shadow-2xl shadow-indigo-600/30 active:scale-95 uppercase text-[11px] tracking-widest"
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-2xl flex items-center gap-3 font-black transition-all shadow-2xl shadow-indigo-600/30 active:scale-95 uppercase text-[11px] tracking-widest whitespace-nowrap"
         >
           <Plus className="w-5 h-5" />
           Gerar Novo Pedido
@@ -769,7 +810,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
-                {orders.map((order) => {
+                {contextOrders.map((order) => {
                   const editable = canEditOrder(order.status);
                   return (
                     <tr key={order.id} className="hover:bg-indigo-500/5 transition-all group">
@@ -808,49 +849,139 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                       <td className="px-10 py-8 font-black text-indigo-400 text-2xl tracking-tighter">R$ {order.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                       <td className="px-10 py-8 text-right">
                         <div className="flex justify-end gap-3 opacity-20 group-hover:opacity-100 transition-all">
-                          <button
-                            onClick={() => handleEditClick(order)}
-                            className={`p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all ${editable ? 'text-slate-500 hover:text-indigo-400' : 'text-slate-700 cursor-not-allowed opacity-50'
-                              }`}
-                            title={editable ? "Editar Pedido" : "Pedido em produção - Edição bloqueada"}
-                          >
-                            {editable ? <Edit3 className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
-                          </button>
-                          <button
-                            onClick={async () => await printServiceOrder(order)}
-                            className="text-slate-500 hover:text-white p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"
-                            title="OS Produção"
-                          >
-                            <Printer className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={async () => await printInvoice(order)}
-                            className="text-slate-500 hover:text-emerald-400 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"
-                            title="Visualizar DANFE"
-                          >
-                            <FileText className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={async () => {
-                              // Find client to get phone - simplistic matching
-                              const client = clients.find(c => c.name.toLowerCase() === order.clientName.toLowerCase());
-                              const phone = client?.whatsapp || '';
-                              const message = getStatusUpdateMessage(order, order.status);
-                              const link = getWhatsAppLink(phone, message);
-                              window.open(link, '_blank');
-                            }}
-                            className="text-slate-500 hover:text-indigo-400 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"
-                            title="Enviar Status via WhatsApp"
-                          >
-                            <Send className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(order.id)}
-                            className="text-slate-500 hover:text-rose-500 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"
-                            title="Excluir Pedido"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
+                          {activeContext === 'store' ? (
+                            <>
+                              {order.status === OrderStatus.STORE_REQUEST && (
+                                <button
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    if (!confirm('Iniciar conferência deste pedido?')) return;
+                                    try {
+                                      const newStatus = OrderStatus.STORE_CONFERENCE;
+                                      await orderService.update(order.id, { status: newStatus });
+                                      setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: newStatus } : o));
+
+                                      const client = clients.find(c => c.name.toLowerCase() === order.clientName.toLowerCase());
+                                      if (client?.whatsapp) {
+                                        const msg = getStatusUpdateMessage(order, newStatus);
+                                        window.open(getWhatsAppLink(client.whatsapp, msg), '_blank');
+                                      }
+                                    } catch (err) { console.error(err); alert('Erro ao atualizar status'); }
+                                  }}
+                                  className="text-slate-500 hover:text-violet-400 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"
+                                  title="Iniciar Conferência"
+                                >
+                                  <ClipboardList className="w-5 h-5" />
+                                </button>
+                              )}
+                              {order.status === OrderStatus.STORE_CONFERENCE && (
+                                <button
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    if (!confirm('Finalizar conferência e aguardar aprovação?')) return;
+                                    try {
+                                      const newStatus = OrderStatus.STORE_CHECKED;
+                                      await orderService.update(order.id, { status: newStatus });
+                                      setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: newStatus } : o));
+
+                                      const client = clients.find(c => c.name.toLowerCase() === order.clientName.toLowerCase());
+                                      if (client?.whatsapp) {
+                                        const msg = getStatusUpdateMessage(order, newStatus);
+                                        window.open(getWhatsAppLink(client.whatsapp, msg), '_blank');
+                                      }
+                                    } catch (err) { console.error(err); alert('Erro ao atualizar status'); }
+                                  }}
+                                  className="text-slate-500 hover:text-teal-400 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"
+                                  title="Finalizar Conferência"
+                                >
+                                  <ThumbsUp className="w-5 h-5" />
+                                </button>
+                              )}
+                              {order.status === OrderStatus.STORE_CHECKED && (
+                                <button
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    if (!confirm('Confirmar pedido e mover para Produção?')) return;
+                                    try {
+                                      const newStatus = OrderStatus.RECEIVED;
+                                      await orderService.update(order.id, { status: newStatus });
+                                      setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: newStatus } : o));
+
+                                      const client = clients.find(c => c.name.toLowerCase() === order.clientName.toLowerCase());
+                                      if (client?.whatsapp) {
+                                        const msg = getStatusUpdateMessage(order, newStatus);
+                                        window.open(getWhatsAppLink(client.whatsapp, msg), '_blank');
+                                      }
+                                    } catch (err) { console.error(err); alert('Erro ao atualizar status'); }
+                                  }}
+                                  className="text-slate-500 hover:text-emerald-400 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"
+                                  title="Confirmar e Mover para Produção"
+                                >
+                                  <ArrowRight className="w-5 h-5" />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleEditClick(order)}
+                                className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all text-slate-500 hover:text-indigo-400"
+                                title="Ver Detalhes"
+                              >
+                                <Edit3 className="w-5 h-5" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(order.id)}
+                                className="text-slate-500 hover:text-rose-500 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"
+                                title="Excluir Pedido"
+                              >
+                                <Trash2 className="w-5 h-5" />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => handleEditClick(order)}
+                                className={`p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all ${editable ? 'text-slate-500 hover:text-indigo-400' : 'text-slate-700 cursor-not-allowed opacity-50'
+                                  }`}
+                                title={editable ? "Editar Pedido" : "Pedido em produção - Edição bloqueada"}
+                              >
+                                {editable ? <Edit3 className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
+                              </button>
+                              <button
+                                onClick={async () => await printServiceOrder(order)}
+                                className="text-slate-500 hover:text-white p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"
+                                title="OS Produção"
+                              >
+                                <Printer className="w-5 h-5" />
+                              </button>
+                              <button
+                                onClick={async () => await printInvoice(order)}
+                                className="text-slate-500 hover:text-emerald-400 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"
+                                title="Visualizar DANFE"
+                              >
+                                <FileText className="w-5 h-5" />
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  // Find client to get phone - simplistic matching
+                                  const client = clients.find(c => c.name.toLowerCase() === order.clientName.toLowerCase());
+                                  const phone = client?.whatsapp || '';
+                                  const message = getStatusUpdateMessage(order, order.status);
+                                  const link = getWhatsAppLink(phone, message);
+                                  window.open(link, '_blank');
+                                }}
+                                className="text-slate-500 hover:text-indigo-400 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"
+                                title="Enviar Status via WhatsApp"
+                              >
+                                <Send className="w-5 h-5" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(order.id)}
+                                className="text-slate-500 hover:text-rose-500 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"
+                                title="Excluir Pedido"
+                              >
+                                <Trash2 className="w-5 h-5" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>

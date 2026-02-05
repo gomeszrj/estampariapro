@@ -14,6 +14,12 @@ export const getStatusUpdateMessage = (order: Order, newStatus: OrderStatus): st
     const orderRef = `#${order.orderNumber}`;
 
     switch (newStatus) {
+        case OrderStatus.STORE_REQUEST:
+            return `Olá ${clientName}! 👋 Recebemos sua solicitação #${order.orderNumber}. Vamos conferir os itens e já retornamos!`;
+        case OrderStatus.STORE_CONFERENCE:
+            return `Olá ${clientName}! 🧐 Estamos conferindo seu pedido #${order.orderNumber} para garantir que tudo está certo.`;
+        case OrderStatus.STORE_CHECKED:
+            return `Tudo certo, ${clientName}! ✅ Conferência do pedido #${order.orderNumber} finalizada. Podemos confirmar e iniciar a produção?`;
         case OrderStatus.RECEIVED:
             return `Olá ${clientName}! 👋 Somos da Estamparia.
 Recebemos seu pedido ${orderRef}. Vamos conferir os detalhes e te avisamos qualquer coisa! 😉`;
