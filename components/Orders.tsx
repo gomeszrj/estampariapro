@@ -23,7 +23,8 @@ import {
   Bot,
   ThumbsUp,
   ArrowRight,
-  ClipboardList
+  ClipboardList,
+  DollarSign
 } from 'lucide-react';
 import { getWhatsAppLink, getStatusUpdateMessage } from '../utils/whatsappUtils';
 import { parseOrderText, ParsedOrderItem } from '../services/aiService';
@@ -32,6 +33,7 @@ import { Order, OrderStatus, OrderType, Product, Client, OrderItem, PaymentStatu
 import { printServiceOrder, printInvoice } from '../utils/printUtils';
 import { orderService } from '../services/orderService';
 import { clientService } from '../services/clientService';
+import { financeService } from '../services/financeService';
 
 import { ProductionBoard } from './ProductionBoard';
 
@@ -428,6 +430,42 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
   };
 
   const isOrderLate = deliveryDate && new Date(deliveryDate) < new Date();
+
+  const handleReceivePayment = async (order: Order) => {
+    if (order.paymentStatus === PaymentStatus.FULL) return;
+
+    if (!confirm(`Confirmar recebimento INTEGRAL de R$ ${order.totalValue.toLocaleString('pt-BR')} para o pedido #${order.orderNumber}?\n\nIsso gerará um lançamento de receita no financeiro.`)) {
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // 1. Update Order Status
+      await orderService.update(order.id, {
+        paymentStatus: PaymentStatus.FULL,
+        amountPaid: order.totalValue
+      });
+
+      // 2. Create Finance Transaction
+      await financeService.create({
+        type: 'income',
+        category: 'sale',
+        amount: order.totalValue,
+        description: `Recebimento Pedido #${order.orderNumber} - ${order.clientName}`,
+        date: new Date().toISOString()
+      });
+
+      // 3. Refresh
+      window.dispatchEvent(new Event('refreshData'));
+      alert("Pagamento registrado com sucesso!");
+
+    } catch (error) {
+      console.error("Error receiving payment:", error);
+      alert("Erro ao registrar pagamento.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
@@ -952,6 +990,17 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                               >
                                 <Printer className="w-5 h-5" />
                               </button>
+
+                              {/* Receive Payment Button */}
+                              {order.paymentStatus !== PaymentStatus.FULL && (
+                                <button
+                                  onClick={() => handleReceivePayment(order)}
+                                  className="text-slate-500 hover:text-emerald-400 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"
+                                  title="Registrar Pagamento Total"
+                                >
+                                  <DollarSign className="w-5 h-5" />
+                                </button>
+                              )}
                               <button
                                 onClick={async () => await printInvoice(order)}
                                 className="text-slate-500 hover:text-emerald-400 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"

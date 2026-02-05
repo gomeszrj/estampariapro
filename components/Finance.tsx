@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   BarChart,
   Bar,
@@ -9,233 +8,357 @@ import {
   Tooltip,
   ResponsiveContainer,
   AreaChart,
-  Area
+  Area,
+  Legend
 } from 'recharts';
-import { DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight, CreditCard, PieChart, Wallet, Percent } from 'lucide-react';
-import { Order, OrderStatus, Product } from '../types';
+import {
+  DollarSign,
+  TrendingUp,
+  ArrowUpRight,
+  ArrowDownRight,
+  CreditCard,
+  PieChart,
+  Wallet,
+  Percent,
+  Plus,
+  Calendar,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  Loader2,
+  X
+} from 'lucide-react';
+import { Order, OrderStatus, Product, Transaction } from '../types';
+import { financeService } from '../services/financeService';
 
 interface FinanceProps {
   orders: Order[];
   products: Product[];
 }
 
-const FinanceStat = ({ title, value, icon: Icon, color, trend }: any) => (
-  <div className="bg-[#0f172a] p-6 rounded-3xl border border-slate-800 flex flex-col justify-between relative overflow-hidden group hover:border-slate-700 transition-colors">
+const FinanceStat = ({ title, value, icon: Icon, color, trend, subtext }: any) => (
+  <div className="bg-[#0f172a] p-6 rounded-3xl border border-slate-800 flex flex-col justify-between relative overflow-hidden group hover:border-slate-700 transition-colors shadow-lg shadow-black/20">
     <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full opacity-5 ${color.replace('bg-', 'text-')} group-hover:scale-110 transition-transform`} />
     <div className="flex justify-between items-start mb-4 relative">
       <div className={`p-3 rounded-xl ${color} shadow-lg shadow-black/20`}>
         <Icon className="w-6 h-6 text-white" />
       </div>
-      <div className={`flex items-center gap-1 text-xs font-bold ${trend > 0 ? 'text-emerald-400' : trend < 0 ? 'text-rose-400' : 'text-slate-500'}`}>
-        {trend !== 0 && (trend > 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />)}
-        {Math.abs(trend)}%
-      </div>
+      {trend !== undefined && (
+        <div className={`flex items-center gap-1 text-xs font-bold ${trend > 0 ? 'text-emerald-400' : trend < 0 ? 'text-rose-400' : 'text-slate-500'}`}>
+          {trend !== 0 && (trend > 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />)}
+          {Math.abs(trend)}%
+        </div>
+      )}
     </div>
     <div className="relative">
       <h3 className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">{title}</h3>
       <p className="text-2xl font-black text-slate-100 tracking-tight">{value}</p>
+      {subtext && <p className="text-[10px] text-slate-500 font-bold mt-1">{subtext}</p>}
     </div>
   </div>
 );
 
 const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
-  // 1. Calculate Aggregates
-  const totalRevenue = orders.reduce((acc, curr) => acc + curr.totalValue, 0);
-  const ticketMedio = orders.length > 0 ? totalRevenue / orders.length : 0;
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isAdding, setIsAdding] = useState(false);
 
-  // Calculate Costs
-  let totalEstimatedCost = 0;
-  orders.forEach(order => {
-    order.items.forEach(item => {
-      const product = products.find(p => p.id === item.productId);
-      if (product && product.costPrice) {
-        totalEstimatedCost += (item.quantity * product.costPrice);
-      }
-    });
+  // New Transaction Form State
+  const [newTransaction, setNewTransaction] = useState<Partial<Transaction>>({
+    type: 'expense',
+    category: 'other',
+    date: new Date().toISOString().split('T')[0]
+  });
+  const [saving, setSaving] = useState(false);
+
+  const loadTransactions = async () => {
+    try {
+      const data = await financeService.getAll();
+      setTransactions(data);
+    } catch (error) {
+      console.error("Failed to load transactions:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTransactions();
+  }, []);
+
+  const handleSaveTransaction = async () => {
+    if (!newTransaction.amount || !newTransaction.description) return;
+    setSaving(true);
+    try {
+      const created = await financeService.create({
+        type: newTransaction.type as 'income' | 'expense',
+        category: newTransaction.category as any,
+        amount: Number(newTransaction.amount),
+        description: newTransaction.description,
+        date: new Date(newTransaction.date!).toISOString()
+      });
+      setTransactions(prev => [created, ...prev]);
+      setIsAdding(false);
+      setNewTransaction({ type: 'expense', category: 'other', date: new Date().toISOString().split('T')[0] });
+    } catch (error) {
+      console.error("Failed to save transaction", error);
+      alert("Erro ao salvar transação");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // --- CALCULATIONS ---
+
+  // 1. Revenue (From Orders)
+  // In v15.3, we still rely on Orders for Revenue until we implement "Accounts Receivable" fully.
+  const revenueOrders = orders.filter(o => o.status !== 'BUDGET'); // Exclude budgets
+  const totalRevenue = revenueOrders.reduce((acc, curr) => acc + curr.totalValue, 0);
+
+  // 2. Expenses (From Transactions + Estimated COGS if needed, but lets stick to Real Transactions for v15.3)
+  // Actually, distinct between "Operating Expenses" (Transactions) and "COGS" (Materials).
+  // The Purchase Flow creates 'expense' transactions for materials.
+  const expenseTransactions = transactions.filter(t => t.type === 'expense');
+  const totalExpenses = expenseTransactions.reduce((acc, curr) => acc + curr.amount, 0);
+
+  // 3. Net Profit
+  const netProfit = totalRevenue - totalExpenses;
+  const margin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+
+  // 4. Chart Data (Merge Orders & Transactions by Month)
+  const monthlyData: Record<string, { revenue: number, expense: number, profit: number }> = {};
+
+  // Process Revenue
+  revenueOrders.forEach(o => {
+    if (!o.createdAt) return;
+    const key = o.createdAt.slice(0, 7); // YYYY-MM
+    if (!monthlyData[key]) monthlyData[key] = { revenue: 0, expense: 0, profit: 0 };
+    monthlyData[key].revenue += o.totalValue;
   });
 
-  const estimatedProfit = totalRevenue - totalEstimatedCost;
-  const profitMargin = totalRevenue > 0 ? (estimatedProfit / totalRevenue) * 100 : 0;
-
-  const pendingRevenue = orders.filter(o => o.status !== OrderStatus.FINISHED).reduce((acc, curr) => acc + curr.totalValue, 0);
-
-  // ... (rest of the logic) ...
-
-  // 2. Group by Month (YYYY-MM)
-  const monthlyGroups: Record<string, number> = {};
-
-  orders.forEach(order => {
-    // Check if valid date
-    if (!order.createdAt) return;
-    const date = new Date(order.createdAt);
-    if (isNaN(date.getTime())) return;
-
-    // Key: YYYY-MM
-    const key = date.toISOString().slice(0, 7);
-    monthlyGroups[key] = (monthlyGroups[key] || 0) + order.totalValue;
+  // Process Expenses
+  expenseTransactions.forEach(t => {
+    const key = t.date.slice(0, 7);
+    if (!monthlyData[key]) monthlyData[key] = { revenue: 0, expense: 0, profit: 0 };
+    monthlyData[key].expense += t.amount;
   });
 
-  // 3. Convert to Array and Sort
-  // Get last 6 months dynamic keys to ensure we show even empty months or just actual data?
-  // Let's simplified: Show actual data sorted chronologically
-  const sortedKeys = Object.keys(monthlyGroups).sort();
+  // Calculate Profit per month
+  Object.keys(monthlyData).forEach(key => {
+    monthlyData[key].profit = monthlyData[key].revenue - monthlyData[key].expense;
+  });
 
-  // Prepare data for Chart
-  // Format: { name: 'Jan', value: 1234 }
-  const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-
-  const data = sortedKeys.map(key => {
+  const chartData = Object.keys(monthlyData).sort().map(key => {
     const [year, month] = key.split('-');
-    const mIndex = parseInt(month, 10) - 1;
+    const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
     return {
-      name: monthNames[mIndex], // or `${monthNames[mIndex]}/${year.slice(2)}` for clarity
-      fullName: `${monthNames[mIndex]}/${year}`,
-      value: monthlyGroups[key]
+      name: `${months[parseInt(month) - 1]}/${year.slice(2)}`,
+      ...monthlyData[key]
     };
   });
 
-  // If no data, show empty placeholder or keep empty
-  if (data.length === 0) {
-    const today = new Date();
-    data.push({ name: monthNames[today.getMonth()], fullName: 'Atual', value: 0 });
-  }
-
-  // 4. Calculate Trends (Current Month vs Previous Month)
-  const currentMonthKey = new Date().toISOString().slice(0, 7);
-  const currentMonthValue = monthlyGroups[currentMonthKey] || 0;
-
-  // Find previous month key
-  const d = new Date();
-  d.setMonth(d.getMonth() - 1);
-  const lastMonthKey = d.toISOString().slice(0, 7);
-  const lastMonthValue = monthlyGroups[lastMonthKey] || 0;
-
-  let trendPercentage = 0;
-  if (lastMonthValue > 0) {
-    trendPercentage = ((currentMonthValue - lastMonthValue) / lastMonthValue) * 100;
-  } else if (currentMonthValue > 0) {
-    trendPercentage = 100; // 100% growth if prev was 0
-  }
-
-  // Ensure 1 decimal
-  const formattedTrend = Number(trendPercentage.toFixed(1));
+  if (loading) return <div className="flex h-96 items-center justify-center"><Loader2 className="w-8 h-8 text-indigo-500 animate-spin" /></div>;
 
   return (
-    <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
-      <header>
-        <h2 className="text-3xl font-black text-slate-100 tracking-tight">Financeiro</h2>
-        <p className="text-slate-500">Gestão de faturamento, custos e análise de performance.</p>
-      </header>
+    <div className="space-y-8 animate-in slide-in-from-right-4 duration-500 relative">
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <FinanceStat title="Faturamento Bruto" value={`R$ ${totalRevenue.toLocaleString('pt-BR')}`} icon={DollarSign} color="bg-indigo-600" trend={formattedTrend} />
-        <FinanceStat title="Lucro Estimado" value={`R$ ${estimatedProfit.toLocaleString('pt-BR')}`} icon={Wallet} color="bg-emerald-600" trend={0.0} />
-        <FinanceStat title="Custo Estimado" value={`R$ ${totalEstimatedCost.toLocaleString('pt-BR')}`} icon={PieChart} color="bg-rose-600" trend={0.0} />
-        <FinanceStat title="Margem de Lucro" value={`${profitMargin.toFixed(1)}%`} icon={Percent} color="bg-amber-600" trend={0.0} />
-      </div>
+      {/* NEW TRANSACTION MODAL */}
+      {isAdding && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-black text-white uppercase flex items-center gap-2">
+                <Plus className="w-5 h-5 text-indigo-500" />
+                Nova Movimentação
+              </h3>
+              <button onClick={() => setIsAdding(false)} className="bg-slate-800 p-2 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-[#0f172a] p-8 rounded-3xl border border-slate-800 shadow-sm">
-          <h3 className="text-lg font-bold mb-8 text-slate-100 flex items-center gap-2">
-            <DollarSign className="w-5 h-5 text-indigo-400" />
-            Histórico Recente
-          </h3>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data}>
-                <defs>
-                  <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11, fontWeight: 700 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11, fontWeight: 700 }} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#0f172a', borderRadius: '16px', border: '1px solid #1e293b', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.5)' }}
-                  itemStyle={{ color: '#6366f1', fontWeight: 900 }}
-                  labelStyle={{ color: '#94a3b8' }}
-                  formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR')}`, 'Faturamento']}
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setNewTransaction({ ...newTransaction, type: 'income' })}
+                  className={`flex-1 py-3 rounded-xl font-black uppercase text-xs border border-slate-800 transition-all ${newTransaction.type === 'income' ? 'bg-emerald-600 text-white border-emerald-500 shadow-lg' : 'bg-slate-950 text-slate-500 hover:bg-slate-800'}`}
+                >
+                  Receita
+                </button>
+                <button
+                  onClick={() => setNewTransaction({ ...newTransaction, type: 'expense' })}
+                  className={`flex-1 py-3 rounded-xl font-black uppercase text-xs border border-slate-800 transition-all ${newTransaction.type === 'expense' ? 'bg-rose-600 text-white border-rose-500 shadow-lg' : 'bg-slate-950 text-slate-500 hover:bg-slate-800'}`}
+                >
+                  Despesa
+                </button>
+              </div>
+
+              <div>
+                <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest ml-1">Valor (R$)</label>
+                <input
+                  type="number"
+                  autoFocus
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-xl"
+                  placeholder="0.00"
+                  value={newTransaction.amount || ''}
+                  onChange={e => setNewTransaction({ ...newTransaction, amount: parseFloat(e.target.value) })}
                 />
-                <Area type="monotone" dataKey="value" stroke="#6366f1" strokeWidth={4} fillOpacity={1} fill="url(#colorValue)" />
-              </AreaChart>
-            </ResponsiveContainer>
+              </div>
+
+              <div>
+                <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest ml-1">Descrição</label>
+                <input
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none font-bold"
+                  placeholder="Ex: Pagamento Aluguel"
+                  value={newTransaction.description || ''}
+                  onChange={e => setNewTransaction({ ...newTransaction, description: e.target.value })}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest ml-1">Categoria</label>
+                  <select
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-sm"
+                    value={newTransaction.category}
+                    onChange={e => setNewTransaction({ ...newTransaction, category: e.target.value as any })}
+                  >
+                    <option value="sale">Venda</option>
+                    <option value="material">Material</option>
+                    <option value="rent">Aluguel</option>
+                    <option value="utility">Contas (Luz/Água)</option>
+                    <option value="salary">Salário</option>
+                    <option value="other">Outros</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest ml-1">Data</label>
+                  <input
+                    type="date"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-sm"
+                    value={newTransaction.date}
+                    onChange={e => setNewTransaction({ ...newTransaction, date: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={handleSaveTransaction}
+                disabled={saving}
+                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black uppercase tracking-widest py-4 rounded-xl shadow-lg shadow-indigo-900/20 active:scale-95 transition-all mt-4 disabled:opacity-50"
+              >
+                {saving ? 'Salvando...' : 'Confirmar'}
+              </button>
+            </div>
           </div>
         </div>
+      )}
 
-        <div className="bg-[#0f172a] p-8 rounded-3xl border border-slate-800 shadow-sm">
+      <header className="flex justify-between items-end">
+        <div>
+          <h2 className="text-3xl font-black text-slate-100 tracking-tight flex items-center gap-3">
+            <TrendingUp className="w-8 h-8 text-emerald-500" />
+            Dashboard Financeiro
+          </h2>
+          <p className="text-slate-500 mt-1">Visão completa do fluxo de caixa e resultados.</p>
+        </div>
+        <button
+          onClick={() => setIsAdding(true)}
+          className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-black uppercase text-xs tracking-widest shadow-xl shadow-indigo-900/20 transition-all flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" />
+          Novo Lançamento
+        </button>
+      </header>
+
+      {/* KPI CARDS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <FinanceStat
+          title="Receita Total"
+          value={`R$ ${totalRevenue.toLocaleString('pt-BR')}`}
+          icon={DollarSign}
+          color="bg-indigo-600"
+          subtext="Baseado em Pedidos"
+        />
+        <FinanceStat
+          title="Despesas"
+          value={`R$ ${totalExpenses.toLocaleString('pt-BR')}`}
+          icon={CreditCard}
+          color="bg-rose-600"
+          subtext={`${expenseTransactions.length} lançamentos`}
+        />
+        <FinanceStat
+          title="Lucro Líquido"
+          value={`R$ ${netProfit.toLocaleString('pt-BR')}`}
+          icon={Wallet}
+          color={netProfit >= 0 ? "bg-emerald-600" : "bg-rose-600"}
+        />
+        <FinanceStat
+          title="Margem de Lucro"
+          value={`${margin.toFixed(1)}%`}
+          icon={Percent}
+          color="bg-amber-600"
+        />
+      </div>
+
+      {/* CHARTS & LIST */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {/* CHART */}
+        <div className="lg:col-span-2 bg-[#0f172a] p-8 rounded-3xl border border-slate-800 shadow-sm min-h-[400px]">
           <h3 className="text-lg font-bold mb-8 text-slate-100 flex items-center gap-2">
-            <PieChart className="w-5 h-5 text-emerald-400" />
-            Distribuição de Volume
+            <PieChart className="w-5 h-5 text-indigo-400" />
+            Fluxo de Caixa (Receita x Despesa)
           </h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data}>
+              <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11, fontWeight: 700 }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11, fontWeight: 700 }} />
                 <Tooltip
-                  cursor={{ fill: 'rgba(30, 41, 59, 0.4)' }}
                   contentStyle={{ backgroundColor: '#0f172a', borderRadius: '16px', border: '1px solid #1e293b' }}
-                  formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR')}`, 'Volume']}
+                  cursor={{ fill: 'rgba(255,255,255,0.03)' }}
                 />
-                <Bar dataKey="value" fill="#10b981" radius={[8, 8, 0, 0]} barSize={40} />
+                <Legend />
+                <Bar dataKey="revenue" name="Receita" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={50} />
+                <Bar dataKey="expense" name="Despesa" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={50} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* TOP CLIENTS TABLE (Full Width) */}
-        <div className="bg-[#0f172a] p-8 rounded-3xl border border-slate-800 shadow-sm col-span-1 lg:col-span-2">
+        {/* RECENT TRANSACTIONS LIST */}
+        <div className="bg-[#0f172a] p-8 rounded-3xl border border-slate-800 shadow-sm flex flex-col h-[500px]">
           <h3 className="text-lg font-bold mb-6 text-slate-100 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-amber-500" />
-            Top 5 Melhores Clientes
+            <Calendar className="w-5 h-5 text-indigo-400" />
+            Últimos Lançamentos
           </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-slate-800 text-[10px] font-black uppercase text-slate-500 tracking-widest">
-                  <th className="pb-4 pl-4">Cliente</th>
-                  <th className="pb-4 text-center">Pedidos</th>
-                  <th className="pb-4 text-right pr-4">Total Investido</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/50">
-                {orders.reduce((acc: any[], order) => {
-                  const existing = acc.find(c => c.name === order.clientName);
-                  if (existing) {
-                    existing.total += order.totalValue;
-                    existing.count += 1;
-                  } else {
-                    acc.push({ name: order.clientName, total: order.totalValue, count: 1 });
-                  }
-                  return acc;
-                }, [])
-                  .sort((a, b) => b.total - a.total)
-                  .slice(0, 5)
-                  .map((client, index) => (
-                    <tr key={index} className="hover:bg-slate-900/50 transition-colors">
-                      <td className="py-4 pl-4 flex items-center gap-3">
-                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${index === 0 ? 'bg-amber-500 text-amber-950' :
-                          index === 1 ? 'bg-slate-300 text-slate-900' :
-                            index === 2 ? 'bg-amber-800 text-amber-200' :
-                              'bg-slate-800 text-slate-400'
-                          }`}>
-                          {index + 1}
-                        </span>
-                        <span className="font-bold text-slate-200">{client.name}</span>
-                      </td>
-                      <td className="py-4 text-center text-xs font-bold text-slate-500">{client.count}</td>
-                      <td className="py-4 text-right pr-4 text-sm font-black text-indigo-400">
-                        {client.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
+
+          <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
+            {transactions.length === 0 ? (
+              <div className="text-center py-10 opacity-50">
+                <p className="text-sm font-bold text-slate-500">Nenhuma movimentação registrada.</p>
+              </div>
+            ) : (
+              transactions.map((t) => (
+                <div key={t.id} className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800/50 flex justify-between items-center group hover:border-slate-700 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-xl ${t.type === 'income' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                      {t.type === 'income' ? <ArrowUpCircle className="w-5 h-5" /> : <ArrowDownCircle className="w-5 h-5" />}
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-200 text-sm truncate max-w-[120px]">{t.description}</p>
+                      <p className="text-[10px] font-black uppercase text-slate-500">{new Date(t.date).toLocaleDateString('pt-BR')} • {t.category}</p>
+                    </div>
+                  </div>
+                  <span className={`font-black text-sm ${t.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {t.type === 'expense' ? '-' : '+'} R$ {t.amount.toLocaleString('pt-BR')}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </div>
+
       </div>
     </div>
   );
