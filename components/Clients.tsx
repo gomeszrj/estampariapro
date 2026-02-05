@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { Search, UserPlus, Edit2, Phone, Mail, Trash2, X, Save, User, ShoppingBag, CreditCard, Clock, Calendar, AlertTriangle, ArrowRight, Wallet, Globe } from 'lucide-react';
+import { Search, UserPlus, Edit2, Phone, Mail, Trash2, X, Save, User, ShoppingBag, CreditCard, Clock, Calendar, AlertTriangle, ArrowRight, Wallet, Globe, Package } from 'lucide-react';
 import { Client, Order, OrderStatus, CatalogOrder } from '../types.ts';
 import { clientService } from '../services/clientService.ts';
 import { catalogOrderService } from '../services/catalogOrderService.ts';
@@ -47,8 +46,14 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
   const getClientFinancials = (clientId: string) => {
     const clientOrders = getClientOrders(clientId);
     const totalSpent = clientOrders.reduce((sum, order) => sum + (order.totalValue || 0), 0);
+
+    const storeOrders = clientOrders.filter(o => o.origin === 'store');
+    const factoryOrders = clientOrders.filter(o => o.origin !== 'store');
+    const storeSpent = storeOrders.reduce((sum, o) => sum + (o.totalValue || 0), 0);
+    const factorySpent = factoryOrders.reduce((sum, o) => sum + (o.totalValue || 0), 0);
+
     const lastOrderDate = clientOrders.length > 0 ? new Date(clientOrders[0].createdAt).toLocaleDateString() : 'N/A';
-    return { totalSpent, lastOrderDate, totalOrders: clientOrders.length };
+    return { totalSpent, storeSpent, factorySpent, lastOrderDate, totalOrders: clientOrders.length };
   };
 
   const filteredOrders = viewingClient ? getClientOrders(viewingClient.id) : [];
@@ -283,20 +288,28 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
               </button>
             </div>
 
-            {/* Stats Row */}
-            <div className="px-8 mt-8 grid grid-cols-3 gap-4">
+            {/* Stats Row with Store breakdown */}
+            <div className="px-8 mt-8 grid grid-cols-4 gap-4">
               <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 flex flex-col gap-1 relative overflow-hidden group">
                 <div className="absolute right-0 top-0 opacity-10 -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform">
                   <Wallet className="w-24 h-24 text-indigo-500" />
                 </div>
-                <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Total Investido</span>
+                <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Total Geral</span>
                 <span className="text-2xl font-black text-indigo-400">
                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(getClientFinancials(viewingClient.id).totalSpent)}
                 </span>
               </div>
               <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 flex flex-col gap-1">
-                <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Pedidos Totais</span>
-                <span className="text-2xl font-black text-white">{getClientFinancials(viewingClient.id).totalOrders}</span>
+                <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-1"><ShoppingBag className="w-3 h-3 text-emerald-400" /> Loja / Varejo</span>
+                <span className="text-xl font-black text-emerald-400">
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(getClientFinancials(viewingClient.id).storeSpent)}
+                </span>
+              </div>
+              <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 flex flex-col gap-1">
+                <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-1"><Package className="w-3 h-3 text-sky-400" /> Encomendas</span>
+                <span className="text-xl font-black text-sky-400">
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(getClientFinancials(viewingClient.id).factorySpent)}
+                </span>
               </div>
               <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 flex flex-col gap-1">
                 <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Último Pedido</span>
@@ -349,6 +362,11 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
                           <span className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider border ${getStatusColor(order.status)}`}>
                             {order.status}
                           </span>
+                          {order.origin === 'store' && (
+                            <span className="text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center gap-1">
+                              <ShoppingBag className="w-3 h-3" /> Loja
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs text-slate-500 font-medium">Criado em {new Date(order.createdAt).toLocaleDateString()}</p>
                       </div>
@@ -376,6 +394,11 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
                           <span className="text-[9px] font-black bg-emerald-900/30 text-emerald-400 px-2 py-0.5 rounded-md uppercase tracking-wider border border-emerald-900/50">
                             Finalizado
                           </span>
+                          {order.origin === 'store' && (
+                            <span className="text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center gap-1">
+                              <ShoppingBag className="w-3 h-3" /> Loja
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs text-slate-500 font-medium">{new Date(order.createdAt).toLocaleDateString()}</p>
                       </div>

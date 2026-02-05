@@ -1,8 +1,7 @@
 import { supabase } from './supabase';
-import { Order, OrderItem, OrderStatus, OrderType, PaymentStatus } from '../types';
+import { Order, OrderItem, OrderStatus, OrderType, PaymentStatus, CatalogOrder } from '../types';
 import { orderService } from './orderService';
 import { productService } from './productService';
-import { v4 as uuidv4 } from 'uuid';
 
 export const catalogOrderService = {
     // Adapter: Create Order using ERP Services
@@ -38,7 +37,7 @@ export const catalogOrderService = {
             const orderItems: OrderItem[] = data.items.map(item => {
                 const product = products.find(p => p.id === item.productId);
                 return {
-                    id: uuidv4(), // Generate ID
+                    id: Math.random().toString(36).substring(2) + Date.now().toString(36), // Simple ID
                     productId: item.productId,
                     productName: item.productName,
                     fabricId: 'f-store', // Placeholder or infer
@@ -108,5 +107,33 @@ export const catalogOrderService = {
         const prefix = 'LJ';
         const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
         return `${prefix}-${random}`;
+    },
+
+    async getByClientId(clientId: string): Promise<CatalogOrder[]> {
+        const { data, error } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('client_id', clientId)
+            .eq('origin', 'store') // Only store requests
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching catalog orders:', error);
+            return [];
+        }
+
+        // Map from DB to CatalogOrder structure
+        return data.map((d: any) => ({
+            id: d.id,
+            clientId: d.client_id,
+            clientName: d.client_name,
+            clientPhone: '', // Need to fetch or optional
+            clientTeam: d.client_team,
+            items: d.items || [],
+            totalEstimated: d.total_value,
+            status: d.status === OrderStatus.STORE_REQUEST ? 'pending' : 'approved', // Simplified mapping
+            createdAt: d.created_at,
+            notes: d.notes
+        }));
     }
 };
