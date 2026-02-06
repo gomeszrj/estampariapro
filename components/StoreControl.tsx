@@ -696,24 +696,93 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
                   </div>
 
                   {/* Grades Selection */}
+                  {/* Grades & Measurements Matrix */}
                   <div className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-500 uppercase">Grades Disponíveis</label>
-                    <div className="flex flex-wrap gap-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase">Grades & Medidas (cm)</label>
+                    <div className="space-y-3">
                       {GRADES.map(g => {
                         const isActive = editingProduct.allowedGrades?.[g.label];
                         return (
-                          <button
-                            key={g.label}
-                            onClick={() => {
-                              const newGrades = { ...editingProduct.allowedGrades };
-                              if (isActive) delete newGrades[g.label];
-                              else newGrades[g.label] = g.sizes;
-                              setEditingProduct({ ...editingProduct, allowedGrades: newGrades });
-                            }}
-                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase border transaction-all ${isActive ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-950 border-slate-800 text-slate-500'}`}
-                          >
-                            {g.label}
-                          </button>
+                          <div key={g.label} className={`border rounded-2xl transition-all ${isActive ? 'bg-slate-900/50 border-indigo-500/50' : 'bg-slate-950 border-slate-800'}`}>
+                            {/* Header / Toggle */}
+                            <div
+                              className="p-4 flex items-center justify-between cursor-pointer"
+                              onClick={() => {
+                                const newGrades = { ...editingProduct.allowedGrades };
+                                if (isActive) delete newGrades[g.label];
+                                else newGrades[g.label] = g.sizes;
+                                setEditingProduct({ ...editingProduct, allowedGrades: newGrades });
+                              }}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${isActive ? 'bg-indigo-600 border-indigo-500 text-white' : 'border-slate-700 bg-slate-900'}`}>
+                                  {isActive && <Check className="w-3.5 h-3.5" />}
+                                </div>
+                                <span className={`text-xs font-black uppercase tracking-widest ${isActive ? 'text-white' : 'text-slate-500'}`}>{g.label}</span>
+                              </div>
+                              {isActive && <span className="text-[10px] text-indigo-400 font-bold">Configurar Medidas</span>}
+                            </div>
+
+                            {/* Measurements Grid (Expanded) */}
+                            {isActive && (
+                              <div className="px-4 pb-4 border-t border-slate-800/50 pt-4">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                  {g.sizes.map(size => {
+                                    const key = `${g.label}-${size}`;
+                                    const current = editingProduct.measurements?.[key] || { width: '', height: '' };
+                                    return (
+                                      <div key={size} className="bg-slate-950 border border-slate-800 rounded-xl p-2 flex flex-col gap-2">
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-[10px] font-black bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded uppercase">{size}</span>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                          <div className="space-y-0.5">
+                                            <label className="text-[8px] text-slate-600 font-bold uppercase block text-center">ALT (A)</label>
+                                            <input
+                                              type="text"
+                                              placeholder="cm"
+                                              className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1 px-1 text-center text-xs text-white font-bold focus:border-indigo-500 outline-none"
+                                              value={current.height}
+                                              onChange={e => {
+                                                const val = e.target.value;
+                                                setEditingProduct((prev: any) => ({
+                                                  ...prev,
+                                                  measurements: {
+                                                    ...prev.measurements,
+                                                    [key]: { ...current, height: val }
+                                                  }
+                                                }));
+                                              }}
+                                            />
+                                          </div>
+                                          <div className="space-y-0.5">
+                                            <label className="text-[8px] text-slate-600 font-bold uppercase block text-center">LARG (L)</label>
+                                            <input
+                                              type="text"
+                                              placeholder="cm"
+                                              className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1 px-1 text-center text-xs text-white font-bold focus:border-indigo-500 outline-none"
+                                              value={current.width}
+                                              onChange={e => {
+                                                const val = e.target.value;
+                                                setEditingProduct((prev: any) => ({
+                                                  ...prev,
+                                                  measurements: {
+                                                    ...prev.measurements,
+                                                    [key]: { ...current, width: val }
+                                                  }
+                                                }));
+                                              }}
+                                            />
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                                <p className="text-[10px] text-slate-500 mt-3 text-center italic">Informe as medidas em Centímetros (cm).</p>
+                              </div>
+                            )}
+                          </div>
                         )
                       })}
                     </div>

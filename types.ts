@@ -86,7 +86,7 @@ export interface Product {
   costPrice?: number; // New: Cost Price for Profit Calculation
   description?: string; // Commercial description
   allowedGrades?: Record<string, string[]>;
-  measurements?: Record<string, { height: number; width: number }>; // New: Size measurements e.g. { 'P': { height: 70, width: 50 } }
+  measurements?: Record<string, { height: string; width: string }>; // New: Size measurements e.g. { 'P': { height: '70', width: '50' } }
   published?: boolean; // Controls visibility in Public Store
 }
 

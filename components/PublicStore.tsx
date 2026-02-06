@@ -45,6 +45,9 @@ const PublicStore: React.FC = () => {
     // Company Settings
     const [company, setCompany] = useState<CompanySettings | null>(null);
 
+    // Measurement Table Modal
+    const [isMeasurementTableOpen, setIsMeasurementTableOpen] = useState(false);
+
     // --- Effects ---
     useEffect(() => {
         loadData();
@@ -247,15 +250,23 @@ const PublicStore: React.FC = () => {
                                 {/* Grade Tabs */}
                                 {hasGrades && availableGroups.length > 0 && (
                                     <div className="space-y-3">
-                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Modelo</label>
+                                        <div className="flex justify-between items-center">
+                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Modelo</label>
+                                            <button
+                                                onClick={() => setIsMeasurementTableOpen(true)}
+                                                className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 underline uppercase tracking-wider"
+                                            >
+                                                Ver Tabela de Medidas
+                                            </button>
+                                        </div>
                                         <div className="flex items-center gap-4 border-b border-slate-800">
                                             {availableGroups.map(group => (
                                                 <button
                                                     key={group}
                                                     onClick={() => { setSelectedGroup(group); setSelectedSize(''); }}
                                                     className={`pb-2 text-sm font-bold uppercase tracking-wider transition-all border-b-2 ${selectedGroup === group
-                                                            ? 'text-indigo-400 border-indigo-400'
-                                                            : 'text-slate-500 border-transparent hover:text-slate-300'
+                                                        ? 'text-indigo-400 border-indigo-400'
+                                                        : 'text-slate-500 border-transparent hover:text-slate-300'
                                                         }`}
                                                 >
                                                     {group}
@@ -270,9 +281,9 @@ const PublicStore: React.FC = () => {
                                     <div className="flex justify-between items-end">
                                         <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Tamanho</label>
                                         {currentMeasurement && (
-                                            <div className="flex items-center gap-2 text-[10px] text-indigo-300 bg-indigo-500/10 px-2 py-1 rounded">
-                                                <Ruler className="w-3 h-3" />
-                                                <span>A: {currentMeasurement.height}cm x L: {currentMeasurement.width}cm</span>
+                                            <div className="flex items-center gap-2 text-[10px] text-emerald-300 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20 animate-in fade-in duration-300">
+                                                <Ruler className="w-3.5 h-3.5" />
+                                                <span className="font-bold tracking-wide">ALTURA: {currentMeasurement.height}cm &nbsp;•&nbsp; LARGURA: {currentMeasurement.width}cm</span>
                                             </div>
                                         )}
                                     </div>
@@ -326,7 +337,58 @@ const PublicStore: React.FC = () => {
                         </div>
                     </div>
                 </div>
-            </div>
+
+                {/* Measurement Table Modal Layer */}
+                {
+                    isMeasurementTableOpen && (
+                        <div className="absolute inset-0 z-[160] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in">
+                            <div className="bg-[#0f172a] w-full max-w-2xl rounded-3xl border border-slate-800 p-8 shadow-2xl relative animate-in zoom-in-95">
+                                <button
+                                    onClick={() => setIsMeasurementTableOpen(false)}
+                                    className="absolute top-4 right-4 p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+
+                                <h3 className="text-xl font-black text-white uppercase tracking-widest mb-6 flex items-center gap-3">
+                                    <Ruler className="w-5 h-5 text-indigo-500" />
+                                    Tabela de Medidas (cm)
+                                </h3>
+
+                                <div className="space-y-8 max-h-[60vh] overflow-y-auto px-2 custom-scrollbar">
+                                    {availableGroups.map(group => {
+                                        const groupSizes = product.allowedGrades![group] || [];
+                                        return (
+                                            <div key={group} className="space-y-3">
+                                                <h4 className="text-sm font-bold text-indigo-400 uppercase tracking-widest border-b border-indigo-500/20 pb-2 mb-3">
+                                                    {group}
+                                                </h4>
+                                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                                                    {groupSizes.map(size => {
+                                                        const m = product.measurements?.[`${group}-${size}`];
+                                                        return (
+                                                            <div key={size} className="bg-slate-900 border border-slate-800 rounded-xl p-3 flex flex-col items-center gap-1">
+                                                                <span className="text-sm font-black text-white">{size}</span>
+                                                                {m ? (
+                                                                    <span className="text-[10px] text-slate-400 font-bold">
+                                                                        {m.height} x {m.width}
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="text-[10px] text-slate-600 italic">--</span>
+                                                                )}
+                                                            </div>
+                                                        )
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    )
+                }
+            </div >
         );
     };
 
