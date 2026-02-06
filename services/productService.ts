@@ -113,7 +113,8 @@ const mapProductFromDB = (dbItem: any): Product => ({
     costPrice: dbItem.cost_price || 0,
     description: dbItem.description,
     allowedGrades: dbItem.allowed_grades,
-    measurements: dbItem.measurements
+    measurements: dbItem.measurements,
+    published: dbItem.published
 });
 
 const mapProductToDB = (appItem: Partial<Product>) => {
