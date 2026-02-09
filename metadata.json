@@ -1,0 +1,7 @@
+{
+  "name": "ERP Estamparia AI-First",
+  "description": "Professional ERP for print shops with AI-driven order parsing, production Kanban, catalog management, and financial KPIs.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

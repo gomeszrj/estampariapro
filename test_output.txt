@@ -1,0 +1,13 @@
+Loading .env.local from: D:\GOMESZ SPEED PRINT\estamapariapro\erp-estamparia-ai-first\.env.local
+VITE_SUPABASE_URL: FOUND
+­ƒÜÇ Iniciando Teste do Sistema...
+
+­ƒæñ Criando Cliente de Teste...
+
+ÔØî ERRO NO TESTE: {
+  code: '42501',
+  details: null,
+  hint: null,
+  message: 'new row violates row-level security policy for table "clients"'
+}
+Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76

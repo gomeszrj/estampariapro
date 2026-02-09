@@ -1,0 +1,20 @@
+Loading .env.local from: D:\GOMESZ SPEED PRINT\estamapariapro\erp-estamparia-ai-first\.env.local
+­ƒÜÇ Iniciando Teste do Sistema...
+
+­ƒöÉ Autenticando usu├írio de teste...
+Ô£à Autenticado como: test_runner_1769569315794@example.com
+
+­ƒæñ Criando Cliente de Teste...
+Ô£à Cliente Criado: b5311dc0-3460-441e-ae46-a374934f46ba Cliente Teste 1769569316327
+
+­ƒæò Criando Produto de Teste...
+Ô£à Produto Criado: 296f3c61-3470-402c-8893-673581257066 Produto Teste 1769569316327
+
+­ƒôØ Criando Pedido...
+Ô£à Pedido Criado: 6fc02888-ee8e-49ad-995c-e07d60e2bfce Total: 50
+
+­ƒôï Verificando Lista de Pedidos...
+Ô£à Pedido encontrado na lista!
+   Cliente no Pedido (Join): Cliente Teste 1769569316327
+
+­ƒÄë TESTE CONCLU├ìDO COM SUCESSO! O sistema est├í operando corretamente.
