@@ -61,8 +61,8 @@ const PublicStore: React.FC = () => {
         setLoading(true);
         try {
             const [prods, settings] = await Promise.all([
-                productService.getAll(),
-                settingsService.getSettings()
+                productService.getPublicProducts(),
+                settingsService.getPublicSettings() as Promise<CompanySettings>
             ]);
             setProducts(prods.filter(p => p.status === 'active' && p.published));
             setCompany(settings);

@@ -10,9 +10,18 @@ export const productService = {
             .order('created_at', { ascending: false });
 
         if (error) throw error;
-        // Map snake_case to camelCase if needed, but for now assuming types match or we adjust types
-        // Supabase returns snake_case columns by default. Our types are camelCase.
-        // We should map them.
+        return data?.map(mapProductFromDB) as Product[];
+    },
+
+    async getPublicProducts() {
+        const { data, error } = await supabase
+            .from('products')
+            .select('id, sku, name, category, status, image_url, back_image_url, base_price, description, allowed_grades, measurements, published, created_at')
+            .eq('published', true)
+            .eq('status', 'active')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
         return data?.map(mapProductFromDB) as Product[];
     },
 

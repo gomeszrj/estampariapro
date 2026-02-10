@@ -25,7 +25,6 @@ export const settingsService = {
 
         if (error) {
             if (error.code === 'PGRST116') { // Row not found
-                // Return default empty structure
                 return {
                     name: '',
                     cnpj: '',
@@ -57,6 +56,27 @@ export const settingsService = {
             evolution_api_key: data.evolution_api_key || '',
             evolution_instance_name: data.evolution_instance_name || '',
             cloudbot_enabled: data.cloudbot_enabled || false
+        };
+    },
+
+    getPublicSettings: async (): Promise<Partial<CompanySettings>> => {
+        const { data, error } = await supabase
+            .from('settings')
+            .select('name, logo_url, phone, email, website, address')
+            .single();
+
+        if (error) {
+            console.error("Error fetching public settings", error);
+            return {};
+        }
+
+        return {
+            name: data.name || '',
+            logo_url: data.logo_url || '',
+            phone: data.phone || '',
+            email: data.email || '',
+            website: data.website || '',
+            address: data.address || ''
         };
     },
 

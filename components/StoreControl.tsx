@@ -680,8 +680,8 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
 
       {/* ADMIN EDIT MODAL */}
       {editingProduct && (
-        <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0f172a] rounded-[2.5rem] w-full max-w-2xl border border-slate-800 p-8 md:p-10 shadow-2xl animate-in zoom-in-95 overflow-y-auto max-h-[95vh]">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0f172a] rounded-[2.5rem] w-full max-w-2xl border border-slate-800 p-8 md:p-10 shadow-2xl animate-in zoom-in-95 overflow-y-auto max-h-[95vh] custom-scrollbar">
             {/* Header */}
             <div className="flex justify-between items-start mb-6">
               <div>
@@ -731,12 +731,21 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
                       </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-slate-500 uppercase">Custo de Produção (R$)</label>
-                        <input type="number" step="0.01" className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-slate-300 font-black text-lg focus:border-indigo-500 outline-none" value={editingProduct.costPrice || ''} onChange={e => setEditingProduct({ ...editingProduct, costPrice: parseFloat(e.target.value) })} />
+                        <input
+                          type="number"
+                          step="0.01"
+                          className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-slate-300 font-black text-lg focus:border-indigo-500 outline-none"
+                          value={editingProduct.costPrice || ''}
+                          onChange={e => {
+                            const val = parseFloat(e.target.value);
+                            setEditingProduct({ ...editingProduct, costPrice: isNaN(val) ? 0 : val });
+                          }}
+                        />
                       </div>
                     </div>
-                    {editingProduct.basePrice && editingProduct.costPrice && (
+                    {editingProduct.basePrice && editingProduct.costPrice !== undefined && (
                       <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest text-right">
-                        Lucro: R$ {(editingProduct.basePrice - editingProduct.costPrice).toFixed(2)} ({((editingProduct.basePrice - editingProduct.costPrice) / editingProduct.basePrice * 100).toFixed(0)}%)
+                        Lucro: R$ {(editingProduct.basePrice - (editingProduct.costPrice || 0)).toFixed(2)} ({editingProduct.basePrice > 0 ? ((editingProduct.basePrice - (editingProduct.costPrice || 0)) / editingProduct.basePrice * 100).toFixed(0) : 0}%)
                       </p>
                     )}
                     <div className="space-y-2">

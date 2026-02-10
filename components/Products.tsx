@@ -412,18 +412,21 @@ const Products: React.FC = () => {
                                                 <input
                                                     type="number"
                                                     value={editingProduct?.costPrice || ''}
-                                                    onChange={e => setEditingProduct({ ...editingProduct!, costPrice: parseFloat(e.target.value) })}
+                                                    onChange={e => {
+                                                        const val = parseFloat(e.target.value);
+                                                        setEditingProduct({ ...editingProduct!, costPrice: isNaN(val) ? 0 : val });
+                                                    }}
                                                     className="w-full bg-[#1e293b] border border-slate-700/50 rounded-xl px-4 py-3 text-2xl font-black text-slate-300 focus:border-indigo-500 outline-none"
                                                     placeholder="0.00"
                                                 />
                                             </div>
-                                            {editingProduct?.basePrice && editingProduct?.costPrice && (
+                                            {editingProduct?.basePrice && editingProduct?.costPrice !== undefined ? (
                                                 <div className="col-span-2 text-right -mt-2">
                                                     <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest bg-emerald-500/10 px-2 py-1 rounded inline-block">
-                                                        Lucro Estimado: R$ {(editingProduct.basePrice - editingProduct.costPrice).toFixed(2)} ({((editingProduct.basePrice - editingProduct.costPrice) / editingProduct.basePrice * 100).toFixed(0)}%)
+                                                        Lucro Estimado: R$ {(editingProduct.basePrice - (editingProduct.costPrice || 0)).toFixed(2)} ({editingProduct.basePrice > 0 ? ((editingProduct.basePrice - (editingProduct.costPrice || 0)) / editingProduct.basePrice * 100).toFixed(0) : 0}%)
                                                     </p>
                                                 </div>
-                                            )}
+                                            ) : null}
                                             <div className="col-span-2">
                                                 <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Descrição Pública</label>
                                                 <textarea
