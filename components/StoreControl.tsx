@@ -610,9 +610,27 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
             </div>
 
             {/* Totals */}
-            <div className="flex justify-between items-end pt-2">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Total Geral</span>
-              <span className="text-3xl font-black text-white">R$ {cartTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+            <div className="flex flex-col gap-1 pt-2">
+              <div className="flex justify-between items-end">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Custo Prod.</span>
+                <span className="text-sm font-bold text-slate-400">R$ {cart.reduce((acc, item) => {
+                  const product = products.find(p => p.id === item.productId);
+                  return acc + ((product?.costPrice || 0) * item.quantity);
+                }, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex justify-between items-end">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Lucro Previsto</span>
+                <span className="text-sm font-bold text-emerald-500">R$ {cart.reduce((acc, item) => {
+                  const product = products.find(p => p.id === item.productId);
+                  const cost = (product?.costPrice || 0) * item.quantity;
+                  const revenue = item.price * item.quantity;
+                  return acc + (revenue - cost);
+                }, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex justify-between items-end pt-2 border-t border-slate-800">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Total Geral</span>
+                <span className="text-3xl font-black text-white">R$ {cartTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              </div>
             </div>
 
             <button
