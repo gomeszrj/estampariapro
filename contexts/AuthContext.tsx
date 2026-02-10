@@ -22,19 +22,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        let mounted = true;
+
+        // Force stop loading after 5 seconds to prevent black screen
+        const timeout = setTimeout(() => {
+            if (mounted && loading) {
+                console.error("Auth loading timed out - forcing render");
+                setLoading(false);
+            }
+        }, 5000);
+
         supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
-            setUser(session?.user ?? null);
-            setLoading(false);
+            if (mounted) {
+                setSession(session);
+                setUser(session?.user ?? null);
+                setLoading(false);
+            }
+        }).catch(err => {
+            console.error("Auth session error:", err);
+            if (mounted) setLoading(false);
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session);
-            setUser(session?.user ?? null);
-            setLoading(false);
+            if (mounted) {
+                setSession(session);
+                setUser(session?.user ?? null);
+                setLoading(false);
+            }
         });
 
-        return () => subscription.unsubscribe();
+        return () => {
+            mounted = false;
+            clearTimeout(timeout);
+            subscription.unsubscribe();
+        };
     }, []);
 
     const signOut = async () => {

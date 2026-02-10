@@ -114,37 +114,56 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
   const revenueOrders = orders.filter(o => o.status !== 'BUDGET'); // Exclude budgets
   const totalRevenue = revenueOrders.reduce((acc, curr) => acc + curr.totalValue, 0);
 
-  // 2. Expenses (From Transactions + Estimated COGS if needed, but lets stick to Real Transactions for v15.3)
-  // Actually, distinct between "Operating Expenses" (Transactions) and "COGS" (Materials).
-  // The Purchase Flow creates 'expense' transactions for materials.
-  const expenseTransactions = transactions.filter(t => t.type === 'expense');
-  const totalExpenses = expenseTransactions.reduce((acc, curr) => acc + curr.amount, 0);
+  // 2. Production Costs (COGS) - Estimate based on current product cost
+  const productionCosts = revenueOrders.reduce((acc, order) => {
+    return acc + order.items.reduce((itemAcc, item) => {
+      const product = products.find(p => p.id === item.productId);
+      // Fallback: If product not found (deleted) or no cost, use 0.
+      // Ideally we should snapshot this in the OrderItem at purchase time.
+      const unitCost = product?.costPrice || 0;
+      return itemAcc + (unitCost * item.quantity);
+    }, 0);
+  }, 0);
 
-  // 3. Net Profit
-  const netProfit = totalRevenue - totalExpenses;
+  // 3. Operating Expenses (From Transactions)
+  const expenseTransactions = transactions.filter(t => t.type === 'expense');
+  const operatingExpenses = expenseTransactions.reduce((acc, curr) => acc + curr.amount, 0);
+
+  // 4. Total Outflow & Net Profit
+  const totalOutflow = operatingExpenses + productionCosts;
+  const netProfit = totalRevenue - totalOutflow;
   const margin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
-  // 4. Chart Data (Merge Orders & Transactions by Month)
-  const monthlyData: Record<string, { revenue: number, expense: number, profit: number }> = {};
+  // 5. Chart Data (Merge Orders & Transactions by Month)
+  const monthlyData: Record<string, { revenue: number, expense: number, cost: number, profit: number }> = {};
 
-  // Process Revenue
+  // Process Revenue & Production Costs
   revenueOrders.forEach(o => {
     if (!o.createdAt) return;
     const key = o.createdAt.slice(0, 7); // YYYY-MM
-    if (!monthlyData[key]) monthlyData[key] = { revenue: 0, expense: 0, profit: 0 };
+    if (!monthlyData[key]) monthlyData[key] = { revenue: 0, expense: 0, cost: 0, profit: 0 };
+
     monthlyData[key].revenue += o.totalValue;
+
+    // Add Configured Cost for this order
+    const orderCost = o.items.reduce((acc, item) => {
+      const p = products.find(prod => prod.id === item.productId);
+      return acc + ((p?.costPrice || 0) * item.quantity);
+    }, 0);
+    monthlyData[key].cost += orderCost;
   });
 
-  // Process Expenses
+  // Process Operating Expenses
   expenseTransactions.forEach(t => {
     const key = t.date.slice(0, 7);
-    if (!monthlyData[key]) monthlyData[key] = { revenue: 0, expense: 0, profit: 0 };
+    if (!monthlyData[key]) monthlyData[key] = { revenue: 0, expense: 0, cost: 0, profit: 0 };
     monthlyData[key].expense += t.amount;
   });
 
   // Calculate Profit per month
   Object.keys(monthlyData).forEach(key => {
-    monthlyData[key].profit = monthlyData[key].revenue - monthlyData[key].expense;
+    const data = monthlyData[key];
+    data.profit = data.revenue - (data.expense + data.cost);
   });
 
   const chartData = Object.keys(monthlyData).sort().map(key => {
@@ -279,23 +298,25 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
           subtext="Baseado em Pedidos"
         />
         <FinanceStat
-          title="Despesas"
-          value={`R$ ${totalExpenses.toLocaleString('pt-BR')}`}
+          title="Despesas Operacionais"
+          value={`R$ ${operatingExpenses.toLocaleString('pt-BR')}`}
           icon={CreditCard}
           color="bg-rose-600"
           subtext={`${expenseTransactions.length} lançamentos`}
         />
         <FinanceStat
-          title="Lucro Líquido"
+          title="Custo de Produção"
+          value={`R$ ${productionCosts.toLocaleString('pt-BR')}`}
+          icon={TrendingUp} // Or another suitable icon
+          color="bg-amber-600"
+          subtext="Estimado (Baseado em Pedidos)"
+        />
+        <FinanceStat
+          title="Lucro Líquido Real"
           value={`R$ ${netProfit.toLocaleString('pt-BR')}`}
           icon={Wallet}
           color={netProfit >= 0 ? "bg-emerald-600" : "bg-rose-600"}
-        />
-        <FinanceStat
-          title="Margem de Lucro"
-          value={`${margin.toFixed(1)}%`}
-          icon={Percent}
-          color="bg-amber-600"
+          subtext={`Margem: ${margin.toFixed(1)}%`}
         />
       </div>
 
@@ -306,7 +327,7 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
         <div className="lg:col-span-2 bg-[#0f172a] p-8 rounded-3xl border border-slate-800 shadow-sm min-h-[400px]">
           <h3 className="text-lg font-bold mb-8 text-slate-100 flex items-center gap-2">
             <PieChart className="w-5 h-5 text-indigo-400" />
-            Fluxo de Caixa (Receita x Despesa)
+            Fluxo de Caixa (Receita x Despesa + Custo)
           </h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
@@ -320,7 +341,8 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
                 />
                 <Legend />
                 <Bar dataKey="revenue" name="Receita" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={50} />
-                <Bar dataKey="expense" name="Despesa" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={50} />
+                <Bar dataKey="cost" name="Custo Prod." fill="#d97706" radius={[4, 4, 0, 0]} maxBarSize={50} />
+                <Bar dataKey="expense" name="Desp. Operacional" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={50} />
               </BarChart>
             </ResponsiveContainer>
           </div>

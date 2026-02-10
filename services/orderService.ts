@@ -133,17 +133,10 @@ const mapOrderFromDB = (dbItem: any): Order => ({
     id: dbItem.id,
     orderNumber: dbItem.order_number,
     clientId: dbItem.client_id,
-    clientName: dbItem.clients?.name || 'Cliente Desconhecido',
-    // Wait, my migration didn't enforce client_name in orders table, I should check schema.
-    // Schema: client_id uuid references clients(id).
-    // So I need to fetch client name via join or store it.
-    // Let's check my migration in step 64.
-    // "client_id uuid references clients(id)"
-    // I did NOT add client_name to orders table in migration.
-    // So I need to select clients(name) in the query.
-    // Updating query in getAll above.
+    clientName: dbItem.clients?.name || dbItem.client_name || 'Cliente Desconhecido', // Fallback
     status: dbItem.status,
-    paymentStatus: dbItem.payment_status as any, // Cast or ensure Enum match
+    paymentStatus: dbItem.payment_status as any,
+    origin: dbItem.origin, // Mapping origin
     orderType: dbItem.order_type,
     totalValue: dbItem.total_value,
     amountPaid: dbItem.amount_paid,
@@ -161,8 +154,10 @@ const mapOrderToDB = (appItem: Partial<Order>) => {
     const dbItem: any = {};
     if (appItem.orderNumber) dbItem.order_number = appItem.orderNumber;
     if (appItem.clientId) dbItem.client_id = appItem.clientId;
+    if (appItem.clientName) dbItem.client_name = appItem.clientName; // Ensure name is saved if present
     if (appItem.status) dbItem.status = appItem.status;
     if (appItem.paymentStatus) dbItem.payment_status = appItem.paymentStatus;
+    if (appItem.origin) dbItem.origin = appItem.origin; // Save origin
     if (appItem.orderType) dbItem.order_type = appItem.orderType;
     if (appItem.totalValue) dbItem.total_value = appItem.totalValue;
     if (appItem.amountPaid !== undefined) dbItem.amount_paid = appItem.amountPaid;

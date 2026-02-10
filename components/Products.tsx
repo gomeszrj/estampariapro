@@ -231,7 +231,7 @@ const Products: React.FC = () => {
                     <button
                         onClick={() => {
                             setEditingProduct({
-                                name: '', sku: '', category: 'Dry-Fit', basePrice: 0, status: 'active', published: true,
+                                name: '', sku: '', category: 'Dry-Fit', basePrice: 0, costPrice: 0, status: 'active', published: true,
                                 imageUrl: '', allowedGrades: {}, measurements: {}
                             });
                             setIsEditing(true);
@@ -397,8 +397,8 @@ const Products: React.FC = () => {
                                                     placeholder="PROD-001"
                                                 />
                                             </div>
-                                            <div className="col-span-2">
-                                                <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Preço Base (R$)</label>
+                                            <div>
+                                                <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Preço Venda (R$)</label>
                                                 <input
                                                     type="number"
                                                     value={editingProduct?.basePrice}
@@ -407,6 +407,23 @@ const Products: React.FC = () => {
                                                     placeholder="0.00"
                                                 />
                                             </div>
+                                            <div>
+                                                <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Custo Prod. (R$)</label>
+                                                <input
+                                                    type="number"
+                                                    value={editingProduct?.costPrice || ''}
+                                                    onChange={e => setEditingProduct({ ...editingProduct!, costPrice: parseFloat(e.target.value) })}
+                                                    className="w-full bg-[#1e293b] border border-slate-700/50 rounded-xl px-4 py-3 text-2xl font-black text-slate-300 focus:border-indigo-500 outline-none"
+                                                    placeholder="0.00"
+                                                />
+                                            </div>
+                                            {editingProduct?.basePrice && editingProduct?.costPrice && (
+                                                <div className="col-span-2 text-right -mt-2">
+                                                    <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest bg-emerald-500/10 px-2 py-1 rounded inline-block">
+                                                        Lucro Estimado: R$ {(editingProduct.basePrice - editingProduct.costPrice).toFixed(2)} ({((editingProduct.basePrice - editingProduct.costPrice) / editingProduct.basePrice * 100).toFixed(0)}%)
+                                                    </p>
+                                                </div>
+                                            )}
                                             <div className="col-span-2">
                                                 <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Descrição Pública</label>
                                                 <textarea

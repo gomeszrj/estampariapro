@@ -77,28 +77,56 @@ export const catalogOrderService = {
         }
     },
 
-    async getOrCreateClient(name: string, phone: string): Promise<string> {
-        // Normalize phone for search (remove formatting if needed, but assuming exact match for now)
-        const { data: existing } = await supabase
+    async getOrCreateClient(name: string, rawPhone: string): Promise<string> {
+        // Normalize phone: remove all non-numeric characters
+        const cleanPhone = rawPhone.replace(/\D/g, '');
+        // If phone is too short, fallback to original or handle error? Let's use clean if > 8 chars, else raw
+        const phoneToUse = cleanPhone.length > 8 ? cleanPhone : rawPhone;
+
+        // Try to find existing client by phone
+        const { data: existing, error: findError } = await supabase
             .from('clients')
             .select('id')
-            .eq('whatsapp', phone) // Assuming whatsapp column stores phone
-            .single();
+            .eq('whatsapp', phoneToUse) // Assuming whatsapp column stores phone
+            .maybeSingle();
+
+        if (findError) {
+            console.warn("Error finding client:", findError);
+            // Proceed to try creation as fallback or throw? 
+            // If error is network, creation will likely fail too. 
+            // But if error is invalid syntax or RLS, maybe we should continue.
+        }
 
         if (existing) return existing.id;
 
-        // Create
-        const { data: newClient, error } = await supabase
+        // Create new client
+        // We use a placeholder email based on phone to ensure uniqueness if email is required/unique
+        const placeholderEmail = `${phoneToUse}@placeholder.com`;
+
+        const { data: newClient, error: createError } = await supabase
             .from('clients')
             .insert([{
-                name,
-                whatsapp: phone,
-                email: `${phone.replace(/\D/g, '')}@placeholder.com`, // Dummy email
+                name: name,
+                whatsapp: phoneToUse,
+                email: placeholderEmail,
             }])
             .select()
             .single();
 
-        if (error) throw error;
+        if (createError) {
+            // Handle case where maybe client existed but lookup failed or race condition
+            if (createError.code === '23505') { // Unique violation
+                // Retry lookup one more time
+                const { data: retry } = await supabase
+                    .from('clients')
+                    .select('id')
+                    .eq('whatsapp', phoneToUse)
+                    .maybeSingle();
+                if (retry) return retry.id;
+            }
+            throw createError;
+        }
+
         return newClient.id;
     },
 

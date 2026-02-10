@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingBag, Search, X, Plus, Minus, ArrowRight, CheckCircle2, ChevronRight, Ruler, Info, Instagram, MessageCircle, Menu, SlidersHorizontal } from 'lucide-react';
+import { ShoppingBag, Search, X, Plus, Minus, ArrowRight, CheckCircle2, ChevronRight, Ruler, Info, Instagram, MessageCircle, Menu, SlidersHorizontal, List } from 'lucide-react';
 import { Product } from '../types';
 import { productService } from '../services/productService';
 import { catalogOrderService } from '../services/catalogOrderService';
@@ -41,6 +41,7 @@ const PublicStore: React.FC = () => {
     const [clientTeam, setClientTeam] = useState('');
     const [clientPhone, setClientPhone] = useState('');
     const [clientNotes, setClientNotes] = useState('');
+    const [namesList, setNamesList] = useState(''); // New State
 
     // Company Settings
     const [company, setCompany] = useState<CompanySettings | null>(null);
@@ -128,13 +129,19 @@ const PublicStore: React.FC = () => {
         }
 
         try {
+            // Combine notes
+            const finalNotes = [
+                clientNotes ? `Obs: ${clientNotes}` : '',
+                namesList ? `\n--- LISTA DE NOMES ---\n${namesList}` : ''
+            ].filter(Boolean).join('\n');
+
             await catalogOrderService.create({
                 clientId: 'public-client',
                 clientName,
                 clientTeam,
                 clientPhone,
                 totalEstimated: cartTotal,
-                notes: clientNotes,
+                notes: finalNotes, // Use combined notes
                 items: cart.map(item => ({
                     productId: item.productId,
                     productName: item.productName,
@@ -165,7 +172,7 @@ const PublicStore: React.FC = () => {
 
             <div className="relative z-10 text-center px-6 max-w-4xl space-y-6 animate-in slide-in-from-bottom-10 fade-in duration-1000">
                 <span className="text-indigo-400 font-medium tracking-[0.2em] text-sm md:text-base uppercase bg-indigo-500/10 px-4 py-2 rounded-full border border-indigo-500/20">
-                    Nova Coleção 2025
+                    Nova Coleção 2026
                 </span>
                 <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white tracking-tighter leading-tight drop-shadow-2xl">
                     {company?.name || 'ESTAMPARIA.AI'}
@@ -536,7 +543,7 @@ const PublicStore: React.FC = () => {
                         <a href="#" className="w-12 h-12 bg-[#1e293b] rounded-full flex items-center justify-center text-slate-400 hover:bg-emerald-500 hover:text-white transition-all"><MessageCircle className="w-5 h-5" /></a>
                     </div>
 
-                    <p className="text-xs text-slate-600 uppercase tracking-widest">© 2025 Todos os direitos reservados</p>
+                    <p className="text-xs text-slate-600 uppercase tracking-widest">© 2026 Todos os direitos reservados</p>
                 </div>
             </footer>
 
@@ -627,6 +634,20 @@ const PublicStore: React.FC = () => {
                             <div className="space-y-1">
                                 <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Observações Gerais</label>
                                 <textarea value={clientNotes} onChange={e => setClientNotes(e.target.value)} className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-4 py-3 text-white resize-none h-20 text-sm focus:border-indigo-500 outline-none" placeholder="Detalhes da entrega, prazo, etc." />
+                            </div>
+
+                            <div className="space-y-1 border-t border-slate-800 pt-4 mt-2">
+                                <label className="text-xs font-bold text-indigo-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                                    <List className="w-3 h-3" />
+                                    Lista de Nomes / Personalização
+                                </label>
+                                <p className="text-[10px] text-slate-500 ml-1 mb-2">Cole aqui a lista de nomes e tamanhos (Ex: João - P, Maria - M...)</p>
+                                <textarea
+                                    value={namesList}
+                                    onChange={e => setNamesList(e.target.value)}
+                                    className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-4 py-3 text-white resize-none h-32 text-sm focus:border-indigo-500 outline-none font-mono"
+                                    placeholder="1. Nome - Tam&#10;2. Nome - Tam..."
+                                />
                             </div>
                         </div>
 

@@ -410,7 +410,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
           {!readOnly && (
             <button
               onClick={() => setEditingProduct({
-                id: '', name: '', sku: '', category: 'Dry-Fit', basePrice: 0, imageUrl: '',
+                id: '', name: '', sku: '', category: 'Dry-Fit', basePrice: 0, costPrice: 0, imageUrl: '',
                 allowedGrades: GRADES.reduce((acc, g) => ({ ...acc, [g.label]: g.sizes }), {}),
                 measurements: {}, description: ''
               })}
@@ -466,8 +466,17 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-slate-900"><Tag className="w-8 h-8 opacity-20" /></div>
                   )}
-                  <div className="absolute top-3 right-3 bg-black/60 backdrop-blur px-2 py-1 rounded-lg border border-white/10">
-                    <span className="text-white text-[10px] font-black tracking-widest">R$ {product.basePrice.toFixed(0)}</span>
+                  <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
+                    <div className="bg-black/60 backdrop-blur px-2 py-1 rounded-lg border border-white/10">
+                      <span className="text-white text-[10px] font-black tracking-widest">R$ {product.basePrice.toFixed(2)}</span>
+                    </div>
+                    {!readOnly && product.costPrice > 0 && (
+                      <div className="bg-emerald-900/80 backdrop-blur px-1.5 py-0.5 rounded-lg border border-emerald-500/30 shadow-lg">
+                        <span className="text-emerald-400 text-[8px] font-bold tracking-widest">
+                          LUCRO: R$ {(product.basePrice - product.costPrice).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="p-4 flex-1 flex flex-col">
@@ -476,13 +485,27 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
 
                   {!readOnly && (
                     <div className="mt-auto pt-3 border-t border-slate-800 flex justify-between items-center">
-                      <button
-                        onClick={(e) => handleEditClick(product, e)}
-                        className="w-8 h-8 rounded-full bg-slate-800 hover:bg-indigo-600 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
-                      >
-                        <Edit3 className="w-3.5 h-3.5" />
-                      </button>
-                      <div className={`w-2 h-2 rounded-full ${product.published ? 'bg-emerald-500' : 'bg-slate-600'}`} title={product.published ? 'Publicado' : 'Oculto'} />
+                      <div className="flex bg-slate-800 rounded-full p-0.5">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            productService.update(product.id, { published: !product.published }).then(() => {
+                              setProducts(prev => prev.map(p => p.id === product.id ? { ...p, published: !p.published } : p));
+                            });
+                          }}
+                          className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${product.published ? 'bg-emerald-500 text-slate-900' : 'text-slate-500 hover:text-white'}`}
+                          title={product.published ? 'Publicado na Loja (Clique para ocultar)' : 'Oculto da Loja (Clique para publicar)'}
+                        >
+                          <Share2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={(e) => handleEditClick(product, e)}
+                          className="w-8 h-8 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
+                          title="Editar Ficha"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   )}
                   {readOnly && (
@@ -683,10 +706,21 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
                       <div className="flex justify-between"><label className="text-[10px] font-black text-slate-500 uppercase">Descrição</label><button onClick={handleGenerateDescription} className="text-[9px] text-indigo-400 font-bold">✨ Gerar AI</button></div>
                       <textarea className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-slate-100 font-medium h-24" value={editingProduct.description || ''} onChange={e => setEditingProduct({ ...editingProduct, description: e.target.value })} />
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase">Preço (R$)</label>
-                      <input type="number" className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-slate-100 font-black text-lg" value={editingProduct.basePrice} onChange={e => setEditingProduct({ ...editingProduct, basePrice: parseFloat(e.target.value) })} />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase">Preço Venda (R$)</label>
+                        <input type="number" step="0.01" className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-slate-100 font-black text-lg focus:border-indigo-500 outline-none" value={editingProduct.basePrice} onChange={e => setEditingProduct({ ...editingProduct, basePrice: parseFloat(e.target.value) })} />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase">Custo de Produção (R$)</label>
+                        <input type="number" step="0.01" className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-slate-300 font-black text-lg focus:border-indigo-500 outline-none" value={editingProduct.costPrice || ''} onChange={e => setEditingProduct({ ...editingProduct, costPrice: parseFloat(e.target.value) })} />
+                      </div>
                     </div>
+                    {editingProduct.basePrice && editingProduct.costPrice && (
+                      <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest text-right">
+                        Lucro: R$ {(editingProduct.basePrice - editingProduct.costPrice).toFixed(2)} ({((editingProduct.basePrice - editingProduct.costPrice) / editingProduct.basePrice * 100).toFixed(0)}%)
+                      </p>
+                    )}
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-slate-500 uppercase">Categoria</label>
                       <select className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-slate-100 font-bold" value={editingProduct.category} onChange={e => setEditingProduct({ ...editingProduct, category: e.target.value })}>
@@ -737,7 +771,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
                                         </div>
                                         <div className="grid grid-cols-2 gap-2">
                                           <div className="space-y-0.5">
-                                            <label className="text-[8px] text-slate-600 font-bold uppercase block text-center">ALT (A)</label>
+                                            <label className="text-[8px] text-slate-600 font-bold uppercase block text-center">ALTURA</label>
                                             <input
                                               type="text"
                                               placeholder="cm"
@@ -756,7 +790,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
                                             />
                                           </div>
                                           <div className="space-y-0.5">
-                                            <label className="text-[8px] text-slate-600 font-bold uppercase block text-center">LARG (L)</label>
+                                            <label className="text-[8px] text-slate-600 font-bold uppercase block text-center">LARGURA</label>
                                             <input
                                               type="text"
                                               placeholder="cm"
