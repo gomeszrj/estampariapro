@@ -4,7 +4,7 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .10, increment major version (e.g., 2.9 -> 3.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '17.0';
+export const SYSTEM_VERSION = '17.1';
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [

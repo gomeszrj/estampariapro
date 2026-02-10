@@ -753,12 +753,30 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
 
                   {/* Footer Actions */}
                   <div className="mt-8 pt-8 border-t border-slate-800 flex items-center justify-between sticky bottom-0 bg-[#0f172a] pb-2">
-                    <div>
-                      <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Valor Total</p>
-                      <p className="text-3xl font-black text-slate-100">R$ {(parsedItems.reduce((acc, curr) => {
-                        const prod = products.find(p => p.name === curr.product);
-                        return acc + (curr.quantity || 0) * (prod ? prod.basePrice : 35);
-                      }, 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    <div className="flex gap-8">
+                      <div>
+                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Custo Estimado</p>
+                        <p className="text-xl font-bold text-slate-400">R$ {(parsedItems.reduce((acc, curr) => {
+                          const prod = products.find(p => p.name.toLowerCase() === (curr.product || '').toLowerCase());
+                          return acc + (curr.quantity || 0) * (prod?.costPrice || 0);
+                        }, 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Lucro Previsto</p>
+                        <p className="text-xl font-bold text-emerald-500">R$ {(parsedItems.reduce((acc, curr) => {
+                          const prod = products.find(p => p.name.toLowerCase() === (curr.product || '').toLowerCase());
+                          const revenue = (curr.quantity || 0) * (prod ? prod.basePrice : 35);
+                          const cost = (curr.quantity || 0) * (prod?.costPrice || 0);
+                          return acc + (revenue - cost);
+                        }, 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Valor Total</p>
+                        <p className="text-3xl font-black text-slate-100">R$ {(parsedItems.reduce((acc, curr) => {
+                          const prod = products.find(p => p.name.toLowerCase() === (curr.product || '').toLowerCase());
+                          return acc + (curr.quantity || 0) * (prod ? prod.basePrice : 35);
+                        }, 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      </div>
                     </div>
                     <div className="flex gap-4">
                       <button onClick={handleCloseModal} className="px-6 py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:bg-slate-800">Cancelar</button>
@@ -843,6 +861,8 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                   <th className="px-10 py-8">Pgto</th>
                   <th className="px-10 py-8">Cliente</th>
                   <th className="px-10 py-8">Status Produção</th>
+                  <th className="px-10 py-8">Custo Est.</th>
+                  <th className="px-10 py-8">Lucro Real</th>
                   <th className="px-10 py-8">Valor Bruto</th>
                   <th className="px-10 py-8 text-right">Ações</th>
                 </tr>
@@ -850,6 +870,13 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
               <tbody className="divide-y divide-slate-800">
                 {contextOrders.map((order) => {
                   const editable = canEditOrder(order.status);
+                  // Calculate Cost and Profit on the fly based on current products
+                  const estimatedCost = order.items.reduce((acc, item) => {
+                    const prod = products.find(p => p.id === item.productId);
+                    return acc + (item.quantity * (prod?.costPrice || 0));
+                  }, 0);
+                  const realProfit = order.totalValue - estimatedCost;
+
                   return (
                     <tr key={order.id} className="hover:bg-indigo-500/5 transition-all group">
                       <td className="px-10 py-8">
@@ -884,6 +911,8 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                           {STATUS_CONFIG[order.status]?.label}
                         </span>
                       </td>
+                      <td className="px-10 py-8 font-bold text-slate-500 text-sm">R$ {estimatedCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                      <td className="px-10 py-8 font-bold text-emerald-500 text-sm">R$ {realProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                       <td className="px-10 py-8 font-black text-indigo-400 text-2xl tracking-tighter">R$ {order.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                       <td className="px-10 py-8 text-right">
                         <div className="flex justify-end gap-3 opacity-20 group-hover:opacity-100 transition-all">
