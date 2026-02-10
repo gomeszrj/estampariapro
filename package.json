@@ -1,7 +1,7 @@
 {
   "name": "erp-estamparia-ai-first",
   "private": true,
-  "version": "16.3.1",
+  "version": "16.4.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
