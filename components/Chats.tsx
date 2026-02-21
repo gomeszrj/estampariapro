@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Send, User, Search, Loader2 } from 'lucide-react';
 import { orderService } from '../services/orderService';
+import { supabase } from '../services/supabase';
 import { OrderMessage } from '../types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -39,6 +40,40 @@ const Chats: React.FC = () => {
     useEffect(() => {
         if (activeSessionId) {
             loadMessages(activeSessionId);
+
+            // Realtime Subscription
+            const channel = supabase
+                .channel(`chat_messages_${activeSessionId}`)
+                .on(
+                    'postgres_changes',
+                    { event: 'INSERT', schema: 'public', table: 'order_messages', filter: `order_id=eq.${activeSessionId}` },
+                    (payload) => {
+                        const newMsg = payload.new as OrderMessage;
+                        setMessages(prev => {
+                            // Prevent duplicates if we just sent it
+                            if (prev.find(m => m.id === newMsg.id)) return prev;
+                            return [...prev, newMsg];
+                        });
+
+                        // Update sidebar automatically
+                        setSessions(prev => prev.map(s => {
+                            if (s.orderId === activeSessionId) {
+                                return {
+                                    ...s,
+                                    lastMessage: newMsg.message,
+                                    lastMessageAt: newMsg.created_at,
+                                    lastSender: newMsg.sender
+                                };
+                            }
+                            return s;
+                        }).sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()));
+                    }
+                )
+                .subscribe();
+
+            return () => {
+                supabase.removeChannel(channel);
+            };
         }
     }, [activeSessionId]);
 

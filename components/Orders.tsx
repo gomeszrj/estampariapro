@@ -34,6 +34,7 @@ import { printServiceOrder, printInvoice } from '../utils/printUtils';
 import { orderService } from '../services/orderService';
 import { clientService } from '../services/clientService';
 import { financeService } from '../services/financeService';
+import { supabase } from '../services/supabase';
 
 import { ProductionBoard } from './ProductionBoard';
 
@@ -117,6 +118,29 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
       console.error(e);
     }
   };
+
+  React.useEffect(() => {
+    if (chatOrder) {
+      const channel = supabase
+        .channel(`store_chat_${chatOrder.id}`)
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'order_messages', filter: `order_id=eq.${chatOrder.id}` },
+          (payload) => {
+            const newMsg = payload.new as OrderMessage;
+            setChatMessages(prev => {
+              if (prev.find(m => m.id === newMsg.id)) return prev;
+              return [...prev, newMsg];
+            });
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [chatOrder]);
 
   const sendChatMessage = async (e: React.FormEvent) => {
     e.preventDefault();

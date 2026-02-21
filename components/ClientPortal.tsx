@@ -70,6 +70,31 @@ const ClientPortal: React.FC = () => {
         }
     };
 
+    useEffect(() => {
+        if (selectedOrder) {
+            // Realtime Subscription
+            const channel = supabase
+                .channel(`client_chat_${selectedOrder.id}`)
+                .on(
+                    'postgres_changes',
+                    { event: 'INSERT', schema: 'public', table: 'order_messages', filter: `order_id=eq.${selectedOrder.id}` },
+                    (payload) => {
+                        const newMsg = payload.new as OrderMessage;
+                        setMessages(prev => {
+                            // Prevent duplicates if we just sent it
+                            if (prev.find(m => m.id === newMsg.id)) return prev;
+                            return [...prev, newMsg];
+                        });
+                    }
+                )
+                .subscribe();
+
+            return () => {
+                supabase.removeChannel(channel);
+            };
+        }
+    }, [selectedOrder]);
+
     const sendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newMessage.trim() || !selectedOrder) return;
