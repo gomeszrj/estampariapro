@@ -23,6 +23,7 @@ import { productService } from './services/productService.ts';
 import { orderService } from './services/orderService.ts';
 import ApiSettingsModal from './components/ApiSettingsModal.tsx';
 import { SYSTEM_VERSION } from './constants';
+import { ErrorBoundary } from './components/ErrorBoundary.tsx';
 
 const AuthenticatedApp: React.FC = () => {
   const { session, user, signOut } = useAuth();
@@ -160,7 +161,9 @@ const AuthenticatedApp: React.FC = () => {
         <ApiSettingsModal isOpen={isApiSettingsOpen} onClose={() => setIsApiSettingsOpen(false)} />
 
         <div className="p-10 max-w-[1600px] mx-auto w-full">
-          {renderContent()}
+          <ErrorBoundary>
+            {renderContent()}
+          </ErrorBoundary>
         </div>
       </main>
     </div>
