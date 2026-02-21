@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, UserPlus, Edit2, Phone, Mail, Trash2, X, Save, User, ShoppingBag, CreditCard, Clock, Calendar, AlertTriangle, ArrowRight, Wallet, Globe, Package } from 'lucide-react';
+import { Search, UserPlus, Edit2, Phone, Mail, Trash2, X, Save, User, ShoppingBag, CreditCard, Clock, Calendar, AlertTriangle, ArrowRight, Wallet, Globe, Package, Lock } from 'lucide-react';
 import { Client, Order, OrderStatus, CatalogOrder } from '../types.ts';
 import { clientService } from '../services/clientService.ts';
 import { catalogOrderService } from '../services/catalogOrderService.ts';
@@ -95,6 +95,9 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
 
       if (editingClient.password) {
         payload.password = editingClient.password;
+      } else if (!editingClient.id) {
+        // Auto-generate a simple 4-digit password for new clients if none is provided
+        payload.password = Math.floor(1000 + Math.random() * 9000).toString();
       }
 
       if (!editingClient.id) {
