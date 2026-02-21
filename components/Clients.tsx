@@ -85,22 +85,22 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
   // ... inside component ...
   const handleSave = async () => {
     try {
+      const payload: any = {
+        name: editingClient.name,
+        whatsapp: editingClient.whatsapp,
+        email: editingClient.email,
+        document: editingClient.document || '',
+        address: editingClient.address || ''
+      };
+
+      if (editingClient.password) {
+        payload.password = editingClient.password;
+      }
+
       if (!editingClient.id) {
-        await clientService.create({
-          name: editingClient.name,
-          whatsapp: editingClient.whatsapp,
-          email: editingClient.email,
-          document: editingClient.document || '',
-          address: editingClient.address || ''
-        });
+        await clientService.create(payload);
       } else {
-        await clientService.update(editingClient.id, {
-          name: editingClient.name,
-          whatsapp: editingClient.whatsapp,
-          email: editingClient.email,
-          document: editingClient.document,
-          address: editingClient.address
-        });
+        await clientService.update(editingClient.id, payload);
       }
       setEditingClient(null);
       window.dispatchEvent(new Event('refreshData'));
@@ -260,6 +260,27 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
                   className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-200 focus:ring-2 focus:ring-indigo-500"
                   value={editingClient.email}
                   onChange={(e) => setEditingClient({ ...editingClient, email: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Documento (CPF/CNPJ)</label>
+                <input
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-200 focus:ring-2 focus:ring-indigo-500"
+                  value={editingClient.document || ''}
+                  onChange={(e) => setEditingClient({ ...editingClient, document: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                  <Lock className="w-3 h-3" />
+                  Senha de Acesso (Portal do Cliente)
+                </label>
+                <input
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-200 focus:ring-2 focus:ring-indigo-500"
+                  type="text"
+                  placeholder="Deixe em branco para não alterar/criar"
+                  value={editingClient.password || ''}
+                  onChange={(e) => setEditingClient({ ...editingClient, password: e.target.value })}
                 />
               </div>
               <button onClick={handleSave} className="w-full mt-6 py-3 bg-indigo-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700">

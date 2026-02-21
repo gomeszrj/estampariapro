@@ -97,6 +97,15 @@ export interface Client {
   email: string;
   document?: string; // CPF or CNPJ
   address?: string;
+  password?: string; // Client Portal Access
+}
+
+export interface OrderMessage {
+  id: string;
+  order_id: string;
+  sender: 'client' | 'store';
+  message: string;
+  created_at: string;
 }
 
 export enum UserRole {

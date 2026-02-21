@@ -125,6 +125,29 @@ export const orderService = {
             .eq('id', id);
 
         if (error) throw error;
+    },
+
+    // --- CHAT MESSAGES ---
+    async getMessages(orderId: string) {
+        const { data, error } = await supabase
+            .from('order_messages')
+            .select('*')
+            .eq('order_id', orderId)
+            .order('created_at', { ascending: true });
+
+        if (error) throw error;
+        return data || [];
+    },
+
+    async sendMessage(orderId: string, sender: 'client' | 'store', message: string) {
+        const { data, error } = await supabase
+            .from('order_messages')
+            .insert([{ order_id: orderId, sender, message }])
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
     }
 };
 

@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { supabase } from '../services/supabase';
 import { orderService } from '../services/orderService';
-import { Lock, Mail, AlertCircle, Search, Truck, Package, ArrowRight, CheckCircle2, Clock } from 'lucide-react';
+import { Lock, Mail, AlertCircle, Search, Truck, Package, ArrowRight, Phone, User, Store } from 'lucide-react';
 import { STATUS_CONFIG } from '../constants';
 import { Order } from '../types';
+import { clientService } from '../services/clientService.ts';
 
 const Login: React.FC = () => {
-    const [email, setEmail] = useState('');
+    const [email, setEmail] = useState(''); // Serves as email or phone
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [mode, setMode] = useState<'login' | 'register' | 'tracker'>('login');
+    const [mode, setMode] = useState<'login' | 'register' | 'tracker' | 'client_login'>('login');
 
     // Tracker State
     const [trackNumber, setTrackNumber] = useState('');
@@ -28,6 +29,15 @@ const Login: React.FC = () => {
                     password,
                 });
                 if (error) throw error;
+            } else if (mode === 'client_login') {
+                const clientUser = await clientService.getByPhoneAndPassword(email, password);
+                if (!clientUser) throw new Error('WhatsApp/Documento ou Senha incorretos.');
+                localStorage.setItem('client_session', JSON.stringify({
+                    id: clientUser.id,
+                    name: clientUser.name,
+                    phone: clientUser.whatsapp
+                }));
+                window.location.href = '/?view=client_portal';
             } else {
                 const { error } = await supabase.auth.signUp({
                     email,
@@ -59,7 +69,9 @@ const Login: React.FC = () => {
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-black text-white mb-2 tracking-tight">Estamparia Pro</h1>
                     <p className="text-slate-400">
-                        {mode === 'tracker' ? 'Rastreamento de Pedidos' : 'Entre com suas credenciais'}
+                        {mode === 'tracker' ? 'Rastreamento de Pedidos' :
+                            mode === 'client_login' ? 'Portal do Cliente' :
+                                'Acesso Administrativo'}
                     </p>
                 </div>
 
@@ -138,15 +150,21 @@ const Login: React.FC = () => {
                     <>
                         <form onSubmit={handleAuth} className="space-y-6 animate-in slide-in-from-left-4">
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email</label>
+                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                    {mode === 'client_login' ? 'WhatsApp ou Documento' : 'Email'}
+                                </label>
                                 <div className="relative">
-                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                                    {mode === 'client_login' ? (
+                                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                                    ) : (
+                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                                    )}
                                     <input
-                                        type="email"
+                                        type={mode === 'client_login' ? 'text' : 'email'}
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         className="w-full bg-[#1e293b] border border-slate-700/50 rounded-xl py-3 pl-12 pr-4 text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
-                                        placeholder="seu@email.com"
+                                        placeholder={mode === 'client_login' ? 'Qual seu número?' : 'seu@email.com'}
                                         required
                                     />
                                 </div>
@@ -172,33 +190,52 @@ const Login: React.FC = () => {
                                 disabled={loading}
                                 className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {loading ? 'Carregando...' : mode === 'login' ? 'Entrar' : 'Cadastrar'}
+                                {loading ? 'Carregando...' : mode === 'register' ? 'Cadastrar' : 'Entrar'}
                             </button>
                         </form>
 
                         <div className="mt-8 space-y-4 text-center">
-                            <button
-                                onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
-                                className="text-slate-400 hover:text-indigo-400 text-sm font-medium transition-colors block w-full"
-                            >
-                                {mode === 'login' ? 'Não tem uma conta? Cadastre-se' : 'Já tem uma conta? Entre'}
-                            </button>
+                            {mode !== 'client_login' && (
+                                <button
+                                    onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
+                                    className="text-slate-400 hover:text-indigo-400 text-sm font-medium transition-colors block w-full"
+                                >
+                                    {mode === 'login' ? 'Não tem uma conta? Cadastre-se' : 'Já tem uma conta? Entre'}
+                                </button>
+                            )}
 
                             <div className="relative py-2">
                                 <div className="absolute inset-0 flex items-center">
                                     <div className="w-full border-t border-slate-800"></div>
                                 </div>
                                 <div className="relative flex justify-center text-xs uppercase">
-                                    <span className="bg-[#0f172a] px-2 text-slate-500">Ou</span>
+                                    <span className="bg-[#0f172a] px-2 text-slate-500">Acessos</span>
                                 </div>
                             </div>
 
-                            <button
-                                onClick={() => { setMode('tracker'); setError(null); }}
-                                className="text-emerald-500 hover:text-emerald-400 text-xs font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2 w-full py-2 hover:bg-emerald-500/10 rounded-lg"
-                            >
-                                <Truck className="w-4 h-4" /> Rastrear Pedido
-                            </button>
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    onClick={() => { setMode('tracker'); setError(null); }}
+                                    className="text-emerald-500 hover:text-emerald-400 text-xs font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2 w-full py-3 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-xl"
+                                >
+                                    <Truck className="w-4 h-4" /> Rastrear
+                                </button>
+                                {mode === 'client_login' ? (
+                                    <button
+                                        onClick={() => { setMode('login'); setError(null); }}
+                                        className="text-indigo-400 hover:text-indigo-300 text-xs font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2 w-full py-3 bg-indigo-500/10 hover:bg-indigo-500/20 rounded-xl"
+                                    >
+                                        <Store className="w-4 h-4" /> Lojista
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={() => { setMode('client_login'); setError(null); }}
+                                        className="text-amber-500 hover:text-amber-400 text-xs font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2 w-full py-3 bg-amber-500/10 hover:bg-amber-500/20 rounded-xl"
+                                    >
+                                        <User className="w-4 h-4" /> Sou Cliente
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </>
                 )}

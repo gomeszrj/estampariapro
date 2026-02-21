@@ -15,6 +15,7 @@ import Inventory from './components/Inventory.tsx';
 import { CloudBot } from './components/CloudBot';
 import OrderTracker from './components/OrderTracker.tsx';
 import PublicStore from './components/PublicStore.tsx';
+import ClientPortal from './components/ClientPortal.tsx';
 import { Bell, User as UserIcon, Share2 } from 'lucide-react';
 import { Order, Product, Client, OrderStatus, OrderType } from './types';
 import { AuthProvider, useAuth } from './contexts/AuthContext.tsx';
@@ -37,9 +38,10 @@ const AuthenticatedApp: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   const isPublicCatalog = new URLSearchParams(window.location.search).get('view') === 'public_catalog' || window.location.pathname === '/catalogo';
+  const isClientPortal = new URLSearchParams(window.location.search).get('view') === 'client_portal' || !!localStorage.getItem('client_session');
 
-  // Show Login if no session AND not in public catalog mode
-  if (!session && !isPublicCatalog) {
+  // Show Login if no session AND not in public catalog mode AND not in client portal
+  if (!session && !isPublicCatalog && !isClientPortal) {
     return <Login />;
   }
 
@@ -104,6 +106,10 @@ const AuthenticatedApp: React.FC = () => {
       default: return null;
     }
   };
+
+  if (isClientPortal) {
+    return <ClientPortal />;
+  }
 
   if (isPublicCatalog) {
     return <PublicStore />;

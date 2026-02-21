@@ -68,5 +68,34 @@ export const clientService = {
             .eq('id', id);
 
         if (error) throw error;
+    },
+
+    async getByPhoneAndPassword(loginIdentifier: string, password: string): Promise<Client | null> {
+        // Remove non-numeric characters for comparison
+        const cleanIdentifier = loginIdentifier.replace(/\D/g, '');
+
+        if (!cleanIdentifier || !password) return null;
+
+        // Fetch clients matching the password
+        const { data, error } = await supabase
+            .from('clients')
+            .select('*')
+            .eq('password', password);
+
+        if (error) throw error;
+        if (!data || data.length === 0) return null;
+
+        // Find the client that matches either the document or the phone
+        const matched = data.find(c => {
+            const dbPhone = (c.whatsapp || '').replace(/\D/g, '');
+            const dbDoc = (c.document || '').replace(/\D/g, '');
+
+            const matchesPhone = dbPhone && cleanIdentifier.length >= 8 && dbPhone.endsWith(cleanIdentifier.slice(-8));
+            const matchesDoc = dbDoc && dbDoc === cleanIdentifier;
+
+            return matchesPhone || matchesDoc;
+        });
+
+        return matched as Client || null;
     }
 };

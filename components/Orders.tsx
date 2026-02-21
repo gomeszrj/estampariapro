@@ -29,7 +29,7 @@ import {
 import { getWhatsAppLink, getStatusUpdateMessage } from '../utils/whatsappUtils';
 import { parseOrderText, ParsedOrderItem } from '../services/aiService';
 import { FABRICS, STATUS_CONFIG, GRADES } from '../constants';
-import { Order, OrderStatus, OrderType, Product, Client, OrderItem, PaymentStatus } from '../types';
+import { Order, OrderStatus, OrderType, Product, Client, OrderItem, PaymentStatus, OrderMessage } from '../types';
 import { printServiceOrder, printInvoice } from '../utils/printUtils';
 import { orderService } from '../services/orderService';
 import { clientService } from '../services/clientService';
@@ -101,6 +101,38 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
   const [customAmountPaid, setCustomAmountPaid] = useState<number | string>(''); // For UI input
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const [newOrderBriefing, setNewOrderBriefing] = useState('');
+
+  // Chat State
+  const [chatOrder, setChatOrder] = useState<Order | null>(null);
+  const [chatMessages, setChatMessages] = useState<OrderMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [isSendingChat, setIsSendingChat] = useState(false);
+
+  const openChat = async (order: Order) => {
+    setChatOrder(order);
+    try {
+      const msgs = await orderService.getMessages(order.id);
+      setChatMessages(msgs);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const sendChatMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim() || !chatOrder) return;
+    setIsSendingChat(true);
+    try {
+      const msg = await orderService.sendMessage(chatOrder.id, 'store', chatInput);
+      setChatMessages(prev => [...prev, msg]);
+      setChatInput('');
+    } catch (e) {
+      console.error(e);
+      alert('Erro ao enviar mensagem.');
+    } finally {
+      setIsSendingChat(false);
+    }
+  };
 
   // Watch for Bot Draft
   React.useEffect(() => {
@@ -1008,6 +1040,13 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                                 </button>
                               )}
                               <button
+                                onClick={() => openChat(order)}
+                                className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all text-slate-500 hover:text-indigo-400"
+                                title="Chat com Cliente"
+                              >
+                                <MessageSquare className="w-5 h-5" />
+                              </button>
+                              <button
                                 onClick={() => handleEditClick(order)}
                                 className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all text-slate-500 hover:text-indigo-400"
                                 title="Ver Detalhes"
@@ -1024,6 +1063,13 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                             </>
                           ) : (
                             <>
+                              <button
+                                onClick={() => openChat(order)}
+                                className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all text-slate-500 hover:text-indigo-400"
+                                title="Chat com Cliente"
+                              >
+                                <MessageSquare className="w-5 h-5" />
+                              </button>
                               <button
                                 onClick={() => handleEditClick(order)}
                                 className={`p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all ${editable ? 'text-slate-500 hover:text-indigo-400' : 'text-slate-700 cursor-not-allowed opacity-50'
@@ -1087,6 +1133,72 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                 })}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* CHAT MODAL */}
+      {chatOrder && (
+        <div className="fixed inset-0 bg-[#020617]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0f172a] rounded-3xl w-full max-w-lg shadow-2xl border border-slate-800 flex flex-col h-[70vh] max-h-[800px] overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="p-6 border-b border-slate-800 bg-[#1e293b]/50 flex justify-between items-center shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-400">
+                  <MessageSquare className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-100">{chatOrder.clientName}</h3>
+                  <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Pedido #{chatOrder.orderNumber}</p>
+                </div>
+              </div>
+              <button onClick={() => setChatOrder(null)} className="p-2 text-slate-400 hover:text-white transition-colors bg-slate-800 rounded-full">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-950/20">
+              {chatMessages.map(msg => {
+                const isStore = msg.sender === 'store';
+                return (
+                  <div key={msg.id} className={`flex ${isStore ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[80%] rounded-2xl p-4 ${isStore ? 'bg-indigo-600 text-white rounded-tr-sm' : 'bg-slate-800 text-slate-200 rounded-tl-sm border border-slate-700'}`}>
+                      <p className="text-sm font-medium">{msg.message}</p>
+                      <p className={`text-[9px] font-bold mt-2 text-right opacity-70`}>
+                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+              {chatMessages.length === 0 && (
+                <div className="h-full flex flex-col items-center justify-center text-slate-500 opacity-50 gap-4">
+                  <MessageSquare className="w-12 h-12" />
+                  <p className="text-sm font-bold text-center">Nenhuma mensagem ainda.<br />Inicie o atendimento com foco neste pedido.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Input Form */}
+            <div className="p-4 bg-[#1e293b]/50 border-t border-slate-800 shrink-0">
+              <form onSubmit={sendChatMessage} className="relative">
+                <input
+                  type="text"
+                  className="w-full bg-[#0f172a] border border-slate-700/50 rounded-xl py-3.5 pl-4 pr-12 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm font-medium transition-all"
+                  placeholder="Mensagem..."
+                  value={chatInput}
+                  onChange={e => setChatInput(e.target.value)}
+                />
+                <button
+                  type="submit"
+                  disabled={!chatInput.trim() || isSendingChat}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg flex items-center justify-center transition-colors shadow-lg shadow-indigo-600/20"
+                >
+                  <Send className="w-4 h-4 ml-0.5" />
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       )}
