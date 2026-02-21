@@ -288,7 +288,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
     setDelayReason(order.delayReason || '');
     setOrderType(order.orderType || OrderType.SALE);
     setPaymentStatus(order.paymentStatus || PaymentStatus.PENDING);
-    setParsedItems(order.items.length > 0 ? order.items.map(i => ({
+    setParsedItems((order.items || []).length > 0 ? (order.items || []).map(i => ({
       product: i.productName,
       grade: i.gradeLabel as any,
       size: i.size,
@@ -891,7 +891,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                 {contextOrders.map((order) => {
                   const editable = canEditOrder(order.status);
                   // Calculate Cost and Profit on the fly based on current products
-                  const estimatedCost = order.items.reduce((acc, item) => {
+                  const estimatedCost = (order.items || []).reduce((acc, item) => {
                     const prod = products.find(p => p.id === item.productId);
                     return acc + (item.quantity * (prod?.costPrice || 0));
                   }, 0);
