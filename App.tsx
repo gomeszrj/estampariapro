@@ -9,7 +9,7 @@ import Settings from './components/Settings.tsx';
 import Finance from './components/Finance.tsx';
 import Clients from './components/Clients.tsx';
 import Login from './components/Login.tsx';
-import { ChatLayout } from './components/CRM/ChatLayout';
+import Chats from './components/Chats.tsx';
 import CatalogRequests from './components/CatalogRequests.tsx';
 import Inventory from './components/Inventory.tsx';
 import { CloudBot } from './components/CloudBot';
@@ -102,7 +102,7 @@ const AuthenticatedApp: React.FC = () => {
       case 'clients': return <Clients clients={clients} setClients={setClients} orders={orders} />;
       case 'inventory': return <Inventory />;
       case 'cloudbot': return <CloudBot onCreateOrder={handleBotOrder} />;
-      case 'crm': return <ChatLayout />;
+      case 'crm': return <Chats />;
       default: return null;
     }
   };

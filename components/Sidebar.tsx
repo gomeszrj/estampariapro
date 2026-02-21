@@ -40,6 +40,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
     { id: 'products', label: 'Produtos', icon: Package },
     { id: 'catalog-requests', label: 'Solicitações', icon: Inbox },
     { id: 'clients', label: 'Clientes', icon: Users },
+    { id: 'crm', label: 'Chats', icon: MessageSquare },
     { id: 'inventory', label: 'Estoque', icon: Box },
     ...(cloudBotEnabled ? [{ id: 'cloudbot', label: 'CloudBot Agent', icon: Bot }] : []),
     { id: 'finance', label: 'Financeiro', icon: TrendingUp },

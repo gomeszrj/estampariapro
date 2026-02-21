@@ -139,6 +139,60 @@ export const orderService = {
         return data || [];
     },
 
+    async getChatSessions() {
+        // Fetch all messages to find orders with active chats
+        // Since Supabase JS lacks a simple "Select Distinct Order ID with Message Count", 
+        // we'll fetch messages and aggregate in JS for this scale.
+        const { data: messages, error: msgError } = await supabase
+            .from('order_messages')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (msgError) throw msgError;
+        if (!messages || messages.length === 0) return [];
+
+        // Deduplicate to find unique order IDs and their latest message
+        const sessionsMap = new Map<string, any>();
+        for (const msg of messages) {
+            if (!sessionsMap.has(msg.order_id)) {
+                sessionsMap.set(msg.order_id, {
+                    orderId: msg.order_id,
+                    lastMessage: msg.message,
+                    lastMessageAt: msg.created_at,
+                    lastSender: msg.sender,
+                    unread: 0 // In a complete system, we'd track read/unread status
+                });
+            }
+        }
+
+        const activeOrderIds = Array.from(sessionsMap.keys());
+
+        // Now fetch details for these orders
+        const { data: dbOrders, error: ordersError } = await supabase
+            .from('orders')
+            .select('*')
+            .in('id', activeOrderIds);
+
+        if (ordersError) throw ordersError;
+
+        // Combine the data
+        const sessions = activeOrderIds.map(orderId => {
+            const dbOrder = dbOrders?.find(o => o.id === orderId);
+            const sessionData = sessionsMap.get(orderId);
+
+            if (!dbOrder) return null;
+
+            return {
+                ...sessionData,
+                clientName: dbOrder.client_name,
+                orderNumber: dbOrder.order_number,
+                status: dbOrder.status
+            };
+        }).filter(Boolean);
+
+        return sessions;
+    },
+
     async sendMessage(orderId: string, sender: 'client' | 'store', message: string) {
         const { data, error } = await supabase
             .from('order_messages')
