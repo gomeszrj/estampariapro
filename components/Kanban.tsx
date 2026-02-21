@@ -248,9 +248,9 @@ const Kanban: React.FC<KanbanProps> = ({ orders, setOrders }) => {
   // Filter Logic
   const filteredOrders = orders.filter(order => {
     const matchesSearch =
-      order.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (order.clientTeam && order.clientTeam.toLowerCase().includes(searchTerm.toLowerCase()));
+      (order.clientName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (order.orderNumber || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (order.clientTeam && (order.clientTeam || '').toLowerCase().includes(searchTerm.toLowerCase()));
 
     const isLate = new Date(order.deliveryDate) < new Date() && order.status !== OrderStatus.FINISHED;
     const matchesLate = showOnlyLate ? isLate : true;

@@ -208,8 +208,8 @@ const Inventory: React.FC = () => {
     };
 
     const filtered = materials.filter(m =>
-        m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        m.category.toLowerCase().includes(searchTerm.toLowerCase())
+        (m.name || '').toLowerCase().includes((searchTerm || '').toLowerCase()) ||
+        (m.category || '').toLowerCase().includes((searchTerm || '').toLowerCase())
     );
 
     if (loading) {

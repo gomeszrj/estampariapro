@@ -77,7 +77,7 @@ const PublicStore: React.FC = () => {
     const categories = ['Todos', ...Array.from(new Set(products.map(p => p.category)))];
 
     const filteredProducts = products.filter(p => {
-        const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = (p.name || '').toLowerCase().includes((searchTerm || '').toLowerCase());
         const matchesCategory = selectedCategory === 'Todos' || p.category === selectedCategory;
         return matchesSearch && matchesCategory;
     });

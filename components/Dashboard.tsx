@@ -60,14 +60,14 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) =>
   // Profit Calculation
   const profitMonth = React.useMemo(() => {
     const currentMonth = new Date().toISOString().slice(0, 7);
-    const monthOrders = orders.filter(o => o.createdAt.startsWith(currentMonth));
+    const monthOrders = orders.filter(o => (o.createdAt || '').startsWith(currentMonth));
 
     let totalCost = 0;
     monthOrders.forEach(order => {
-      order.items.forEach(item => {
+      (order.items || []).forEach(item => {
         const product = products.find(p => p.id === item.productId);
         if (product && product.costPrice) {
-          totalCost += (item.quantity * product.costPrice);
+          totalCost += ((item.quantity || 0) * product.costPrice);
         }
       });
     });
@@ -91,7 +91,16 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) =>
   };
 
   const today = new Date().toISOString().split('T')[0];
-  const sortedOrders = [...orders].sort((a, b) => new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime());
+  const sortedOrders = React.useMemo(() => {
+    return [...orders].sort((a, b) => new Date(a.deliveryDate || 0).getTime() - new Date(b.deliveryDate || 0).getTime());
+  }, [orders]);
+
+  const sevenDaysCount = React.useMemo(() => {
+    return orders.filter(o => {
+      const diff = Math.ceil((new Date(o.deliveryDate || 0).getTime() - new Date().getTime()) / (1000 * 3600 * 24));
+      return diff >= 0 && diff <= 7 && o.status !== OrderStatus.FINISHED;
+    }).length;
+  }, [orders]);
 
   const handleOrderClick = (order: Order) => {
     setSelectedOrder(order);
@@ -158,10 +167,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) =>
         />
         <SummaryCard
           title="Entregas (7 Dias)"
-          count={orders.filter(o => {
-            const diff = Math.ceil((new Date(o.deliveryDate).getTime() - new Date().getTime()) / (1000 * 3600 * 24));
-            return diff >= 0 && diff <= 7 && o.status !== OrderStatus.FINISHED;
-          }).length.toString().padStart(2, '0')}
+          count={sevenDaysCount.toString().padStart(2, '0')}
           icon={LayoutTemplate}
           color="bg-indigo-500/10"
           textColor="text-indigo-400"

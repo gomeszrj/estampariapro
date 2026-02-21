@@ -46,7 +46,7 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
     };
 
     const filteredChats = chats.filter(c =>
-        c.clients?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (c.clients?.name || '').toLowerCase().includes((searchTerm || '').toLowerCase()) ||
         c.whatsapp_id.includes(searchTerm)
     );
 
