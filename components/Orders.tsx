@@ -609,7 +609,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                     {/* Client & Date */}
                     <div className="space-y-4">
                       <div className="relative group">
-                        <label className={`block text-[9px] font-black uppercase tracking-widest ml-1 mb-1 ${!clientName ? 'text-rose-500' : 'text-slate-500'}`}>Cliente {!clientName && '*'}</label>
+                        <label className={`block text-[9px] font-black uppercase tracking-widest ml-1 mb-1 ${!clientName ? 'text-rose-500' : 'text-slate-500'}`}>Cliente {!clientName && <span>*</span>}</label>
                         <User className="absolute left-4 top-[2.2rem] text-slate-600 w-4 h-4 group-focus-within:text-indigo-400 transition-colors" />
                         <input
                           type="text"
@@ -626,7 +626,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                         </datalist>
                       </div>
                       <div className="relative group">
-                        <label className={`block text-[9px] font-black uppercase tracking-widest ml-1 mb-1 ${!deliveryDate ? 'text-rose-500' : 'text-slate-500'}`}>Entrega {!deliveryDate && '*'}</label>
+                        <label className={`block text-[9px] font-black uppercase tracking-widest ml-1 mb-1 ${!deliveryDate ? 'text-rose-500' : 'text-slate-500'}`}>Entrega {!deliveryDate && <span>*</span>}</label>
                         <Calendar className="absolute left-4 top-[2.2rem] text-slate-600 w-4 h-4 group-focus-within:text-indigo-400 transition-colors" />
                         <input
                           type="date"
