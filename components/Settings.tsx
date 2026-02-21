@@ -130,11 +130,13 @@ const Settings: React.FC = () => {
             {activeTab === 'company' ? 'Identidade Corporativa' : 'Gestão de Equipe'}
           </h2>
           <p className="text-slate-500 font-medium">
-            {activeTab === 'company'
-              ? 'Configure os dados oficiais que darão autoridade aos seus documentos.'
-              : activeTab === 'team'
-                ? 'Gerencie os usuários e permissões de acesso ao sistema.'
-                : 'Configure a inteligência artificial do seu CloudBot.'}
+            <span>
+              {activeTab === 'company'
+                ? 'Configure os dados oficiais que darão autoridade aos seus documentos.'
+                : activeTab === 'team'
+                  ? 'Gerencie os usuários e permissões de acesso ao sistema.'
+                  : 'Configure a inteligência artificial do seu CloudBot.'}
+            </span>
           </p>
         </div>
 
