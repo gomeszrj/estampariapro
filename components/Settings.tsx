@@ -169,7 +169,7 @@ const Settings: React.FC = () => {
               disabled={isLoadingSettings}
               className={`px-10 py-4 rounded-2xl font-black uppercase text-xs tracking-[0.2em] transition-all flex items-center gap-3 shadow-2xl ${saved ? 'bg-emerald-600 text-white' : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/20'}`}
             >
-              {saved ? <CheckCircle2 className="w-5 h-5" /> : <Save className="w-5 h-5" />}
+              <span>{saved ? <CheckCircle2 className="w-5 h-5" /> : <Save className="w-5 h-5" />}</span>
               {saved ? 'Dados Atualizados' : (isLoadingSettings ? 'Carregando...' : 'Salvar Configurações')}
             </button>
           </div>

@@ -371,7 +371,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) =>
                         disabled={isSaving}
                         className="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-3 hover:bg-emerald-700 shadow-xl shadow-emerald-600/20 disabled:opacity-50"
                       >
-                        {isSaving ? <Clock className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        <span>{isSaving ? <Clock className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}</span>
                         {isSaving ? 'Salvando...' : 'Confirmar Alterações'}
                       </button>
                     </>

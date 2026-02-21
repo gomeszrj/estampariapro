@@ -674,7 +674,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                         disabled={isAiProcessing || !aiText}
                         className="w-full py-4 bg-indigo-600 text-white rounded-xl font-black flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-indigo-700 transition-all uppercase text-[10px] tracking-[0.2em] shadow-lg shadow-indigo-600/20"
                       >
-                        {isAiProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                        <span>{isAiProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}</span>
                         Processar Texto
                       </button>
                     </div>

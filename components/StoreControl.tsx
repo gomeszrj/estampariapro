@@ -639,7 +639,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
               disabled={isSubmittingOrder}
               className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-indigo-900/20 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              {isSubmittingOrder ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+              <span>{isSubmittingOrder ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}</span>
               Finalizar Venda
             </button>
           </div>
