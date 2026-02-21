@@ -15,10 +15,15 @@ const Products: React.FC = () => {
     const [isProcessingImage, setIsProcessingImage] = useState(false);
 
     // Filter Logic
-    const filtered = products.filter(p =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.sku.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filtered = React.useMemo(() => {
+        const searchLower = (searchTerm || '').toLowerCase();
+        const safeProducts = Array.isArray(products) ? products : [];
+        if (!searchLower) return safeProducts;
+        return safeProducts.filter(p =>
+            (p.name || '').toLowerCase().includes(searchLower) ||
+            (p.sku || '').toLowerCase().includes(searchLower)
+        );
+    }, [products, searchTerm]);
 
     const loadProducts = async () => {
         setLoading(true);
