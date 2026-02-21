@@ -492,7 +492,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h2 className="text-3xl font-black text-slate-100 tracking-tight uppercase">Gestão de Pedidos</h2>
-          <p className="text-slate-500 font-medium whitespace-nowrap">Controle total sobre vendas e {activeContext === 'store' ? 'solicitações da loja.' : 'produção.'}</p>
+          <p className="text-slate-500 font-medium whitespace-nowrap">Controle total sobre vendas e <span>{activeContext === 'store' ? 'solicitações da loja.' : 'produção.'}</span></p>
         </div>
 
         <div className="flex items-center gap-4 bg-slate-900/50 p-1.5 rounded-2xl border border-slate-800">
