@@ -620,7 +620,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                           className={`w-full pl-12 pr-4 py-4 bg-slate-950 border rounded-2xl text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold transition-all ${!clientName ? 'border-rose-900/50 shadow-[0_0_15px_rgba(244,63,94,0.1)]' : 'border-slate-800'}`}
                         />
                         <datalist id="client-options">
-                          {clients.map(client => (
+                          {(clients || []).map(client => (
                             <option key={client.id} value={client.name} />
                           ))}
                         </datalist>
@@ -744,7 +744,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                                   onChange={(e) => updateItem(idx, 'product', e.target.value)}
                                   placeholder="Busque..."
                                 />
-                                <datalist id={`prod-list-${idx}`}>{products.map(p => <option key={p.id} value={p.name} />)}</datalist>
+                                <datalist id={`prod-list-${idx}`}>{(products || []).map(p => <option key={p.id} value={p.name} />)}</datalist>
                               </div>
                               <div className="md:col-span-8 flex gap-4">
                                 <div className="flex-1 space-y-1">

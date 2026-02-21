@@ -182,8 +182,9 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
   // --- Filtering ---
   const filteredProducts = useMemo(() => {
     return products.filter(product => {
-      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.sku?.toLowerCase().includes(searchTerm.toLowerCase());
+      const searchLower = (searchTerm || '').toLowerCase();
+      const matchesSearch = (product.name || '').toLowerCase().includes(searchLower) ||
+        (product.sku || '').toLowerCase().includes(searchLower);
       const matchesFabric = fabricFilter === 'all' || product.category === fabricFilter;
       // In ReadOnly (Public), only show published
       if (readOnly && !product.published) return false;
@@ -443,7 +444,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
               />
             </div>
             <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-              {['all', ...FABRICS].map(f => (
+              {['all', ...(FABRICS || [])].map(f => (
                 <button key={f} onClick={() => setFabricFilter(f)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all whitespace-nowrap ${fabricFilter === f ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-900 border-slate-800 text-slate-500'}`}>
                   {f === 'all' ? 'Todos' : f}
                 </button>
@@ -455,7 +456,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
         {/* GRID */}
         <div className={`${!readOnly ? 'flex-1 overflow-y-auto px-8 pb-8 custom-scrollbar' : ''}`}>
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredProducts.map(product => (
+            {(filteredProducts || []).map(product => (
               <div key={product.id}
                 className="group bg-slate-900/40 rounded-3xl border border-slate-800/50 overflow-hidden hover:border-indigo-500/30 transition-all cursor-pointer relative flex flex-col"
                 onClick={() => handleAddToCart(product)}
@@ -584,7 +585,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm font-bold text-white focus:border-indigo-500 outline-none"
               >
                 <option value="">Selecione um cliente...</option>
-                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                {(clients || []).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
 
@@ -751,7 +752,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-slate-500 uppercase">Categoria</label>
                       <select className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-slate-100 font-bold" value={editingProduct.category} onChange={e => setEditingProduct({ ...editingProduct, category: e.target.value })}>
-                        {FABRICS.map(f => <option key={f} value={f}>{f}</option>)}
+                        {(FABRICS || []).map(f => <option key={f} value={f}>{f}</option>)}
                       </select>
                     </div>
                   </div>
@@ -761,7 +762,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
                   <div className="space-y-4">
                     <label className="text-[10px] font-black text-slate-500 uppercase">Grades & Medidas (cm)</label>
                     <div className="space-y-3">
-                      {GRADES.map(g => {
+                      {(GRADES || []).map(g => {
                         const isActive = editingProduct.allowedGrades?.[g.label];
                         return (
                           <div key={g.label} className={`border rounded-2xl transition-all ${isActive ? 'bg-slate-900/50 border-indigo-500/50' : 'bg-slate-950 border-slate-800'}`}>
