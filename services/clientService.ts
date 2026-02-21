@@ -71,10 +71,7 @@ export const clientService = {
     },
 
     async getByPhoneAndPassword(loginIdentifier: string, password: string): Promise<Client | null> {
-        // Remove non-numeric characters for comparison
-        const cleanIdentifier = loginIdentifier.replace(/\D/g, '');
-
-        if (!cleanIdentifier || !password) return null;
+        if (!loginIdentifier || !password) return null;
 
         // Fetch clients matching the password
         const { data, error } = await supabase
@@ -85,15 +82,22 @@ export const clientService = {
         if (error) throw error;
         if (!data || data.length === 0) return null;
 
-        // Find the client that matches either the document or the phone
+        const isEmail = loginIdentifier.includes('@');
+        const cleanIdentifier = loginIdentifier.replace(/\D/g, '');
+
+        // Find the client that matches either email, document, or phone
         const matched = data.find(c => {
-            const dbPhone = (c.whatsapp || '').replace(/\D/g, '');
-            const dbDoc = (c.document || '').replace(/\D/g, '');
+            if (isEmail) {
+                return (c.email || '').toLowerCase() === loginIdentifier.toLowerCase().trim();
+            } else {
+                const dbPhone = (c.whatsapp || '').replace(/\D/g, '');
+                const dbDoc = (c.document || '').replace(/\D/g, '');
 
-            const matchesPhone = dbPhone && cleanIdentifier.length >= 8 && dbPhone.endsWith(cleanIdentifier.slice(-8));
-            const matchesDoc = dbDoc && dbDoc === cleanIdentifier;
+                const matchesPhone = dbPhone && cleanIdentifier.length >= 8 && dbPhone.endsWith(cleanIdentifier.slice(-8));
+                const matchesDoc = dbDoc && dbDoc === cleanIdentifier;
 
-            return matchesPhone || matchesDoc;
+                return matchesPhone || matchesDoc;
+            }
         });
 
         return matched as Client || null;

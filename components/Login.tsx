@@ -151,7 +151,7 @@ const Login: React.FC = () => {
                         <form onSubmit={handleAuth} className="space-y-6 animate-in slide-in-from-left-4">
                             <div className="space-y-2">
                                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                                    {mode === 'client_login' ? 'WhatsApp ou Documento' : 'Email'}
+                                    {mode === 'client_login' ? 'Email, WhatsApp ou CPF/CNPJ' : 'Email'}
                                 </label>
                                 <div className="relative">
                                     {mode === 'client_login' ? (
@@ -164,7 +164,7 @@ const Login: React.FC = () => {
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         className="w-full bg-[#1e293b] border border-slate-700/50 rounded-xl py-3 pl-12 pr-4 text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
-                                        placeholder={mode === 'client_login' ? 'Qual seu número?' : 'seu@email.com'}
+                                        placeholder={mode === 'client_login' ? 'ex: joao@email.com, 11999999999, 12345678909' : 'seu@email.com'}
                                         required
                                     />
                                 </div>
