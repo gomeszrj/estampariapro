@@ -17,10 +17,15 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
   const [profileTab, setProfileTab] = useState<'active' | 'history' | 'info' | 'catalog'>('active');
   const [clientCatalogOrders, setClientCatalogOrders] = useState<CatalogOrder[]>([]);
 
-  const filteredClients = clients.filter(c =>
-    c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredClients = React.useMemo(() => {
+    const searchLower = searchTerm.toLowerCase();
+    const safeClients = Array.isArray(clients) ? clients : [];
+    if (!searchLower) return safeClients;
+    return safeClients.filter(c =>
+      (c.name || '').toLowerCase().includes(searchLower) ||
+      (c.email || '').toLowerCase().includes(searchLower)
+    );
+  }, [clients, searchTerm]);
 
   const getClientOrderCount = (clientId: string) => {
     return orders.filter(o => o.clientId === clientId).length;
@@ -39,11 +44,11 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
     }
   };
 
-  const getClientOrders = (clientId: string) => {
-    return orders.filter(o => o.clientId === clientId).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  };
+  const getClientOrders = React.useCallback((clientId: string) => {
+    return (Array.isArray(orders) ? orders : []).filter(o => o.clientId === clientId).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [orders]);
 
-  const getClientFinancials = (clientId: string) => {
+  const getClientFinancials = React.useCallback((clientId: string) => {
     const clientOrders = getClientOrders(clientId);
     const totalSpent = clientOrders.reduce((sum, order) => sum + (order.totalValue || 0), 0);
 
@@ -54,7 +59,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
 
     const lastOrderDate = clientOrders.length > 0 ? new Date(clientOrders[0].createdAt).toLocaleDateString() : 'N/A';
     return { totalSpent, storeSpent, factorySpent, lastOrderDate, totalOrders: clientOrders.length };
-  };
+  }, [getClientOrders]);
 
   const filteredOrders = viewingClient ? getClientOrders(viewingClient.id) : [];
   const activeOrders = filteredOrders.filter(o => o.status !== OrderStatus.FINISHED && o.status !== OrderStatus.RECEIVED); // Assuming RECEIVED is active? Let's treat FINISHED as history.
