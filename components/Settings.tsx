@@ -180,7 +180,7 @@ const Settings: React.FC = () => {
             <div className="lg:col-span-4 space-y-8">
               <div className="bg-[#0f172a] p-10 rounded-[3rem] border border-slate-800 shadow-xl">
                 <h3 className="text-xl font-black text-slate-100 flex items-center gap-2 uppercase tracking-tight mb-4">
-                  <MessageSquare className="w-6 h-6 text-indigo-500" /> CloudBot
+                  <MessageSquare className="w-6 h-6 text-indigo-500" /> <span>CloudBot</span>
                 </h3>
                 <p className="text-slate-400 text-sm mb-8">
                   Ative o agente autônomo para responder clientes no WhatsApp 24/7.
@@ -201,7 +201,7 @@ const Settings: React.FC = () => {
             <div className="lg:col-span-8 space-y-8">
               <div className="bg-[#0f172a] p-10 rounded-[3rem] border border-slate-800 shadow-xl space-y-6">
                 <h3 className="text-xl font-black text-slate-100 flex items-center gap-2 uppercase tracking-tight mb-2">
-                  <Globe className="w-6 h-6 text-indigo-500" /> Conexão Evolution API
+                  <Globe className="w-6 h-6 text-indigo-500" /> <span>Conexão Evolution API</span>
                 </h3>
                 <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-6">Configure a URL e Chave da API para conectar o WhatsApp.</p>
 
@@ -281,13 +281,13 @@ const Settings: React.FC = () => {
                   </div>
                   <input type="file" ref={fileInputRef} onChange={handleLogoUpload} className="hidden" accept="image/*" />
 
-                  <h3 className="text-xl font-black text-slate-100 truncate w-full px-4 tracking-tight">{company.name || 'Nome da Empresa'}</h3>
-                  <p className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.3em] mt-2">{company.cnpj || 'CNPJ Pendente'}</p>
+                  <h3 className="text-xl font-black text-slate-100 truncate w-full px-4 tracking-tight"><span>{company.name || 'Nome da Empresa'}</span></h3>
+                  <p className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.3em] mt-2"><span>{company.cnpj || 'CNPJ Pendente'}</span></p>
                 </div>
 
                 <div className="bg-indigo-500/5 p-8 rounded-[2.5rem] border border-indigo-500/10 space-y-4">
                   <h4 className="text-indigo-400 font-black text-xs uppercase tracking-widest flex items-center gap-3">
-                    <FileText className="w-5 h-5" /> Importante
+                    <FileText className="w-5 h-5" /> <span>Importante</span>
                   </h4>
                   <p className="text-xs text-slate-500 leading-relaxed font-medium">
                     O logotipo enviado será redimensionado automaticamente para caber nos cabeçalhos da <b>Ordem de Serviço</b> e da <b>Nota Fiscal Eletrônica</b>. Recomendamos o uso de fundo transparente (PNG).
@@ -300,7 +300,7 @@ const Settings: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-10">
                     <div className="space-y-3 col-span-full md:col-span-1">
                       <label className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] flex items-center gap-2 ml-1">
-                        <Building2 className="w-4 h-4 text-indigo-500" /> Razão Social
+                        <Building2 className="w-4 h-4 text-indigo-500" /> <span>Razão Social</span>
                       </label>
                       <input
                         name="name"
@@ -312,7 +312,7 @@ const Settings: React.FC = () => {
                     </div>
                     <div className="space-y-3 col-span-full md:col-span-1">
                       <label className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] flex items-center gap-2 ml-1">
-                        <FileText className="w-4 h-4 text-indigo-500" /> CNPJ Oficial
+                        <FileText className="w-4 h-4 text-indigo-500" /> <span>CNPJ Oficial</span>
                       </label>
                       <input
                         name="cnpj"
@@ -324,7 +324,7 @@ const Settings: React.FC = () => {
                     </div>
                     <div className="space-y-3 col-span-full md:col-span-1">
                       <label className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] flex items-center gap-2 ml-1">
-                        <Mail className="w-4 h-4 text-indigo-500" /> Email de Contato
+                        <Mail className="w-4 h-4 text-indigo-500" /> <span>Email de Contato</span>
                       </label>
                       <input
                         name="email"
@@ -336,7 +336,7 @@ const Settings: React.FC = () => {
                     </div>
                     <div className="space-y-3 col-span-full md:col-span-1">
                       <label className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] flex items-center gap-2 ml-1">
-                        <Phone className="w-4 h-4 text-indigo-500" /> Telefone / WhatsApp
+                        <Phone className="w-4 h-4 text-indigo-500" /> <span>Telefone / WhatsApp</span>
                       </label>
                       <input
                         name="phone"
@@ -348,7 +348,7 @@ const Settings: React.FC = () => {
                     </div>
                     <div className="col-span-full space-y-3">
                       <label className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] flex items-center gap-2 ml-1">
-                        <Globe className="w-4 h-4 text-indigo-500" /> Endereço da Sede
+                        <Globe className="w-4 h-4 text-indigo-500" /> <span>Endereço da Sede</span>
                       </label>
                       <input
                         name="address"
@@ -360,7 +360,7 @@ const Settings: React.FC = () => {
                     </div>
                     <div className="col-span-full space-y-3">
                       <label className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] flex items-center gap-2 ml-1">
-                        <Landmark className="w-4 h-4 text-indigo-500" /> Informações Financeiras (PIX / Dados Bancários)
+                        <Landmark className="w-4 h-4 text-indigo-500" /> <span>Informações Financeiras (PIX / Dados Bancários)</span>
                       </label>
                       <textarea
                         name="bankInfo"
@@ -386,7 +386,7 @@ const Settings: React.FC = () => {
           <div className="lg:col-span-4 space-y-8">
             <div className="bg-[#0f172a] p-10 rounded-[3rem] border border-slate-800 shadow-xl space-y-6">
               <h3 className="text-xl font-black text-slate-100 flex items-center gap-2 uppercase tracking-tight">
-                <UserPlus className="w-6 h-6 text-indigo-500" /> Novo Usuário
+                <UserPlus className="w-6 h-6 text-indigo-500" /> <span>Novo Usuário</span>
               </h3>
 
               <div className="space-y-3">
@@ -419,13 +419,13 @@ const Settings: React.FC = () => {
                 disabled={!newMemberName || !newMemberRole}
                 className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                <UserPlus className="w-4 h-4" /> Cadastrar Membro
+                <UserPlus className="w-4 h-4" /> <span>Cadastrar Membro</span>
               </button>
             </div>
 
             <div className="bg-emerald-500/5 p-8 rounded-[2.5rem] border border-emerald-500/10 space-y-4">
               <h4 className="text-emerald-400 font-black text-xs uppercase tracking-widest flex items-center gap-3">
-                <Shield className="w-5 h-5" /> Segurança
+                <Shield className="w-5 h-5" /> <span>Segurança</span>
               </h4>
               <p className="text-xs text-slate-500 leading-relaxed font-medium">
                 Os usuários cadastrados terão acesso às funções do sistema conforme seus cargos. O gerente tem acesso total.
@@ -437,7 +437,7 @@ const Settings: React.FC = () => {
           <div className="lg:col-span-8">
             <div className="bg-[#0f172a] p-10 rounded-[3rem] border border-slate-800 shadow-xl min-h-[500px]">
               <h3 className="text-xl font-black text-slate-100 flex items-center gap-2 uppercase tracking-tight mb-8">
-                <Users className="w-6 h-6 text-indigo-500" /> Membros da Equipe
+                <Users className="w-6 h-6 text-indigo-500" /> <span>Membros da Equipe</span>
               </h3>
 
               {isLoadingTeam ? (
