@@ -244,8 +244,15 @@ const PublicStore: React.FC = () => {
 
                             <div>
                                 <span className="text-indigo-400 font-bold text-xs uppercase tracking-widest mb-2 block">{product.category}</span>
-                                <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight leading-tight mb-3">{product.name}</h2>
-                                <p className="text-slate-400 text-sm leading-relaxed">{product.description || "Design exclusivo e acabamento de alta performance."}</p>
+                                <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight leading-tight mb-4">{product.name}</h2>
+
+                                <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800 mb-2">
+                                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-2">
+                                        <Info className="w-4 h-4 text-indigo-400" />
+                                        <span>Especificações Técnicas</span>
+                                    </h4>
+                                    <p className="text-slate-300 text-sm leading-relaxed">{product.description || "Design exclusivo e acabamento de alta performance. Desenvolvido para máxima durabilidade e conforto."}</p>
+                                </div>
                             </div>
 
                             <div className="flex items-center gap-4 pb-4 border-b border-slate-800/50">
@@ -286,7 +293,7 @@ const PublicStore: React.FC = () => {
                                 {/* Size Selector */}
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-end">
-                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Tamanho</label>
+                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Tamanhos Disponíveis</label>
                                         {currentMeasurement && (
                                             <div className="flex items-center gap-2 text-[10px] text-emerald-300 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20 animate-in fade-in duration-300">
                                                 <Ruler className="w-3.5 h-3.5" />
