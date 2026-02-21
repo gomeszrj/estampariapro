@@ -73,33 +73,43 @@ export const clientService = {
     async getByPhoneAndPassword(loginIdentifier: string, password: string): Promise<Client | null> {
         if (!loginIdentifier || !password) return null;
 
-        // Fetch clients matching the password
+        const isEmail = loginIdentifier.includes('@');
+        const cleanIdentifier = loginIdentifier.replace(/\D/g, '');
+
+        if (isEmail) {
+            // Se for email, busca exato pelo e-mail e confere a senha
+            const { data, error } = await supabase
+                .from('clients')
+                .select('*')
+                .ilike('email', loginIdentifier.trim())
+                .eq('password', password)
+                .single();
+
+            if (error || !data) return null;
+            return data as Client;
+        }
+
+        // Se for número (Doc ou Zap), buscamos todos que tenham esse password
+        // E filtramos no JS, pois o whatsapp pode estar formatado (11) 99999-9999
+        // e o cleanIdentifier é apenas os números. Fazer LIKE no postgresql com regex é pesado/inviável via SDK padrão sem RPC.
         const { data, error } = await supabase
             .from('clients')
             .select('*')
             .eq('password', password);
 
-        if (error) throw error;
-        if (!data || data.length === 0) return null;
+        if (error || !data || data.length === 0) return null;
 
-        const isEmail = loginIdentifier.includes('@');
-        const cleanIdentifier = loginIdentifier.replace(/\D/g, '');
-
-        // Find the client that matches either email, document, or phone
+        // Procura entre os usuários com essa senha, aquele que bate o documento ou últimas 8 casas d zap
         const matched = data.find(c => {
-            if (isEmail) {
-                return (c.email || '').toLowerCase() === loginIdentifier.toLowerCase().trim();
-            } else {
-                const dbPhone = (c.whatsapp || '').replace(/\D/g, '');
-                const dbDoc = (c.document || '').replace(/\D/g, '');
+            const dbPhone = (c.whatsapp || '').replace(/\D/g, '');
+            const dbDoc = (c.document || '').replace(/\D/g, '');
 
-                const matchesPhone = dbPhone && cleanIdentifier.length >= 8 && dbPhone.endsWith(cleanIdentifier.slice(-8));
-                const matchesDoc = dbDoc && dbDoc === cleanIdentifier;
+            const matchesPhone = dbPhone && cleanIdentifier.length >= 8 && dbPhone.endsWith(cleanIdentifier.slice(-8));
+            const matchesDoc = dbDoc && dbDoc === cleanIdentifier;
 
-                return matchesPhone || matchesDoc;
-            }
+            return matchesPhone || matchesDoc;
         });
 
-        return matched as Client || null;
+        return (matched as Client) || null;
     }
 };

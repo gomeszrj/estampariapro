@@ -31,7 +31,7 @@ const Login: React.FC = () => {
                 if (error) throw error;
             } else if (mode === 'client_login') {
                 const clientUser = await clientService.getByPhoneAndPassword(email, password);
-                if (!clientUser) throw new Error('WhatsApp/Documento ou Senha incorretos.');
+                if (!clientUser) throw new Error('Email, WhatsApp/Documento ou Senha incorretos.');
                 localStorage.setItem('client_session', JSON.stringify({
                     id: clientUser.id,
                     name: clientUser.name,
