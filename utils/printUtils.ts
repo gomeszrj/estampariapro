@@ -262,10 +262,19 @@ export async function printInvoice(order: Order) {
    // Calculations
    const total = order.totalValue || 0;
    let paid = order.amountPaid || 0;
-   if (!order.amountPaid && order.paymentStatus === PaymentStatus.FULL) paid = total;
-   if (!order.amountPaid && order.paymentStatus === 'Sinal (50%)') paid = total / 2;
 
-   const remaining = total - paid;
+   // Backward compatibility for old records saved with buggy 999.999 value
+   if (paid === 999999) {
+      paid = 0;
+   }
+
+   if (order.paymentStatus === PaymentStatus.FULL) {
+      paid = total;
+   } else if (!paid && order.paymentStatus === 'Sinal (50%)') {
+      paid = total / 2;
+   }
+
+   const remaining = Math.max(0, total - paid);
    const isPaidOff = remaining <= 0.1;
 
    const html = `
