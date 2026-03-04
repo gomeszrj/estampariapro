@@ -76,7 +76,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
     const map = new Map<string, Product>();
     const safeProducts = Array.isArray(products) ? products : [];
     safeProducts.forEach(p => {
-      if (p.name) map.set(p.name.toLowerCase(), p);
+      if (p.name) map.set(p.name.trim().toLowerCase(), p);
     });
     return map;
   }, [products]);
@@ -285,6 +285,35 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
 
       setInternalNotes(prev => (prev ? prev + '\n\n' : '') + formattedOutput.trim());
 
+      const aggregatedItems: ParsedOrderItem[] = [];
+      Object.keys(groups).sort((a, b) => parseInt(a) - parseInt(b)).forEach(layoutKey => {
+        const layoutNum = parseInt(layoutKey);
+        const layoutGrades = groups[layoutNum];
+        const gradeOrder = ['MASCULINO', 'FEMININO', 'INFANTIL'];
+        const sortedGrades = Object.keys(layoutGrades).sort((a, b) => {
+          return gradeOrder.indexOf(a) - gradeOrder.indexOf(b);
+        });
+
+        sortedGrades.forEach(grade => {
+          const products = layoutGrades[grade];
+          Object.keys(products).sort().forEach(product => {
+            const sizes = products[product];
+            Object.keys(sizes).forEach(size => {
+              const data = sizes[size];
+              aggregatedItems.push({
+                product: product,
+                grade: grade as any,
+                size: size,
+                quantity: data.quantity,
+                fabric: data.fabric || ''
+              });
+            });
+          });
+        });
+      });
+
+      setParsedItems(prev => [...prev, ...aggregatedItems]);
+
     } catch (e: any) {
       console.error(e);
       // Improve error message for user
@@ -420,7 +449,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
 
     try {
       const calculatedTotal = parsedItems.reduce((acc, curr) => {
-        const prod = products.find(p => p.name === curr.product);
+        const prod = productsByName.get((curr.product || '').trim().toLowerCase());
         const price = prod ? prod.basePrice : 35;
         return acc + (curr.quantity || 0) * price;
       }, 0);
@@ -442,7 +471,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
         internalNotes: internalNotes,
         delayReason: delayReason,
         items: parsedItems.map(item => {
-          const prod = products.find(p => p.name === item.product);
+          const prod = productsByName.get((item.product || '').trim().toLowerCase());
           return {
             id: Math.random().toString(), // Service ignores this on insert usually or mapping needs care
             productId: prod ? prod.id : 'p-custom',
@@ -482,7 +511,8 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
           orderType,
           paymentStatus,
           clientId: clientIdToUse,
-          amountPaid: orderData.amountPaid
+          amountPaid: orderData.amountPaid,
+          items: orderData.items
         });
       } else {
         await orderService.create({
@@ -818,7 +848,10 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                                 </div>
                                 <div className="w-24 space-y-1">
                                   <label className="text-[8px] font-black text-slate-600 uppercase tracking-wider ml-1 text-center block">Qtd</label>
-                                  <input type="number" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-2 py-3 text-xs font-black text-indigo-400 text-center outline-none" value={item.quantity} onChange={e => updateItem(idx, 'quantity', parseInt(e.target.value))} />
+                                  <input type="number" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-2 py-3 text-xs font-black text-indigo-400 text-center outline-none" value={item.quantity === 0 ? '' : item.quantity} onChange={e => {
+                                    const val = parseInt(e.target.value);
+                                    updateItem(idx, 'quantity', isNaN(val) ? 0 : val);
+                                  }} />
                                 </div>
                               </div>
                             </div>
@@ -834,14 +867,14 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                       <div>
                         <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Custo Estimado</p>
                         <p className="text-xl font-bold text-slate-400">R$ {(parsedItems.reduce((acc, curr) => {
-                          const prod = productsByName.get((curr.product || '').toLowerCase());
+                          const prod = productsByName.get((curr.product || '').trim().toLowerCase());
                           return acc + (curr.quantity || 0) * (prod?.costPrice || 0);
                         }, 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                       </div>
                       <div>
                         <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Lucro Previsto</p>
                         <p className="text-xl font-bold text-emerald-500">R$ {(parsedItems.reduce((acc, curr) => {
-                          const prod = productsByName.get((curr.product || '').toLowerCase());
+                          const prod = productsByName.get((curr.product || '').trim().toLowerCase());
                           const revenue = (curr.quantity || 0) * (prod ? prod.basePrice : 35);
                           const cost = (curr.quantity || 0) * (prod?.costPrice || 0);
                           return acc + (revenue - cost);
@@ -850,7 +883,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                       <div>
                         <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Valor Total</p>
                         <p className="text-3xl font-black text-slate-100">R$ {(parsedItems.reduce((acc, curr) => {
-                          const prod = productsByName.get((curr.product || '').toLowerCase());
+                          const prod = productsByName.get((curr.product || '').trim().toLowerCase());
                           return acc + (curr.quantity || 0) * (prod ? prod.basePrice : 35);
                         }, 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                       </div>

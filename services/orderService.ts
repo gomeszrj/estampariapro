@@ -115,6 +115,32 @@ export const orderService = {
             .single();
 
         if (error) throw error;
+
+        // --- NEW: Update Items ---
+        if (updates.items) {
+            // First, delete old items
+            const { error: deleteError } = await supabase
+                .from('order_items')
+                .delete()
+                .eq('order_id', id);
+
+            if (deleteError) throw deleteError;
+
+            // Then insert new ones
+            if (updates.items.length > 0) {
+                const dbItems = updates.items.map(item => ({
+                    ...mapOrderItemToDB(item),
+                    order_id: id
+                }));
+
+                const { error: insertError } = await supabase
+                    .from('order_items')
+                    .insert(dbItems);
+
+                if (insertError) throw insertError;
+            }
+        }
+
         return this.getById(id);
     },
 
