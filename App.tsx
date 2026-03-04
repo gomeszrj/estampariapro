@@ -23,7 +23,7 @@ import { clientService } from './services/clientService.ts';
 import { productService } from './services/productService.ts';
 import { orderService } from './services/orderService.ts';
 import ApiSettingsModal from './components/ApiSettingsModal.tsx';
-import { SYSTEM_VERSION } from './constants';
+import { SYSTEM_VERSION, LATEST_RELEASE_NOTES } from './constants';
 import { ErrorBoundary } from './components/ErrorBoundary.tsx';
 
 const AuthenticatedApp: React.FC = () => {
@@ -137,7 +137,11 @@ const AuthenticatedApp: React.FC = () => {
             </a>
           </div>
           <div className="flex items-center gap-8">
-            <button className="relative px-3 py-2 text-slate-400 hover:text-indigo-400 transition-all bg-slate-800/30 rounded-xl border border-slate-700/50 group flex items-center gap-3" title={`Sistema Atualizado: v${SYSTEM_VERSION}`}>
+            <button
+              onClick={() => alert(`Sistema Estamparia.AI Atualizado (v${SYSTEM_VERSION})\n\n${LATEST_RELEASE_NOTES}\n\nObrigado por utilizar nosso sistema!`)}
+              className="relative px-3 py-2 text-slate-400 hover:text-indigo-400 transition-all bg-slate-800/30 rounded-xl border border-slate-700/50 group flex items-center gap-3"
+              title={`Ver Novidades da Versão ${SYSTEM_VERSION}`}
+            >
               <div className="relative">
                 <Bell className="w-5 h-5" />
                 <div className="absolute top-0 right-0 w-2 h-2 bg-indigo-500 rounded-full border-2 border-[#0f172a]"></div>

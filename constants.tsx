@@ -4,7 +4,11 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .10, increment major version (e.g., 2.9 -> 3.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '17.16';
+export const SYSTEM_VERSION = '17.17';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 17.17:
+- Lançamento: A Inteligência Artificial agora preenche todos os Itens do Pedido automaticamente na lista, identificando tamanhos, quantidade e agrupamento corretamente.
+- Correção de cálculo: Erro "NaN" ao limpar dados de quantidade resolvido, mantendo o cálculo do Lucro Real intacto.
+- Tratamento de Dados: Ajuste no reconhecimento de itens da grade para não sumirem no menu suspenso.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [
