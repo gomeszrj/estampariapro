@@ -300,9 +300,11 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
             const sizes = products[product];
             Object.keys(sizes).forEach(size => {
               const data = sizes[size];
+              // Format grade properly (MASCULINO -> Masculino) to match the Grades dropdown options
+              const formattedGrade = grade.charAt(0).toUpperCase() + grade.slice(1).toLowerCase();
               aggregatedItems.push({
                 product: product,
-                grade: grade as any,
+                grade: formattedGrade as any,
                 size: size,
                 quantity: data.quantity,
                 fabric: data.fabric || ''
