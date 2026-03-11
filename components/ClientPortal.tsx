@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Truck, LogOut, Package, Clock, CheckCircle2, MessageCircle, Send, X } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { orderService } from '../services/orderService';
+import { settingsService } from '../services/settingsService';
 import { Order, OrderMessage } from '../types';
 import { STATUS_CONFIG } from '../constants';
 import ClientLogin from './ClientLogin';
@@ -10,6 +11,7 @@ const ClientPortal: React.FC = () => {
     const [clientSession, setClientSession] = useState<{ id: string; name: string; phone: string } | null>(null);
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
+    const [companySettings, setCompanySettings] = useState<any>(null);
 
     // Chat State
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -34,15 +36,19 @@ const ClientPortal: React.FC = () => {
 
         const fetchOrders = async () => {
             try {
-                const { data, error } = await supabase
-                    .from('orders')
-                    .select(`*, items:order_items(*)`)
-                    .eq('client_id', clientSession.id)
-                    .order('created_at', { ascending: false });
+                const [ordersRes, settingsRes] = await Promise.all([
+                    supabase
+                        .from('orders')
+                        .select(`*, items:order_items(*)`)
+                        .eq('client_id', clientSession.id)
+                        .order('created_at', { ascending: false }),
+                    settingsService.getPublicSettings()
+                ]);
 
-                if (error) throw error;
+                if (ordersRes.error) throw ordersRes.error;
+
                 // Basic mapping simulation
-                const formatted = data.map((o: any) => ({
+                const formatted = (ordersRes.data || []).map((o: any) => ({
                     ...o,
                     orderNumber: o.order_number,
                     createdAt: o.created_at,
@@ -51,6 +57,7 @@ const ClientPortal: React.FC = () => {
                 })) as Order[];
 
                 setOrders(formatted);
+                setCompanySettings(settingsRes);
             } catch (error) {
                 console.error("Failed to fetch client orders:", error);
             } finally {
@@ -163,7 +170,20 @@ const ClientPortal: React.FC = () => {
             </header>
 
             {/* Content */}
-            <main className="max-w-5xl mx-auto p-6 md:p-10">
+            <main className="max-w-5xl mx-auto p-6 md:p-10 space-y-8">
+                {/* Financial Info Banner */}
+                {companySettings?.bank_info && (
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-3xl p-6 md:p-8 flex items-start gap-4 animate-in slide-in-from-top-4">
+                        <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center shrink-0">
+                            <span className="text-emerald-400 font-black text-xl">$</span>
+                        </div>
+                        <div>
+                            <h3 className="text-emerald-400 font-black uppercase tracking-widest text-xs mb-2">Dados para Pagamento / PIX</h3>
+                            <p className="text-slate-300 text-sm whitespace-pre-wrap leading-relaxed">{companySettings.bank_info}</p>
+                        </div>
+                    </div>
+                )}
+
                 {orders.length === 0 ? (
                     <div className="text-center py-20 bg-[#0f172a] rounded-3xl border border-slate-800">
                         <div className="w-20 h-20 bg-slate-800/50 rounded-full flex items-center justify-center mx-auto mb-6">

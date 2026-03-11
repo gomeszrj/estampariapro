@@ -62,7 +62,7 @@ export const settingsService = {
     getPublicSettings: async (): Promise<Partial<CompanySettings>> => {
         const { data, error } = await supabase
             .from('settings')
-            .select('name, logo_url, phone, email, website, address')
+            .select('name, logo_url, phone, email, website, address, bank_info')
             .single();
 
         if (error) {
@@ -76,7 +76,8 @@ export const settingsService = {
             phone: data.phone || '',
             email: data.email || '',
             website: data.website || '',
-            address: data.address || ''
+            address: data.address || '',
+            bank_info: data.bank_info || ''
         };
     },
 
