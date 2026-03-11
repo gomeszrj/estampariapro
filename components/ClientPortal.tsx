@@ -148,8 +148,8 @@ const ClientPortal: React.FC = () => {
                         <Truck className="w-5 h-5 text-indigo-400" />
                     </div>
                     <div>
-                        <h1 className="text-xl font-black text-white tracking-tight">Meus Pedidos</h1>
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{clientSession.name}</p>
+                        <h1 className="text-lg md:text-xl font-black text-white tracking-tight">Meus Pedidos</h1>
+                        <p className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest truncate max-w-[150px] md:max-w-none">{clientSession.name}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -173,13 +173,13 @@ const ClientPortal: React.FC = () => {
             <main className="max-w-5xl mx-auto p-6 md:p-10 space-y-8">
                 {/* Financial Info Banner */}
                 {companySettings?.bank_info && (
-                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-3xl p-6 md:p-8 flex items-start gap-4 animate-in slide-in-from-top-4">
-                        <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center shrink-0">
-                            <span className="text-emerald-400 font-black text-xl">$</span>
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-3xl p-5 md:p-8 flex flex-col md:flex-row items-start gap-4 animate-in slide-in-from-top-4">
+                        <div className="w-10 h-10 md:w-12 md:h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center shrink-0">
+                            <span className="text-emerald-400 font-black text-lg md:text-xl">$</span>
                         </div>
-                        <div>
-                            <h3 className="text-emerald-400 font-black uppercase tracking-widest text-xs mb-2">Dados para Pagamento / PIX</h3>
-                            <p className="text-slate-300 text-sm whitespace-pre-wrap leading-relaxed">{companySettings.bank_info}</p>
+                        <div className="flex-1 w-full overflow-hidden">
+                            <h3 className="text-emerald-400 font-black uppercase tracking-widest text-[10px] md:text-xs mb-2">Dados para Pagamento / PIX</h3>
+                            <p className="text-slate-300 text-xs md:text-sm whitespace-pre-wrap leading-relaxed break-words">{companySettings.bank_info}</p>
                         </div>
                     </div>
                 )}
@@ -200,32 +200,32 @@ const ClientPortal: React.FC = () => {
 
                             return (
                                 <div key={order.id} className="bg-[#0f172a] rounded-3xl border border-slate-800 overflow-hidden hover:border-slate-700 transition-colors">
-                                    <div className="p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
-                                        <div className="flex items-center gap-6 w-full md:w-auto">
-                                            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border ${statusConfig?.color || 'bg-slate-800 text-slate-300 border-slate-700'}`}>
-                                                <StatusIcon className="w-8 h-8" />
+                                    <div className="p-5 md:p-8 flex flex-col items-start md:flex-row md:items-center justify-between gap-5 md:gap-6">
+                                        <div className="flex items-center gap-4 md:gap-6 w-full md:w-auto">
+                                            <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center border shrink-0 ${statusConfig?.color || 'bg-slate-800 text-slate-300 border-slate-700'}`}>
+                                                <StatusIcon className="w-6 h-6 md:w-8 md:h-8" />
                                             </div>
-                                            <div>
+                                            <div className="min-w-0">
                                                 <div className="flex items-center gap-3 mb-1">
-                                                    <h3 className="text-2xl font-black text-white">Pedido #{order.orderNumber}</h3>
+                                                    <h3 className="text-lg md:text-2xl font-black text-white truncate">Pedido #{order.orderNumber}</h3>
                                                 </div>
-                                                <p className="text-sm font-medium text-slate-400">
+                                                <p className="text-xs md:text-sm font-medium text-slate-400">
                                                     Feito em {new Date(order.createdAt).toLocaleDateString()}
                                                 </p>
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-6 w-full md:w-auto bg-[#1e293b] p-4 rounded-2xl justify-between md:justify-start flex-1 md:flex-none">
-                                            <div>
-                                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Status Atual</p>
-                                                <p className={`text-sm font-black uppercase tracking-wider ${statusConfig?.color ? statusConfig.color.split(' ')[1] : 'text-slate-300'}`}>
+                                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 md:gap-6 w-full md:w-auto bg-[#1e293b] p-4 rounded-2xl justify-between flex-1 md:flex-none">
+                                            <div className="w-full sm:w-auto">
+                                                <p className="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest">Status Atual</p>
+                                                <p className={`text-xs md:text-sm font-black uppercase tracking-wider ${statusConfig?.color ? statusConfig.color.split(' ')[1] : 'text-slate-300'}`}>
                                                     {statusConfig?.label || order.status}
                                                 </p>
                                             </div>
-                                            <div className="w-px h-8 bg-slate-700 hidden md:block"></div>
-                                            <div>
-                                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Previsão</p>
-                                                <p className="text-sm font-black text-slate-200">
+                                            <div className="w-full h-px sm:w-px sm:h-8 bg-slate-700"></div>
+                                            <div className="w-full sm:w-auto">
+                                                <p className="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest">Previsão</p>
+                                                <p className="text-xs md:text-sm font-black text-slate-200">
                                                     {order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : 'A definir'}
                                                 </p>
                                             </div>

@@ -99,13 +99,13 @@ const ClientLogin: React.FC<ClientLoginProps> = ({ onLoginSuccess }) => {
             <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl"></div>
             <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-indigo-900/20 rounded-full blur-3xl"></div>
 
-            <div className="w-full max-w-md bg-[#0f172a]/80 backdrop-blur-xl border border-slate-800 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative z-10 animate-in slide-in-from-bottom-8 duration-700">
-                <div className="flex flex-col items-center mb-10 text-center">
-                    <div className="w-16 h-16 bg-indigo-600 rounded-3xl flex items-center justify-center shadow-lg shadow-indigo-600/20 mb-6 rotate-3">
+            <div className="w-full max-w-md bg-[#0f172a]/80 backdrop-blur-xl border border-slate-800 rounded-[2.5rem] p-6 md:p-12 shadow-2xl relative z-10 animate-in slide-in-from-bottom-8 duration-700">
+                <div className="flex flex-col items-center mb-8 md:mb-10 text-center">
+                    <div className="w-14 h-14 md:w-16 md:h-16 bg-indigo-600 rounded-3xl flex items-center justify-center shadow-lg shadow-indigo-600/20 mb-6 rotate-3">
                         <Package className="w-8 h-8 text-white -rotate-3" />
                     </div>
-                    <h1 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Portal do Cliente</h1>
-                    <p className="text-slate-400 text-sm font-medium">Acompanhe seus pedidos em tempo real.</p>
+                    <h1 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter mb-2">Portal do Cliente</h1>
+                    <p className="text-slate-400 text-xs md:text-sm font-medium">Acompanhe seus pedidos em tempo real.</p>
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-6">
