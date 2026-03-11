@@ -24,7 +24,8 @@ import {
   ThumbsUp,
   ArrowRight,
   ClipboardList,
-  DollarSign
+  DollarSign,
+  Link as LinkIcon
 } from 'lucide-react';
 import { getWhatsAppLink, getStatusUpdateMessage } from '../utils/whatsappUtils';
 import { parseOrderText, ParsedOrderItem } from '../services/aiService';
@@ -1194,6 +1195,18 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                                 title="Enviar Status via WhatsApp"
                               >
                                 <Send className="w-5 h-5" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const portalLink = `${window.location.origin}/?view=client_portal`;
+                                  const msg = `Olá! Acompanhe o status do seu pedido #${order.orderNumber} em nosso Portal do Cliente:\n\n🔗 ${portalLink}\n\nUse seu WhatsApp e o Número do Pedido (${order.orderNumber}) para acessar.`;
+                                  navigator.clipboard.writeText(msg);
+                                  alert("Link e instruções do Portal copiados para a área de transferência! Cole no WhatsApp do cliente.");
+                                }}
+                                className="text-slate-500 hover:text-cyan-400 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"
+                                title="Copiar Link do Portal do Cliente"
+                              >
+                                <LinkIcon className="w-5 h-5" />
                               </button>
                               <button
                                 onClick={() => handleDelete(order.id)}

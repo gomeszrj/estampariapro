@@ -16,7 +16,7 @@ import { CloudBot } from './components/CloudBot';
 import OrderTracker from './components/OrderTracker.tsx';
 import PublicStore from './components/PublicStore.tsx';
 import ClientPortal from './components/ClientPortal.tsx';
-import { Bell, User as UserIcon, Share2, Menu } from 'lucide-react';
+import { Bell, User as UserIcon, Share2, Menu, ExternalLink } from 'lucide-react';
 import { Order, Product, Client, OrderStatus, OrderType } from './types';
 import { AuthProvider, useAuth } from './contexts/AuthContext.tsx';
 import { clientService } from './services/clientService.ts';
@@ -141,6 +141,9 @@ const AuthenticatedApp: React.FC = () => {
             </span>
             <a href="/catalogo" target="_blank" className="hidden md:flex text-[10px] font-bold text-indigo-400 hover:text-indigo-300 ml-4 border border-indigo-500/30 px-3 py-1 rounded-lg uppercase tracking-widest items-center gap-2 hover:bg-indigo-500/10 transition-all">
               <Share2 className="w-3 h-3" /> Catálogo Próprio
+            </a>
+            <a href="/?view=client_portal" target="_blank" className="hidden md:flex text-[10px] font-bold text-emerald-400 hover:text-emerald-300 ml-2 border border-emerald-500/30 px-3 py-1 rounded-lg uppercase tracking-widest items-center gap-2 hover:bg-emerald-500/10 transition-all">
+              <ExternalLink className="w-3 h-3" /> Portal do Cliente
             </a>
           </div>
           <div className="flex items-center gap-4 md:gap-8">

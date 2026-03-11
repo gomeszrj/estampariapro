@@ -4,11 +4,12 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '18.0';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 18.0:
-- Funcionalidade de Desconto Adicionada: Desconto funcional na tela de pedidos que salva no banco de dados.
-- Nova Lógica de Versões: O sistema passa a utilizar a regra de dezenas reais (ex: 17.9 -> 18.0).
-- Preparação de Infraestrutura: Iniciando a estrutura para Tela de Login Mobile, Portal do Cliente e Download do APK.`;
+export const SYSTEM_VERSION = '18.1';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 18.1:
+- Funcionalidade de Desconto Adicionada: Desconto funcional na tela de pedidos.
+- Portal do Cliente Liberado: Novo acesso prático via Telefone e Número do Pedido.
+- Compartilhamento Fácil: Links diretos para os clientes adicionados ao menu (Catálogo Exclusivo) e na tabela de Pedidos.
+- Preparação de Infraestrutura PWA e Mobile Completa.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [
