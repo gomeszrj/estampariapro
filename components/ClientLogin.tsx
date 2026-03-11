@@ -3,19 +3,27 @@ import { Package, Smartphone, ArrowRight, Loader2 } from 'lucide-react';
 import { supabase } from '../services/supabase';
 
 interface ClientLoginProps {
-    onLoginSuccess: (session: { id: string; name: string; phone: string }) => void;
+    onLoginSuccess: (session: { id: string; name: string; phone: string }, options?: { openSupportChat?: boolean }) => void;
 }
 
 const ClientLogin: React.FC<ClientLoginProps> = ({ onLoginSuccess }) => {
+    const [mode, setMode] = useState<'login' | 'support'>('login');
     const [orderNumber, setOrderNumber] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
+    const [supportName, setSupportName] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!orderNumber || !phoneNumber) {
+
+        if (mode === 'login' && (!orderNumber || !phoneNumber)) {
             setError('Preencha todos os campos obrigatórios.');
+            return;
+        }
+
+        if (mode === 'support' && (!supportName || !phoneNumber)) {
+            setError('Preencha seu nome e telefone.');
             return;
         }
 
@@ -23,8 +31,77 @@ const ClientLogin: React.FC<ClientLoginProps> = ({ onLoginSuccess }) => {
         setError('');
 
         try {
-            const cleanOrderNumber = orderNumber.replace(/#/g, '').trim();
             const cleanPhone = phoneNumber.replace(/\D/g, '');
+            if (cleanPhone.length < 8) {
+                setError('Número de telefone inválido. Digite com o DDD.');
+                setLoading(false);
+                return;
+            }
+            const phoneLast8 = cleanPhone.slice(-8);
+
+            if (mode === 'support') {
+                // 1. Encontrar ou criar cliente
+                let { data: clients, error: clientError } = await supabase
+                    .from('clients')
+                    .select('*')
+                    .ilike('whatsapp', `%${phoneLast8}%`)
+                    .limit(1);
+
+                let client = clients && clients.length > 0 ? clients[0] : null;
+
+                if (!client) {
+                    const { data: newClient, error: createError } = await supabase
+                        .from('clients')
+                        .insert([{ name: supportName, whatsapp: cleanPhone }])
+                        .select()
+                        .single();
+
+                    if (createError) throw createError;
+                    client = newClient;
+                }
+
+                // 2. Encontrar último pedido ou criar pedido fictício de suporte
+                let { data: orders, error: ordersError } = await supabase
+                    .from('orders')
+                    .select('*')
+                    .eq('client_id', client.id)
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+
+                let order = orders && orders.length > 0 ? orders[0] : null;
+
+                if (!order) {
+                    const { data: newOrder, error: orderCreateError } = await supabase
+                        .from('orders')
+                        .insert([{
+                            client_id: client.id,
+                            client_name: client.name,
+                            order_number: 'SUPORTE',
+                            status: 'store-request',
+                            origin: 'store',
+                            order_type: 'sale',
+                            total_value: 0
+                        }])
+                        .select()
+                        .single();
+
+                    if (orderCreateError) throw orderCreateError;
+                    order = newOrder;
+                }
+
+                const session = {
+                    id: client.id,
+                    name: client.name,
+                    phone: client.whatsapp || cleanPhone
+                };
+                localStorage.setItem('client_session', JSON.stringify(session));
+                localStorage.setItem('open_support_chat', order.id);
+                onLoginSuccess(session, { openSupportChat: true });
+                return;
+            }
+
+            // Modo Login normal
+            const cleanOrderNumber = orderNumber.replace(/#/g, '').trim();
 
             if (cleanPhone.length < 8) {
                 setError('Número de telefone inválido. Digite com o DDD.');
@@ -58,9 +135,6 @@ const ClientLogin: React.FC<ClientLoginProps> = ({ onLoginSuccess }) => {
                 setLoading(false);
                 return;
             }
-
-            // Pegar os últimos 8 dígitos do telefone digitado para uma comparação segura
-            const phoneLast8 = cleanPhone.slice(-8);
 
             // Procurar dentro dos pedidos encontrados qual pertence ao telefone
             const matchingOrder = ordersData.find(order => {
@@ -109,33 +183,67 @@ const ClientLogin: React.FC<ClientLoginProps> = ({ onLoginSuccess }) => {
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-6">
-                    <div className="space-y-3">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Número do Pedido</label>
-                        <div className="relative">
-                            <Package className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600" />
-                            <input
-                                type="text"
-                                placeholder="Ex: 5312"
-                                value={orderNumber}
-                                onChange={(e) => setOrderNumber(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-5 py-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-700 placeholder:font-medium"
-                            />
-                        </div>
-                    </div>
+                    {mode === 'login' ? (
+                        <>
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Número do Pedido</label>
+                                <div className="relative">
+                                    <Package className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600" />
+                                    <input
+                                        type="text"
+                                        placeholder="Ex: 5312"
+                                        value={orderNumber}
+                                        onChange={(e) => setOrderNumber(e.target.value)}
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-5 py-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-700 placeholder:font-medium"
+                                    />
+                                </div>
+                            </div>
 
-                    <div className="space-y-3">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Seu WhatsApp / Telefone</label>
-                        <div className="relative">
-                            <Smartphone className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600" />
-                            <input
-                                type="tel"
-                                placeholder="(00) 00000-0000"
-                                value={phoneNumber}
-                                onChange={(e) => setPhoneNumber(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-5 py-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-700 placeholder:font-medium"
-                            />
-                        </div>
-                    </div>
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Seu WhatsApp / Telefone</label>
+                                <div className="relative">
+                                    <Smartphone className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600" />
+                                    <input
+                                        type="tel"
+                                        placeholder="(00) 00000-0000"
+                                        value={phoneNumber}
+                                        onChange={(e) => setPhoneNumber(e.target.value)}
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-5 py-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-700 placeholder:font-medium"
+                                    />
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Seu Nome Completo</label>
+                                <div className="relative">
+                                    <Package className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600" />
+                                    <input
+                                        type="text"
+                                        placeholder="Ex: João Silva"
+                                        value={supportName}
+                                        onChange={(e) => setSupportName(e.target.value)}
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-5 py-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-700 placeholder:font-medium"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Seu WhatsApp / Telefone</label>
+                                <div className="relative">
+                                    <Smartphone className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600" />
+                                    <input
+                                        type="tel"
+                                        placeholder="(00) 00000-0000"
+                                        value={phoneNumber}
+                                        onChange={(e) => setPhoneNumber(e.target.value)}
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-5 py-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-700 placeholder:font-medium"
+                                    />
+                                </div>
+                            </div>
+                        </>
+                    )}
 
                     {error && (
                         <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold p-4 rounded-xl text-center">
@@ -154,19 +262,28 @@ const ClientLogin: React.FC<ClientLoginProps> = ({ onLoginSuccess }) => {
                             </>
                         ) : (
                             <>
-                                Acessar Meus Pedidos <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                {mode === 'login' ? 'Acessar Meus Pedidos' : 'Iniciar Atendimento'} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                             </>
                         )}
                     </button>
                 </form>
 
                 <div className="mt-8 pt-8 border-t border-slate-800/50 text-center">
-                    <p className="text-xs text-slate-500 font-medium">
-                        Precisando de ajuda?{' '}
-                        <a href="#" className="text-indigo-400 font-bold hover:text-indigo-300 transition-colors uppercase tracking-wider">
-                            Fale com o suporte
-                        </a>
-                    </p>
+                    {mode === 'login' ? (
+                        <p className="text-xs text-slate-500 font-medium">
+                            Precisando de ajuda?{' '}
+                            <button type="button" onClick={() => setMode('support')} className="text-indigo-400 font-bold hover:text-indigo-300 transition-colors uppercase tracking-wider">
+                                Fale com o suporte
+                            </button>
+                        </p>
+                    ) : (
+                        <p className="text-xs text-slate-500 font-medium">
+                            Já tem um pedido?{' '}
+                            <button type="button" onClick={() => setMode('login')} className="text-indigo-400 font-bold hover:text-indigo-300 transition-colors uppercase tracking-wider">
+                                Rastrear Pedido
+                            </button>
+                        </p>
+                    )}
                 </div>
             </div>
         </div>

@@ -58,6 +58,16 @@ const ClientPortal: React.FC = () => {
 
                 setOrders(formatted);
                 setCompanySettings(settingsRes);
+
+                // Check auto-open chat logic
+                const autoOpenOrderId = localStorage.getItem('open_support_chat');
+                if (autoOpenOrderId) {
+                    const targetOrder = formatted.find(o => o.id === autoOpenOrderId);
+                    if (targetOrder) {
+                        openChat(targetOrder);
+                    }
+                    localStorage.removeItem('open_support_chat');
+                }
             } catch (error) {
                 console.error("Failed to fetch client orders:", error);
             } finally {

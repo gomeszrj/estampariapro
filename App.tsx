@@ -16,7 +16,7 @@ import { CloudBot } from './components/CloudBot';
 import OrderTracker from './components/OrderTracker.tsx';
 import PublicStore from './components/PublicStore.tsx';
 import ClientPortal from './components/ClientPortal.tsx';
-import { Bell, User as UserIcon, Share2, Menu, ExternalLink } from 'lucide-react';
+import { Bell, User as UserIcon, Share2, Menu, ExternalLink, Link as LinkIcon, Copy } from 'lucide-react';
 import { Order, Product, Client, OrderStatus, OrderType } from './types';
 import { AuthProvider, useAuth } from './contexts/AuthContext.tsx';
 import { clientService } from './services/clientService.ts';
@@ -32,6 +32,7 @@ const AuthenticatedApp: React.FC = () => {
   const [companyName, setCompanyName] = useState('Minha Estamparia');
   const [isApiSettingsOpen, setIsApiSettingsOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isLinksOpen, setIsLinksOpen] = useState(false);
 
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -90,6 +91,13 @@ const AuthenticatedApp: React.FC = () => {
     setActiveView('orders');
   };
 
+  const handleCopyLink = (path: string) => {
+    const fullUrl = `${window.location.origin}${path}`;
+    navigator.clipboard.writeText(fullUrl);
+    alert('Link copiado para a área de transferência!');
+    setIsLinksOpen(false);
+  };
+
   const renderContent = () => {
     switch (activeView) {
       case 'dashboard': return <Dashboard orders={orders} setOrders={setOrders} products={products} />;
@@ -139,14 +147,56 @@ const AuthenticatedApp: React.FC = () => {
             <span className="hidden md:inline text-xs font-black text-slate-100 bg-slate-800 px-4 py-1.5 rounded-full border border-slate-700 shadow-sm uppercase tracking-wider">
               {companyName}
             </span>
-            <a href="/catalogo" target="_blank" className="hidden md:flex text-[10px] font-bold text-indigo-400 hover:text-indigo-300 ml-4 border border-indigo-500/30 px-3 py-1 rounded-lg uppercase tracking-widest items-center gap-2 hover:bg-indigo-500/10 transition-all">
-              <Share2 className="w-3 h-3" /> Catálogo Próprio
-            </a>
-            <a href="/?view=client_portal" target="_blank" className="hidden md:flex text-[10px] font-bold text-emerald-400 hover:text-emerald-300 ml-2 border border-emerald-500/30 px-3 py-1 rounded-lg uppercase tracking-widest items-center gap-2 hover:bg-emerald-500/10 transition-all">
-              <ExternalLink className="w-3 h-3" /> Portal do Cliente
-            </a>
           </div>
+
           <div className="flex items-center gap-4 md:gap-8">
+            <div className="relative">
+              <button
+                onClick={() => setIsLinksOpen(!isLinksOpen)}
+                className="hidden md:flex text-[10px] font-bold text-slate-300 hover:text-white border border-slate-700 bg-slate-800/50 px-4 py-2 rounded-lg uppercase tracking-widest items-center gap-2 hover:bg-slate-700 transition-all shadow-sm"
+              >
+                <LinkIcon className="w-4 h-4 text-indigo-400" /> Links Úteis
+              </button>
+
+              {isLinksOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsLinksOpen(false)}></div>
+                  <div className="absolute top-full mt-2 right-0 w-64 bg-[#0f172a] border border-slate-800 rounded-2xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                    <div className="p-3 border-b border-slate-800/50 bg-slate-900/30">
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Links de Compartilhamento</p>
+                    </div>
+                    <div className="p-2 space-y-1">
+                      <div className="group rounded-xl p-2 hover:bg-indigo-500/10 transition-colors">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-bold text-indigo-400 flex items-center gap-2 uppercase tracking-wider">
+                            <Share2 className="w-3 h-3" /> Catálogo Próprio
+                          </span>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => handleCopyLink('/catalogo')} className="p-1.5 bg-indigo-500/20 rounded hover:bg-indigo-500/40 text-indigo-300" title="Copiar Link"><Copy className="w-3 h-3" /></button>
+                            <a href="/catalogo" target="_blank" className="p-1.5 bg-indigo-500/20 rounded hover:bg-indigo-500/40 text-indigo-300" title="Abrir"><ExternalLink className="w-3 h-3" /></a>
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-slate-500">Loja virtual para clientes fazerem pedidos de uniformes sozinhos.</p>
+                      </div>
+
+                      <div className="group rounded-xl p-2 hover:bg-emerald-500/10 transition-colors">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-bold text-emerald-400 flex items-center gap-2 uppercase tracking-wider">
+                            <ExternalLink className="w-3 h-3" /> Portal do Cliente
+                          </span>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => handleCopyLink('/?view=client_portal')} className="p-1.5 bg-emerald-500/20 rounded hover:bg-emerald-500/40 text-emerald-300" title="Copiar Link"><Copy className="w-3 h-3" /></button>
+                            <a href="/?view=client_portal" target="_blank" className="p-1.5 bg-emerald-500/20 rounded hover:bg-emerald-500/40 text-emerald-300" title="Abrir"><ExternalLink className="w-3 h-3" /></a>
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-slate-500">Rastreamento de pedidos, histórico e contato direto com o suporte.</p>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
             <button
               onClick={() => alert(`Sistema Estamparia.AI Atualizado (v${SYSTEM_VERSION})\n\n${LATEST_RELEASE_NOTES}\n\nObrigado por utilizar nosso sistema!`)}
               className="relative px-3 py-2 text-slate-400 hover:text-indigo-400 transition-all bg-slate-800/30 rounded-xl border border-slate-700/50 group flex items-center gap-3"
