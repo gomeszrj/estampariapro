@@ -27,52 +27,62 @@ const ClientLogin: React.FC<ClientLoginProps> = ({ onLoginSuccess }) => {
             const cleanPhone = phoneNumber.replace(/\D/g, '');
 
             if (cleanPhone.length < 8) {
-                setError('Número de telefone inválido.');
+                setError('Número de telefone inválido. Digite com o DDD.');
                 setLoading(false);
                 return;
             }
 
-            // Buscar o pedido e o cliente associado
-            const { data: orderData, error: orderError } = await supabase
+            // Converter para número para ignorar zeros à esquerda na busca
+            const numForSearch = parseInt(cleanOrderNumber, 10);
+            const searchStr = isNaN(numForSearch) ? cleanOrderNumber : numForSearch.toString();
+
+            // Buscar possíveis pedidos que contenham o número digitado
+            const { data: ordersData, error: orderError } = await supabase
                 .from('orders')
                 .select(`
-          client_id,
-          clients (
-            id,
-            name,
-            phone,
-            whatsapp,
-            document
-          )
-        `)
-                .eq('order_number', cleanOrderNumber)
-                .single();
+                  id,
+                  client_id,
+                  order_number,
+                  clients (
+                    id,
+                    name,
+                    whatsapp,
+                    document
+                  )
+                `)
+                .ilike('order_number', `%${searchStr}%`)
+                .limit(20);
 
-            if (orderError || !orderData || !orderData.clients) {
+            if (orderError || !ordersData || ordersData.length === 0) {
                 setError('Pedido não encontrado. Verifique o número digitado.');
                 setLoading(false);
                 return;
             }
 
-            const client = orderData.clients as any;
-            const dbPhone = (client.phone || '').replace(/\D/g, '');
-            const dbWhatsapp = (client.whatsapp || '').replace(/\D/g, '');
+            // Pegar os últimos 8 dígitos do telefone digitado para uma comparação segura
+            const phoneLast8 = cleanPhone.slice(-8);
 
-            // Check if typed phone matches last 8 digits of stored phone or whatsapp
-            const matchPhone = dbPhone && dbPhone.endsWith(cleanPhone.slice(-8));
-            const matchWhatsapp = dbWhatsapp && dbWhatsapp.endsWith(cleanPhone.slice(-8));
+            // Procurar dentro dos pedidos encontrados qual pertence ao telefone
+            const matchingOrder = ordersData.find(order => {
+                const client = order.clients as any;
+                if (!client) return false;
 
-            if (matchPhone || matchWhatsapp) {
+                const dbWhatsapp = (client.whatsapp || '').replace(/\D/g, '');
+                return dbWhatsapp && dbWhatsapp.endsWith(phoneLast8);
+            });
+
+            if (matchingOrder) {
+                const client = matchingOrder.clients as any;
                 // Sucesso
                 const session = {
                     id: client.id,
                     name: client.name,
-                    phone: client.whatsapp || client.phone || cleanPhone
+                    phone: client.whatsapp || cleanPhone
                 };
                 localStorage.setItem('client_session', JSON.stringify(session));
                 onLoginSuccess(session);
             } else {
-                setError('O telefone informado não confere com o cadastro deste pedido.');
+                setError('O telefone informado não confere com nenhum pedido com este número.');
             }
 
         } catch (err: any) {
