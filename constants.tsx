@@ -2,12 +2,13 @@
 import { Fabric, SizeGrade, OrderStatus } from './types';
 import React from 'react';
 
-// Versioning Rule: Minor versions go 0-9. When reaching .10, increment major version (e.g., 2.9 -> 3.0)
+// Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '17.19';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 17.19:
-- Funcionalidade de Desconto: Adicionado o campo de "Desconto / R$" durante a configuração do pedido. O sistema puxa, subtrai do total e salva diretamente no banco de dados para evitar confusões de pagamento.
-- Layout Mobile (Em Breve): Em preparação para a visualização no celular.`;
+export const SYSTEM_VERSION = '18.0';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 18.0:
+- Funcionalidade de Desconto Adicionada: Desconto funcional na tela de pedidos que salva no banco de dados.
+- Nova Lógica de Versões: O sistema passa a utilizar a regra de dezenas reais (ex: 17.9 -> 18.0).
+- Preparação de Infraestrutura: Iniciando a estrutura para Tela de Login Mobile, Portal do Cliente e Download do APK.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [
