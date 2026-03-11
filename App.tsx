@@ -16,7 +16,7 @@ import { CloudBot } from './components/CloudBot';
 import OrderTracker from './components/OrderTracker.tsx';
 import PublicStore from './components/PublicStore.tsx';
 import ClientPortal from './components/ClientPortal.tsx';
-import { Bell, User as UserIcon, Share2 } from 'lucide-react';
+import { Bell, User as UserIcon, Share2, Menu } from 'lucide-react';
 import { Order, Product, Client, OrderStatus, OrderType } from './types';
 import { AuthProvider, useAuth } from './contexts/AuthContext.tsx';
 import { clientService } from './services/clientService.ts';
@@ -31,6 +31,7 @@ const AuthenticatedApp: React.FC = () => {
   const [activeView, setActiveView] = useState('dashboard');
   const [companyName, setCompanyName] = useState('Minha Estamparia');
   const [isApiSettingsOpen, setIsApiSettingsOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -123,20 +124,26 @@ const AuthenticatedApp: React.FC = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#020617]">
-      <Sidebar activeView={activeView} setActiveView={setActiveView} />
+    <div className="flex min-h-screen bg-[#020617] relative">
+      <Sidebar activeView={activeView} setActiveView={setActiveView} isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
       <main className="flex-1 flex flex-col min-w-0">
-        <header className="h-20 bg-[#0f172a]/40 backdrop-blur-xl border-b border-slate-800/50 flex items-center justify-between px-10 sticky top-0 z-30">
+        <header className="h-20 bg-[#0f172a]/40 backdrop-blur-xl border-b border-slate-800/50 flex items-center justify-between px-4 md:px-10 sticky top-0 z-30">
           <div className="flex items-center gap-3">
-            <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Tenant:</span>
-            <span className="text-xs font-black text-slate-100 bg-slate-800 px-4 py-1.5 rounded-full border border-slate-700 shadow-sm uppercase tracking-wider">
+            <button
+              className="md:hidden text-slate-400 hover:text-white mr-2"
+              onClick={() => setIsSidebarOpen(true)}
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+            <span className="hidden md:inline text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Tenant:</span>
+            <span className="hidden md:inline text-xs font-black text-slate-100 bg-slate-800 px-4 py-1.5 rounded-full border border-slate-700 shadow-sm uppercase tracking-wider">
               {companyName}
             </span>
-            <a href="/catalogo" target="_blank" className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 ml-4 border border-indigo-500/30 px-3 py-1 rounded-lg uppercase tracking-widest flex items-center gap-2 hover:bg-indigo-500/10 transition-all">
-              <Share2 className="w-3 h-3" /> Catálogo Público
+            <a href="/catalogo" target="_blank" className="hidden md:flex text-[10px] font-bold text-indigo-400 hover:text-indigo-300 ml-4 border border-indigo-500/30 px-3 py-1 rounded-lg uppercase tracking-widest items-center gap-2 hover:bg-indigo-500/10 transition-all">
+              <Share2 className="w-3 h-3" /> Catálogo Próprio
             </a>
           </div>
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-4 md:gap-8">
             <button
               onClick={() => alert(`Sistema Estamparia.AI Atualizado (v${SYSTEM_VERSION})\n\n${LATEST_RELEASE_NOTES}\n\nObrigado por utilizar nosso sistema!`)}
               className="relative px-3 py-2 text-slate-400 hover:text-indigo-400 transition-all bg-slate-800/30 rounded-xl border border-slate-700/50 group flex items-center gap-3"
@@ -170,7 +177,7 @@ const AuthenticatedApp: React.FC = () => {
 
         <ApiSettingsModal isOpen={isApiSettingsOpen} onClose={() => setIsApiSettingsOpen(false)} />
 
-        <div className="p-10 max-w-[1600px] mx-auto w-full">
+        <div className="p-4 md:p-10 max-w-[1600px] mx-auto w-full">
           <ErrorBoundary>
             {renderContent()}
           </ErrorBoundary>

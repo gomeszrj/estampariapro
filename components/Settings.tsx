@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Building2, Save, Upload, Globe, Phone, Mail, FileText, Landmark, Camera, CheckCircle2, Users, UserPlus, Trash2, Shield, User, MessageSquare } from 'lucide-react';
+import { Building2, Save, Upload, Globe, Phone, Mail, FileText, Landmark, Camera, CheckCircle2, Users, UserPlus, Trash2, Shield, User, MessageSquare, Download } from 'lucide-react';
 import { teamService } from '../services/teamService';
 import { settingsService, CompanySettings } from '../services/settingsService';
 import { TeamMember, UserRole } from '../types';
@@ -292,6 +292,22 @@ const Settings: React.FC = () => {
                   <p className="text-xs text-slate-500 leading-relaxed font-medium">
                     O logotipo enviado será redimensionado automaticamente para caber nos cabeçalhos da <b>Ordem de Serviço</b> e da <b>Nota Fiscal Eletrônica</b>. Recomendamos o uso de fundo transparente (PNG).
                   </p>
+                </div>
+
+                <div className="bg-[#0f172a] p-8 rounded-[2.5rem] border border-slate-800 shadow-xl space-y-4">
+                  <h4 className="text-slate-100 font-black text-xs uppercase tracking-widest flex items-center gap-3">
+                    <Download className="w-5 h-5 text-indigo-500" /> <span>Aplicativo Mobile</span>
+                  </h4>
+                  <p className="text-xs text-slate-500 leading-relaxed font-medium">
+                    Baixe o aplicativo para Android e gerencie sua estamparia diretamente do celular.
+                  </p>
+                  <a
+                    href="/estamparia-pro.apk"
+                    download
+                    className="mt-4 w-full flex items-center justify-center gap-4 px-5 py-4 rounded-2xl transition-all duration-300 bg-indigo-600 text-white hover:bg-indigo-700 font-black uppercase tracking-widest text-[11px] shadow-lg"
+                  >
+                    <Download className="w-5 h-5" /> Instalar APK
+                  </a>
                 </div>
               </div>
 
