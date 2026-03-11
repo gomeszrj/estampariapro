@@ -55,7 +55,8 @@ export async function parseOrderText(text: string, availableProducts: { id: stri
         # 2️⃣ PADRÃO VISUAL & ESTRUTURA
         - Extract 'teamName' if present (e.g. "Equipe X", Title at top).
         - Extract 'layoutNumber' (e.g. "Layout 502") -> Critical for grouping.
-        - Match 'product' to Available Products.
+        - O campo 'product' DEVE SER EXATAMENTE um dos itens listados em Available Products.
+        - NUNCA invente nomes de produtos. Se o texto original usar outro nome, encontre o correspondente MAIS PRÓXIMO na lista Available Products.
         
         # 3️⃣ REGRAS DE INTERPRETAÇÃO
         - Repetir nomes de acordo com a quantidade (Ex: "2x João" -> João, João).
@@ -142,7 +143,7 @@ export async function parseOrderText(text: string, availableProducts: { id: stri
             # 3️⃣ INTERPRETATION
             - Extract 'teamName' if possible.
             - Extract 'layoutNumber' (e.g. "Layout 502").
-            - Match 'product' to Available Products.
+            - O campo 'product' DEVE SER EXATAMENTE um dos itens listados em Available Products. NUNCA invente nomes.
             - Normalize Grade and Size.
             
             Do not include markdown formatting. Return raw JSON.`
