@@ -242,6 +242,7 @@ const mapOrderFromDB = (dbItem: any): Order => ({
     origin: dbItem.origin, // Mapping origin
     orderType: dbItem.order_type,
     totalValue: dbItem.total_value,
+    discountValue: dbItem.discount_value,
     amountPaid: dbItem.amount_paid,
     createdAt: dbItem.created_at,
     deliveryDate: dbItem.delivery_date,
@@ -263,6 +264,7 @@ const mapOrderToDB = (appItem: Partial<Order>) => {
     if (appItem.origin) dbItem.origin = appItem.origin; // Save origin
     if (appItem.orderType) dbItem.order_type = appItem.orderType;
     if (appItem.totalValue) dbItem.total_value = appItem.totalValue;
+    if (appItem.discountValue !== undefined) dbItem.discount_value = appItem.discountValue;
     if (appItem.amountPaid !== undefined) dbItem.amount_paid = appItem.amountPaid;
     if (appItem.deliveryDate) dbItem.delivery_date = appItem.deliveryDate;
     if (appItem.notes) dbItem.notes = appItem.notes;

@@ -4,10 +4,10 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .10, increment major version (e.g., 2.9 -> 3.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '17.18';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 17.18:
-- Correção na IA: O assistente de importação agora é forçado a cruzar as palavras do seu texto exclusivamente com os Produtos cadastrados no seu sistema, impedindo a criação de produtos "fantasmas" que quebravam o orçamento.
-- Preparação de Infraestrutura: Iniciando a estrutura para a Tela de Login e Portal do Cliente via Telefone.`;
+export const SYSTEM_VERSION = '17.19';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 17.19:
+- Funcionalidade de Desconto: Adicionado o campo de "Desconto / R$" durante a configuração do pedido. O sistema puxa, subtrai do total e salva diretamente no banco de dados para evitar confusões de pagamento.
+- Layout Mobile (Em Breve): Em preparação para a visualização no celular.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [

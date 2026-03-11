@@ -64,6 +64,7 @@ export interface Order {
   orderType: OrderType;
   items: OrderItem[];
   totalValue: number;
+  discountValue?: number; // New: Value of discount applied
   amountPaid?: number; // New: Custom partial payment amount
   createdAt: string;
   deliveryDate: string;
