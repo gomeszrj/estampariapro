@@ -4,12 +4,10 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '18.2';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 18.2:
-- Painel do Cliente e Login Responsivos: Telas adaptadas perfeitamente para celular.
-- Atendimento / Support Chat: Novo modo de solicitar suporte no Login do Cliente que entra direto pro chat com a loja.
-- Links Úteis na Sidebar: Catálogo Próprio e Portal do Cliente movidos para o Menu Lateral para facilitar o compartilhamento.
-- Nome da Empresa Dinâmico: O seu tenant agora aparece customizado com o nome do seu negócio configurado nos Ajustes.`;
+export const SYSTEM_VERSION = '18.3';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 18.3:
+- Correção Crítica (Dashboard): O sistema não trava mais (erro "split") ao tentar carregar a agenda com o novo pedido de chat de suporte sem data de entrega.
+- Ajuste interno do Chat de Suporte para registrar o status corretamente no banco de dados.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [

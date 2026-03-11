@@ -223,7 +223,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) =>
                     }`}>
                     <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${item.deliveryDate === today ? 'text-indigo-200' : 'text-slate-500'}`}>{item.deliveryDate === today ? 'Hoje' : 'Dia'}</span>
                     <span className={`text-2xl font-black ${item.deliveryDate === today ? 'text-white' : 'text-slate-200'}`}>
-                      {item.deliveryDate.split('-')[2]}
+                      {item.deliveryDate ? item.deliveryDate.split('-')[2] : '--'}
                     </span>
                   </div>
                   <div>

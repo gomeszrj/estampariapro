@@ -75,12 +75,13 @@ const ClientLogin: React.FC<ClientLoginProps> = ({ onLoginSuccess }) => {
                         .from('orders')
                         .insert([{
                             client_id: client.id,
-                            client_name: client.name,
+                            client_name: client.name || supportName,
                             order_number: 'SUPORTE',
-                            status: 'store-request',
+                            status: 'solicitacao',
                             origin: 'store',
                             order_type: 'sale',
-                            total_value: 0
+                            total_value: 0,
+                            delivery_date: new Date().toISOString()
                         }])
                         .select()
                         .single();
