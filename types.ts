@@ -60,7 +60,8 @@ export interface Order {
   clientName: string;
   status: OrderStatus;
   paymentStatus?: PaymentStatus;
-  origin?: 'manual' | 'store'; // New: Origin of the order
+  origin?: 'manual' | 'store' | 'support'; // Origin of the order
+  assignedSeller?: string; // Salesperson handling the chat
   orderType: OrderType;
   items: OrderItem[];
   totalValue: number;
@@ -71,6 +72,7 @@ export interface Order {
   notes?: string;
   internalNotes?: string;
   delayReason?: string;
+  layoutUrl?: string; // New: Image url for approved layout
   fiscalKey?: string; // Simulated NFe Access Key
   clientTeam?: string; // Turma/Time (from Store)
 }

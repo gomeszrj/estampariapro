@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { Package, Clock, CheckCircle, Truck, Search, ArrowRight, ShoppingCart } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { Package, Clock, CheckCircle, Truck, Search, ArrowRight, ShoppingCart, MessageCircle, Send } from 'lucide-react';
 import { orderService } from '../services/orderService';
-import { Order, OrderStatus } from '../types';
+import { supabase } from '../services/supabase';
+import { Order, OrderStatus, OrderMessage } from '../types';
 
 interface OrderTrackerProps {
     orderId?: string;
@@ -14,17 +15,43 @@ const OrderTracker: React.FC<OrderTrackerProps> = ({ orderId, onBack }) => {
     const [searchCode, setSearchCode] = useState('');
     const [error, setError] = useState('');
 
-    // Status Steps Configuration
-    const steps = [
-        { id: OrderStatus.RECEIVED, label: 'Recebido', icon: Package, description: 'Pedido confirmado e ordem de serviço gerada.' },
-        { id: OrderStatus.FINALIZATION, label: 'Arte & Preparação', icon: Search, description: 'Preparação de artefinal, telas e matrizes.' },
-        { id: OrderStatus.IN_PRODUCTION, label: 'Em Produção', icon: Clock, description: 'Estamparia e acabamento em andamento.' },
-        { id: OrderStatus.FINISHED, label: 'Pronto / Entregue', icon: CheckCircle, description: 'Pedido finalizado e disponível para retirada.' }
-    ];
+    // Chat State
+    const [messages, setMessages] = useState<OrderMessage[]>([]);
+    const [loadingMessages, setLoadingMessages] = useState(false);
+    const [newMessage, setNewMessage] = useState('');
+    const [sending, setSending] = useState(false);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    const getStepStatus = (stepId: OrderStatus, currentStatus: OrderStatus) => {
-        const stepIndex = steps.findIndex(s => s.id === stepId);
-        const currentIndex = steps.findIndex(s => s.id === currentStatus);
+    const getDetailedSteps = (orderOrigin?: string) => {
+        const baseSteps = [
+            { id: OrderStatus.RECEIVED, label: 'Recebido', icon: Package, description: 'Pedido confirmado e ordem de serviço gerada.' },
+            { id: OrderStatus.FINALIZATION, label: 'Arte & Preparação', icon: Search, description: 'Preparação de artefinal, telas e matrizes.' },
+            { id: OrderStatus.IN_PRODUCTION, label: 'Em Produção', icon: Clock, description: 'Estamparia e acabamento em andamento.' },
+            { id: OrderStatus.FINISHED, label: 'Pronto / Entregue', icon: CheckCircle, description: 'Pedido finalizado e disponível para retirada.' }
+        ];
+
+        if (orderOrigin === 'store' || orderOrigin === 'support') {
+            return [
+                { id: 'solicitacao' as any, label: 'Contato Incial', icon: ShoppingCart, description: 'Solicitação ou contato de suporte inicial.' },
+                { id: OrderStatus.STORE_REQUEST, label: 'Solicitação na Loja', icon: ShoppingCart, description: 'Pedido efetuado na Loja Virtual.' },
+                { id: OrderStatus.STORE_CONFERENCE, label: 'Em Conferência', icon: Search, description: 'Nossa equipe está conferindo itens e pagamento.' },
+                { id: OrderStatus.STORE_CHECKED, label: 'Conferido', icon: CheckCircle, description: 'Pedido conferido, aguardando início da produção.' },
+                ...baseSteps
+            ];
+        }
+
+        return baseSteps;
+    };
+
+    const getStepStatus = (stepId: OrderStatus | string, currentStatus: OrderStatus, orderOrigin?: string) => {
+        const activeSteps = getDetailedSteps(orderOrigin);
+
+        // Handle "solicitacao" as an equivalent alias to STORE_REQUEST in terms of timeline for leads
+        let effectiveCurrent = currentStatus as string;
+        if (effectiveCurrent === 'solicitacao' && (stepId === OrderStatus.STORE_REQUEST || stepId === 'solicitacao')) return 'current';
+
+        const stepIndex = activeSteps.findIndex(s => s.id === stepId);
+        const currentIndex = activeSteps.findIndex(s => s.id === currentStatus);
 
         if (stepIndex < currentIndex) return 'completed';
         if (stepIndex === currentIndex) return 'current';
@@ -52,12 +79,74 @@ const OrderTracker: React.FC<OrderTrackerProps> = ({ orderId, onBack }) => {
             }
 
             setOrder(data);
+            if (data) loadMessages(data.id);
         } catch (e) {
             console.error(e);
             setError('Pedido não encontrado. Verifique o código e tente novamente.');
             setOrder(null);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadMessages = async (id: string) => {
+        setLoadingMessages(true);
+        try {
+            const msgs = await orderService.getMessages(id);
+            setMessages(msgs);
+        } catch (error) {
+            console.error('Error loading tracker messages:', error);
+        } finally {
+            setLoadingMessages(false);
+        }
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    useEffect(() => {
+        if (order?.id) {
+            // Realtime Subscription
+            const channel = supabase
+                .channel(`tracker_chat_${order.id}`)
+                .on(
+                    'postgres_changes',
+                    { event: 'INSERT', schema: 'public', table: 'order_messages', filter: `order_id=eq.${order.id}` },
+                    (payload) => {
+                        const newMsg = payload.new as OrderMessage;
+                        setMessages(prev => {
+                            if (prev.find(m => m.id === newMsg.id)) return prev;
+                            return [...prev, newMsg];
+                        });
+                    }
+                )
+                .subscribe();
+
+            return () => {
+                supabase.removeChannel(channel);
+            };
+        }
+    }, [order?.id]);
+
+    const sendMessage = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newMessage.trim() || !order) return;
+
+        setSending(true);
+        try {
+            const msg = await orderService.sendMessage(order.id, 'client', newMessage.trim());
+            setMessages(prev => [...prev, msg]);
+            setNewMessage('');
+        } catch (err) {
+            console.error(err);
+            alert('Falha ao enviar mensagem.');
+        } finally {
+            setSending(false);
         }
     };
 
@@ -149,43 +238,56 @@ const OrderTracker: React.FC<OrderTrackerProps> = ({ orderId, onBack }) => {
 
                     {/* Timeline */}
                     <div className="relative mb-16 px-4 animate-in fade-in duration-1000 delay-200">
-                        {/* Connecting Line */}
-                        <div className="absolute left-8 top-8 bottom-8 w-1 bg-slate-800 rounded-full md:left-0 md:right-0 md:top-6 md:h-1 md:w-full md:bottom-auto"></div>
-                        {/* Progress Line */}
-                        <div
-                            className="absolute left-8 top-8 w-1 bg-indigo-500 rounded-full transition-all duration-1000 md:left-0 md:top-6 md:h-1 md:w-0 md:bottom-auto shadow-[0_0_15px_rgba(99,102,241,0.6)]"
-                            style={{
-                                height: window.innerWidth < 768 ? `${(steps.findIndex(s => s.id === order.status) / (steps.length - 1)) * 100}%` : '4px',
-                                width: window.innerWidth >= 768 ? `${(steps.findIndex(s => s.id === order.status) / (steps.length - 1)) * 100}%` : '4px'
-                            }}
-                        ></div>
+                        {(() => {
+                            const activeSteps = getDetailedSteps(order.origin);
+                            let effectiveStatus = order.status as string;
+                            if (effectiveStatus === 'solicitacao') effectiveStatus = OrderStatus.STORE_REQUEST;
 
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative">
-                            {steps.map((step, idx) => {
-                                const status = getStepStatus(step.id, order.status);
-                                const isCurrent = status === 'current';
-                                const isCompleted = status === 'completed';
+                            const stepProgressIndex = Math.max(0, activeSteps.findIndex(s => s.id === effectiveStatus));
+                            const progressPercent = (stepProgressIndex / Math.max(1, activeSteps.length - 1)) * 100;
 
-                                return (
-                                    <div key={step.id} className="flex md:flex-col items-start md:items-center md:text-center gap-4 group">
-                                        <div className={`w-12 h-12 rounded-full border-4 relative z-10 flex items-center justify-center transition-all duration-500 ${isCompleted ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-600/50' :
-                                                isCurrent ? 'bg-[#020617] border-indigo-500 text-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.4)] scale-110' :
-                                                    'bg-[#020617] border-slate-800 text-slate-700'
-                                            }`}>
-                                            <step.icon className="w-5 h-5" />
-                                        </div>
-                                        <div className="pt-1 md:pt-4">
-                                            <h3 className={`font-black uppercase tracking-wider text-sm ${isCurrent ? 'text-white' : isCompleted ? 'text-indigo-200' : 'text-slate-600'}`}>
-                                                {step.label}
-                                            </h3>
-                                            <p className="text-[10px] text-slate-500 font-medium mt-1 leading-relaxed max-w-[150px] mx-auto hidden md:block">
-                                                {step.description}
-                                            </p>
-                                        </div>
+                            return (
+                                <>
+                                    {/* Connecting Line */}
+                                    <div className="absolute left-8 top-8 bottom-8 w-1 bg-slate-800 rounded-full md:left-0 md:right-0 md:top-6 md:h-1 md:w-full md:bottom-auto"></div>
+                                    {/* Progress Line */}
+                                    <div
+                                        className="absolute left-8 top-8 w-1 bg-indigo-500 rounded-full transition-all duration-1000 md:left-0 md:top-6 md:h-1 md:w-0 md:bottom-auto shadow-[0_0_15px_rgba(99,102,241,0.6)]"
+                                        style={{
+                                            height: window.innerWidth < 768 ? `${progressPercent}%` : '4px',
+                                            width: window.innerWidth >= 768 ? `${progressPercent}%` : '4px'
+                                        }}
+                                    ></div>
+
+                                    <div className={`grid grid-cols-1 md:grid-cols-${activeSteps.length} gap-4 md:gap-2 relative`}>
+                                        {activeSteps.map((step, idx) => {
+                                            const status = getStepStatus(step.id, order.status, order.origin);
+                                            const isCurrent = status === 'current';
+                                            const isCompleted = status === 'completed';
+
+                                            return (
+                                                <div key={step.id} className="flex md:flex-col items-start md:items-center md:text-center gap-4 group">
+                                                    <div className={`w-12 h-12 rounded-full border-4 relative z-10 flex items-center justify-center transition-all duration-500 shrink-0 ${isCompleted ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-600/50' :
+                                                        isCurrent ? 'bg-[#020617] border-indigo-500 text-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.4)] scale-110' :
+                                                            'bg-[#020617] border-slate-800 text-slate-700'
+                                                        }`}>
+                                                        <step.icon className="w-5 h-5" />
+                                                    </div>
+                                                    <div className="pt-1 md:pt-4">
+                                                        <h3 className={`font-black uppercase tracking-widest text-[10px] md:text-xs ${isCurrent ? 'text-white' : isCompleted ? 'text-indigo-200' : 'text-slate-600'}`}>
+                                                            {step.label}
+                                                        </h3>
+                                                        <p className="text-[9px] text-slate-500 font-medium mt-1 leading-relaxed max-w-[120px] mx-auto hidden md:block">
+                                                            {step.description}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
                                     </div>
-                                )
-                            })}
-                        </div>
+                                </>
+                            );
+                        })()}
                     </div>
 
                     {/* Order Details Grid */}
@@ -225,6 +327,77 @@ const OrderTracker: React.FC<OrderTrackerProps> = ({ orderId, onBack }) => {
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Chat Section */}
+                    <div className="mt-8 bg-[#0f172a] rounded-[2rem] border border-slate-800 shadow-xl overflow-hidden animate-in slide-in-from-bottom-8 duration-700 delay-500">
+                        <div className="p-6 md:p-8 border-b border-slate-800 flex items-center gap-3">
+                            <div className="w-12 h-12 bg-indigo-600/20 rounded-xl flex items-center justify-center">
+                                <MessageCircle className="w-6 h-6 text-indigo-400" />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-black text-white uppercase tracking-tighter">Atendimento</h2>
+                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Fale diretamente com nossa equipe</p>
+                            </div>
+                        </div>
+
+                        <div className="h-[400px] flex flex-col">
+                            {/* Messages List */}
+                            <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-4 bg-slate-900/50">
+                                {loadingMessages ? (
+                                    <div className="h-full flex items-center justify-center">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
+                                    </div>
+                                ) : messages.length === 0 ? (
+                                    <div className="h-full flex flex-col items-center justify-center text-slate-500 gap-4 opacity-70">
+                                        <MessageCircle className="w-12 h-12" />
+                                        <p className="text-sm font-medium text-center">Nenhuma mensagem ainda.<br />Envie sua dúvida abaixo.</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="text-center pb-6 mb-2">
+                                            <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest bg-slate-800/50 inline-block px-4 py-1.5 rounded-full">
+                                                Início do Atendimento
+                                            </p>
+                                        </div>
+                                        {messages.map((msg) => {
+                                            const isClient = msg.sender === 'client';
+                                            return (
+                                                <div key={msg.id} className={`flex ${isClient ? 'justify-end' : 'justify-start'}`}>
+                                                    <div className={`max-w-[85%] rounded-2xl p-4 ${isClient ? 'bg-indigo-600 text-white rounded-tr-sm shadow-md shadow-indigo-600/20' : 'bg-[#1e293b] text-slate-200 border border-slate-800 rounded-tl-sm shadow-sm'}`}>
+                                                        <p className="text-sm font-medium leading-relaxed">{msg.message}</p>
+                                                        <p className={`text-[9px] font-black mt-2 tracking-widest ${isClient ? 'text-indigo-200' : 'text-slate-500'} text-right`}>
+                                                            {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                        <div ref={messagesEndRef} />
+                                    </>
+                                )}
+                            </div>
+
+                            {/* Chat Input */}
+                            <div className="p-4 md:p-6 bg-[#0f172a] border-t border-slate-800">
+                                <form onSubmit={sendMessage} className="relative">
+                                    <input
+                                        type="text"
+                                        value={newMessage}
+                                        onChange={(e) => setNewMessage(e.target.value)}
+                                        placeholder="Digite sua mensagem para a equipe..."
+                                        className="w-full bg-slate-950 border border-slate-700/50 rounded-2xl py-4 flex-1 pl-5 pr-16 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-sm font-medium shadow-inner"
+                                    />
+                                    <button
+                                        type="submit"
+                                        disabled={sending || !newMessage.trim()}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 w-12 h-12 bg-indigo-600 hover:bg-indigo-500 rounded-xl flex items-center justify-center text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-600/30 active:scale-95"
+                                    >
+                                        <Send className="w-5 h-5 ml-1" />
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>

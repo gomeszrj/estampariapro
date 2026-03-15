@@ -5,6 +5,8 @@ import { supabase } from '../services/supabase';
 import { OrderMessage } from '../types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { teamService } from '../services/teamService';
+import { TeamMember } from '../types';
 
 interface ChatSession {
     orderId: string;
@@ -15,6 +17,8 @@ interface ChatSession {
     lastMessageAt: string;
     lastSender: string;
     unread: number;
+    origin?: string;
+    assignedSeller?: string;
 }
 
 const Chats: React.FC = () => {
@@ -28,14 +32,26 @@ const Chats: React.FC = () => {
     const [newMessage, setNewMessage] = useState('');
     const [isSending, setIsSending] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+    const [activeTab, setActiveTab] = useState<'all' | 'leads' | 'clients'>('all');
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         loadSessions();
+        loadTeam();
         const interval = setInterval(loadSessions, 15000); // Poll every 15s to update list
         return () => clearInterval(interval);
     }, []);
+
+    const loadTeam = async () => {
+        try {
+            const members = await teamService.getAll();
+            setTeamMembers(members);
+        } catch (error) {
+            console.error('Error loading team members:', error);
+        }
+    };
 
     useEffect(() => {
         if (activeSessionId) {
@@ -134,14 +150,30 @@ const Chats: React.FC = () => {
         }
     };
 
+    const handleAssign = async (sellerId: string) => {
+        if (!activeSessionId) return;
+        try {
+            await orderService.update(activeSessionId, { assignedSeller: sellerId });
+            setSessions(prev => prev.map(s => s.orderId === activeSessionId ? { ...s, assignedSeller: sellerId } : s));
+        } catch (e) {
+            console.error(e);
+            alert('Erro ao atribuir vendedor');
+        }
+    };
+
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
-    const filteredSessions = sessions.filter(session =>
-        session.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        session.orderNumber?.includes(searchTerm)
-    );
+    const filteredSessions = sessions.filter(session => {
+        const matchesSearch = session.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            session.orderNumber?.includes(searchTerm);
+        if (!matchesSearch) return false;
+
+        if (activeTab === 'leads') return session.origin === 'support';
+        if (activeTab === 'clients') return session.origin !== 'support';
+        return true;
+    });
 
     const activeSession = sessions.find(s => s.orderId === activeSessionId);
 
@@ -164,6 +196,20 @@ const Chats: React.FC = () => {
                             onChange={e => setSearchTerm(e.target.value)}
                             className="w-full bg-[#1e293b] border border-slate-700/50 rounded-xl py-2 pl-9 pr-4 text-slate-200 text-sm focus:ring-1 focus:ring-indigo-500 focus:outline-none"
                         />
+                    </div>
+                    <div className="flex bg-slate-900/50 rounded-lg p-1 mt-4 gap-1">
+                        <button
+                            onClick={() => setActiveTab('all')}
+                            className={`flex-1 text-[10px] font-bold py-1.5 rounded-md transition-all uppercase tracking-wider ${activeTab === 'all' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
+                        >Todos</button>
+                        <button
+                            onClick={() => setActiveTab('leads')}
+                            className={`flex-1 text-[10px] font-bold py-1.5 rounded-md transition-all uppercase tracking-wider ${activeTab === 'leads' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
+                        >Leads</button>
+                        <button
+                            onClick={() => setActiveTab('clients')}
+                            className={`flex-1 text-[10px] font-bold py-1.5 rounded-md transition-all uppercase tracking-wider ${activeTab === 'clients' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
+                        >Clientes</button>
                     </div>
                 </div>
 
@@ -223,9 +269,22 @@ const Chats: React.FC = () => {
                                 <div>
                                     <h3 className="text-sm font-bold text-slate-100">{activeSession.clientName}</h3>
                                     <p className="text-[10px] text-indigo-400 uppercase tracking-widest font-black">
-                                        Pedido #{activeSession.orderNumber}
+                                        {activeSession.origin === 'support' ? 'Lead / Suporte' : `Pedido #${activeSession.orderNumber}`}
                                     </p>
                                 </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Responsável:</span>
+                                <select
+                                    value={activeSession.assignedSeller || ''}
+                                    onChange={e => handleAssign(e.target.value)}
+                                    className="bg-slate-900 border border-slate-700 text-slate-200 text-xs font-bold rounded-lg px-3 py-1.5 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                                >
+                                    <option value="">Não Atribuído</option>
+                                    {teamMembers.map(m => (
+                                        <option key={m.id} value={m.name}>{m.name}</option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
 

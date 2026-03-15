@@ -103,7 +103,9 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
   const [customAmountPaid, setCustomAmountPaid] = useState<number | string>(''); // For UI input
   const [discountValue, setDiscountValue] = useState<number | string>(''); // For UI input
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
+  const [isPartialEditMode, setIsPartialEditMode] = useState(false);
   const [newOrderBriefing, setNewOrderBriefing] = useState('');
+  const [layoutUrl, setLayoutUrl] = useState<string>('');
 
   // Chat State
   const [chatOrder, setChatOrder] = useState<Order | null>(null);
@@ -366,10 +368,9 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
   };
 
   const handleEditClick = (order: Order) => {
-    if (!canEditOrder(order.status)) {
-      alert("Este pedido já está em produção ou finalizado e não pode mais ser editado.");
-      return;
-    }
+    const isPartial = !canEditOrder(order.status);
+    setIsPartialEditMode(isPartial);
+
     setEditingOrderId(order.id);
     setClientName(order.clientName);
     setDeliveryDate(order.deliveryDate);
@@ -388,8 +389,47 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
     // Set Custom Amount if exists
     setCustomAmountPaid(order.amountPaid ? order.amountPaid : '');
     setDiscountValue(order.discountValue || '');
+    setLayoutUrl(order.layoutUrl || '');
 
     setIsAdding(true);
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const max_size = 800;
+
+        if (width > height) {
+          if (width > max_size) {
+            height *= max_size / width;
+            width = max_size;
+          }
+        } else {
+          if (height > max_size) {
+            width *= max_size / height;
+            height = max_size;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        setLayoutUrl(dataUrl);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleAddNew = () => {
@@ -434,6 +474,8 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
     setCustomAmountPaid('');
     setDiscountValue('');
     setNewOrderBriefing('');
+    setLayoutUrl('');
+    setIsPartialEditMode(false);
   };
 
   const handleDelete = async (id: string) => {
@@ -480,6 +522,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
         briefing: editingOrderId ? undefined : newOrderBriefing,
         internalNotes: internalNotes,
         delayReason: delayReason,
+        layoutUrl: layoutUrl,
         items: parsedItems.map(item => {
           const prod = productsByName.get((item.product || '').trim().toLowerCase());
           return {
@@ -523,7 +566,8 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
           paymentStatus,
           clientId: clientIdToUse,
           amountPaid: orderData.amountPaid,
-          items: orderData.items
+          items: orderData.items,
+          layoutUrl: layoutUrl
         });
       } else {
         await orderService.create({
@@ -640,12 +684,14 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                         className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg transition-colors ${activeTab === 'details' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'text-slate-500 hover:text-slate-300'}`}
                       >Detalhes</button>
                       <button
-                        onClick={() => setActiveTab('items')}
-                        className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg transition-colors ${activeTab === 'items' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'text-slate-500 hover:text-slate-300'}`}
+                        onClick={() => !isPartialEditMode && setActiveTab('items')}
+                        className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg transition-colors ${activeTab === 'items' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'text-slate-500 hover:text-slate-300'} ${isPartialEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        title={isPartialEditMode ? "Itens não podem ser editados em produção" : ""}
                       >Itens</button>
                       <button
-                        onClick={() => setActiveTab('briefing')}
-                        className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg transition-colors flex items-center gap-1 ${activeTab === 'briefing' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'text-slate-500 hover:text-slate-300'}`}
+                        onClick={() => !isPartialEditMode && setActiveTab('briefing')}
+                        className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg transition-colors flex items-center gap-1 ${activeTab === 'briefing' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'text-slate-500 hover:text-slate-300'} ${isPartialEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        title={isPartialEditMode ? "Briefing bloqueado em produção" : ""}
                       >
                         <Bot className="w-3 h-3" /> Briefing IA
                       </button>
@@ -664,8 +710,19 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
               {activeTab === 'details' && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in slide-in-from-left-4 duration-300">
                   <div className="space-y-6">
+                    {/* Partial Edit Warning Banner */}
+                    {isPartialEditMode && (
+                      <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex items-start gap-3">
+                        <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-xs font-black text-amber-400 uppercase tracking-widest mb-1">Pedido em Produção</p>
+                          <p className="text-[10px] text-amber-500/80 font-medium">Apenas o prazo de entrega e observações internas podem ser alterados para preservar a integridade do histórico financeiro e estoque.</p>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Order Type & Payment Status Logic moved here for cleaner UI */}
-                    <div className="bg-slate-950 p-6 rounded-3xl border border-slate-800 space-y-6">
+                    <div className={`bg-slate-950 p-6 rounded-3xl border border-slate-800 space-y-6 ${isPartialEditMode ? 'opacity-60 pointer-events-none' : ''}`}>
                       <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Configuração do Pedido</h4>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -714,6 +771,27 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                       </div>
                     </div>
 
+                    {/* Layout Image */}
+                    <div className="bg-slate-950 p-6 rounded-3xl border border-slate-800">
+                      <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Layout Aprovado</h4>
+                      <div className="flex flex-col md:flex-row gap-6 items-center">
+                        <div className="flex-1 w-full relative">
+                          <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" id="layout-upload" />
+                          <label htmlFor="layout-upload" className="flex items-center justify-center gap-2 w-full py-4 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-indigo-500 rounded-2xl cursor-pointer transition-all text-xs font-bold text-slate-400 uppercase tracking-widest">
+                            <Plus className="w-4 h-4" /> Adicionar / Alterar Imagem
+                          </label>
+                        </div>
+                        {layoutUrl && (
+                          <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-slate-700 bg-slate-900 shrink-0 relative group">
+                            <img src={layoutUrl} alt="Layout" className="w-full h-full object-cover" />
+                            <button onClick={(e) => { e.preventDefault(); setLayoutUrl(''); }} className="absolute inset-0 bg-red-500/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white" title="Remover imagem">
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
                     {/* Client & Date */}
                     <div className="space-y-4">
                       <div className="relative group">
@@ -724,8 +802,9 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                           list="client-options"
                           placeholder="Nome do Cliente"
                           value={clientName}
+                          disabled={isPartialEditMode}
                           onChange={(e) => setClientName(e.target.value)}
-                          className={`w-full pl-12 pr-4 py-4 bg-slate-950 border rounded-2xl text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold transition-all ${!clientName ? 'border-rose-900/50 shadow-[0_0_15px_rgba(244,63,94,0.1)]' : 'border-slate-800'}`}
+                          className={`w-full pl-12 pr-4 py-4 bg-slate-950 border rounded-2xl text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold transition-all ${!clientName ? 'border-rose-900/50 shadow-[0_0_15px_rgba(244,63,94,0.1)]' : 'border-slate-800'} ${isPartialEditMode ? 'opacity-60 cursor-not-allowed' : ''}`}
                         />
                         <datalist id="client-options">
                           {(clients || []).map(client => (
@@ -983,247 +1062,240 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
               />
             </div>
           </div>
-          <div className="overflow-x-auto scrollbar-hide">
-            <table className="w-full text-left">
-              <thead className="bg-slate-900/50 text-slate-600 text-[10px] uppercase font-black tracking-[0.4em]">
-                <tr>
-                  <th className="px-10 py-8">Nº Registro</th>
-                  <th className="px-10 py-8">Modalidade</th>
-                  <th className="px-10 py-8">Pgto</th>
-                  <th className="px-10 py-8">Cliente</th>
-                  <th className="px-10 py-8">Status Produção</th>
-                  <th className="px-10 py-8">Custo Est.</th>
-                  <th className="px-10 py-8">Lucro Real</th>
-                  <th className="px-10 py-8">Valor Bruto</th>
-                  <th className="px-10 py-8 text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800">
-                {contextOrders.map((order) => {
-                  const editable = canEditOrder(order.status);
-                  // Calculate Cost and Profit on the fly based on current products
-                  const estimatedCost = (order.items || []).reduce((acc, item) => {
-                    const prod = products.find(p => p.id === item.productId);
-                    return acc + (item.quantity * (prod?.costPrice || 0));
-                  }, 0);
-                  const realProfit = order.totalValue - estimatedCost;
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {contextOrders.map((order) => {
+              const editable = canEditOrder(order.status);
+              const estimatedCost = (order.items || []).reduce((acc, item) => {
+                const prod = products.find(p => p.id === item.productId);
+                return acc + (item.quantity * (prod?.costPrice || 0));
+              }, 0);
+              const realProfit = order.totalValue - estimatedCost;
 
-                  return (
-                    <tr key={order.id} className="hover:bg-indigo-500/5 transition-all group">
-                      <td className="px-10 py-8">
-                        <span className="font-black text-slate-500">#{order.orderNumber}</span>
-                      </td>
-                      <td className="px-10 py-8">
-                        <span className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border ${order.orderType === OrderType.SALE ? 'bg-emerald-900/20 border-emerald-900/40 text-emerald-400' : 'bg-amber-900/20 border-amber-900/40 text-amber-400'}`}>
+              return (
+                <div key={order.id} className="bg-slate-900/50 rounded-3xl border border-slate-800 p-6 flex flex-col hover:border-indigo-500/30 transition-all group">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <div className="flex items-center gap-3 mb-1">
+                        <span className="font-black text-slate-400">#{order.orderNumber}</span>
+                        <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border ${order.orderType === OrderType.SALE ? 'bg-emerald-900/20 border-emerald-900/40 text-emerald-400' : 'bg-amber-900/20 border-amber-900/40 text-amber-400'}`}>
                           {order.orderType === OrderType.SALE ? 'Venda' : 'Orçamento'}
                         </span>
-                      </td>
-                      <td className="px-10 py-8">
-                        <span className={`px-3 py-1 rounded text-[8px] font-black uppercase tracking-widest border ${!order.paymentStatus || order.paymentStatus === PaymentStatus.PENDING ? 'bg-slate-800 border-slate-700 text-slate-400' :
+                      </div>
+                      <h4 className="font-black text-slate-100 text-lg truncate pr-2" title={order.clientName}>{order.clientName}</h4>
+                      <div className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1 flex items-center gap-1">
+                        <Calendar className="w-3 h-3" /> {new Date(order.createdAt).toLocaleDateString('pt-BR')}
+                      </div>
+                    </div>
+                    <span className={`px-3 py-1.5 rounded-xl text-[8px] font-black uppercase border tracking-widest whitespace-nowrap ${STATUS_CONFIG[order.status]?.color}`}>
+                      {STATUS_CONFIG[order.status]?.label}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mb-6 bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50 flex-1">
+                    <div>
+                      <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest mb-1">Valor Bruto</p>
+                      <p className="font-black text-indigo-400 text-lg">R$ {order.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
+                    <div>
+                      <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest mb-1">Pgto</p>
+                      <div>
+                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider border ${!order.paymentStatus || order.paymentStatus === PaymentStatus.PENDING ? 'bg-slate-800 border-slate-700 text-slate-400' :
                           order.paymentStatus === 'Sinal (50%)' || order.paymentStatus === 'Sinal / Parcial' ? 'bg-indigo-900/20 border-indigo-900/40 text-indigo-400' :
                             'bg-emerald-900/20 border-emerald-900/40 text-emerald-400'
                           }`}>
                           {order.paymentStatus || 'PENDENTE'}
                         </span>
                         {order.amountPaid && order.amountPaid > 0 && order.paymentStatus !== PaymentStatus.FULL && (
-                          <div className="mt-1 text-[9px] text-slate-500 font-mono">
+                          <p className="mt-1 text-[8px] text-slate-500 font-mono">
                             PG: R$ {order.amountPaid.toLocaleString('pt-BR')}
-                          </div>
+                          </p>
                         )}
-                      </td>
-                      <td className="px-10 py-8">
-                        <div className="font-black text-slate-100 text-lg">{order.clientName}</div>
-                        <div className="text-[10px] text-slate-600 font-bold uppercase tracking-widest mt-1 flex items-center gap-2">
-                          <Calendar className="w-3 h-3" /> {new Date(order.createdAt).toLocaleDateString('pt-BR')}
-                        </div>
-                      </td>
-                      <td className="px-10 py-8">
-                        <span className={`px-3.5 py-2 rounded-xl text-[9px] font-black uppercase border tracking-widest ${STATUS_CONFIG[order.status]?.color}`}>
-                          {STATUS_CONFIG[order.status]?.label}
-                        </span>
-                      </td>
-                      <td className="px-10 py-8 font-bold text-slate-500 text-sm">R$ {estimatedCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                      <td className="px-10 py-8 font-bold text-emerald-500 text-sm">R$ {realProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                      <td className="px-10 py-8 font-black text-indigo-400 text-2xl tracking-tighter">R$ {order.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                      <td className="px-10 py-8 text-right">
-                        <div className="flex justify-end gap-3 opacity-20 group-hover:opacity-100 transition-all">
-                          {activeContext === 'store' ? (
-                            <>
-                              {order.status === OrderStatus.STORE_REQUEST && (
-                                <button
-                                  onClick={async (e) => {
-                                    e.stopPropagation();
-                                    if (!confirm('Iniciar conferência deste pedido?')) return;
-                                    try {
-                                      const newStatus = OrderStatus.STORE_CONFERENCE;
-                                      await orderService.update(order.id, { status: newStatus });
-                                      setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: newStatus } : o));
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest mb-1">Custo Est.</p>
+                      <p className="font-bold text-slate-400 text-xs">R$ {estimatedCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
+                    <div>
+                      <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest mb-1">Lucro Real</p>
+                      <p className="font-bold text-emerald-500 text-xs">R$ {realProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
+                  </div>
 
-                                      const client = clientsByName.get((order.clientName || '').toLowerCase());
-                                      if (client?.whatsapp) {
-                                        const msg = getStatusUpdateMessage(order, newStatus);
-                                        window.open(getWhatsAppLink(client.whatsapp, msg), '_blank');
-                                      }
-                                    } catch (err) { console.error(err); alert('Erro ao atualizar status'); }
-                                  }}
-                                  className="text-slate-500 hover:text-violet-400 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"
-                                  title="Iniciar Conferência"
-                                >
-                                  <ClipboardList className="w-5 h-5" />
-                                </button>
-                              )}
-                              {order.status === OrderStatus.STORE_CONFERENCE && (
-                                <button
-                                  onClick={async (e) => {
-                                    e.stopPropagation();
-                                    if (!confirm('Finalizar conferência e aguardar aprovação?')) return;
-                                    try {
-                                      const newStatus = OrderStatus.STORE_CHECKED;
-                                      await orderService.update(order.id, { status: newStatus });
-                                      setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: newStatus } : o));
+                  {/* Actions Grid */}
+                  <div className="flex flex-wrap gap-2 pt-4 border-t border-slate-800/50">
+                    {activeContext === 'store' ? (
+                      <>
+                        {order.status === OrderStatus.STORE_REQUEST && (
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (!confirm('Iniciar conferência deste pedido?')) return;
+                              try {
+                                const newStatus = OrderStatus.STORE_CONFERENCE;
+                                await orderService.update(order.id, { status: newStatus });
+                                setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: newStatus } : o));
 
-                                      const client = clientsByName.get((order.clientName || '').toLowerCase());
-                                      if (client?.whatsapp) {
-                                        const msg = getStatusUpdateMessage(order, newStatus);
-                                        window.open(getWhatsAppLink(client.whatsapp, msg), '_blank');
-                                      }
-                                    } catch (err) { console.error(err); alert('Erro ao atualizar status'); }
-                                  }}
-                                  className="text-slate-500 hover:text-teal-400 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"
-                                  title="Finalizar Conferência"
-                                >
-                                  <ThumbsUp className="w-5 h-5" />
-                                </button>
-                              )}
-                              {order.status === OrderStatus.STORE_CHECKED && (
-                                <button
-                                  onClick={async (e) => {
-                                    e.stopPropagation();
-                                    if (!confirm('Confirmar pedido e mover para Produção?')) return;
-                                    try {
-                                      const newStatus = OrderStatus.RECEIVED;
-                                      await orderService.update(order.id, { status: newStatus });
-                                      setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: newStatus } : o));
+                                const client = clientsByName.get((order.clientName || '').toLowerCase());
+                                if (client?.whatsapp) {
+                                  const msg = getStatusUpdateMessage(order, newStatus);
+                                  window.open(getWhatsAppLink(client.whatsapp, msg), '_blank');
+                                }
+                              } catch (err) { console.error(err); alert('Erro ao atualizar status'); }
+                            }}
+                            className="flex-1 text-slate-400 hover:text-violet-400 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all flex justify-center items-center"
+                            title="Iniciar Conferência"
+                          >
+                            <ClipboardList className="w-4 h-4" />
+                          </button>
+                        )}
+                        {order.status === OrderStatus.STORE_CONFERENCE && (
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (!confirm('Finalizar conferência e aguardar aprovação?')) return;
+                              try {
+                                const newStatus = OrderStatus.STORE_CHECKED;
+                                await orderService.update(order.id, { status: newStatus });
+                                setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: newStatus } : o));
 
-                                      const client = clientsByName.get((order.clientName || '').toLowerCase());
-                                      if (client?.whatsapp) {
-                                        const msg = getStatusUpdateMessage(order, newStatus);
-                                        window.open(getWhatsAppLink(client.whatsapp, msg), '_blank');
-                                      }
-                                    } catch (err) { console.error(err); alert('Erro ao atualizar status'); }
-                                  }}
-                                  className="text-slate-500 hover:text-emerald-400 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"
-                                  title="Confirmar e Mover para Produção"
-                                >
-                                  <ArrowRight className="w-5 h-5" />
-                                </button>
-                              )}
-                              <button
-                                onClick={() => openChat(order)}
-                                className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all text-slate-500 hover:text-indigo-400"
-                                title="Chat com Cliente"
-                              >
-                                <MessageSquare className="w-5 h-5" />
-                              </button>
-                              <button
-                                onClick={() => handleEditClick(order)}
-                                className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all text-slate-500 hover:text-indigo-400"
-                                title="Ver Detalhes"
-                              >
-                                <Edit3 className="w-5 h-5" />
-                              </button>
-                              <button
-                                onClick={() => handleDelete(order.id)}
-                                className="text-slate-500 hover:text-rose-500 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"
-                                title="Excluir Pedido"
-                              >
-                                <Trash2 className="w-5 h-5" />
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <button
-                                onClick={() => openChat(order)}
-                                className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all text-slate-500 hover:text-indigo-400"
-                                title="Chat com Cliente"
-                              >
-                                <MessageSquare className="w-5 h-5" />
-                              </button>
-                              <button
-                                onClick={() => handleEditClick(order)}
-                                className={`p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all ${editable ? 'text-slate-500 hover:text-indigo-400' : 'text-slate-700 cursor-not-allowed opacity-50'
-                                  }`}
-                                title={editable ? "Editar Pedido" : "Pedido em produção - Edição bloqueada"}
-                              >
-                                {editable ? <Edit3 className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
-                              </button>
-                              <button
-                                onClick={async () => await printServiceOrder(order)}
-                                className="text-slate-500 hover:text-white p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"
-                                title="OS Produção"
-                              >
-                                <Printer className="w-5 h-5" />
-                              </button>
+                                const client = clientsByName.get((order.clientName || '').toLowerCase());
+                                if (client?.whatsapp) {
+                                  const msg = getStatusUpdateMessage(order, newStatus);
+                                  window.open(getWhatsAppLink(client.whatsapp, msg), '_blank');
+                                }
+                              } catch (err) { console.error(err); alert('Erro ao atualizar status'); }
+                            }}
+                            className="flex-1 text-slate-400 hover:text-teal-400 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all flex justify-center items-center"
+                            title="Finalizar Conferência"
+                          >
+                            <ThumbsUp className="w-4 h-4" />
+                          </button>
+                        )}
+                        {order.status === OrderStatus.STORE_CHECKED && (
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (!confirm('Confirmar pedido e mover para Produção?')) return;
+                              try {
+                                const newStatus = OrderStatus.RECEIVED;
+                                await orderService.update(order.id, { status: newStatus });
+                                setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: newStatus } : o));
 
-                              {/* Receive Payment Button */}
-                              {order.paymentStatus !== PaymentStatus.FULL && (
-                                <button
-                                  onClick={() => handleReceivePayment(order)}
-                                  className="text-slate-500 hover:text-emerald-400 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"
-                                  title="Registrar Pagamento Total"
-                                >
-                                  <DollarSign className="w-5 h-5" />
-                                </button>
-                              )}
-                              <button
-                                onClick={async () => await printInvoice(order)}
-                                className="text-slate-500 hover:text-emerald-400 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"
-                                title="Visualizar DANFE"
-                              >
-                                <FileText className="w-5 h-5" />
-                              </button>
-                              <button
-                                onClick={async () => {
-                                  // Find client to get phone - simplistic matching
-                                  const client = clientsByName.get((order.clientName || '').toLowerCase());
-                                  const phone = client?.whatsapp || '';
-                                  const message = getStatusUpdateMessage(order, order.status);
-                                  const link = getWhatsAppLink(phone, message);
-                                  window.open(link, '_blank');
-                                }}
-                                className="text-slate-500 hover:text-indigo-400 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"
-                                title="Enviar Status via WhatsApp"
-                              >
-                                <Send className="w-5 h-5" />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  const portalLink = `${window.location.origin}/?view=client_portal`;
-                                  const msg = `Olá! Acompanhe o status do seu pedido #${order.orderNumber} em nosso Portal do Cliente:\n\n🔗 ${portalLink}\n\nUse seu WhatsApp e o Número do Pedido (${order.orderNumber}) para acessar.`;
-                                  navigator.clipboard.writeText(msg);
-                                  alert("Link e instruções do Portal copiados para a área de transferência! Cole no WhatsApp do cliente.");
-                                }}
-                                className="text-slate-500 hover:text-cyan-400 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"
-                                title="Copiar Link do Portal do Cliente"
-                              >
-                                <LinkIcon className="w-5 h-5" />
-                              </button>
-                              <button
-                                onClick={() => handleDelete(order.id)}
-                                className="text-slate-500 hover:text-rose-500 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 transition-all"
-                                title="Excluir Pedido"
-                              >
-                                <Trash2 className="w-5 h-5" />
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                                const client = clientsByName.get((order.clientName || '').toLowerCase());
+                                if (client?.whatsapp) {
+                                  const msg = getStatusUpdateMessage(order, newStatus);
+                                  window.open(getWhatsAppLink(client.whatsapp, msg), '_blank');
+                                }
+                              } catch (err) { console.error(err); alert('Erro ao atualizar status'); }
+                            }}
+                            className="flex-1 text-slate-400 hover:text-emerald-400 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all flex justify-center items-center"
+                            title="Confirmar e Mover para Produção"
+                          >
+                            <ArrowRight className="w-4 h-4" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => openChat(order)}
+                          className="flex-1 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all text-slate-400 hover:text-indigo-400 flex justify-center items-center"
+                          title="Chat com Cliente"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleEditClick(order)}
+                          className="flex-1 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all text-slate-400 hover:text-indigo-400 flex justify-center items-center"
+                          title="Ver Detalhes"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(order.id)}
+                          className="flex-1 text-slate-400 hover:text-rose-500 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all flex justify-center items-center"
+                          title="Excluir Pedido"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => openChat(order)}
+                          className="flex-1 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all text-slate-400 hover:text-indigo-400 flex justify-center items-center"
+                          title="Chat com Cliente"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleEditClick(order)}
+                          className={`flex-1 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all flex justify-center items-center ${editable ? 'text-slate-400 hover:text-indigo-400' : 'text-slate-600 cursor-not-allowed opacity-50'}`}
+                          title={editable ? "Editar Pedido" : "Pedido em produção - Edição bloqueada"}
+                        >
+                          {editable ? <Edit3 className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                        </button>
+                        <button
+                          onClick={async () => await printServiceOrder(order)}
+                          className="flex-1 text-slate-400 hover:text-white p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all flex justify-center items-center"
+                          title="OS Produção"
+                        >
+                          <Printer className="w-4 h-4" />
+                        </button>
+
+                        {/* Receive Payment Button */}
+                        {order.paymentStatus !== PaymentStatus.FULL && (
+                          <button
+                            onClick={() => handleReceivePayment(order)}
+                            className="flex-1 text-slate-400 hover:text-emerald-400 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all flex justify-center items-center"
+                            title="Registrar Pagamento Total"
+                          >
+                            <DollarSign className="w-4 h-4" />
+                          </button>
+                        )}
+                        <button
+                          onClick={async () => await printInvoice(order)}
+                          className="flex-1 text-slate-400 hover:text-emerald-400 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all flex justify-center items-center"
+                          title="Visualizar DANFE"
+                        >
+                          <FileText className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={async () => {
+                            const client = clientsByName.get((order.clientName || '').toLowerCase());
+                            const phone = client?.whatsapp || '';
+                            const message = getStatusUpdateMessage(order, order.status);
+                            const link = getWhatsAppLink(phone, message);
+                            window.open(link, '_blank');
+                          }}
+                          className="flex-1 text-slate-400 hover:text-indigo-400 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all flex justify-center items-center"
+                          title="Enviar Status via WhatsApp"
+                        >
+                          <Send className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            const portalLink = `${window.location.origin}/?view=client_portal`;
+                            const msg = `Olá! Acompanhe o status do seu pedido #${order.orderNumber} em nosso Portal do Cliente:\n\n🔗 ${portalLink}\n\nUse seu WhatsApp e o Número do Pedido (${order.orderNumber}) para acessar.`;
+                            navigator.clipboard.writeText(msg);
+                            alert("Link e instruções do Portal copiados para a área de transferência! Cole no WhatsApp do cliente.");
+                          }}
+                          className="flex-1 text-slate-400 hover:text-cyan-400 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all flex justify-center items-center"
+                          title="Copiar Link do Portal do Cliente"
+                        >
+                          <LinkIcon className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(order.id)}
+                          className="flex-1 text-slate-400 hover:text-rose-500 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all flex justify-center items-center"
+                          title="Excluir Pedido"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

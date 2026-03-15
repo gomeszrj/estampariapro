@@ -70,14 +70,14 @@ export const ProductionBoard: React.FC<ProductionBoardProps> = ({ orders, onOrde
     const filteredOrders = orders.filter(o => o.status !== 'delivered' && o.status !== 'cancelled');
 
     return (
-        <div className="flex gap-4 h-[calc(100vh-200px)] overflow-x-auto pb-4 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 h-auto md:h-[calc(100vh-200px)] overflow-y-auto md:overflow-hidden pb-4 items-start w-full">
             {COLUMNS.map(col => {
                 const colOrders = filteredOrders.filter(o => o.status === col.id);
 
                 return (
                     <div
                         key={col.id}
-                        className={`flex-shrink-0 w-80 flex flex-col h-full rounded-2xl border-2 ${col.border} ${col.bg} backdrop-blur-sm transition-colors ${draggedOrderId ? 'border-dashed' : ''}`}
+                        className={`w-full flex md:flex-col h-full md:max-h-full rounded-2xl border-2 ${col.border} ${col.bg} backdrop-blur-sm transition-colors ${draggedOrderId ? 'border-dashed' : ''} min-h-[400px] flex-col overflow-hidden`}
                         onDragOver={handleDragOver}
                         onDrop={(e) => handleDrop(e, col.id as OrderStatus)}
                     >
@@ -108,13 +108,20 @@ export const ProductionBoard: React.FC<ProductionBoardProps> = ({ orders, onOrde
                                             </span>
                                             <h4 className="font-bold text-slate-200 text-sm line-clamp-1">{order.clientName}</h4>
                                         </div>
-                                        {order.deliveryDate && (
-                                            <div className={`flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded-lg ${new Date(order.deliveryDate) < new Date() ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-800 text-slate-400'
-                                                }`}>
-                                                <Calendar className="w-3 h-3" />
-                                                {new Date(order.deliveryDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
-                                            </div>
-                                        )}
+                                        <div className="flex items-center gap-2">
+                                            {order.layoutUrl && (
+                                                <a href={order.layoutUrl} target="_blank" rel="noreferrer" className="flex items-center justify-center p-1 bg-indigo-500/10 text-indigo-400 rounded-md hover:bg-indigo-500/20 transition-colors" title="Ver Layout" onClick={(e) => e.stopPropagation()}>
+                                                    <img src={order.layoutUrl} alt="Layout" className="w-4 h-4 object-contain" />
+                                                </a>
+                                            )}
+                                            {order.deliveryDate && (
+                                                <div className={`flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded-lg ${new Date(order.deliveryDate) < new Date() ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-800 text-slate-400'
+                                                    }`}>
+                                                    <Calendar className="w-3 h-3" />
+                                                    {new Date(order.deliveryDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <div className="space-y-2">

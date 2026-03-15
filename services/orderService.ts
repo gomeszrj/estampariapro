@@ -12,6 +12,7 @@ export const orderService = {
         items:order_items(*),
         clients(name)
       `)
+            .neq('origin', 'support')
             .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -177,7 +178,6 @@ export const orderService = {
         if (msgError) throw msgError;
         if (!messages || messages.length === 0) return [];
 
-        // Deduplicate to find unique order IDs and their latest message
         const sessionsMap = new Map<string, any>();
         for (const msg of messages) {
             if (!sessionsMap.has(msg.order_id)) {
@@ -191,7 +191,30 @@ export const orderService = {
             }
         }
 
+        // Get all Support Leads as well, even without messages
+        const { data: supportLeads, error: leadsError } = await supabase
+            .from('orders')
+            .select('id, created_at')
+            .eq('origin', 'support');
+
+        if (leadsError) throw leadsError;
+
+        if (supportLeads) {
+            for (const lead of supportLeads) {
+                if (!sessionsMap.has(lead.id)) {
+                    sessionsMap.set(lead.id, {
+                        orderId: lead.id,
+                        lastMessage: '📝 Novo contato de suporte',
+                        lastMessageAt: lead.created_at,
+                        lastSender: 'client',
+                        unread: 1
+                    });
+                }
+            }
+        }
+
         const activeOrderIds = Array.from(sessionsMap.keys());
+        if (activeOrderIds.length === 0) return [];
 
         // Now fetch details for these orders
         const { data: dbOrders, error: ordersError } = await supabase
@@ -212,7 +235,9 @@ export const orderService = {
                 ...sessionData,
                 clientName: dbOrder.client_name,
                 orderNumber: dbOrder.order_number,
-                status: dbOrder.status
+                status: dbOrder.status,
+                origin: dbOrder.origin,
+                assignedSeller: dbOrder.assigned_seller
             };
         }).filter(Boolean);
 
@@ -220,6 +245,7 @@ export const orderService = {
     },
 
     async sendMessage(orderId: string, sender: 'client' | 'store', message: string) {
+        // Insert the actual message
         const { data, error } = await supabase
             .from('order_messages')
             .insert([{ order_id: orderId, sender, message }])
@@ -227,6 +253,53 @@ export const orderService = {
             .single();
 
         if (error) throw error;
+
+        // Auto-reply logic (virtual attendant) for first client message
+        if (sender === 'client') {
+            try {
+                // Count how many messages the client sent in this order
+                const { count } = await supabase
+                    .from('order_messages')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('order_id', orderId)
+                    .eq('sender', 'client');
+
+                // If this is the their first message, send the greeting
+                if (count === 1) {
+                    // Fetch order to see if it has an assigned seller
+                    const { data: orderData } = await supabase
+                        .from('orders')
+                        .select('assigned_seller')
+                        .eq('id', orderId)
+                        .single();
+
+                    let sellerName = 'um de nossos especialistas';
+
+                    if (orderData?.assigned_seller) {
+                        const { data: sellerData } = await supabase
+                            .from('team_members')
+                            .select('name')
+                            .eq('id', orderData.assigned_seller)
+                            .single();
+                        
+                        if (sellerData?.name) {
+                            // Extract just the first name for a friendlier tone
+                            sellerName = sellerData.name.split(' ')[0];
+                        }
+                    }
+
+                    const botMessage = `Olá! Recebemos sua mensagem. Este atendimento está sendo direcionado para ${sellerName}, que irá te responder em breve!`;
+
+                    // Insert bot reply
+                    await supabase
+                        .from('order_messages')
+                        .insert([{ order_id: orderId, sender: 'store', message: botMessage }]);
+                }
+            } catch (autoReplyError) {
+                console.error("Failed to send auto-reply:", autoReplyError);
+            }
+        }
+
         return data;
     }
 };
@@ -240,12 +313,14 @@ const mapOrderFromDB = (dbItem: any): Order => ({
     status: dbItem.status,
     paymentStatus: dbItem.payment_status as any,
     origin: dbItem.origin, // Mapping origin
+    assignedSeller: dbItem.assigned_seller,
     orderType: dbItem.order_type,
     totalValue: dbItem.total_value,
     discountValue: dbItem.discount_value,
     amountPaid: dbItem.amount_paid,
     createdAt: dbItem.created_at,
     deliveryDate: dbItem.delivery_date,
+    layoutUrl: dbItem.layout_url,
     notes: dbItem.notes,
     internalNotes: dbItem.internal_notes,
     delayReason: dbItem.delay_reason,
@@ -267,6 +342,7 @@ const mapOrderToDB = (appItem: Partial<Order>) => {
     if (appItem.discountValue !== undefined) dbItem.discount_value = appItem.discountValue;
     if (appItem.amountPaid !== undefined) dbItem.amount_paid = appItem.amountPaid;
     if (appItem.deliveryDate) dbItem.delivery_date = appItem.deliveryDate;
+    if (appItem.layoutUrl !== undefined) dbItem.layout_url = appItem.layoutUrl;
     if (appItem.notes) dbItem.notes = appItem.notes;
     if (appItem.internalNotes) dbItem.internal_notes = appItem.internalNotes;
     if (appItem.delayReason) dbItem.delay_reason = appItem.delayReason;

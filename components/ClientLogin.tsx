@@ -78,7 +78,7 @@ const ClientLogin: React.FC<ClientLoginProps> = ({ onLoginSuccess }) => {
                             client_name: client.name || supportName,
                             order_number: 'SUPORTE',
                             status: 'solicitacao',
-                            origin: 'store',
+                            origin: 'support',
                             order_type: 'sale',
                             total_value: 0,
                             delivery_date: new Date().toISOString()

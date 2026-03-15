@@ -121,14 +121,18 @@ export async function printServiceOrder(order: Order) {
              background: #fff; box-shadow: 4px 4px 0px rgba(0,0,0,0.1);
           }
           .traveler-step { 
-             flex: 1; border-right: 1px dashed #000; padding: 15px; text-align: center; position: relative; 
+             flex: 1; border-right: 1px dashed #000; padding: 10px 6px; text-align: center; position: relative; 
           }
           .traveler-step:last-child { border-right: none; }
           .traveler-check { 
-             width: 25px; height: 25px; border: 2px solid #000; border-radius: 6px; margin: 0 auto 8px auto; 
+             width: 22px; height: 22px; border: 2px solid #000; border-radius: 5px; margin: 0 auto 6px auto; 
           }
-          .traveler-label { font-size: 7.5pt; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; }
-          .traveler-sig { height: 15px; border-bottom: 1px solid #ccc; margin-top: 10px; }
+          .traveler-label { font-size: 6.5pt; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; }
+          .traveler-sig { height: 15px; border-bottom: 1px solid #ccc; margin-top: 8px; }
+
+          /* Layout Image */
+          .layout-section { margin-bottom: 20px; }
+          .layout-img { max-width: 100%; max-height: 10cm; display: block; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; }
 
           /* Footer */
           .footer-box { border-top: 1px dotted #ccc; margin-top: auto; padding-top: 10px; text-align: center; font-size: 8pt; color: #999; }
@@ -172,27 +176,37 @@ export async function printServiceOrder(order: Order) {
           <div class="section">
              <div class="section-title">Fluxo de Produção (Checklist)</div>
              <div class="traveler-strip">
-                <div class="traveler-step">
-                   <div class="traveler-check"></div>
-                   <div class="traveler-label">Corte</div>
-                </div>
-                <div class="traveler-step">
-                   <div class="traveler-check"></div>
-                   <div class="traveler-label">Estampa</div>
-                </div>
-                <div class="traveler-step">
-                   <div class="traveler-check"></div>
-                   <div class="traveler-label">Costura</div>
-                </div>
-                <div class="traveler-step">
-                   <div class="traveler-check"></div>
-                   <div class="traveler-label">Acabto.</div>
-                </div>
-                <div class="traveler-step">
-                   <div class="traveler-check"></div>
-                   <div class="traveler-label">Conferência</div>
-                </div>
-             </div>
+                 <div class="traveler-step">
+                    <div class="traveler-check"></div>
+                    <div class="traveler-label">Finalização</div>
+                    <div class="traveler-sig"></div>
+                 </div>
+                 <div class="traveler-step">
+                    <div class="traveler-check"></div>
+                    <div class="traveler-label">Impressão</div>
+                    <div class="traveler-sig"></div>
+                 </div>
+                 <div class="traveler-step">
+                    <div class="traveler-check"></div>
+                    <div class="traveler-label">Estampa</div>
+                    <div class="traveler-sig"></div>
+                 </div>
+                 <div class="traveler-step">
+                    <div class="traveler-check"></div>
+                    <div class="traveler-label">Separação</div>
+                    <div class="traveler-sig"></div>
+                 </div>
+                 <div class="traveler-step">
+                    <div class="traveler-check"></div>
+                    <div class="traveler-label">Costura</div>
+                    <div class="traveler-sig"></div>
+                 </div>
+                 <div class="traveler-step">
+                    <div class="traveler-check"></div>
+                    <div class="traveler-label">Conferência</div>
+                    <div class="traveler-sig"></div>
+                 </div>
+              </div>
           </div>
 
           <div class="section">
@@ -224,6 +238,13 @@ export async function printServiceOrder(order: Order) {
               </tbody>
             </table>
           </div>
+
+          ${order.layoutUrl ? `
+          <div class="section layout-section">
+             <div class="section-title">Layout Aprovado</div>
+             <img src="${order.layoutUrl}" class="layout-img" alt="Layout Aprovado" />
+          </div>
+          ` : ''}
 
           <div class="section" style="margin-top:30px;">
              <div class="section-title">Observações Técnicas / Personalização</div>

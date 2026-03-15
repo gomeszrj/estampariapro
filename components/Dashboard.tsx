@@ -157,7 +157,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) =>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
         <SummaryCard
           title="Recebidos"
           count={counts.received.toString().padStart(2, '0')}
@@ -216,39 +216,39 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) =>
               <div
                 key={item.id}
                 onClick={() => handleOrderClick(item)}
-                className="p-8 flex flex-wrap items-center justify-between hover:bg-slate-800/20 transition-all cursor-pointer group gap-8"
+                className="p-8 flex flex-col xl:flex-row items-start xl:items-center justify-between hover:bg-slate-800/20 transition-all cursor-pointer group gap-8"
               >
-                <div className="flex items-center gap-8 min-w-[320px]">
-                  <div className={`w-16 h-16 rounded-[1.5rem] flex flex-col items-center justify-center border-2 transition-transform group-hover:scale-105 ${item.deliveryDate === today ? 'bg-indigo-600 border-indigo-500 shadow-2xl shadow-indigo-600/30' : 'bg-slate-900 border-slate-800'
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 sm:gap-8 w-full xl:w-auto">
+                  <div className={`w-16 h-16 rounded-[1.5rem] flex flex-col items-center justify-center border-2 transition-transform group-hover:scale-105 shrink-0 ${item.deliveryDate === today ? 'bg-indigo-600 border-indigo-500 shadow-2xl shadow-indigo-600/30' : 'bg-slate-900 border-slate-800'
                     }`}>
                     <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${item.deliveryDate === today ? 'text-indigo-200' : 'text-slate-500'}`}>{item.deliveryDate === today ? 'Hoje' : 'Dia'}</span>
                     <span className={`text-2xl font-black ${item.deliveryDate === today ? 'text-white' : 'text-slate-200'}`}>
                       {item.deliveryDate ? item.deliveryDate.split('-')[2] : '--'}
                     </span>
                   </div>
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <h4 className="font-black text-slate-100 text-xl group-hover:text-indigo-400 transition-colors tracking-tight">{item.clientName}</h4>
+                  <div className="min-w-0 w-full">
+                    <div className="flex flex-wrap items-center gap-3 mb-2">
+                      <h4 className="font-black text-slate-100 text-xl group-hover:text-indigo-400 transition-colors tracking-tight truncate">{item.clientName}</h4>
                       {item.clientTeam && (
-                        <span className="text-[10px] font-black px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 uppercase tracking-widest">{item.clientTeam}</span>
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 uppercase tracking-widest whitespace-nowrap">{item.clientTeam}</span>
                       )}
                       {new Date(item.deliveryDate) < new Date() && item.status !== OrderStatus.FINISHED && (
-                        <span className="text-[8px] font-black px-2.5 py-1 rounded-lg bg-rose-500 text-white uppercase tracking-[0.2em] shadow-lg shadow-rose-500/20">Atrasado</span>
+                        <span className="text-[8px] font-black px-2.5 py-1 rounded-lg bg-rose-500 text-white uppercase tracking-[0.2em] shadow-lg shadow-rose-500/20 whitespace-nowrap">Atrasado</span>
                       )}
                     </div>
-                    <div className="flex items-center gap-4">
-                      <p className="text-xs text-slate-500 font-bold uppercase tracking-widest flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-4">
+                      <p className="text-xs text-slate-500 font-bold uppercase tracking-widest flex items-center gap-2 whitespace-nowrap">
                         <Clock className="w-3.5 h-3.5" />
                         R$ {item.totalValue.toLocaleString('pt-BR')}
                       </p>
-                      <div className="w-1.5 h-1.5 rounded-full bg-slate-700"></div>
-                      <span className="text-xs font-black text-indigo-400 uppercase tracking-widest">{item.status}</span>
+                      <div className="hidden sm:block w-1.5 h-1.5 rounded-full bg-slate-700"></div>
+                      <span className="text-xs font-black text-indigo-400 uppercase tracking-widest whitespace-nowrap">{item.status}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-10">
-                  <button className="w-12 h-12 flex items-center justify-center bg-slate-900 border border-slate-800 rounded-2xl text-slate-500 hover:text-white hover:border-slate-600 hover:bg-slate-800 transition-all group-hover:translate-x-1">
+                <div className="flex items-center gap-10 w-full xl:w-auto justify-end mt-4 xl:mt-0">
+                  <button className="w-12 h-12 flex items-center justify-center bg-slate-900 border border-slate-800 rounded-2xl text-slate-500 hover:text-white hover:border-slate-600 hover:bg-slate-800 transition-all group-hover:translate-x-1 shrink-0">
                     <ChevronRight className="w-6 h-6" />
                   </button>
                 </div>
