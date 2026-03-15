@@ -1072,55 +1072,62 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
               const realProfit = order.totalValue - estimatedCost;
 
               return (
-                <div key={order.id} className="bg-slate-900/50 rounded-3xl border border-slate-800 p-6 flex flex-col hover:border-indigo-500/30 transition-all group">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <div className="flex items-center gap-3 mb-1">
-                        <span className="font-black text-slate-400">#{order.orderNumber}</span>
-                        <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border ${order.orderType === OrderType.SALE ? 'bg-emerald-900/20 border-emerald-900/40 text-emerald-400' : 'bg-amber-900/20 border-amber-900/40 text-amber-400'}`}>
+                <div key={order.id} className="bg-slate-900/50 rounded-3xl border border-slate-800 p-5 flex flex-col hover:border-indigo-500/30 transition-all group overflow-hidden">
+                  {/* Card Header */}
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className="font-black text-slate-400 text-xs shrink-0">#{order.orderNumber}</span>
+                        <span className={`px-2 py-0.5 rounded-md text-[7px] font-black uppercase tracking-widest border shrink-0 ${order.orderType === OrderType.SALE ? 'bg-emerald-900/20 border-emerald-900/40 text-emerald-400' : 'bg-amber-900/20 border-amber-900/40 text-amber-400'}`}>
                           {order.orderType === OrderType.SALE ? 'Venda' : 'Orçamento'}
                         </span>
                       </div>
-                      <h4 className="font-black text-slate-100 text-lg truncate pr-2" title={order.clientName}>{order.clientName}</h4>
-                      <div className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1 flex items-center gap-1">
-                        <Calendar className="w-3 h-3" /> {new Date(order.createdAt).toLocaleDateString('pt-BR')}
+                      <h4 className="font-black text-slate-100 text-base truncate" title={order.clientName}>{order.clientName}</h4>
+                      <div className="text-[8px] text-slate-500 font-bold uppercase tracking-widest mt-1 flex items-center gap-1">
+                        <Calendar className="w-3 h-3 shrink-0" />
+                        <span className="truncate">{new Date(order.createdAt).toLocaleDateString('pt-BR')}</span>
                       </div>
                     </div>
-                    <span className={`px-3 py-1.5 rounded-xl text-[8px] font-black uppercase border tracking-widest whitespace-nowrap ${STATUS_CONFIG[order.status]?.color}`}>
-                      {STATUS_CONFIG[order.status]?.label}
-                    </span>
+                    {/* Status badge — fixed on the right, never overlaps name */}
+                    <div className="shrink-0 max-w-[110px]">
+                      <span className={`block px-2 py-1.5 rounded-xl text-[7px] font-black uppercase border tracking-wide text-center leading-tight ${STATUS_CONFIG[order.status]?.color}`}>
+                        {STATUS_CONFIG[order.status]?.label}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 mb-6 bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50 flex-1">
-                    <div>
-                      <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest mb-1">Valor Bruto</p>
-                      <p className="font-black text-indigo-400 text-lg">R$ {order.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  {/* Financial Info */}
+                  <div className="grid grid-cols-2 gap-3 mb-5 bg-slate-950/50 p-3 rounded-2xl border border-slate-800/50 flex-1">
+                    <div className="min-w-0">
+                      <p className="text-[7px] text-slate-500 font-bold uppercase tracking-widest mb-1">Valor Bruto</p>
+                      <p className="font-black text-indigo-400 text-sm truncate">R$ {order.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                     </div>
-                    <div>
-                      <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest mb-1">Pgto</p>
+                    <div className="min-w-0">
+                      <p className="text-[7px] text-slate-500 font-bold uppercase tracking-widest mb-1">Pgto</p>
                       <div>
-                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider border ${!order.paymentStatus || order.paymentStatus === PaymentStatus.PENDING ? 'bg-slate-800 border-slate-700 text-slate-400' :
+                        <span className={`inline-block px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-wide border truncate max-w-full ${!order.paymentStatus || order.paymentStatus === PaymentStatus.PENDING ? 'bg-slate-800 border-slate-700 text-slate-400' :
                           order.paymentStatus === 'Sinal (50%)' || order.paymentStatus === 'Sinal / Parcial' ? 'bg-indigo-900/20 border-indigo-900/40 text-indigo-400' :
                             'bg-emerald-900/20 border-emerald-900/40 text-emerald-400'
                           }`}>
                           {order.paymentStatus || 'PENDENTE'}
                         </span>
                         {order.amountPaid && order.amountPaid > 0 && order.paymentStatus !== PaymentStatus.FULL && (
-                          <p className="mt-1 text-[8px] text-slate-500 font-mono">
+                          <p className="mt-1 text-[7px] text-slate-500 font-mono truncate">
                             PG: R$ {order.amountPaid.toLocaleString('pt-BR')}
                           </p>
                         )}
                       </div>
                     </div>
-                    <div>
-                      <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest mb-1">Custo Est.</p>
-                      <p className="font-bold text-slate-400 text-xs">R$ {estimatedCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    <div className="min-w-0">
+                      <p className="text-[7px] text-slate-500 font-bold uppercase tracking-widest mb-1">Custo Est.</p>
+                      <p className="font-bold text-slate-400 text-xs truncate">R$ {estimatedCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                     </div>
-                    <div>
-                      <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest mb-1">Lucro Real</p>
-                      <p className="font-bold text-emerald-500 text-xs">R$ {realProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    <div className="min-w-0">
+                      <p className="text-[7px] text-slate-500 font-bold uppercase tracking-widest mb-1">Lucro Real</p>
+                      <p className="font-bold text-emerald-500 text-xs truncate">R$ {realProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                     </div>
                   </div>
+
 
                   {/* Actions Grid */}
                   <div className="flex flex-wrap gap-2 pt-4 border-t border-slate-800/50">

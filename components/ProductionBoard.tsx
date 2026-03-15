@@ -99,25 +99,26 @@ export const ProductionBoard: React.FC<ProductionBoardProps> = ({ orders, onOrde
                                     key={order.id}
                                     draggable
                                     onDragStart={(e) => handleDragStart(e, order.id)}
-                                    className="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-lg hover:border-slate-600 cursor-move active:cursor-grabbing group transition-all"
+                                    className="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-lg hover:border-slate-600 cursor-move active:cursor-grabbing group transition-all overflow-hidden"
                                 >
-                                    <div className="flex justify-between items-start mb-3">
-                                        <div className="flex flex-col">
-                                            <span className="text-[10px] font-black text-indigo-400 uppercase tracking-wider mb-0.5">
+                                    {/* Header row: number + name (left), layout thumb + date (right) */}
+                                    <div className="flex items-start justify-between gap-2 mb-3">
+                                        <div className="min-w-0 flex-1">
+                                            <span className="text-[10px] font-black text-indigo-400 uppercase tracking-wider block mb-0.5">
                                                 #{order.orderNumber}
                                             </span>
-                                            <h4 className="font-bold text-slate-200 text-sm line-clamp-1">{order.clientName}</h4>
+                                            <h4 className="font-bold text-slate-200 text-sm truncate" title={order.clientName}>{order.clientName}</h4>
                                         </div>
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-1.5 shrink-0">
                                             {order.layoutUrl && (
                                                 <a href={order.layoutUrl} target="_blank" rel="noreferrer" className="flex items-center justify-center p-1 bg-indigo-500/10 text-indigo-400 rounded-md hover:bg-indigo-500/20 transition-colors" title="Ver Layout" onClick={(e) => e.stopPropagation()}>
                                                     <img src={order.layoutUrl} alt="Layout" className="w-4 h-4 object-contain" />
                                                 </a>
                                             )}
                                             {order.deliveryDate && (
-                                                <div className={`flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded-lg ${new Date(order.deliveryDate) < new Date() ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-800 text-slate-400'
+                                                <div className={`flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded-lg shrink-0 ${new Date(order.deliveryDate) < new Date() ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-800 text-slate-400'
                                                     }`}>
-                                                    <Calendar className="w-3 h-3" />
+                                                    <Calendar className="w-3 h-3 shrink-0" />
                                                     {new Date(order.deliveryDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
                                                 </div>
                                             )}
@@ -126,9 +127,9 @@ export const ProductionBoard: React.FC<ProductionBoardProps> = ({ orders, onOrde
 
                                     <div className="space-y-2">
                                         {order.items.slice(0, 2).map((item, idx) => (
-                                            <div key={idx} className="text-xs text-slate-400 flex justify-between items-center bg-slate-950/50 p-1.5 rounded-lg border border-slate-800/50">
-                                                <span className="truncate max-w-[140px]">{item.productName}</span>
-                                                <span className="font-mono font-bold text-slate-500">x{item.quantity}</span>
+                                            <div key={idx} className="text-xs text-slate-400 flex justify-between items-center bg-slate-950/50 p-1.5 rounded-lg border border-slate-800/50 gap-2">
+                                                <span className="truncate min-w-0">{item.productName}</span>
+                                                <span className="font-mono font-bold text-slate-500 shrink-0">x{item.quantity}</span>
                                             </div>
                                         ))}
                                         {order.items.length > 2 && (
@@ -137,10 +138,10 @@ export const ProductionBoard: React.FC<ProductionBoardProps> = ({ orders, onOrde
                                     </div>
 
                                     <div className="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center opacity-75 group-hover:opacity-100 transition-opacity">
-                                        <span className="text-[10px] font-bold text-slate-500">
+                                        <span className="text-[10px] font-bold text-slate-500 truncate">
                                             {new Date(order.createdAt).toLocaleDateString('pt-BR')}
                                         </span>
-                                        <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-slate-500">
+                                        <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 shrink-0">
                                             <MoreHorizontal className="w-3 h-3" />
                                         </div>
                                     </div>
