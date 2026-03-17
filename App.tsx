@@ -116,7 +116,7 @@ const AuthenticatedApp: React.FC = () => {
       case 'finance': return <Finance orders={orders} products={products} />;
       case 'clients': return <Clients clients={clients} setClients={setClients} orders={orders} />;
       case 'inventory': return <Inventory />;
-      case 'art-queue': return <ArtQueue orders={orders} setOrders={setOrders} />;
+      case 'art-queue': return <ArtQueue />;
       case 'cloudbot': return <CloudBot onCreateOrder={handleBotOrder} />;
       case 'crm': return <Chats />;
       default: return null;
