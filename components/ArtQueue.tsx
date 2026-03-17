@@ -44,7 +44,7 @@ const ArtQueue: React.FC = () => {
       const { data, error } = await supabase
         .from('art_queue')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: true });
       if (error) throw error;
       setEntries(data || []);
     } catch (e) {
