@@ -16,6 +16,7 @@ import { CloudBot } from './components/CloudBot';
 import OrderTracker from './components/OrderTracker.tsx';
 import PublicStore from './components/PublicStore.tsx';
 import ClientPortal from './components/ClientPortal.tsx';
+import ArtQueue from './components/ArtQueue.tsx';
 import { Bell, User as UserIcon, Share2, Menu, ExternalLink, Link as LinkIcon, Copy } from 'lucide-react';
 import { Order, Product, Client, OrderStatus, OrderType } from './types';
 import { AuthProvider, useAuth } from './contexts/AuthContext.tsx';
@@ -115,6 +116,7 @@ const AuthenticatedApp: React.FC = () => {
       case 'finance': return <Finance orders={orders} products={products} />;
       case 'clients': return <Clients clients={clients} setClients={setClients} orders={orders} />;
       case 'inventory': return <Inventory />;
+      case 'art-queue': return <ArtQueue orders={orders} setOrders={setOrders} />;
       case 'cloudbot': return <CloudBot onCreateOrder={handleBotOrder} />;
       case 'crm': return <Chats />;
       default: return null;

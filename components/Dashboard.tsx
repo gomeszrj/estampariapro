@@ -197,10 +197,10 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) =>
 
       <div className="grid grid-cols-1 gap-6">
         <div className="bg-[#0f172a] rounded-[2.5rem] border border-slate-800 shadow-sm overflow-hidden">
-          <div className="p-8 border-b border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 bg-slate-900/20">
-            <h3 className="text-xl font-black text-slate-100 flex items-center gap-3 uppercase tracking-tighter">
-              <PackageCheck className="w-6 h-6 text-indigo-400" />
-              Cronograma de Entregas
+          <div className="p-6 border-b border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/20">
+            <h3 className="text-lg font-black text-slate-100 flex items-center gap-3 uppercase tracking-tighter">
+              <PackageCheck className="w-5 h-5 text-indigo-400" />
+              Cronograma de Entregas — Pedidos Ativos
             </h3>
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 w-4 h-4" />
@@ -211,53 +211,81 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) =>
               />
             </div>
           </div>
-          <div className="divide-y divide-slate-800/50">
-            {sortedOrders.map((item) => (
-              <div
-                key={item.id}
-                onClick={() => handleOrderClick(item)}
-                className="p-8 flex flex-col xl:flex-row items-start xl:items-center justify-between hover:bg-slate-800/20 transition-all cursor-pointer group gap-8"
-              >
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 sm:gap-8 w-full xl:w-auto">
-                  <div className={`w-16 h-16 rounded-[1.5rem] flex flex-col items-center justify-center border-2 transition-transform group-hover:scale-105 shrink-0 ${item.deliveryDate === today ? 'bg-indigo-600 border-indigo-500 shadow-2xl shadow-indigo-600/30' : 'bg-slate-900 border-slate-800'
-                    }`}>
-                    <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${item.deliveryDate === today ? 'text-indigo-200' : 'text-slate-500'}`}>{item.deliveryDate === today ? 'Hoje' : 'Dia'}</span>
-                    <span className={`text-2xl font-black ${item.deliveryDate === today ? 'text-white' : 'text-slate-200'}`}>
-                      {item.deliveryDate ? item.deliveryDate.split('-')[2] : '--'}
-                    </span>
-                  </div>
-                  <div className="min-w-0 w-full">
-                    <div className="flex flex-wrap items-center gap-3 mb-2">
-                      <h4 className="font-black text-slate-100 text-xl group-hover:text-indigo-400 transition-colors tracking-tight truncate">{item.clientName}</h4>
-                      {item.clientTeam && (
-                        <span className="text-[10px] font-black px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 uppercase tracking-widest whitespace-nowrap">{item.clientTeam}</span>
-                      )}
-                      {new Date(item.deliveryDate) < new Date() && item.status !== OrderStatus.FINISHED && (
-                        <span className="text-[8px] font-black px-2.5 py-1 rounded-lg bg-rose-500 text-white uppercase tracking-[0.2em] shadow-lg shadow-rose-500/20 whitespace-nowrap">Atrasado</span>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-4">
-                      <p className="text-xs text-slate-500 font-bold uppercase tracking-widest flex items-center gap-2 whitespace-nowrap">
-                        <Clock className="w-3.5 h-3.5" />
-                        R$ {item.totalValue.toLocaleString('pt-BR')}
-                      </p>
-                      <div className="hidden sm:block w-1.5 h-1.5 rounded-full bg-slate-700"></div>
-                      <span className="text-xs font-black text-indigo-400 uppercase tracking-widest whitespace-nowrap">{item.status}</span>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-10 w-full xl:w-auto justify-end mt-4 xl:mt-0">
-                  <button className="w-12 h-12 flex items-center justify-center bg-slate-900 border border-slate-800 rounded-2xl text-slate-500 hover:text-white hover:border-slate-600 hover:bg-slate-800 transition-all group-hover:translate-x-1 shrink-0">
-                    <ChevronRight className="w-6 h-6" />
-                  </button>
-                </div>
+          {/* Active orders only — FINISHED excluded */}
+          {(() => {
+            const activeOrders = sortedOrders.filter(o => o.status !== OrderStatus.FINISHED);
+            if (activeOrders.length === 0) {
+              return <div className="p-16 text-center text-slate-600 font-bold">Nenhum pedido ativo no momento.</div>;
+            }
+            return (
+              <div className="p-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                {activeOrders.map((item) => {
+                  const isToday = item.deliveryDate === today;
+                  const isLate = new Date(item.deliveryDate) < new Date() && item.status !== OrderStatus.FINISHED;
+                  const daysLeft = Math.ceil((new Date(item.deliveryDate).getTime() - new Date().getTime()) / (1000 * 3600 * 24));
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => handleOrderClick(item)}
+                      className={`relative flex flex-col p-5 rounded-2xl border cursor-pointer transition-all hover:scale-[1.01] group ${
+                        isLate
+                          ? 'bg-rose-950/20 border-rose-700/40 hover:border-rose-500/60'
+                          : isToday
+                          ? 'bg-indigo-950/30 border-indigo-500/40 hover:border-indigo-400/60'
+                          : 'bg-slate-900/50 border-slate-800 hover:border-slate-600'
+                      }`}
+                    >
+                      {/* Top row: date badge + status */}
+                      <div className="flex items-start justify-between gap-3 mb-4">
+                        <div className={`flex flex-col items-center justify-center w-14 h-14 rounded-2xl border-2 shrink-0 ${
+                          isLate ? 'bg-rose-600 border-rose-500 shadow-lg shadow-rose-600/20'
+                          : isToday ? 'bg-indigo-600 border-indigo-500 shadow-lg shadow-indigo-600/20'
+                          : 'bg-slate-900 border-slate-700'
+                        }`}>
+                          <span className={`text-[8px] font-black uppercase tracking-wider ${isLate || isToday ? 'text-white/70' : 'text-slate-500'}`}>
+                            {isToday ? 'Hoje' : isLate ? 'Atras.' : 'Dia'}
+                          </span>
+                          <span className={`text-xl font-black leading-none ${isLate || isToday ? 'text-white' : 'text-slate-200'}`}>
+                            {item.deliveryDate ? item.deliveryDate.split('-')[2] : '--'}
+                          </span>
+                          <span className={`text-[8px] font-bold ${isLate || isToday ? 'text-white/60' : 'text-slate-600'}`}>
+                            {item.deliveryDate ? new Date(item.deliveryDate + 'T00:00:00').toLocaleDateString('pt-BR', { month: 'short' }) : ''}
+                          </span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-black text-slate-100 text-sm truncate group-hover:text-indigo-400 transition-colors" title={item.clientName}>
+                            {item.clientName}
+                          </h4>
+                          {item.clientTeam && (
+                            <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 uppercase tracking-widest">
+                              {item.clientTeam}
+                            </span>
+                          )}
+                          <p className="text-[10px] text-slate-500 font-bold mt-1">#{item.orderNumber}</p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-slate-600 shrink-0 group-hover:text-indigo-400 transition-colors" />
+                      </div>
+
+                      {/* Bottom row: value + days + status */}
+                      <div className="flex items-center gap-2 flex-wrap mt-auto pt-3 border-t border-slate-800/50">
+                        <span className="text-xs font-black text-slate-400">
+                          R$ {item.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </span>
+                        <span className="text-slate-700">•</span>
+                        <span className={`text-[9px] font-black uppercase tracking-widest ${isLate ? 'text-rose-400' : isToday ? 'text-indigo-400' : daysLeft <= 3 ? 'text-amber-400' : 'text-slate-500'}`}>
+                          {isLate ? `${Math.abs(daysLeft)}d atrasado` : isToday ? 'Hoje!' : `${daysLeft}d restantes`}
+                        </span>
+                        <span className="ml-auto text-[8px] font-black px-2 py-0.5 rounded-lg border bg-slate-900 border-slate-700 text-slate-400 uppercase tracking-wide">
+                          {item.status}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            ))}
-          </div>
-          {orders.length === 0 && (
-            <div className="p-20 text-center text-slate-600">Nenhum pedido cadastrado.</div>
-          )}
+            );
+          })()}
         </div>
       </div>
 

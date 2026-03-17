@@ -4,10 +4,11 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '18.5';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 18.5:
-- Correção de Layout: Nomes de clientes e badges de status/pagamento não saem mais das caixas nos cards de Pedidos e Fluxo de Produção.
-- Textos longos são truncados corretamente com reticências (...) preservando a organização visual.`;
+export const SYSTEM_VERSION = '18.6';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 18.6:
+- NOVO: Fila de Arte — controle de criação e aprovação de layouts por pedido, com campo de número de revisão.
+- Fluxo de Produção: Colunas agora cabem em uma única tela, com scroll interno por coluna.
+- Agenda: Pedidos finalizados removidos do cronograma. Layout em cards organizados por data, com indicadores de prazo.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [

@@ -70,22 +70,22 @@ export const ProductionBoard: React.FC<ProductionBoardProps> = ({ orders, onOrde
     const filteredOrders = orders.filter(o => o.status !== 'delivered' && o.status !== 'cancelled');
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 h-auto md:h-[calc(100vh-200px)] overflow-y-auto md:overflow-hidden pb-4 items-start w-full">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3" style={{ height: 'calc(100vh - 200px)' }}>
             {COLUMNS.map(col => {
                 const colOrders = filteredOrders.filter(o => o.status === col.id);
 
                 return (
                     <div
                         key={col.id}
-                        className={`w-full flex md:flex-col h-full md:max-h-full rounded-2xl border-2 ${col.border} ${col.bg} backdrop-blur-sm transition-colors ${draggedOrderId ? 'border-dashed' : ''} min-h-[400px] flex-col overflow-hidden`}
+                        className={`flex flex-col rounded-2xl border-2 ${col.border} ${col.bg} backdrop-blur-sm transition-colors ${draggedOrderId ? 'border-dashed' : ''} overflow-hidden h-full`}
                         onDragOver={handleDragOver}
                         onDrop={(e) => handleDrop(e, col.id as OrderStatus)}
                     >
                         {/* Header */}
-                        <div className="p-4 border-b border-white/5 flex justify-between items-center">
+                        <div className="p-3 border-b border-white/5 flex justify-between items-center shrink-0">
                             <div className="flex items-center gap-2">
-                                <col.icon className={`w-5 h-5 ${col.color}`} />
-                                <h3 className={`font-black uppercase tracking-widest text-xs ${col.color}`}>{col.label}</h3>
+                                <col.icon className={`w-4 h-4 ${col.color}`} />
+                                <h3 className={`font-black uppercase tracking-widest text-[10px] ${col.color}`}>{col.label}</h3>
                             </div>
                             <span className="bg-slate-900 text-slate-400 text-[10px] font-bold px-2 py-1 rounded-lg">
                                 {colOrders.length}
@@ -93,7 +93,7 @@ export const ProductionBoard: React.FC<ProductionBoardProps> = ({ orders, onOrde
                         </div>
 
                         {/* Drop Zone / List */}
-                        <div className="flex-1 p-3 overflow-y-auto custom-scrollbar space-y-3">
+                        <div className="flex-1 p-2 overflow-y-auto custom-scrollbar space-y-2">
                             {colOrders.map(order => (
                                 <div
                                     key={order.id}

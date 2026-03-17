@@ -321,6 +321,9 @@ const mapOrderFromDB = (dbItem: any): Order => ({
     createdAt: dbItem.created_at,
     deliveryDate: dbItem.delivery_date,
     layoutUrl: dbItem.layout_url,
+    artCreated: dbItem.art_created ?? false,
+    artAwaitingApproval: dbItem.art_awaiting_approval ?? false,
+    layoutRevision: dbItem.layout_revision,
     notes: dbItem.notes,
     internalNotes: dbItem.internal_notes,
     delayReason: dbItem.delay_reason,
@@ -343,6 +346,9 @@ const mapOrderToDB = (appItem: Partial<Order>) => {
     if (appItem.amountPaid !== undefined) dbItem.amount_paid = appItem.amountPaid;
     if (appItem.deliveryDate) dbItem.delivery_date = appItem.deliveryDate;
     if (appItem.layoutUrl !== undefined) dbItem.layout_url = appItem.layoutUrl;
+    if (appItem.artCreated !== undefined) dbItem.art_created = appItem.artCreated;
+    if (appItem.artAwaitingApproval !== undefined) dbItem.art_awaiting_approval = appItem.artAwaitingApproval;
+    if (appItem.layoutRevision !== undefined) dbItem.layout_revision = appItem.layoutRevision;
     if (appItem.notes) dbItem.notes = appItem.notes;
     if (appItem.internalNotes) dbItem.internal_notes = appItem.internalNotes;
     if (appItem.delayReason) dbItem.delay_reason = appItem.delayReason;

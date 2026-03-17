@@ -73,6 +73,9 @@ export interface Order {
   internalNotes?: string;
   delayReason?: string;
   layoutUrl?: string; // New: Image url for approved layout
+  artCreated?: boolean; // Art Queue: art has been created
+  artAwaitingApproval?: boolean; // Art Queue: art is awaiting client approval
+  layoutRevision?: string; // Art Queue: revision/layout number
   fiscalKey?: string; // Simulated NFe Access Key
   clientTeam?: string; // Turma/Time (from Store)
 }

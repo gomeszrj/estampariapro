@@ -14,7 +14,8 @@ import {
   Bot,
   ExternalLink,
   Share2,
-  Copy
+  Copy,
+  Palette
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -46,6 +47,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
     { id: 'dashboard', label: 'Agenda', icon: LayoutDashboard },
     { id: 'orders', label: 'Pedidos', icon: ShoppingCart },
     { id: 'kanban', label: 'Fluxo', icon: Trello },
+    { id: 'art-queue', label: 'Fila de Arte', icon: Palette },
     { id: 'products', label: 'Produtos', icon: Package },
     { id: 'catalog-requests', label: 'Solicitações', icon: Inbox },
     { id: 'clients', label: 'Clientes', icon: Users },
