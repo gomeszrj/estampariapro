@@ -19,7 +19,6 @@ interface ProductionBoardProps {
 const COLUMNS = [
     { id: OrderStatus.RECEIVED, label: 'Pendente', icon: Clock, color: 'text-slate-400', bg: 'bg-slate-900/50', border: 'border-slate-800' },
     { id: OrderStatus.IN_PRODUCTION, label: 'Em Produção', icon: RotateCw, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
-    { id: OrderStatus.FINALIZATION, label: 'Acabamento', icon: PackageCheck, color: 'text-indigo-400', bg: 'bg-indigo-500/10', border: 'border-indigo-500/20' },
     { id: OrderStatus.FINISHED, label: 'Finalizado', icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' }
 ];
 
@@ -70,7 +69,7 @@ export const ProductionBoard: React.FC<ProductionBoardProps> = ({ orders, onOrde
     const filteredOrders = orders.filter(o => o.status !== 'delivered' && o.status !== 'cancelled');
 
     return (
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3" style={{ height: 'calc(100vh - 200px)' }}>
+        <div className="grid grid-cols-3 gap-3" style={{ height: 'calc(100vh - 200px)' }}>
             {COLUMNS.map(col => {
                 const colOrders = filteredOrders.filter(o => o.status === col.id);
 
