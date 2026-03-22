@@ -4,11 +4,9 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '18.7';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 18.7:
-- NOVO: Fila de Arte — cadastro próprio de artes com botão "Nova Arte", sem exibir pedidos existentes.
-- Fluxo de Produção: Removida coluna "Em Arte / Aprovação", agora 3 colunas (Pendente, Em Produção, Finalizado) sem scroll horizontal.
-- Agenda: Pedidos finalizados removidos do cronograma; layout em cards com indicadores de prazo.`;
+export const SYSTEM_VERSION = '18.9';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 18.9:
+- Correção de Numeração: Número de pedido agora é gerado com base no maior número já cadastrado (MAX), garantindo que pedidos excluídos não causem reaproveitamento de números.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [

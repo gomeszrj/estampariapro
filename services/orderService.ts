@@ -154,6 +154,24 @@ export const orderService = {
         if (error) throw error;
     },
 
+    async getNextOrderNumber(): Promise<string> {
+        // Always query the MAX order_number from DB so deletions don't cause reuse
+        const { data, error } = await supabase
+            .from('orders')
+            .select('order_number')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        let maxNum = 0;
+        for (const row of (data || [])) {
+            const num = parseInt(row.order_number, 10);
+            if (!isNaN(num) && num > maxNum) maxNum = num;
+        }
+
+        return (maxNum + 1).toString().padStart(4, '0');
+    },
+
     // --- CHAT MESSAGES ---
     async getMessages(orderId: string) {
         const { data, error } = await supabase
