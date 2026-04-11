@@ -59,6 +59,7 @@ export async function parseOrderText(text: string, availableProducts: { id: stri
         - NUNCA invente nomes de produtos. Se o texto original usar outro nome, encontre o correspondente MAIS PRÓXIMO na lista Available Products.
         
         # 3️⃣ REGRAS DE INTERPRETAÇÃO
+        - ATENÇÃO A MÚLTIPLAS LISTAS: Se o texto listar categorias diferentes (Ex: "REGATA UM OMBRO" seguido de uma lista, e depois "REGATA NBA FEMININA" seguido de outra), você DEVE atribuir o 'product' correto a cada item respectivo da lista. NÃO misture os layouts!
         - Repetir nomes de acordo com a quantidade (Ex: "2x João" -> João, João).
         - Tratar "Tamanho X" sem nome como "Sem Nome - X".
         - Separar: Masculino, Feminino, Infantil.
@@ -141,6 +142,7 @@ export async function parseOrderText(text: string, availableProducts: { id: stri
             Array of: { teamName, layoutNumber, product, fabric, grade (Masculino/Feminino/Infantil), size, quantity, names: string[] }.
             
             # 3️⃣ INTERPRETATION
+            - MÚLTIPLAS LISTAS: Se o texto tiver blocos de diferentes produtos, relacione cada pessoa/tamanho ao 'product' daquele respectivo bloco! Não misture as listas.
             - Extract 'teamName' if possible.
             - Extract 'layoutNumber' (e.g. "Layout 502").
             - O campo 'product' DEVE SER EXATAMENTE um dos itens listados em Available Products. NUNCA invente nomes.

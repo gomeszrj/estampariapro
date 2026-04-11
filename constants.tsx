@@ -4,10 +4,10 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '19.0';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 19.0:
-- Múltiplas Imagens de Layout: Agora você pode anexar várias imagens de design simultaneamente no painel de layouts aprovados nas telas de editar/novo pedido.
-- Grade interativa com remoção individual de envio e contagem de imagens atualizada em tempo real.`;
+export const SYSTEM_VERSION = '19.1';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 19.1:
+- Aprimoramento da IA de Extração: A inteligência artificial agora foi treinada para destrinchar copiar e colar massivos contendo "Múltiplas Listas" com Modelos diferentes sem misturá-las.
+- Múltiplas Imagens de Layout: Adicionado envio simultâneo de layouts para as ordens de serviço.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [
