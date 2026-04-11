@@ -105,7 +105,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const [isPartialEditMode, setIsPartialEditMode] = useState(false);
   const [newOrderBriefing, setNewOrderBriefing] = useState('');
-  const [layoutUrl, setLayoutUrl] = useState<string>('');
+  const [layoutUrls, setLayoutUrls] = useState<string[]>([]);
 
   // Chat State
   const [chatOrder, setChatOrder] = useState<Order | null>(null);
@@ -389,47 +389,49 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
     // Set Custom Amount if exists
     setCustomAmountPaid(order.amountPaid ? order.amountPaid : '');
     setDiscountValue(order.discountValue || '');
-    setLayoutUrl(order.layoutUrl || '');
+    setLayoutUrls(order.layoutUrls && order.layoutUrls.length > 0
+      ? order.layoutUrls
+      : (order.layoutUrl ? [order.layoutUrl] : []));
 
     setIsAdding(true);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        const max_size = 800;
-
-        if (width > height) {
-          if (width > max_size) {
-            height *= max_size / width;
-            width = max_size;
+  const resizeImageToDataUrl = (file: File): Promise<string> =>
+    new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const max_size = 800;
+          if (width > height) {
+            if (width > max_size) { height *= max_size / width; width = max_size; }
+          } else {
+            if (height > max_size) { width *= max_size / height; height = max_size; }
           }
-        } else {
-          if (height > max_size) {
-            width *= max_size / height;
-            height = max_size;
-          }
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-        setLayoutUrl(dataUrl);
+          canvas.width = width;
+          canvas.height = height;
+          canvas.getContext('2d')?.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        };
+        img.src = event.target?.result as string;
       };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+      reader.readAsDataURL(file);
+    });
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    // Reset input so same file can be re-added if needed
+    e.target.value = '';
+    const dataUrls = await Promise.all(files.map(resizeImageToDataUrl));
+    setLayoutUrls(prev => [...prev, ...dataUrls]);
+  };
+
+  const removeLayoutImage = (index: number) => {
+    setLayoutUrls(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleAddNew = () => {
@@ -474,7 +476,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
     setCustomAmountPaid('');
     setDiscountValue('');
     setNewOrderBriefing('');
-    setLayoutUrl('');
+    setLayoutUrls([]);
     setIsPartialEditMode(false);
   };
 
@@ -522,7 +524,8 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
         briefing: editingOrderId ? undefined : newOrderBriefing,
         internalNotes: internalNotes,
         delayReason: delayReason,
-        layoutUrl: layoutUrl,
+        layoutUrl: layoutUrls[0] || '',
+        layoutUrls: layoutUrls,
         items: parsedItems.map(item => {
           const prod = productsByName.get((item.product || '').trim().toLowerCase());
           return {
@@ -567,7 +570,8 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
           clientId: clientIdToUse,
           amountPaid: orderData.amountPaid,
           items: orderData.items,
-          layoutUrl: layoutUrl
+          layoutUrl: layoutUrls[0] || '',
+          layoutUrls: layoutUrls
         });
       } else {
         await orderService.create({
@@ -771,25 +775,60 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                       </div>
                     </div>
 
-                    {/* Layout Image */}
+                    {/* Layout Images — Multiple */}
                     <div className="bg-slate-950 p-6 rounded-3xl border border-slate-800">
-                      <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Layout Aprovado</h4>
-                      <div className="flex flex-col md:flex-row gap-6 items-center">
-                        <div className="flex-1 w-full relative">
-                          <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" id="layout-upload" />
-                          <label htmlFor="layout-upload" className="flex items-center justify-center gap-2 w-full py-4 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-indigo-500 rounded-2xl cursor-pointer transition-all text-xs font-bold text-slate-400 uppercase tracking-widest">
-                            <Plus className="w-4 h-4" /> Adicionar / Alterar Imagem
-                          </label>
-                        </div>
-                        {layoutUrl && (
-                          <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-slate-700 bg-slate-900 shrink-0 relative group">
-                            <img src={layoutUrl} alt="Layout" className="w-full h-full object-cover" />
-                            <button onClick={(e) => { e.preventDefault(); setLayoutUrl(''); }} className="absolute inset-0 bg-red-500/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white" title="Remover imagem">
-                              <Trash2 className="w-5 h-5" />
-                            </button>
-                          </div>
-                        )}
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                          Layouts Aprovados
+                          {layoutUrls.length > 0 && (
+                            <span className="ml-2 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-lg text-[9px]">
+                              {layoutUrls.length} imagem{layoutUrls.length !== 1 ? 'ns' : ''}
+                            </span>
+                          )}
+                        </h4>
                       </div>
+                      {/* Upload button — multiple files at once */}
+                      <div className="mb-4">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleImageUpload}
+                          className="hidden"
+                          id="layout-upload"
+                        />
+                        <label
+                          htmlFor="layout-upload"
+                          className="flex items-center justify-center gap-2 w-full py-4 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-indigo-500 rounded-2xl cursor-pointer transition-all text-xs font-bold text-slate-400 uppercase tracking-widest"
+                        >
+                          <Plus className="w-4 h-4" /> Adicionar Imagens
+                        </label>
+                      </div>
+                      {/* Grid of thumbnails */}
+                      {layoutUrls.length > 0 && (
+                        <div className="grid grid-cols-4 gap-3">
+                          {layoutUrls.map((url, idx) => (
+                            <div
+                              key={idx}
+                              className="relative group aspect-square rounded-2xl overflow-hidden border-2 border-slate-700 bg-slate-900"
+                            >
+                              <img src={url} alt={`Layout ${idx + 1}`} className="w-full h-full object-cover" />
+                              {/* Overlay label */}
+                              <div className="absolute bottom-0 left-0 right-0 bg-slate-900/70 text-[8px] font-black text-slate-300 text-center py-0.5 uppercase tracking-widest">
+                                Layout {idx + 1}
+                              </div>
+                              {/* Remove button */}
+                              <button
+                                onClick={(e) => { e.preventDefault(); removeLayoutImage(idx); }}
+                                className="absolute inset-0 bg-red-500/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white"
+                                title="Remover imagem"
+                              >
+                                <Trash2 className="w-5 h-5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     {/* Client & Date */}
