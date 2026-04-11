@@ -4,9 +4,10 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '18.9';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 18.9:
-- Correção de Numeração: Número de pedido agora é gerado com base no maior número já cadastrado (MAX), garantindo que pedidos excluídos não causem reaproveitamento de números.`;
+export const SYSTEM_VERSION = '19.0';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 19.0:
+- Múltiplas Imagens de Layout: Agora você pode anexar várias imagens de design simultaneamente no painel de layouts aprovados nas telas de editar/novo pedido.
+- Grade interativa com remoção individual de envio e contagem de imagens atualizada em tempo real.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [
