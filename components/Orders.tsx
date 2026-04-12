@@ -493,7 +493,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
   };
 
   const handleFinalize = async () => {
-    if (!clientName || !deliveryDate || parsedItems.length === 0) return;
+    if (!clientName || !deliveryDate) return;
 
     setIsSaving(true);
 

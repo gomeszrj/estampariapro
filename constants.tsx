@@ -4,8 +4,9 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '19.1';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 19.1:
+export const SYSTEM_VERSION = '19.2';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 19.2:
+- Correção de Cadastro: Permitido a criação e salvamento de pedidos (como cadastro de arte) sem a necessidade de adicionar uma lista de peças.
 - Aprimoramento da IA de Extração: A inteligência artificial agora foi treinada para destrinchar copiar e colar massivos contendo "Múltiplas Listas" com Modelos diferentes sem misturá-las.
 - Múltiplas Imagens de Layout: Adicionado envio simultâneo de layouts para as ordens de serviço.`;
 
