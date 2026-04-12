@@ -355,7 +355,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
   };
 
   const addNewManualItem = () => {
-    setParsedItems(prev => [...prev, { product: '', grade: 'Masculino', size: 'M', quantity: 1 }]);
+    setParsedItems(prev => [...prev, { product: '', grade: 'Unidade', size: 'UN', quantity: 1 }]);
   };
 
   const canEditOrder = (status: OrderStatus) => {
@@ -378,8 +378,8 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
     setPaymentStatus(order.paymentStatus || PaymentStatus.PENDING);
     setParsedItems((order.items || []).length > 0 ? (order.items || []).map(i => ({
       product: i.productName,
-      grade: i.gradeLabel as any,
-      size: i.size,
+      grade: (i.gradeLabel || 'Unidade') as any,
+      size: i.size || 'UN',
       quantity: i.quantity,
       fabric: i.fabricName
     })) : [{ product: '', grade: 'Masculino', size: 'G', quantity: 1 }]);
@@ -526,14 +526,52 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
         layoutUrls: layoutUrls,
         items: parsedItems.map(item => {
           const prod = productsByName.get((item.product || '').trim().toLowerCase());
+          
+          let finalGrade = item.grade || 'Masculino';
+          let finalSize = item.size || 'M';
+
+          if (prod) {
+            let allowedGradesObj: Record<string, string[]> | undefined;
+            if (prod.allowedGrades && !Array.isArray(prod.allowedGrades)) {
+              allowedGradesObj = prod.allowedGrades as Record<string, string[]>;
+            } else if (Array.isArray(prod.allowedGrades)) {
+              allowedGradesObj = {};
+              (prod.allowedGrades as any).forEach((g: string) => {
+                const cfg = GRADES.find((gconfig: any) => gconfig.label === g);
+                if (cfg && allowedGradesObj) allowedGradesObj[g] = cfg.sizes;
+              });
+            }
+
+            const allowedGradeLabels = allowedGradesObj ? Object.keys(allowedGradesObj) : GRADES.map((g: any) => g.label);
+            const validGradesList = GRADES.filter((g: any) => allowedGradeLabels.includes(g.label));
+
+            if (validGradesList.length === 0) {
+                finalGrade = 'Unidade';
+                finalSize = 'UN';
+            } else if (!validGradesList.find((g: any) => g.label === finalGrade)) {
+                finalGrade = validGradesList[0].label;
+                finalSize = validGradesList[0].sizes[0] || 'UN';
+            } else {
+                const specificAllowedSizes = allowedGradesObj ? allowedGradesObj[finalGrade] : null;
+                const currentGradeConfig = GRADES.find((g: any) => g.label === finalGrade);
+                const availableSizes = specificAllowedSizes || (currentGradeConfig ? currentGradeConfig.sizes : []);
+                if (!availableSizes.includes(finalSize)) {
+                    finalSize = availableSizes[0] || 'UN';
+                }
+            }
+          } else if (!item.grade) {
+            finalGrade = 'Unidade';
+            finalSize = 'UN';
+          }
+
           return {
             id: Math.random().toString(), // Service ignores this on insert usually or mapping needs care
             productId: prod ? prod.id : 'p-custom',
             productName: item.product || 'Personalizado',
             fabricId: 'f-custom',
             fabricName: item.fabric || 'Não especificado',
-            gradeLabel: item.grade || 'Masculino',
-            size: item.size || 'M',
+            gradeLabel: finalGrade,
+            size: finalSize,
             quantity: item.quantity || 0,
             unitPrice: prod ? prod.basePrice : 35
           };
@@ -946,12 +984,21 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                             allowedGradesObj = selectedProduct.allowedGrades as Record<string, string[]>;
                           }
                         }
-                        const allowedGradeLabels = allowedGradesObj ? Object.keys(allowedGradesObj) : GRADES.map(g => g.label);
-                        const allowedGradesList = GRADES.filter(g => allowedGradeLabels.includes(g.label));
-                        const currentGradeLabel = item.grade || 'Masculino';
+                        const allowedGradeLabels = allowedGradesObj ? Object.keys(allowedGradesObj) : GRADES.map((g: any) => g.label);
+                        let allowedGradesList = GRADES.filter((g: any) => allowedGradeLabels.includes(g.label));
+                        
+                        if (allowedGradesList.length === 0) {
+                            allowedGradesList = [{ label: 'Unidade', sizes: ['UN'] }];
+                        }
+
+                        let currentGradeLabel = item.grade || 'Masculino';
+                        if (!allowedGradesList.find((g: any) => g.label === currentGradeLabel)) {
+                            currentGradeLabel = allowedGradesList[0].label;
+                        }
+
                         const specificAllowedSizes = allowedGradesObj ? allowedGradesObj[currentGradeLabel] : null;
-                        const currentGradeConfig = GRADES.find(g => g.label === currentGradeLabel);
-                        const availableSizes = specificAllowedSizes || (currentGradeConfig ? currentGradeConfig.sizes : []);
+                        const currentGradeConfig = GRADES.find((g: any) => g.label === currentGradeLabel) || allowedGradesList[0];
+                        const availableSizes = specificAllowedSizes || currentGradeConfig.sizes;
 
                         return ( // RENDER ITEM
                           <div key={idx} className="bg-[#0f172a] p-5 rounded-[1.5rem] border border-slate-800 shadow-sm relative group hover:border-indigo-500/30 transition-colors">
@@ -973,14 +1020,14 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                               <div className="md:col-span-8 flex gap-4">
                                 <div className="flex-1 space-y-1">
                                   <label className="text-[8px] font-black text-slate-600 uppercase tracking-wider ml-1">Grade</label>
-                                  <select className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-3 text-xs font-bold text-slate-300 outline-none uppercase" value={item.grade} onChange={e => updateItem(idx, 'grade', e.target.value)}>
-                                    {allowedGradesList.map(g => <option key={g.label} value={g.label}>{g.label}</option>)}
+                                  <select className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-3 text-xs font-bold text-slate-300 outline-none uppercase" value={currentGradeLabel} onChange={e => updateItem(idx, 'grade', e.target.value)}>
+                                    {allowedGradesList.map((g: any) => <option key={g.label} value={g.label}>{g.label}</option>)}
                                   </select>
                                 </div>
                                 <div className="flex-1 space-y-1">
                                   <label className="text-[8px] font-black text-slate-600 uppercase tracking-wider ml-1">Tamanho</label>
-                                  <select className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-3 text-xs font-bold text-slate-300 outline-none" value={item.size} onChange={e => updateItem(idx, 'size', e.target.value)}>
-                                    {availableSizes.map(s => <option key={s} value={s}>{s}</option>)}
+                                  <select className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-3 text-xs font-bold text-slate-300 outline-none" value={availableSizes.includes(item.size || '') ? item.size : availableSizes[0]} onChange={e => updateItem(idx, 'size', e.target.value)}>
+                                    {availableSizes.map((s: any) => <option key={s} value={s}>{s}</option>)}
                                   </select>
                                 </div>
                                 <div className="w-24 space-y-1">

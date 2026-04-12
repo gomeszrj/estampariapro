@@ -4,10 +4,11 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '19.3';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 19.3:
+export const SYSTEM_VERSION = '19.4';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 19.4:
+- Inclusão e correção de Itens de Produção Unitários: Corrigido o erro que impedia salvar pedidos de produtos que não fizessem uso de grades padrão. Adicionado o padrão automático "Unidade" para sanar conflitos.
 - Correção de Cadastro: Permitido a criação e salvamento de pedidos (como cadastro de arte) sem a necessidade de adicionar uma lista de peças.
-- Aprimoramento da IA de Extração: A inteligência artificial agora foi treinada para destrinchar copiar e colar massivos contendo "Múltiplas Listas" com Modelos diferentes sem misturá-las. Corrigida a lógica visual para agrupar grades (Masculino, Feminino, Infantil) dentro do mesmo layout.
+- Aprimoramento da IA de Extração: A inteligência artificial agora foi treinada para destrinchar copiar e colar massivos contendo "Múltiplas Listas" com Modelos diferentes sem misturá-las.
 - Múltiplas Imagens de Layout: Adicionado envio simultâneo de layouts para as ordens de serviço.`;
 
 // --- FABRIC TYPES ---
@@ -23,7 +24,8 @@ export const GRADES: SizeGrade[] = [
   { label: 'Infantil', sizes: ['1', '2', '4', '6', '8', '10', '12', '14'] },
   { label: 'Masculino', sizes: ['PP', 'P', 'M', 'G', 'GG', 'XG', 'XXG', 'ESP1', 'ESP2'] },
   { label: 'Feminino', sizes: ['PP', 'P', 'M', 'G', 'GG', 'XG', 'XXG', 'ESP1', 'ESP2'] },
-  { label: 'Unissex', sizes: ['UN'] }
+  { label: 'Unissex', sizes: ['UN'] },
+  { label: 'Unidade', sizes: ['UN'] }
 ];
 
 export const STATUS_CONFIG = {
