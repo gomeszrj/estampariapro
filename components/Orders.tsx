@@ -216,12 +216,13 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
         const layout = item.layoutNumber || 9999;
         const product = (item.product || 'Produto Personalizado').toUpperCase();
 
+        const size = (item.size || 'UN').toUpperCase();
+
         let grade = (item.grade || 'MASCULINO').toUpperCase();
         if (grade.includes('FEM')) grade = 'FEMININO';
         else if (grade.includes('INF') || grade.includes('UX')) grade = 'INFANTIL';
+        else if (grade.includes('UNI') || size === 'UN') grade = 'UNIDADE';
         else grade = 'MASCULINO'; // Default
-
-        const size = (item.size || 'UN').toUpperCase();
         const fabric = item.fabric || '';
 
         if (!groups[layout]) groups[layout] = {};
@@ -251,7 +252,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
           formattedOutput += `LAYOUT${layoutLabel} - ${product}\n\n`;
 
           const gradesMap = productsMap[product];
-          const gradeOrder = ['MASCULINO', 'FEMININO', 'INFANTIL'];
+          const gradeOrder = ['MASCULINO', 'FEMININO', 'INFANTIL', 'UNISSEX', 'UNIDADE'];
           const sortedGrades = Object.keys(gradesMap).sort((a, b) => {
             return gradeOrder.indexOf(a) - gradeOrder.indexOf(b);
           });
@@ -294,7 +295,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
 
         Object.keys(productsMap).sort().forEach(product => {
           const gradesMap = productsMap[product];
-          const gradeOrder = ['MASCULINO', 'FEMININO', 'INFANTIL'];
+          const gradeOrder = ['MASCULINO', 'FEMININO', 'INFANTIL', 'UNISSEX', 'UNIDADE'];
           const sortedGrades = Object.keys(gradesMap).sort((a, b) => {
             return gradeOrder.indexOf(a) - gradeOrder.indexOf(b);
           });
