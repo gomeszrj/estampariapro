@@ -207,7 +207,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
         return weights[s] || 999;
       };
 
-      // Grouping: Layout -> Grade (Group) -> Product (SubGroup) -> Size
+      // Grouping: Layout -> Product (Group) -> Grade (SubGroup) -> Size
       const groups: Record<number, Record<string, Record<string, Record<string, { quantity: number, names: string[], fabric: string }>>>> = {};
 
       const teamName = items[0]?.teamName || "NOME DA EQUIPE";
@@ -225,16 +225,16 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
         const fabric = item.fabric || '';
 
         if (!groups[layout]) groups[layout] = {};
-        if (!groups[layout][grade]) groups[layout][grade] = {};
-        if (!groups[layout][grade][product]) groups[layout][grade][product] = {};
-        if (!groups[layout][grade][product][size]) {
-          groups[layout][grade][product][size] = { quantity: 0, names: [], fabric };
+        if (!groups[layout][product]) groups[layout][product] = {};
+        if (!groups[layout][product][grade]) groups[layout][product][grade] = {};
+        if (!groups[layout][product][grade][size]) {
+          groups[layout][product][grade][size] = { quantity: 0, names: [], fabric };
         }
 
-        groups[layout][grade][product][size].quantity += item.quantity || 0;
-        if (item.names) groups[layout][grade][product][size].names.push(...item.names);
-        if (fabric && !groups[layout][grade][product][size].fabric) {
-          groups[layout][grade][product][size].fabric = fabric;
+        groups[layout][product][grade][size].quantity += item.quantity || 0;
+        if (item.names) groups[layout][product][grade][size].names.push(...item.names);
+        if (fabric && !groups[layout][product][grade][size].fabric) {
+          groups[layout][product][grade][size].fabric = fabric;
         }
       });
 
@@ -243,46 +243,44 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
       // Iterate Layouts
       Object.keys(groups).sort((a, b) => parseInt(a) - parseInt(b)).forEach(layoutKey => {
         const layoutNum = parseInt(layoutKey);
-        const layoutGrades = groups[layoutNum];
+        const productsMap = groups[layoutNum];
 
-        // Specific Order for Grades: Masculine -> Feminine -> Child
-        const gradeOrder = ['MASCULINO', 'FEMININO', 'INFANTIL'];
-        const sortedGrades = Object.keys(layoutGrades).sort((a, b) => {
-          return gradeOrder.indexOf(a) - gradeOrder.indexOf(b);
-        });
+        Object.keys(productsMap).sort().forEach(product => {
+          // Layout Header
+          const layoutLabel = layoutNum === 9999 ? '' : ` ${layoutNum}`;
+          formattedOutput += `LAYOUT${layoutLabel} - ${product}\n\n`;
 
-        sortedGrades.forEach(grade => {
-          const products = layoutGrades[grade];
-          Object.keys(products).sort().forEach(product => {
-            // Header: LAYOUT REGATA MASCULINA - Single Line
-            formattedOutput += `LAYOUT ${product} ${grade}\n\n`; // Double newline after header for separation
+          const gradesMap = productsMap[product];
+          const gradeOrder = ['MASCULINO', 'FEMININO', 'INFANTIL'];
+          const sortedGrades = Object.keys(gradesMap).sort((a, b) => {
+            return gradeOrder.indexOf(a) - gradeOrder.indexOf(b);
+          });
 
-            const sizes = products[product];
+          sortedGrades.forEach(grade => {
+            formattedOutput += `--- ${grade} ---\n`;
+            
+            const sizes = gradesMap[grade];
             Object.keys(sizes).sort((a, b) => getSizeWeight(a) - getSizeWeight(b)).forEach(size => {
               const data = sizes[size];
-              // ... existing size formatting ...
               const formatAgeSize = (s: string) => {
                 if (!isNaN(parseInt(s)) && !(s || '').toLowerCase().includes('ano')) return `${s} ANOS`;
                 return s;
               };
               const displaySizeHeader = formatAgeSize(size);
 
-              formattedOutput += `TAMANHO - ${displaySizeHeader}\n`; // Single newline after Size Header? User asked for single spacing list, but maybe header needs space. Let's keep one empty line before size group.
+              formattedOutput += `TAMANHO - ${displaySizeHeader}\n`;
 
-              // List Names (Single Spacing)
               data.names.forEach(name => {
                 const displayName = name.toUpperCase().trim();
                 formattedOutput += `1 - ${displayName} - ${displaySizeHeader}\n`;
               });
 
-              // Fill placeholders
-              const missing = data.quantity - data.names.length;
+              const missing = Math.max(0, data.quantity - data.names.length);
               for (let i = 0; i < missing; i++) {
                 formattedOutput += `1 - [SEM NOME] - ${displaySizeHeader}\n`;
               }
               formattedOutput += `\n`; // Space between size groups
             });
-            // formattedOutput += `\n`; // Space between products (already has newlines from sizes)
           });
         });
       });
@@ -292,19 +290,19 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
       const aggregatedItems: ParsedOrderItem[] = [];
       Object.keys(groups).sort((a, b) => parseInt(a) - parseInt(b)).forEach(layoutKey => {
         const layoutNum = parseInt(layoutKey);
-        const layoutGrades = groups[layoutNum];
-        const gradeOrder = ['MASCULINO', 'FEMININO', 'INFANTIL'];
-        const sortedGrades = Object.keys(layoutGrades).sort((a, b) => {
-          return gradeOrder.indexOf(a) - gradeOrder.indexOf(b);
-        });
+        const productsMap = groups[layoutNum];
 
-        sortedGrades.forEach(grade => {
-          const products = layoutGrades[grade];
-          Object.keys(products).sort().forEach(product => {
-            const sizes = products[product];
-            Object.keys(sizes).forEach(size => {
+        Object.keys(productsMap).sort().forEach(product => {
+          const gradesMap = productsMap[product];
+          const gradeOrder = ['MASCULINO', 'FEMININO', 'INFANTIL'];
+          const sortedGrades = Object.keys(gradesMap).sort((a, b) => {
+            return gradeOrder.indexOf(a) - gradeOrder.indexOf(b);
+          });
+
+          sortedGrades.forEach(grade => {
+            const sizes = gradesMap[grade];
+            Object.keys(sizes).sort((a, b) => getSizeWeight(a) - getSizeWeight(b)).forEach(size => {
               const data = sizes[size];
-              // Format grade properly (MASCULINO -> Masculino) to match the Grades dropdown options
               const formattedGrade = grade.charAt(0).toUpperCase() + grade.slice(1).toLowerCase();
               aggregatedItems.push({
                 product: product,
