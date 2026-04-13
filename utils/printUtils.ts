@@ -289,9 +289,10 @@ export async function printInvoice(order: Order) {
       paid = 0;
    }
 
-   if (order.paymentStatus === PaymentStatus.FULL) {
+   const statusStr = order.paymentStatus as string | undefined;
+   if (statusStr === PaymentStatus.FULL || statusStr === 'pago' || statusStr === 'Pago (100%)' || statusStr === 'Integral (100%)') {
       paid = total;
-   } else if (!paid && order.paymentStatus === 'Sinal (50%)') {
+   } else if (!paid && (statusStr === 'Sinal (50%)' || statusStr === 'parcial_50' || statusStr === 'Sinal / Parcial')) {
       paid = total / 2;
    }
 

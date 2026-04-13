@@ -4,12 +4,12 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '19.4';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 19.4:
-- Inclusão e correção de Itens de Produção Unitários: Corrigido o erro que impedia salvar pedidos de produtos que não fizessem uso de grades padrão. Adicionado o padrão automático "Unidade" para sanar conflitos.
-- Correção de Cadastro: Permitido a criação e salvamento de pedidos (como cadastro de arte) sem a necessidade de adicionar uma lista de peças.
-- Aprimoramento da IA de Extração: A inteligência artificial agora foi treinada para destrinchar copiar e colar massivos contendo "Múltiplas Listas" com Modelos diferentes sem misturá-las.
-- Múltiplas Imagens de Layout: Adicionado envio simultâneo de layouts para as ordens de serviço.`;
+export const SYSTEM_VERSION = '20.0';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 20.0 (SaaS Multi-Tenant Edition):
+- Lançamento Oficial da Arquitetura Global SaaS Multi-Tenant.
+- Adicionado sistema de isolamento de Inquilinos via Políticas de Segurança RLS Nível de Banco.
+- Implantação de fallbacks de roteamento dinâmico B2C para a vitrine matriz garantindo 100% de estabilidade local.
+- Compatibilidade reversa no cálculo de pagamentos herdados concluída (DANFE agora reconhece faturamentos pré-migração).`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [
