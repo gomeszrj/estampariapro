@@ -15,7 +15,8 @@ import {
   ExternalLink,
   Share2,
   Copy,
-  Palette
+  Palette,
+  ShieldAlert
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -23,11 +24,12 @@ interface SidebarProps {
   setActiveView: (view: string) => void;
   isOpen?: boolean;
   setIsOpen?: (open: boolean) => void;
+  isMasterAdmin?: boolean;
 }
 
 import { settingsService } from '../services/settingsService';
 
-const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, setIsOpen }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, setIsOpen, isMasterAdmin }) => {
   const [cloudBotEnabled, setCloudBotEnabled] = React.useState(false);
   const [companyName, setCompanyName] = React.useState('Minha Estamparia');
 
@@ -55,6 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
     { id: 'inventory', label: 'Estoque', icon: Box },
     ...(cloudBotEnabled ? [{ id: 'cloudbot', label: 'CloudBot Agent', icon: Bot }] : []),
     { id: 'finance', label: 'Financeiro', icon: TrendingUp },
+    ...(isMasterAdmin ? [{ id: 'master-admin', label: 'Gestão SaaS', icon: ShieldAlert }] : []),
   ];
 
   const handleCopyLink = (path: string) => {

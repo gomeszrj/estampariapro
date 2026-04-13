@@ -34,6 +34,18 @@ export const teamService = {
             .eq('id', id);
 
         if (error) throw error;
+    },
+
+    async update(id: string, updates: Partial<TeamMember>) {
+        const dbItem = mapToDB(updates);
+        // Remove undefined fields
+        Object.keys(dbItem).forEach(key => (dbItem as any)[key] === undefined && delete (dbItem as any)[key]);
+        const { error } = await supabase
+            .from('team_members')
+            .update(dbItem)
+            .eq('id', id);
+
+        if (error) throw error;
     }
 };
 
@@ -43,6 +55,7 @@ const mapFromDB = (dbItem: any): TeamMember => ({
     role: dbItem.role as UserRole,
     active: dbItem.active,
     email: dbItem.email,
+    visible_password: dbItem.visible_password,
     createdAt: dbItem.created_at
 });
 
@@ -50,5 +63,6 @@ const mapToDB = (appItem: Partial<TeamMember>) => ({
     name: appItem.name,
     role: appItem.role,
     active: appItem.active,
-    email: appItem.email
+    email: appItem.email,
+    visible_password: appItem.visible_password
 });

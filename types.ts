@@ -130,6 +130,7 @@ export interface TeamMember {
   role: UserRole;
   active: boolean;
   email?: string;
+  visible_password?: string;
   createdAt?: string;
 }
 

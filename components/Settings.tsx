@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Building2, Save, Upload, Globe, Phone, Mail, FileText, Landmark, Camera, CheckCircle2, Users, UserPlus, Trash2, Shield, User, MessageSquare, Download } from 'lucide-react';
+import { Building2, Save, Upload, Globe, Phone, Mail, FileText, Landmark, Camera, CheckCircle2, Users, UserPlus, Trash2, Shield, User, MessageSquare, Download, Lock, XCircle } from 'lucide-react';
 import { teamService } from '../services/teamService';
 import { settingsService, CompanySettings } from '../services/settingsService';
 import { TeamMember, UserRole } from '../types';
@@ -24,6 +24,11 @@ const Settings: React.FC = () => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberRole, setNewMemberRole] = useState<UserRole | ''>('');
+  const [newMemberPassword, setNewMemberPassword] = useState('');
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
+  const [editingPasswordId, setEditingPasswordId] = useState<string | null>(null);
+  const [editPasswordValue, setEditPasswordValue] = useState('');
+
   const [isLoadingTeam, setIsLoadingTeam] = useState(false);
   const [isLoadingSettings, setIsLoadingSettings] = useState(false);
 
@@ -66,10 +71,12 @@ const Settings: React.FC = () => {
       await teamService.create({
         name: newMemberName,
         role: newMemberRole as UserRole,
+        visible_password: newMemberPassword.trim() || undefined,
         active: true
       });
       setNewMemberName('');
       setNewMemberRole('');
+      setNewMemberPassword('');
       loadTeam();
     } catch (e) {
       alert("Erro ao adicionar membro (Verifique se a tabela team_members existe no Supabase)");
@@ -82,6 +89,19 @@ const Settings: React.FC = () => {
       loadTeam();
     }
   };
+
+  const handleUpdatePassword = async (id: string) => {
+    if (!editPasswordValue.trim()) return;
+    try {
+      await teamService.update(id, { visible_password: editPasswordValue.trim() });
+      setEditingPasswordId(null);
+      setEditPasswordValue('');
+      loadTeam();
+    } catch(e) {
+      alert("Erro ao alterar senha.");
+    }
+  };
+
 
   const handleSave = async () => {
     try {
@@ -430,6 +450,23 @@ const Settings: React.FC = () => {
                 </select>
               </div>
 
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] block ml-1 flex items-center justify-between">
+                  <span>Senha de Acesso (Visível)</span>
+                  <span className="text-slate-500 font-medium normal-case tracking-normal">Opcional</span>
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <input
+                    type="text"
+                    value={newMemberPassword}
+                    onChange={(e) => setNewMemberPassword(e.target.value)}
+                    placeholder="Ex: msenha123"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl py-4 pl-12 pr-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  />
+                </div>
+              </div>
+
               <button
                 onClick={handleSaveMember}
                 disabled={!newMemberName || !newMemberRole}
@@ -472,20 +509,58 @@ const Settings: React.FC = () => {
                           {member.name.substring(0, 2)}
                         </div>
                         <div>
-                          <h4 className="font-black text-slate-200 text-sm uppercase tracking-wide">{member.name}</h4>
-                          <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest bg-indigo-500/10 px-2 py-1 rounded-lg border border-indigo-500/10">
+                          <h4 className="font-black text-slate-200 text-sm uppercase tracking-wide flex items-center gap-3">
+                            {member.name}
+                            
+                            {/* Password Viewer */}
+                            {member.visible_password && editingPasswordId !== member.id && (
+                              <button 
+                                onClick={() => setVisiblePasswords(prev => ({...prev, [member.id]: !prev[member.id]}))}
+                                className="text-[10px] font-bold text-slate-500 hover:text-indigo-400 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded cursor-pointer transition-colors flex items-center gap-1"
+                                title="Mostrar/Ocultar Senha de Login"
+                              >
+                                🔑 {visiblePasswords[member.id] ? member.visible_password : '••••••'}
+                              </button>
+                            )}
+
+                          </h4>
+                          <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest bg-indigo-500/10 px-2 py-1 rounded-lg border border-indigo-500/10 mt-1 inline-block">
                             {member.role}
                           </span>
                         </div>
                       </div>
 
-                      <button
-                        onClick={() => handleDeleteMember(member.id)}
-                        className="text-slate-600 hover:text-rose-500 p-3 hover:bg-rose-500/10 rounded-xl transition-all opacity-0 group-hover:opacity-100"
-                        title="Remover Usuário"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {editingPasswordId === member.id ? (
+                           <div className="flex items-center gap-2 mr-2">
+                             <input 
+                               autoFocus
+                               type="text" 
+                               value={editPasswordValue}
+                               onChange={e => setEditPasswordValue(e.target.value)}
+                               placeholder="Nova Senha..."
+                               className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white w-32 focus:border-indigo-500 outline-none"
+                             />
+                             <button onClick={() => handleUpdatePassword(member.id)} className="text-emerald-500 hover:bg-emerald-500/20 p-2 rounded-lg transition-colors"><Save className="w-4 h-4" /></button>
+                             <button onClick={() => setEditingPasswordId(null)} className="text-rose-500 hover:bg-rose-500/20 p-2 rounded-lg transition-colors"><XCircle className="w-4 h-4" /></button>
+                           </div>
+                        ) : (
+                           <button
+                             onClick={() => { setEditingPasswordId(member.id); setEditPasswordValue(''); }}
+                             className="text-slate-500 hover:text-indigo-400 p-2 hover:bg-indigo-500/10 rounded-lg transition-colors text-[10px] font-black uppercase tracking-widest flex items-center gap-1 border border-transparent hover:border-indigo-500/20"
+                             title="Alterar Senha Manualmente"
+                           >
+                             Modificar Senha
+                           </button>
+                        )}
+                        <button
+                          onClick={() => handleDeleteMember(member.id)}
+                          className="text-slate-600 hover:text-rose-500 p-3 hover:bg-rose-500/10 rounded-xl transition-all"
+                          title="Remover Usuário"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

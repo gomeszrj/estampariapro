@@ -17,6 +17,7 @@ import OrderTracker from './components/OrderTracker.tsx';
 import PublicStore from './components/PublicStore.tsx';
 import ClientPortal from './components/ClientPortal.tsx';
 import ArtQueue from './components/ArtQueue.tsx';
+import MasterAdmin from './components/MasterAdmin.tsx';
 import { Bell, User as UserIcon, Share2, Menu, ExternalLink, Link as LinkIcon, Copy } from 'lucide-react';
 import { Order, Product, Client, OrderStatus, OrderType } from './types';
 import { AuthProvider, useAuth } from './contexts/AuthContext.tsx';
@@ -119,6 +120,7 @@ const AuthenticatedApp: React.FC = () => {
       case 'art-queue': return <ArtQueue />;
       case 'cloudbot': return <CloudBot onCreateOrder={handleBotOrder} />;
       case 'crm': return <Chats />;
+      case 'master-admin': return isMasterAdmin ? <MasterAdmin /> : null;
       default: return null;
     }
   };
@@ -138,9 +140,11 @@ const AuthenticatedApp: React.FC = () => {
     return <OrderTracker orderId={trackerOrderId} onBack={() => window.location.href = '/'} />;
   }
 
+  const isMasterAdmin = user?.email === 'admin@estamparia.com';
+
   return (
     <div className="flex min-h-screen bg-[#020617] relative">
-      <Sidebar activeView={activeView} setActiveView={setActiveView} isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
+      <Sidebar activeView={activeView} setActiveView={setActiveView} isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} isMasterAdmin={isMasterAdmin} />
       <main className="flex-1 flex flex-col min-w-0">
         <header className="h-20 bg-[#0f172a]/40 backdrop-blur-xl border-b border-slate-800/50 flex items-center justify-between px-4 md:px-10 sticky top-0 z-30">
           <div className="flex items-center gap-3">
