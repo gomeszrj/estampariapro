@@ -4,12 +4,12 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '20.0';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 20.0 (SaaS Multi-Tenant Edition):
-- Lançamento Oficial da Arquitetura Global SaaS Multi-Tenant.
-- Adicionado sistema de isolamento de Inquilinos via Políticas de Segurança RLS Nível de Banco.
-- Implantação de fallbacks de roteamento dinâmico B2C para a vitrine matriz garantindo 100% de estabilidade local.
-- Compatibilidade reversa no cálculo de pagamentos herdados concluída (DANFE agora reconhece faturamentos pré-migração).`;
+export const SYSTEM_VERSION = '20.1';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 20.1 (SaaS Admin & User Vault):
+- Lançamento do Painel 'Gestão SaaS' (Exclusivo para Master Admin) para controle de todas as Estamparias/Inquilinos Ativos.
+- Cofre Visível Integrado: Adicionada a função do administrador do Inquilino cadastrar senhas na aba de Equipe para visualização posterior caso os funcionários as esqueçam.
+- Refinamento Estrutural Local: Ajustada estrutura do ambiente para operar diretamente pela sub-raiz do Vercel, otimizando os deploys em menos de 1 minuto!
+- Preparação para Gateway Financeiro: O plano do Inquilino agora fica exibido na tela Master.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [
