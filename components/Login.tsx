@@ -11,7 +11,7 @@ const Login: React.FC = () => {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [mode, setMode] = useState<'login' | 'register' | 'tracker' | 'client_login'>('login');
+    const [mode, setMode] = useState<'login' | 'tracker' | 'client_login'>('login');
 
     // Tracker State
     const [trackNumber, setTrackNumber] = useState('');
@@ -38,13 +38,6 @@ const Login: React.FC = () => {
                     phone: clientUser.whatsapp
                 }));
                 window.location.href = '/?view=client_portal';
-            } else {
-                const { error } = await supabase.auth.signUp({
-                    email,
-                    password,
-                });
-                if (error) throw error;
-                alert('Cadastro realizado! Verifique seu email ou faça login se a confirmação não for necessária.');
             }
         } catch (err: any) {
             setError(err.message);
@@ -190,19 +183,11 @@ const Login: React.FC = () => {
                                 disabled={loading}
                                 className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {loading ? 'Carregando...' : mode === 'register' ? 'Cadastrar' : 'Entrar'}
+                                {loading ? 'Carregando...' : 'Entrar'}
                             </button>
                         </form>
 
                         <div className="mt-8 space-y-4 text-center">
-                            {mode !== 'client_login' && (
-                                <button
-                                    onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
-                                    className="text-slate-400 hover:text-indigo-400 text-sm font-medium transition-colors block w-full"
-                                >
-                                    {mode === 'login' ? 'Não tem uma conta? Cadastre-se' : 'Já tem uma conta? Entre'}
-                                </button>
-                            )}
 
                             <div className="relative py-2">
                                 <div className="absolute inset-0 flex items-center">
