@@ -74,6 +74,8 @@ export interface Order {
   delayReason?: string;
   layoutUrl?: string; // Legacy: single image url (kept for compatibility)
   layoutUrls?: string[]; // New: Multiple image urls for approved layouts
+  designFileUrls?: string[]; // New: Source files (PSD, CDR, RAR)
+  readyFileUrls?: string[]; // New: Print-ready files
   artCreated?: boolean; // Art Queue: art has been created
   artAwaitingApproval?: boolean; // Art Queue: art is awaiting client approval
   layoutRevision?: string; // Art Queue: revision/layout number

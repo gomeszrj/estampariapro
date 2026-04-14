@@ -4,13 +4,13 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '20.5';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 20.5 (SaaS Commercial Armor):
-- Trava de Segurança SaaS: Bloqueio automático de funções após 3 dias de vencimento da assinatura.
-- Teste Grátis (Trial): Novo seletor no Master Admin para conceder 7 dias de degustação a novos clientes.
-- Link de Pagamento: Integração de link de renovação diretamente na tela de bloqueio do inquilino.
-- Multi-Account Testing: Sessões agora são independentes por aba do navegador, permitindo testar várias contas simultaneamente.
-- Upgrade de Performance: Login mais agressivo e persistência otimizada para o ambiente SaaS.`;
+export const SYSTEM_VERSION = '20.7';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 20.7 (Heavy Production Update):
+- Suporte a Arquivos Pesados: Upload direto de arquivos .PSD, .CDR, .RAR e outros de até 1GB via Supabase Storage.
+- Fotos no Kanban: Cards do Fluxo de Produção agora exibem miniaturas dos layouts para rápida identificação visual.
+- Handoff de Arte: Novo fluxo onde o designer baixa as fontes, cria a arte e faz o upload do arquivo finalizado diretamente no card da produção.
+- Downloads de Produção: Próximos setores (impressão/costura) agora podem baixar a arte finalizada direto do Kanban.
+- Correção Vercel: Resolvido problema crítico de build que impedia atualizações automáticas do sistema.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [

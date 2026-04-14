@@ -4,6 +4,23 @@ import { productService } from './productService';
 import { inventoryService } from './inventoryService';
 
 export const orderService = {
+  async uploadFile(file: File, path: string): Promise<string> {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `${path}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('orders') // Assuming bucket name 'orders'
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage
+      .from('orders')
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
+  },
     async getAll() {
         const { data, error } = await supabase
             .from('orders')
@@ -342,6 +359,8 @@ const mapOrderFromDB = (dbItem: any): Order => ({
     layoutUrls: Array.isArray(dbItem.layout_urls) && dbItem.layout_urls.length > 0
         ? dbItem.layout_urls
         : (dbItem.layout_url ? [dbItem.layout_url] : []),
+    designFileUrls: dbItem.design_file_urls || [],
+    readyFileUrls: dbItem.ready_file_urls || [],
     artCreated: dbItem.art_created ?? false,
     artAwaitingApproval: dbItem.art_awaiting_approval ?? false,
     layoutRevision: dbItem.layout_revision,
@@ -368,6 +387,8 @@ const mapOrderToDB = (appItem: Partial<Order>) => {
     if (appItem.deliveryDate) dbItem.delivery_date = appItem.deliveryDate;
     if (appItem.layoutUrl !== undefined) dbItem.layout_url = appItem.layoutUrl;
     if (appItem.layoutUrls !== undefined) dbItem.layout_urls = appItem.layoutUrls;
+    if (appItem.designFileUrls !== undefined) dbItem.design_file_urls = appItem.designFileUrls;
+    if (appItem.readyFileUrls !== undefined) dbItem.ready_file_urls = appItem.readyFileUrls;
     if (appItem.artCreated !== undefined) dbItem.art_created = appItem.artCreated;
     if (appItem.artAwaitingApproval !== undefined) dbItem.art_awaiting_approval = appItem.artAwaitingApproval;
     if (appItem.layoutRevision !== undefined) dbItem.layout_revision = appItem.layoutRevision;

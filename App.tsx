@@ -16,7 +16,7 @@ import { CloudBot } from './components/CloudBot';
 import OrderTracker from './components/OrderTracker.tsx';
 import PublicStore from './components/PublicStore.tsx';
 import ClientPortal from './components/ClientPortal.tsx';
-import { ArtQueue } from './components/ArtQueue.tsx';
+import ArtQueue from './components/ArtQueue.tsx';
 import MasterAdmin from './components/MasterAdmin.tsx';
 import { SubscriptionLock } from './components/SubscriptionLock.tsx';
 import { ForcePasswordChange } from './components/ForcePasswordChange.tsx';

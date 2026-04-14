@@ -3,7 +3,7 @@ import React from 'react';
 import { Order, OrderStatus } from '../types';
 import { STATUS_CONFIG } from '../constants';
 // Add missing Calendar icon import
-import { Clock, AlertCircle, MoreHorizontal, ChevronRight, ChevronLeft, ArrowRightCircle, Printer, Calendar, Search, Users } from 'lucide-react';
+import { Clock, AlertCircle, MoreHorizontal, ChevronRight, ChevronLeft, ArrowRightCircle, Printer, Calendar, Search, Users, Download, Upload, FileCode, ImageIcon, Loader2 } from 'lucide-react';
 import { printServiceOrder } from '../utils/printUtils';
 import { getWhatsAppLink, getStatusUpdateMessage } from '../utils/whatsappUtils';
 import { clientService } from '../services/clientService';
@@ -84,6 +84,18 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ order, onMove }) => {
       </div>
 
       <div>
+        {/* Layout Thumbnail */}
+        {order.layoutUrls && order.layoutUrls.length > 0 && (
+          <div className="mb-4 rounded-3xl overflow-hidden border border-slate-800 bg-slate-950 aspect-video relative group/img">
+            <img src={order.layoutUrls[0]} alt="Layout" className="w-full h-full object-cover transition-transform group-hover/img:scale-110" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 to-transparent flex items-end p-3 opacity-0 group-hover/img:opacity-100 transition-opacity">
+                <span className="text-[8px] font-black text-white uppercase tracking-widest flex items-center gap-1">
+                    <ImageIcon className="w-3 h-3" /> {order.layoutUrls.length} Foto(s)
+                </span>
+            </div>
+          </div>
+        )}
+
         <h4 className="font-black text-slate-100 line-clamp-1 group-hover:text-indigo-400 transition-colors text-xl leading-tight mb-1">{order.clientName}</h4>
         <div className="flex flex-wrap gap-2">
           <div className="flex items-center gap-2 text-[11px] text-slate-500 font-bold uppercase tracking-widest">
@@ -106,6 +118,69 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ order, onMove }) => {
         </div>
         {isLate && order.delayReason && (
           <p className="text-[9px] font-bold text-rose-400/80 italic line-clamp-1">Razão: {order.delayReason}</p>
+        )}
+      </div>
+
+      {/* Production Files Section */}
+      <div className="space-y-2">
+        {/* Source Files (For Designer) */}
+        {order.designFileUrls && order.designFileUrls.length > 0 && (
+            <div className="flex flex-col gap-1">
+                <span className="text-[8px] font-black text-amber-500/60 uppercase tracking-widest ml-1">Fontes (PSD/CDR)</span>
+                {order.designFileUrls.map((url, i) => (
+                    <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-2 bg-amber-500/5 border border-amber-500/10 rounded-xl group/file hover:bg-amber-500/10 transition-colors">
+                        <span className="text-[9px] font-bold text-amber-200/70 truncate max-w-[150px]">{url.split('/').pop()}</span>
+                        <Download className="w-3 h-3 text-amber-500" />
+                    </a>
+                ))}
+            </div>
+        )}
+
+        {/* Ready Files (For Production) */}
+        {order.readyFileUrls && order.readyFileUrls.length > 0 && (
+            <div className="flex flex-col gap-1">
+                <span className="text-[8px] font-black text-emerald-500/60 uppercase tracking-widest ml-1">Arte Finalizada</span>
+                {order.readyFileUrls.map((url, i) => (
+                    <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-2 bg-emerald-500/5 border border-emerald-500/10 rounded-xl hover:bg-emerald-500/10 transition-colors">
+                        <span className="text-[9px] font-bold text-emerald-200/70 truncate max-w-[150px]">{url.split('/').pop()}</span>
+                        <Download className="w-3 h-3 text-emerald-500" />
+                    </a>
+                ))}
+            </div>
+        )}
+
+        {/* Upload Button for Designer in Finalization status */}
+        {order.status === OrderStatus.FINALIZATION && (
+            <div className="mt-2">
+                <input 
+                    type="file" 
+                    id={`ready-upload-${order.id}`} 
+                    className="hidden" 
+                    onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        try {
+                            const url = await orderService.uploadFile(file, `ready-files/${order.orderNumber}`);
+                            const updatedReadyFiles = [...(order.readyFileUrls || []), url];
+                            await orderService.update(order.id, { 
+                                readyFileUrls: updatedReadyFiles,
+                                artCreated: true 
+                            });
+                            alert("Arte final enviada com sucesso!");
+                            window.location.reload();
+                        } catch (err) {
+                            console.error(err);
+                            alert("Erro ao enviar arte final.");
+                        }
+                    }} 
+                />
+                <label 
+                    htmlFor={`ready-upload-${order.id}`}
+                    className="w-full py-2.5 bg-emerald-600/10 border border-emerald-500/30 rounded-xl flex items-center justify-center gap-2 cursor-pointer hover:bg-emerald-600/20 transition-all text-emerald-400 font-black text-[9px] uppercase tracking-widest"
+                >
+                    <Upload className="w-3.5 h-3.5" /> Enviar Arte Final
+                </label>
+            </div>
         )}
       </div>
 

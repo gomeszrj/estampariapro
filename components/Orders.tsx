@@ -106,6 +106,8 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
   const [isPartialEditMode, setIsPartialEditMode] = useState(false);
   const [newOrderBriefing, setNewOrderBriefing] = useState('');
   const [layoutUrls, setLayoutUrls] = useState<string[]>([]);
+  const [designFileUrls, setDesignFileUrls] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Chat State
   const [chatOrder, setChatOrder] = useState<Order | null>(null);
@@ -391,6 +393,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
     setLayoutUrls(order.layoutUrls && order.layoutUrls.length > 0
       ? order.layoutUrls
       : (order.layoutUrl ? [order.layoutUrl] : []));
+    setDesignFileUrls(order.designFileUrls || []);
 
     setIsAdding(true);
   };
@@ -431,6 +434,28 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
 
   const removeLayoutImage = (index: number) => {
     setLayoutUrls(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDesignFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    setIsUploading(true);
+    try {
+        const uploadedUrls = await Promise.all(
+            files.map(file => orderService.uploadFile(file, `design-sources/${Date.now()}`))
+        );
+        setDesignFileUrls(prev => [...prev, ...uploadedUrls]);
+    } catch (e) {
+        console.error(e);
+        alert("Erro ao enviar arquivos de design.");
+    } finally {
+        setIsUploading(false);
+        e.target.value = '';
+    }
+  };
+
+  const removeDesignFile = (index: number) => {
+    setDesignFileUrls(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleAddNew = () => {
@@ -476,6 +501,8 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
     setDiscountValue('');
     setNewOrderBriefing('');
     setLayoutUrls([]);
+    setDesignFileUrls([]);
+    setIsUploading(false);
     setIsPartialEditMode(false);
   };
 
@@ -608,13 +635,15 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
           amountPaid: orderData.amountPaid,
           items: orderData.items,
           layoutUrl: layoutUrls[0] || '',
-          layoutUrls: layoutUrls
+          layoutUrls: layoutUrls,
+          designFileUrls: designFileUrls
         });
       } else {
         await orderService.create({
           ...orderData,
           clientId: clientIdToUse,
           orderNumber: orderData.orderNumber,
+          designFileUrls: designFileUrls,
           // If FULL, we might want to ensure amountPaid == totalValue in backend or just handle in UI
           amountPaid: paymentStatus === PaymentStatus.FULL
             ? orderData.totalValue
@@ -864,6 +893,70 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                               </button>
                             </div>
                           ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Design Source Files — Heavy Files (.psd, .cdr, .rar) */}
+                    <div className="bg-slate-950 p-6 rounded-3xl border border-slate-800">
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-xs font-black text-amber-400 uppercase tracking-widest flex items-center gap-2">
+                          <FileCode2 className="w-4 h-4" /> Arquivos de Design (Fontes)
+                          {designFileUrls.length > 0 && (
+                            <span className="ml-2 bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-lg text-[9px]">
+                              {designFileUrls.length}
+                            </span>
+                          )}
+                        </h4>
+                      </div>
+
+                      <div className="mb-4">
+                        <input
+                          type="file"
+                          accept=".psd,.cdr,.rar,.zip,.pdf,.ai,.eps"
+                          multiple
+                          onChange={handleDesignFileUpload}
+                          className="hidden"
+                          id="design-upload"
+                          disabled={isUploading}
+                        />
+                        <label
+                          htmlFor="design-upload"
+                          className={`flex items-center justify-center gap-2 w-full py-4 border-2 border-dashed rounded-2xl cursor-pointer transition-all text-xs font-bold uppercase tracking-widest ${isUploading ? 'bg-slate-900 border-slate-800 text-slate-600' : 'bg-amber-500/5 border-amber-500/20 text-amber-500/60 hover:bg-amber-500/10 hover:border-amber-500'}`}
+                        >
+                          {isUploading ? (
+                              <>
+                                <Loader2 className="w-4 h-4 animate-spin" /> Enviando Arquivos...
+                              </>
+                          ) : (
+                              <>
+                                <Upload className="w-4 h-4" /> Anexar PSD, CDR, RAR...
+                              </>
+                          )}
+                        </label>
+                      </div>
+
+                      {designFileUrls.length > 0 && (
+                        <div className="space-y-2">
+                          {designFileUrls.map((url, idx) => {
+                              const fileName = url.split('/').pop() || 'Arquivo';
+                              return (
+                                <div key={idx} className="flex items-center justify-between p-3 bg-slate-900 rounded-xl border border-slate-800 group">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
+                                            <FileCode2 className="w-4 h-4" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-[10px] font-bold text-slate-200 truncate">{fileName}</p>
+                                            <a href={url} target="_blank" rel="noopener noreferrer" className="text-[8px] text-indigo-400 font-black uppercase hover:underline">Download</a>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => removeDesignFile(idx)} className="p-2 text-slate-500 hover:text-rose-500 transition-colors">
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                              );
+                          })}
                         </div>
                       )}
                     </div>
