@@ -12,7 +12,7 @@ export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
   auth: {
     storage: window.sessionStorage,
     autoRefreshToken: true,
-    persistSession: false,
+    persistSession: true,
     detectSessionInUrl: false
   }
 });
