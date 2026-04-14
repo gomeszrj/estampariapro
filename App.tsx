@@ -22,15 +22,16 @@ import { SubscriptionLock } from './components/SubscriptionLock.tsx';
 import { ForcePasswordChange } from './components/ForcePasswordChange.tsx';
 import { Bell, User as UserIcon, Share2, Menu, ExternalLink, Link as LinkIcon, Copy } from 'lucide-react';
 import { Order, Product, Client, OrderStatus, OrderType } from './types';
-import { AuthProvider, useAuth } from './contexts/AuthContext.tsx';
-import { clientService } from './services/clientService.ts';
-import { productService } from './services/productService.ts';
-import { orderService } from './services/orderService.ts';
-import { settingsService } from './services/settingsService.ts';
-import ApiSettingsModal from './components/ApiSettingsModal.tsx';
-import { SYSTEM_VERSION, LATEST_RELEASE_NOTES } from './constants.tsx';
-import { ErrorBoundary } from './components/ErrorBoundary.tsx';
-import { tenantService } from './services/tenantService.ts';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { clientService } from './services/clientService';
+import { productService } from './services/productService';
+import { orderService } from './services/orderService';
+import { settingsService } from './services/settingsService';
+import ApiSettingsModal from './components/ApiSettingsModal';
+import { SYSTEM_VERSION, LATEST_RELEASE_NOTES } from './constants';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { tenantService } from './services/tenantService';
+import { supabase } from './services/supabase';
 
 
 const AuthenticatedApp: React.FC = () => {
