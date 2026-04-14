@@ -4,12 +4,12 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '20.1';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 20.1 (SaaS Admin & User Vault):
-- Lançamento do Painel 'Gestão SaaS' (Exclusivo para Master Admin) para controle de todas as Estamparias/Inquilinos Ativos.
-- Cofre Visível Integrado: Adicionada a função do administrador do Inquilino cadastrar senhas na aba de Equipe para visualização posterior caso os funcionários as esqueçam.
-- Refinamento Estrutural Local: Ajustada estrutura do ambiente para operar diretamente pela sub-raiz do Vercel, otimizando os deploys em menos de 1 minuto!
-- Preparação para Gateway Financeiro: O plano do Inquilino agora fica exibido na tela Master.`;
+export const SYSTEM_VERSION = '20.2';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 20.2 (SaaS Security & Smart CloudBot):
+- Blindagem SaaS (RLS) Finalizada: Isolamento total de dados por Inquilino (Tenant). Usuários comuns só enxergam seus próprios dados.
+- Escudo Master Admin: O e-mail admin@estamparia.com agora possui acesso global de auditoria nativo no banco de dados.
+- CloudBot Inteligente: Adicionado mapeamento automático de idade para tamanho (Ex: 2 anos -> Tamanho 2).
+- Análise de Listas: O robô agora gera uma tabela de conferência e pede autorização antes de formalizar pedidos.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [
