@@ -15,6 +15,10 @@ const MasterAdmin: React.FC = () => {
     const [newPlan, setNewPlan] = useState('Pro Plus');
     const [newPrice, setNewPrice] = useState(149.90);
     const [newCycle, setNewCycle] = useState('Mensal');
+    const [newIsTrial, setNewIsTrial] = useState(false);
+    const [newPaymentLink, setNewPaymentLink] = useState('');
+    const [newAdminEmail, setNewAdminEmail] = useState('');
+    const [newAdminPassword, setNewAdminPassword] = useState('');
     
     // Edit Modal States
     const [editingTenant, setEditingTenant] = useState<any>(null);
@@ -23,6 +27,7 @@ const MasterAdmin: React.FC = () => {
     const [editPrice, setEditPrice] = useState(0);
     const [editCycle, setEditCycle] = useState('');
     const [editEndDate, setEditEndDate] = useState('');
+    const [editPaymentLink, setEditPaymentLink] = useState('');
 
     const load = async () => {
         setLoading(true);
@@ -44,20 +49,34 @@ const MasterAdmin: React.FC = () => {
         if(!newName || !newDomain) return alert("Preencha o Nome e o Domínio.");
         try {
             const endDate = new Date();
-            endDate.setDate(endDate.getDate() + 30); // Default 30 days
+            endDate.setDate(endDate.getDate() + (newIsTrial ? 7 : 30));
             
-            await tenantService.createTenant({
+            const tenant = await tenantService.createTenant({
                 name: newName,
                 domain: newDomain,
-                plan: newPlan,
-                plan_price: newPrice,
+                plan: newIsTrial ? 'Trial 7 Dias' : newPlan,
+                plan_price: newIsTrial ? 0 : newPrice,
                 billing_cycle: newCycle,
                 subscription_end_date: endDate.toISOString(),
+                payment_link: newPaymentLink,
                 active: true
             });
-            alert("Inquilino Casastrado com Sucesso!");
+
+            // Provision the first Admin User
+            if (newAdminEmail && newAdminPassword && tenant?.id) {
+                await tenantService.createTenantAdmin(
+                    newAdminEmail,
+                    newAdminPassword,
+                    tenant.id,
+                    `Admin ${newName}`
+                );
+            }
+
+            alert("Inquilino e Administrador Cadastrados com Sucesso!");
             setNewName('');
             setNewDomain('');
+            setNewAdminEmail('');
+            setNewAdminPassword('');
             setActiveTab('ativos');
             load();
         } catch(e) {
@@ -79,7 +98,8 @@ const MasterAdmin: React.FC = () => {
                 plan: editPlan,
                 plan_price: editPrice,
                 billing_cycle: editCycle,
-                subscription_end_date: editEndDate
+                subscription_end_date: editEndDate,
+                payment_link: editPaymentLink
             });
             setEditingTenant(null);
             load();
@@ -96,6 +116,7 @@ const MasterAdmin: React.FC = () => {
         setEditPrice(t.plan_price);
         setEditCycle(t.billing_cycle || 'Mensal');
         setEditEndDate(t.subscription_end_date?.split('T')[0] || '');
+        setEditPaymentLink(t.payment_link || '');
     };
 
     const calculateDaysRemaining = (endDateStr: string) => {
@@ -303,6 +324,26 @@ const MasterAdmin: React.FC = () => {
                                 />
                             </div>
 
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block">Link de Pagamento / Renovação</label>
+                                <input
+                                    value={newPaymentLink}
+                                    onChange={e => setNewPaymentLink(e.target.value)}
+                                    placeholder="Ex: https://checkout.mercadopago.com.br/..."
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                />
+                            </div>
+
+                            <div className="flex items-center gap-3 p-4 bg-indigo-500/5 border border-indigo-500/20 rounded-2xl">
+                                <input 
+                                    type="checkbox" 
+                                    id="trial" 
+                                    checked={newIsTrial} 
+                                    onChange={e => setNewIsTrial(e.target.checked)}
+                                    className="w-5 h-5 accent-indigo-600"
+                                />
+                                <label htmlFor="trial" className="text-xs font-black text-indigo-400 uppercase tracking-widest cursor-pointer">Ativar Teste Grátis de 7 Dias</label>
+                            </div>
                         </div>
 
                         <div className="pt-6 border-t border-slate-800/50">
@@ -310,7 +351,7 @@ const MasterAdmin: React.FC = () => {
                                 onClick={handleCreateTenant}
                                 className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3"
                             >
-                                <Save className="w-5 h-5"/> Criar Ambiente Agora
+                                <Save className="w-5 h-5"/> {newIsTrial ? 'Criar Ambiente de Teste' : 'Criar Ambiente Agora'}
                             </button>
                         </div>
                     </div>
@@ -381,6 +422,11 @@ const MasterAdmin: React.FC = () => {
                                     <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Expiração da Assinatura</label>
                                     <input type="date" value={editEndDate} onChange={e => setEditEndDate(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none"/>
                                 </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Link de Pagamento Individual</label>
+                                <input value={editPaymentLink} onChange={e => setEditPaymentLink(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none"/>
                             </div>
                         </div>
 

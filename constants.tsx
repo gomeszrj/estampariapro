@@ -4,12 +4,13 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '20.4';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 20.4 (Final SaaS Evolution):
-- Gestão SaaS Completa: Novo módulo do Admin Master para editar planos, preços e expiração de assinaturas em tempo real.
-- Branding Dinâmico: O logotipo da sua empresa agora aparece automaticamente no Header e Sidebar após o upload.
-- Autonomia de Equipe: Administradores de cada estamparia podem agora resetar senhas de funcionários instantaneamente em 'Ajustes'.
-- Segurança RLS v3: Blindagem total de dados entre empresas (Multi-Tenant) validada.`;
+export const SYSTEM_VERSION = '20.5';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 20.5 (SaaS Commercial Armor):
+- Trava de Segurança SaaS: Bloqueio automático de funções após 3 dias de vencimento da assinatura.
+- Teste Grátis (Trial): Novo seletor no Master Admin para conceder 7 dias de degustação a novos clientes.
+- Link de Pagamento: Integração de link de renovação diretamente na tela de bloqueio do inquilino.
+- Multi-Account Testing: Sessões agora são independentes por aba do navegador, permitindo testar várias contas simultaneamente.
+- Upgrade de Performance: Login mais agressivo e persistência otimizada para o ambiente SaaS.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [

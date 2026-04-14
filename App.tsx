@@ -16,8 +16,10 @@ import { CloudBot } from './components/CloudBot';
 import OrderTracker from './components/OrderTracker.tsx';
 import PublicStore from './components/PublicStore.tsx';
 import ClientPortal from './components/ClientPortal.tsx';
-import ArtQueue from './components/ArtQueue.tsx';
+import { ArtQueue } from './components/ArtQueue.tsx';
 import MasterAdmin from './components/MasterAdmin.tsx';
+import { SubscriptionLock } from './components/SubscriptionLock.tsx';
+import { ForcePasswordChange } from './components/ForcePasswordChange.tsx';
 import { Bell, User as UserIcon, Share2, Menu, ExternalLink, Link as LinkIcon, Copy } from 'lucide-react';
 import { Order, Product, Client, OrderStatus, OrderType } from './types';
 import { AuthProvider, useAuth } from './contexts/AuthContext.tsx';
@@ -28,6 +30,8 @@ import { settingsService } from './services/settingsService.ts';
 import ApiSettingsModal from './components/ApiSettingsModal.tsx';
 import { SYSTEM_VERSION, LATEST_RELEASE_NOTES } from './constants';
 import { ErrorBoundary } from './components/ErrorBoundary.tsx';
+import { tenantService } from './services/tenantService.ts';
+
 
 const AuthenticatedApp: React.FC = () => {
   const { session, user, signOut } = useAuth();
@@ -42,6 +46,8 @@ const AuthenticatedApp: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tenantData, setTenantData] = useState<any>(null);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
 
   const isPublicCatalog = new URLSearchParams(window.location.search).get('view') === 'public_catalog' || window.location.pathname === '/catalogo';
   const isClientPortal = new URLSearchParams(window.location.search).get('view') === 'client_portal' || !!localStorage.getItem('client_session');
@@ -68,6 +74,18 @@ const AuthenticatedApp: React.FC = () => {
           setClients(fetchedClients);
           setProducts(fetchedProducts);
           setOrders(fetchedOrders);
+
+          // Get Tenant Status and Profile data
+          const { data: profile } = await supabase.from('profiles').select('tenant_id, require_password_change').eq('id', user?.id).single();
+          
+          if (profile) {
+            setMustChangePassword(!!profile.require_password_change);
+            
+            if (profile.tenant_id) {
+                const tData = await tenantService.getTenantById(profile.tenant_id);
+                setTenantData(tData);
+            }
+          }
 
           settingsService.getSettings().then(s => {
             if (s.name) setCompanyName(s.name);
@@ -143,6 +161,44 @@ const AuthenticatedApp: React.FC = () => {
   }
 
   const isMasterAdmin = user?.email === 'admin@estamparia.com';
+
+  // Subscription Logic (Lock System)
+  const isSubscriberBlocked = () => {
+    if (isMasterAdmin) return false;
+    if (!tenantData) return false;
+    if (tenantData.active === false) return true;
+    
+    if (tenantData.subscription_end_date) {
+        const endDate = new Date(tenantData.subscription_end_date);
+        const graceDate = new Date(endDate);
+        graceDate.setDate(graceDate.getDate() + 3); // 3 day grace period
+        
+        return new Date() > graceDate;
+    }
+    return false;
+  };
+
+  const getDaysOverdue = () => {
+      if (!tenantData?.subscription_end_date) return 0;
+      const end = new Date(tenantData.subscription_end_date);
+      const diff = new Date().getTime() - end.getTime();
+      return Math.max(0, Math.ceil(diff / (1000 * 3600 * 24)));
+  };
+
+  if (isSubscriberBlocked()) {
+    return (
+        <SubscriptionLock 
+            tenantName={tenantData?.name || companyName}
+            paymentLink={tenantData?.payment_link}
+            daysOverdue={getDaysOverdue()}
+            onSignOut={signOut}
+        />
+    );
+  }
+
+  if (mustChangePassword) {
+      return <ForcePasswordChange onComplete={() => setMustChangePassword(false)} />;
+  }
 
   return (
     <div className="flex min-h-screen bg-[#020617] relative">

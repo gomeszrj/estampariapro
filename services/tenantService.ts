@@ -19,5 +19,16 @@ export const tenantService = {
   async updateTenant(id: string, updates: any) {
     const { error } = await supabase.from('tenants').update(updates).eq('id', id);
     if (error) throw error;
+    return data;
+  },
+  async createTenantAdmin(email: string, password: string, tenantId: string, fullName: string) {
+    const { data, error } = await supabase.rpc('create_tenant_user', {
+      p_email: email,
+      p_password: password,
+      p_tenant_id: tenantId,
+      p_full_name: fullName
+    });
+    if (error) throw error;
+    return data;
   }
 };
