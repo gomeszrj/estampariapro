@@ -29,6 +29,8 @@ const Login: React.FC = () => {
                     password,
                 });
                 if (error) throw error;
+                // Force a clean reload to sync session and trigger Dashboard loading
+                window.location.href = '/';
             } else if (mode === 'client_login') {
                 const clientUser = await clientService.getByPhoneAndPassword(email, password);
                 if (!clientUser) throw new Error('Email, WhatsApp/Documento ou Senha incorretos.');
