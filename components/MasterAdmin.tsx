@@ -8,6 +8,7 @@ const MasterAdmin: React.FC = () => {
     const [tenants, setTenants] = useState<any[]>([]);
     const [profiles, setProfiles] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [statusFilter, setStatusFilter] = useState<'todos' | 'ativos' | 'vencidos' | 'bloqueados'>('todos');
 
     // Form states
     const [newName, setNewName] = useState('');
@@ -135,6 +136,17 @@ const MasterAdmin: React.FC = () => {
     };
 
     const mrr = tenants.filter(t => t.active).reduce((acc, current) => acc + Number(current.plan_price || 0), 0);
+    const defaultedTenants = tenants.filter(t => calculateDaysRemaining(t.subscription_end_date) <= 0 && t.active);
+    const totalInadimplencia = defaultedTenants.reduce((acc, curr) => acc + Number(curr.plan_price || 0), 0);
+
+    const filteredTenants = tenants.filter(t => {
+        if (statusFilter === 'todos') return true;
+        const days = calculateDaysRemaining(t.subscription_end_date);
+        if (statusFilter === 'ativos') return t.active && days > 0;
+        if (statusFilter === 'vencidos') return t.active && days <= 0;
+        if (statusFilter === 'bloqueados') return !t.active;
+        return true;
+    });
 
     return (
         <div className="animate-in slide-in-from-bottom-4 duration-500 p-6 max-w-7xl mx-auto space-y-8 pb-32">
@@ -176,14 +188,21 @@ const MasterAdmin: React.FC = () => {
                 {activeTab === 'ativos' && (
                     <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
                         {/* KPI Dashboard */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                             <div className="bg-[#0f172a] p-6 rounded-3xl border border-slate-800 shadow-xl">
-                                <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1">Empresas Cadastradas</p>
+                                <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1">Empresas</p>
                                 <p className="text-3xl font-black text-slate-100">{tenants.length}</p>
                             </div>
                             <div className="bg-[#0f172a] p-6 rounded-3xl border border-slate-800 shadow-xl">
                                 <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1">Assinaturas Ativas</p>
-                                <p className="text-3xl font-black text-emerald-400">{tenants.filter(t => t.active).length}</p>
+                                <p className="text-3xl font-black text-emerald-400">{tenants.filter(t => t.active && calculateDaysRemaining(t.subscription_end_date) > 0).length}</p>
+                            </div>
+                            <div className="bg-rose-900/10 p-6 rounded-3xl border border-rose-500/20 shadow-xl">
+                                <p className="text-[10px] font-black uppercase text-rose-400 tracking-widest mb-1">Inadimplência</p>
+                                <div className="flex items-end gap-2">
+                                    <p className="text-3xl font-black text-rose-300">R$ {totalInadimplencia.toFixed(2).replace('.',',')}</p>
+                                    <span className="text-[10px] font-bold text-rose-500 mb-1">{defaultedTenants.length} lojas</span>
+                                </div>
                             </div>
                             <div className="bg-indigo-900/10 p-6 rounded-3xl border border-indigo-500/20 shadow-xl">
                                 <p className="text-[10px] font-black uppercase text-indigo-400 tracking-widest mb-1">Receita Mensal (MRR)</p>
@@ -191,8 +210,21 @@ const MasterAdmin: React.FC = () => {
                             </div>
                         </div>
 
+                        {/* Status Filters */}
+                        <div className="flex items-center gap-3 bg-slate-900/50 p-1.5 rounded-2xl border border-slate-800 w-fit">
+                            {(['todos', 'ativos', 'vencidos', 'bloqueados'] as const).map(f => (
+                                <button
+                                    key={f}
+                                    onClick={() => setStatusFilter(f)}
+                                    className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${statusFilter === f ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'}`}
+                                >
+                                    {f}
+                                </button>
+                            ))}
+                        </div>
+
                         <div className="space-y-4">
-                            {tenants.map(t => {
+                            {filteredTenants.map(t => {
                                 const tenantProfiles = profiles.filter(p => p.tenant_id === t.id);
                                 const daysRemaining = calculateDaysRemaining(t.subscription_end_date);
                                 const isExpired = daysRemaining <= 0;

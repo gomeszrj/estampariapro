@@ -172,6 +172,22 @@ export async function printServiceOrder(order: Order) {
              </div>
           </div>
 
+          <!-- PROMINENT LAYOUT SECTION (MOVED TO TOP) -->
+          ${(order.layoutUrls && order.layoutUrls.length > 0) ? `
+          <div class="section layout-section" style="border: 2px solid #000; padding: 10px; border-radius: 12px; background: #fff;">
+             <div class="section-title" style="border:none; margin-bottom: 5px;">Layout Principal Aprovado</div>
+             <div style="display: flex; justify-content: center;">
+                <img src="${order.layoutUrls[0]}" class="layout-img" style="max-height: 8cm;" alt="Layout Principal" />
+             </div>
+             ${order.layoutUrls.length > 1 ? `<div style="text-align:center; font-size:7pt; color:#666; margin-top:5px;">+ ${order.layoutUrls.length - 1} imagem(ns) no final do documento</div>` : ''}
+          </div>
+          ` : (order.layoutUrl ? `
+          <div class="section layout-section" style="border: 2px solid #000; padding: 10px; border-radius: 12px; background: #fff;">
+             <div class="section-title" style="border:none; margin-bottom: 5px;">Layout Aprovado</div>
+             <img src="${order.layoutUrl}" class="layout-img" style="max-height: 8cm;" alt="Layout Aprovado" />
+          </div>
+          ` : '')}
+
           <!-- Production Traveler Strip -->
           <div class="section">
              <div class="section-title">Fluxo de Produção (Checklist)</div>
