@@ -28,7 +28,7 @@ import { productService } from './services/productService.ts';
 import { orderService } from './services/orderService.ts';
 import { settingsService } from './services/settingsService.ts';
 import ApiSettingsModal from './components/ApiSettingsModal.tsx';
-import { SYSTEM_VERSION, LATEST_RELEASE_NOTES } from './constants';
+import { SYSTEM_VERSION, LATEST_RELEASE_NOTES } from './constants.tsx';
 import { ErrorBoundary } from './components/ErrorBoundary.tsx';
 import { tenantService } from './services/tenantService.ts';
 

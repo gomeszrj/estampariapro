@@ -28,6 +28,7 @@ interface SidebarProps {
 }
 
 import { settingsService } from '../services/settingsService';
+import { SYSTEM_VERSION } from '../constants';
 
 const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, setIsOpen, isMasterAdmin }) => {
   const [cloudBotEnabled, setCloudBotEnabled] = React.useState(false);
@@ -152,6 +153,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
             <Settings className="w-5 h-5" />
             <span className="font-black uppercase text-[11px] tracking-widest">Ajustes</span>
           </button>
+          <div className="mt-4 text-center">
+            <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em]">Estamparia Pro v{SYSTEM_VERSION}</span>
+          </div>
         </div>
       </aside>
     </>
