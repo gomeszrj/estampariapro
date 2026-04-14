@@ -18,6 +18,11 @@ const MasterAdmin: React.FC = () => {
     
     // Edit Modal States
     const [editingTenant, setEditingTenant] = useState<any>(null);
+    const [editName, setEditName] = useState('');
+    const [editPlan, setEditPlan] = useState('');
+    const [editPrice, setEditPrice] = useState(0);
+    const [editCycle, setEditCycle] = useState('');
+    const [editEndDate, setEditEndDate] = useState('');
 
     const load = async () => {
         setLoading(true);
@@ -65,6 +70,33 @@ const MasterAdmin: React.FC = () => {
         await tenantService.updateTenant(id, { active });
         load();
     }
+
+    const handleSaveEdit = async () => {
+        if(!editingTenant) return;
+        try {
+            await tenantService.updateTenant(editingTenant.id, {
+                name: editName,
+                plan: editPlan,
+                plan_price: editPrice,
+                billing_cycle: editCycle,
+                subscription_end_date: editEndDate
+            });
+            setEditingTenant(null);
+            load();
+            alert("Dados do Inquilino atualizados!");
+        } catch(e) {
+            alert("Erro ao salvar alterações.");
+        }
+    };
+
+    const openEdit = (t: any) => {
+        setEditingTenant(t);
+        setEditName(t.name);
+        setEditPlan(t.plan);
+        setEditPrice(t.plan_price);
+        setEditCycle(t.billing_cycle || 'Mensal');
+        setEditEndDate(t.subscription_end_date?.split('T')[0] || '');
+    };
 
     const calculateDaysRemaining = (endDateStr: string) => {
         if(!endDateStr) return 0;
@@ -187,7 +219,7 @@ const MasterAdmin: React.FC = () => {
                                             </div>
                                             
                                             <div className="flex flex-col gap-2 w-full xl:w-48 shrink-0">
-                                                <button onClick={() => alert('Em Breve: Modificador de Inquilino Detalhado')} className="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black uppercase tracking-widest text-[10px] transition-all">
+                                                <button onClick={() => openEdit(t)} className="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black uppercase tracking-widest text-[10px] transition-all">
                                                     Editar Inquilino
                                                 </button>
                                                 <button onClick={() => handleUpdateActive(t.id, !t.active)} className={`w-full px-4 py-3 border rounded-xl font-black uppercase tracking-widest text-[10px] transition-all ${t.active ? 'bg-transparent border-rose-500/50 text-rose-500 hover:bg-rose-500/10' : 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/20'}`}>
@@ -306,6 +338,59 @@ const MasterAdmin: React.FC = () => {
                         </div>
                     </div>
                 )}
+            {/* ---------- MODAL: EDIÇÃO ---------- */}
+            {editingTenant && (
+                <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+                    <div className="bg-[#0f172a] rounded-[3rem] w-full max-w-xl p-8 border border-slate-800 shadow-2xl animate-in zoom-in-95">
+                        <div className="flex justify-between items-center mb-8">
+                            <h3 className="text-xl font-black text-slate-100 uppercase tracking-tight">Editar: {editingTenant.name}</h3>
+                            <button onClick={() => setEditingTenant(null)} className="text-slate-500 hover:text-white"><XCircle /></button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Nome da Empresa</label>
+                                <input value={editName} onChange={e => setEditName(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none focus:ring-1 focus:ring-indigo-500"/>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Plano</label>
+                                    <select value={editPlan} onChange={e => setEditPlan(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none">
+                                        <option value="Starter">Starter</option>
+                                        <option value="Pro Plus">Pro Plus</option>
+                                        <option value="Enterprise">Enterprise</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Ciclo</label>
+                                    <select value={editCycle} onChange={e => setEditCycle(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none">
+                                        <option value="Mensal">Mensal</option>
+                                        <option value="Semestral">Semestral</option>
+                                        <option value="Anual">Anual</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Valor Cobrado (R$)</label>
+                                    <input type="number" value={editPrice} onChange={e => setEditPrice(Number(e.target.value))} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none"/>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Expiração da Assinatura</label>
+                                    <input type="date" value={editEndDate} onChange={e => setEditEndDate(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-8 flex gap-3">
+                            <button onClick={() => setEditingTenant(null)} className="flex-1 py-3 bg-slate-900 text-slate-400 rounded-xl font-black uppercase text-[10px]">Cancelar</button>
+                            <button onClick={handleSaveEdit} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-black uppercase text-[10px] shadow-lg shadow-indigo-600/20">Salvar Alterações</button>
+                        </div>
+                    </div>
+                </div>
+            )}
                 </>
             )}
         </div>

@@ -36,6 +36,7 @@ const AuthenticatedApp: React.FC = () => {
   const [isApiSettingsOpen, setIsApiSettingsOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLinksOpen, setIsLinksOpen] = useState(false);
+  const [companyLogo, setCompanyLogo] = useState('');
 
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -70,6 +71,7 @@ const AuthenticatedApp: React.FC = () => {
 
           settingsService.getSettings().then(s => {
             if (s.name) setCompanyName(s.name);
+            if (s.logo_url) setCompanyLogo(s.logo_url);
           }).catch(console.error);
         }
       } catch (error) {
@@ -155,9 +157,12 @@ const AuthenticatedApp: React.FC = () => {
               <Menu className="w-6 h-6" />
             </button>
             <span className="hidden md:inline text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Tenant:</span>
-            <span className="hidden md:inline text-xs font-black text-slate-100 bg-slate-800 px-4 py-1.5 rounded-full border border-slate-700 shadow-sm uppercase tracking-wider">
-              {companyName}
-            </span>
+            <div className="hidden md:flex items-center gap-3 bg-slate-800 px-4 py-1.5 rounded-full border border-slate-700 shadow-sm">
+              {companyLogo && <img src={companyLogo} alt="Logo" className="w-5 h-5 object-contain" />}
+              <span className="text-xs font-black text-slate-100 uppercase tracking-wider">
+                {companyName}
+              </span>
+            </div>
           </div>
 
           <div className="flex items-center gap-4 md:gap-8">

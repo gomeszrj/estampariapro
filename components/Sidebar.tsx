@@ -32,11 +32,13 @@ import { settingsService } from '../services/settingsService';
 const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, setIsOpen, isMasterAdmin }) => {
   const [cloudBotEnabled, setCloudBotEnabled] = React.useState(false);
   const [companyName, setCompanyName] = React.useState('Minha Estamparia');
+  const [companyLogo, setCompanyLogo] = React.useState('');
 
   const loadSettings = () => {
     settingsService.getSettings().then(s => {
       setCloudBotEnabled(!!s.cloudbot_enabled);
       if (s.name) setCompanyName(s.name);
+      if (s.logo_url) setCompanyLogo(s.logo_url);
     });
   };
 
@@ -79,8 +81,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
       <aside className={`w-72 bg-[#0f172a] border-r border-slate-800/50 h-screen fixed md:sticky top-0 left-0 z-50 flex flex-col transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
         <div className="p-8 border-b border-slate-800/50 flex justify-between items-center">
           <h1 className="text-xl font-black text-indigo-400 flex items-center gap-3 tracking-tighter uppercase truncate">
-            <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-600/20 shrink-0">
-              <Package className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-600/20 shrink-0 overflow-hidden">
+              {companyLogo ? <img src={companyLogo} className="w-full h-full object-contain" /> : <Package className="w-6 h-6 text-white" />}
             </div>
             <span className="truncate" title={companyName}>{companyName}</span>
           </h1>

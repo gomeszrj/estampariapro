@@ -4,11 +4,12 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '20.3';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 20.3 (Multi-Layout OS):
-- Ordem de Serviço (OS) Aprimorada: Agora a OS exibe automaticamente todas as fotos e layouts anexados ao pedido, facilitando a visualização para a equipe de produção.
-- Blindagem SaaS (RLS): Isolamento total de dados por Inquilino (Tenant) validado e ativo.
-- CloudBot Inteligente: Mapeamento automático de idade para tamanho e análise de listas para conferência.`;
+export const SYSTEM_VERSION = '20.4';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 20.4 (Final SaaS Evolution):
+- Gestão SaaS Completa: Novo módulo do Admin Master para editar planos, preços e expiração de assinaturas em tempo real.
+- Branding Dinâmico: O logotipo da sua empresa agora aparece automaticamente no Header e Sidebar após o upload.
+- Autonomia de Equipe: Administradores de cada estamparia podem agora resetar senhas de funcionários instantaneamente em 'Ajustes'.
+- Segurança RLS v3: Blindagem total de dados entre empresas (Multi-Tenant) validada.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [

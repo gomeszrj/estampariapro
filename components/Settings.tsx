@@ -478,10 +478,10 @@ const Settings: React.FC = () => {
 
             <div className="bg-emerald-500/5 p-8 rounded-[2.5rem] border border-emerald-500/10 space-y-4">
               <h4 className="text-emerald-400 font-black text-xs uppercase tracking-widest flex items-center gap-3">
-                <Shield className="w-5 h-5" /> <span>Segurança</span>
+                <Shield className="w-5 h-5" /> <span>Autonomia Total</span>
               </h4>
               <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                Os usuários cadastrados terão acesso às funções do sistema conforme seus cargos. O gerente tem acesso total.
+                Como administrador, você tem total autonomia para gerenciar sua equipe. Você pode resetar senhas de funcionários sem precisar saber a senha antiga ou solicitar suporte.
               </p>
             </div>
           </div>
@@ -548,9 +548,9 @@ const Settings: React.FC = () => {
                            <button
                              onClick={() => { setEditingPasswordId(member.id); setEditPasswordValue(''); }}
                              className="text-slate-500 hover:text-indigo-400 p-2 hover:bg-indigo-500/10 rounded-lg transition-colors text-[10px] font-black uppercase tracking-widest flex items-center gap-1 border border-transparent hover:border-indigo-500/20"
-                             title="Alterar Senha Manualmente"
+                             title="Resetar senha deste funcionário imediatamente"
                            >
-                             Modificar Senha
+                             Resetar Senha
                            </button>
                         )}
                         <button
