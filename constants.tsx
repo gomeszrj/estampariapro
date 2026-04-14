@@ -4,12 +4,11 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '20.2';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 20.2 (SaaS Security & Smart CloudBot):
-- Blindagem SaaS (RLS) Finalizada: Isolamento total de dados por Inquilino (Tenant). Usuários comuns só enxergam seus próprios dados.
-- Escudo Master Admin: O e-mail admin@estamparia.com agora possui acesso global de auditoria nativo no banco de dados.
-- CloudBot Inteligente: Adicionado mapeamento automático de idade para tamanho (Ex: 2 anos -> Tamanho 2).
-- Análise de Listas: O robô agora gera uma tabela de conferência e pede autorização antes de formalizar pedidos.`;
+export const SYSTEM_VERSION = '20.3';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 20.3 (Multi-Layout OS):
+- Ordem de Serviço (OS) Aprimorada: Agora a OS exibe automaticamente todas as fotos e layouts anexados ao pedido, facilitando a visualização para a equipe de produção.
+- Blindagem SaaS (RLS): Isolamento total de dados por Inquilino (Tenant) validado e ativo.
+- CloudBot Inteligente: Mapeamento automático de idade para tamanho e análise de listas para conferência.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [

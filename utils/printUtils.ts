@@ -239,12 +239,24 @@ export async function printServiceOrder(order: Order) {
             </table>
           </div>
 
-          ${order.layoutUrl ? `
+          ${(order.layoutUrls && order.layoutUrls.length > 0) ? `
+          <div class="section layout-section">
+             <div class="section-title">Layouts Aprovados (${order.layoutUrls.length})</div>
+             <div style="display: flex; flex-direction: column; gap: 20px; align-items: center;">
+                ${order.layoutUrls.map((url, idx) => `
+                   <div style="width: 100%; text-align: center;">
+                      <img src="${url}" class="layout-img" alt="Layout ${idx + 1}" />
+                      <div style="font-size: 7pt; color: #666; margin-top: 5px;">Imagem #${idx + 1}</div>
+                   </div>
+                `).join('')}
+             </div>
+          </div>
+          ` : (order.layoutUrl ? `
           <div class="section layout-section">
              <div class="section-title">Layout Aprovado</div>
              <img src="${order.layoutUrl}" class="layout-img" alt="Layout Aprovado" />
           </div>
-          ` : ''}
+          ` : '')}
 
           <div class="section" style="margin-top:30px;">
              <div class="section-title">Observações Técnicas / Personalização</div>
