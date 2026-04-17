@@ -172,107 +172,34 @@ export async function printServiceOrder(order: Order) {
              </div>
           </div>
 
-          <!-- PROMINENT LAYOUT SECTION (MOVED TO TOP) -->
-          ${(order.layoutUrls && order.layoutUrls.length > 0) ? `
+          <!-- LAYOUT IMAGES - Grid 3 per row, no duplicates -->
+          ${(() => {
+            // Collect all unique layout URLs (deduplicate)
+            const allUrls: string[] = [];
+            const seen = new Set<string>();
+            const urls = order.layoutUrls && order.layoutUrls.length > 0
+              ? order.layoutUrls
+              : (order.layoutUrl ? [order.layoutUrl] : []);
+            urls.forEach(u => {
+              if (u && !seen.has(u)) { seen.add(u); allUrls.push(u); }
+            });
+            if (allUrls.length === 0) return '';
+            return `
           <div class="section layout-section" style="border: 2px solid #000; padding: 10px; border-radius: 12px; background: #fff;">
-             <div class="section-title" style="border:none; margin-bottom: 5px;">Layout Principal Aprovado</div>
-             <div style="display: flex; justify-content: center;">
-                <img src="${order.layoutUrls[0]}" class="layout-img" style="max-height: 8cm;" alt="Layout Principal" />
+             <div class="section-title" style="border-bottom: 1px solid #000; margin-bottom: 10px;">
+                Layouts Aprovados (${allUrls.length})
              </div>
-             ${order.layoutUrls.length > 1 ? `<div style="text-align:center; font-size:7pt; color:#666; margin-top:5px;">+ ${order.layoutUrls.length - 1} imagem(ns) no final do documento</div>` : ''}
-          </div>
-          ` : (order.layoutUrl ? `
-          <div class="section layout-section" style="border: 2px solid #000; padding: 10px; border-radius: 12px; background: #fff;">
-             <div class="section-title" style="border:none; margin-bottom: 5px;">Layout Aprovado</div>
-             <img src="${order.layoutUrl}" class="layout-img" style="max-height: 8cm;" alt="Layout Aprovado" />
-          </div>
-          ` : '')}
-
-          <!-- Production Traveler Strip -->
-          <div class="section">
-             <div class="section-title">Fluxo de Produção (Checklist)</div>
-             <div class="traveler-strip">
-                 <div class="traveler-step">
-                    <div class="traveler-check"></div>
-                    <div class="traveler-label">Finalização</div>
-                    <div class="traveler-sig"></div>
-                 </div>
-                 <div class="traveler-step">
-                    <div class="traveler-check"></div>
-                    <div class="traveler-label">Impressão</div>
-                    <div class="traveler-sig"></div>
-                 </div>
-                 <div class="traveler-step">
-                    <div class="traveler-check"></div>
-                    <div class="traveler-label">Estampa</div>
-                    <div class="traveler-sig"></div>
-                 </div>
-                 <div class="traveler-step">
-                    <div class="traveler-check"></div>
-                    <div class="traveler-label">Separação</div>
-                    <div class="traveler-sig"></div>
-                 </div>
-                 <div class="traveler-step">
-                    <div class="traveler-check"></div>
-                    <div class="traveler-label">Costura</div>
-                    <div class="traveler-sig"></div>
-                 </div>
-                 <div class="traveler-step">
-                    <div class="traveler-check"></div>
-                    <div class="traveler-label">Conferência</div>
-                    <div class="traveler-sig"></div>
-                 </div>
-              </div>
-          </div>
-
-          <div class="section">
-            <div class="section-title">
-                Itens do Pedido
-                <span style="font-size:8pt; font-weight:400; text-transform:none; color:#666;">Total de Peças: ${order.items.reduce((acc, i) => acc + (i.quantity || 0), 0)}</span>
-            </div>
-            <table>
-              <thead>
-                <tr>
-                   <th width="40" style="text-align:center;">QTD</th>
-                   <th>Produto / Detalhes</th>
-                   <th>Tamanho</th>
-                   <th>Tecido</th>
-                </tr>
-              </thead>
-              <tbody>
-                 ${order.items.map(item => `
-                    <tr>
-                       <td style="text-align:center; font-weight:900; font-size:12pt; background:#f9fafb;">${item.quantity}</td>
-                       <td>
-                          <div style="font-weight:700;">${item.productName}</div>
-                          ${item.gradeLabel ? `<div style="font-size:7pt; color:#666;">MODELO: ${item.gradeLabel}</div>` : ''}
-                       </td>
-                       <td><span class="tag">${item.size}</span></td>
-                       <td>${item.fabricName || '-'}</td>
-                    </tr>
-                 `).join('')}
-              </tbody>
-            </table>
-          </div>
-
-          ${(order.layoutUrls && order.layoutUrls.length > 0) ? `
-          <div class="section layout-section">
-             <div class="section-title">Layouts Aprovados (${order.layoutUrls.length})</div>
-             <div style="display: flex; flex-direction: column; gap: 20px; align-items: center;">
-                ${order.layoutUrls.map((url, idx) => `
-                   <div style="width: 100%; text-align: center;">
-                      <img src="${url}" class="layout-img" alt="Layout ${idx + 1}" />
-                      <div style="font-size: 7pt; color: #666; margin-top: 5px;">Imagem #${idx + 1}</div>
+             <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;">
+                ${allUrls.map((url, idx) => `
+                   <div style="flex: 0 0 calc(33.333% - 6px); max-width: calc(33.333% - 6px); text-align: center;">
+                      <img src="${url}" alt="Layout ${idx + 1}" style="width: 100%; max-height: 5cm; object-fit: contain; border: 1px solid #e5e7eb; border-radius: 6px; background: #f9fafb;" />
+                      <div style="font-size: 7pt; font-weight: 700; color: #666; margin-top: 3px;">LAYOUT ${idx + 1}</div>
                    </div>
                 `).join('')}
              </div>
           </div>
-          ` : (order.layoutUrl ? `
-          <div class="section layout-section">
-             <div class="section-title">Layout Aprovado</div>
-             <img src="${order.layoutUrl}" class="layout-img" alt="Layout Aprovado" />
-          </div>
-          ` : '')}
+          `;
+          })()}
 
           <div class="section" style="margin-top:30px;">
              <div class="section-title">Observações Técnicas / Personalização</div>
