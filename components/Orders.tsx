@@ -443,18 +443,29 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
     setIsUploading(true);
-    try {
-        const uploadedUrls = await Promise.all(
-            files.map(file => orderService.uploadFile(file, `design-sources/${Date.now()}`))
-        );
-        setDesignFileUrls(prev => [...prev, ...uploadedUrls]);
-    } catch (e) {
-        console.error(e);
-        alert("Erro ao enviar arquivos de design.");
-    } finally {
-        setIsUploading(false);
-        e.target.value = '';
+    const successUrls: string[] = [];
+    const errors: string[] = [];
+    for (const file of files) {
+      try {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+        console.log(`[Upload] Enviando: ${file.name} (${sizeMB}MB)`);
+        const url = await orderService.uploadFile(file, `design-sources/${Date.now()}`);
+        successUrls.push(url);
+      } catch (err: any) {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+        const msg = err?.message || err?.statusCode || 'Erro desconhecido';
+        console.error(`[Upload] Falha: ${file.name} (${sizeMB}MB)`, err);
+        errors.push(`${file.name} (${sizeMB}MB): ${msg}`);
+      }
     }
+    if (successUrls.length > 0) {
+      setDesignFileUrls(prev => [...prev, ...successUrls]);
+    }
+    if (errors.length > 0) {
+      alert(`Erro ao enviar ${errors.length} arquivo(s):\n\n${errors.join('\n')}\n\nVerifique se você está logado no sistema.`);
+    }
+    setIsUploading(false);
+    e.target.value = '';
   };
 
   const removeDesignFile = (index: number) => {
@@ -917,7 +928,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                       <div className="mb-4">
                         <input
                           type="file"
-                          accept=".psd,.cdr,.rar,.zip,.pdf,.ai,.eps"
+                          accept=".psd,.cdr,.rar,.zip,.pdf,.ai,.eps,.svg,.7z,.tar,.gz,.tif,.tiff,.png,.jpg,.jpeg,.bmp,.indd,.xd,.fig,.sketch"
                           multiple
                           onChange={handleDesignFileUpload}
                           className="hidden"
