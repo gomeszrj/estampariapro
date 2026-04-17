@@ -26,7 +26,8 @@ import {
   ClipboardList,
   DollarSign,
   Link as LinkIcon,
-  FileCode
+  FileCode,
+  FileCode2
 } from 'lucide-react';
 import { getWhatsAppLink, getStatusUpdateMessage } from '../utils/whatsappUtils';
 import { parseOrderText, ParsedOrderItem } from '../services/aiService';

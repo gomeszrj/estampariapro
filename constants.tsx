@@ -4,13 +4,14 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '20.7';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 20.7 (Heavy Production Update):
-- Suporte a Arquivos Pesados: Upload direto de arquivos .PSD, .CDR, .RAR e outros de até 1GB via Supabase Storage.
-- Fotos no Kanban: Cards do Fluxo de Produção agora exibem miniaturas dos layouts para rápida identificação visual.
-- Handoff de Arte: Novo fluxo onde o designer baixa as fontes, cria a arte e faz o upload do arquivo finalizado diretamente no card da produção.
-- Downloads de Produção: Próximos setores (impressão/costura) agora podem baixar a arte finalizada direto do Kanban.
-- Correção Vercel: Resolvido problema crítico de build que impedia atualizações automáticas do sistema.`;
+export const SYSTEM_VERSION = '20.8';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 20.8 (Master Audit Update):
+- Dashboard de Inadimplentes: Novo painel no Master Admin para visualizar e gerenciar tenants com pagamentos pendentes.
+- OS Visual Aprimorada: Melhorias visuais na Ordem de Serviço para impressão e acompanhamento no chão de fábrica.
+- Upload Polish: Refinamentos no fluxo de upload de arquivos de produção para maior estabilidade.
+- Auto Dashboard: Login agora redireciona automaticamente para o Dashboard sem necessidade de refresh manual.
+- Persistência de Sessão: Sessão salva no sessionStorage para suportar refresh de página em modo multi-conta.
+- Auditoria de Robustez: Correções gerais de imports, extensões de arquivo e estabilidade do sistema.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [
