@@ -5,15 +5,42 @@ import { inventoryService } from './inventoryService';
 
 export const orderService = {
   async uploadFile(file: File, path: string): Promise<string> {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random()}.${fileExt}`;
-    const filePath = `${path}/${fileName}`;
+    const fileExt = (file.name.split('.').pop() || 'bin').toLowerCase();
+    const safeName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${fileExt}`;
+    const filePath = `${path}/${safeName}`;
+
+    // Map common design file extensions to proper MIME types
+    // Browsers don't know MIME types for .cdr, .psd, .ai etc., causing upload rejection
+    const mimeMap: Record<string, string> = {
+      'psd': 'image/vnd.adobe.photoshop',
+      'ai': 'application/postscript',
+      'eps': 'application/postscript',
+      'cdr': 'application/octet-stream',
+      'rar': 'application/x-rar-compressed',
+      'zip': 'application/zip',
+      '7z': 'application/x-7z-compressed',
+      'pdf': 'application/pdf',
+      'svg': 'image/svg+xml',
+      'tif': 'image/tiff',
+      'tiff': 'image/tiff',
+      'indd': 'application/octet-stream',
+      'fig': 'application/octet-stream',
+      'sketch': 'application/octet-stream',
+    };
+    const contentType = mimeMap[fileExt] || file.type || 'application/octet-stream';
 
     const { error: uploadError } = await supabase.storage
-      .from('orders') // Assuming bucket name 'orders'
-      .upload(filePath, file);
+      .from('orders')
+      .upload(filePath, file, {
+        contentType,
+        cacheControl: '3600',
+        upsert: true
+      });
 
-    if (uploadError) throw uploadError;
+    if (uploadError) {
+      console.error('[Storage] Upload failed:', uploadError.message, { filePath, contentType, size: file.size });
+      throw uploadError;
+    }
 
     const { data } = supabase.storage
       .from('orders')
