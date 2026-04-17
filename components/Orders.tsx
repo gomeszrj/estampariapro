@@ -902,7 +902,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                     {/* Design Source Files — Heavy Files (.psd, .cdr, .rar) */}
                      <div className="bg-slate-950 p-6 rounded-3xl border border-slate-800">
                       <div className="flex items-center justify-between mb-4">
-                        <div h4 className="text-xs font-black text-amber-400 uppercase tracking-widest flex items-center gap-2">
+                        <h4 className="text-xs font-black text-amber-400 uppercase tracking-widest flex items-center gap-2">
                           <FileCode className="w-4 h-4" /> Arquivos de Design (Fontes)
                           {designFileUrls.length > 0 && (
                             <span className="ml-2 bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-lg text-[9px]">
