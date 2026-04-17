@@ -27,7 +27,8 @@ import {
   DollarSign,
   Link as LinkIcon,
   FileCode,
-  FileCode2
+  FileCode2,
+  Upload
 } from 'lucide-react';
 import { getWhatsAppLink, getStatusUpdateMessage } from '../utils/whatsappUtils';
 import { parseOrderText, ParsedOrderItem } from '../services/aiService';
