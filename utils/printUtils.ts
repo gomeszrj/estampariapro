@@ -201,6 +201,73 @@ export async function printServiceOrder(order: Order) {
           `;
           })()}
 
+          <!-- Production Traveler Strip -->
+          <div class="section">
+             <div class="section-title">Fluxo de Produção (Checklist)</div>
+             <div class="traveler-strip">
+                 <div class="traveler-step">
+                    <div class="traveler-check"></div>
+                    <div class="traveler-label">Finalização</div>
+                    <div class="traveler-sig"></div>
+                 </div>
+                 <div class="traveler-step">
+                    <div class="traveler-check"></div>
+                    <div class="traveler-label">Impressão</div>
+                    <div class="traveler-sig"></div>
+                 </div>
+                 <div class="traveler-step">
+                    <div class="traveler-check"></div>
+                    <div class="traveler-label">Estampa</div>
+                    <div class="traveler-sig"></div>
+                 </div>
+                 <div class="traveler-step">
+                    <div class="traveler-check"></div>
+                    <div class="traveler-label">Separação</div>
+                    <div class="traveler-sig"></div>
+                 </div>
+                 <div class="traveler-step">
+                    <div class="traveler-check"></div>
+                    <div class="traveler-label">Costura</div>
+                    <div class="traveler-sig"></div>
+                 </div>
+                 <div class="traveler-step">
+                    <div class="traveler-check"></div>
+                    <div class="traveler-label">Conferência</div>
+                    <div class="traveler-sig"></div>
+                 </div>
+              </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">
+                Itens do Pedido
+                <span style="font-size:8pt; font-weight:400; text-transform:none; color:#666;">Total de Peças: ${order.items.reduce((acc, i) => acc + (i.quantity || 0), 0)}</span>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                   <th width="40" style="text-align:center;">QTD</th>
+                   <th>Produto / Detalhes</th>
+                   <th>Tamanho</th>
+                   <th>Tecido</th>
+                </tr>
+              </thead>
+              <tbody>
+                 ${order.items.map(item => `
+                    <tr>
+                       <td style="text-align:center; font-weight:900; font-size:12pt; background:#f9fafb;">${item.quantity}</td>
+                       <td>
+                          <div style="font-weight:700;">${item.productName}</div>
+                          ${item.gradeLabel ? `<div style="font-size:7pt; color:#666;">MODELO: ${item.gradeLabel}</div>` : ''}
+                       </td>
+                       <td><span class="tag">${item.size}</span></td>
+                       <td>${item.fabricName || '-'}</td>
+                    </tr>
+                 `).join('')}
+              </tbody>
+            </table>
+          </div>
+
           <div class="section" style="margin-top:30px;">
              <div class="section-title">Observações Técnicas / Personalização</div>
              <div style="border: 2px dashed #ccc; padding: 20px; border-radius: 8px; min-height: 4cm; background:#fdfdfd; font-family: 'Inter', sans-serif; white-space: pre-wrap;">
