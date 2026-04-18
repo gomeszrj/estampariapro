@@ -441,6 +441,19 @@ const MasterAdmin: React.FC = () => {
     load();
   };
 
+  const handleDeleteTenant = async (id: string, name: string) => {
+    if (confirm(`⚠️ ALERTA DE EXCLUSÃO!\n\nTem certeza que deseja DELETAR PERMANENTEMENTE o assinante "${name}"?\nTodos os dados (pedidos, clientes, produtos) serão perdidos.\n\nEssa ação NÃO PODE SER DESFEITA!`)) {
+      try {
+        await tenantService.deleteTenant(id);
+        alert(`✅ Assinante "${name}" excluído com sucesso!`);
+        load();
+      } catch (e: any) {
+        alert('Erro ao excluir assinante: ' + (e?.message || 'Erro desconhecido. Verifique as restrições do banco.'));
+        console.error(e);
+      }
+    }
+  };
+
   const handleResetPassword = async (userId: string, userName: string) => {
     if (!resetNewPassword || resetNewPassword.length < 6) return alert('A senha deve ter pelo menos 6 caracteres.');
     if (!confirm(`Redefinir a senha de "${userName}"?\n\nNova senha: ${resetNewPassword}`)) return;
@@ -653,10 +666,16 @@ const MasterAdmin: React.FC = () => {
                               <Copy className="w-3 h-3" /> Copiar Link
                             </button>
                           )}
-                          <button onClick={() => handleUpdateActive(t.id, !t.active)}
-                            className={`w-full px-4 py-2.5 border rounded-xl font-black uppercase text-[10px] transition-all ${t.active ? 'border-rose-500/50 text-rose-500 hover:bg-rose-500/10' : 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/20'}`}>
-                            {t.active ? 'Suspender' : 'Reativar'}
-                          </button>
+                          <div className="flex gap-2">
+                            <button onClick={() => handleUpdateActive(t.id, !t.active)}
+                              className={`flex-1 px-4 py-2.5 border rounded-xl font-black uppercase text-[10px] transition-all ${t.active ? 'border-rose-500/50 text-rose-500 hover:bg-rose-500/10' : 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/20'}`}>
+                              {t.active ? 'Suspender' : 'Reativar'}
+                            </button>
+                            <button onClick={() => handleDeleteTenant(t.id, t.name)}
+                              className="px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-500 rounded-xl font-black uppercase transition-all" title="Excluir Permanentemente">
+                              <XCircle className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
