@@ -133,4 +133,47 @@ export const tenantService = {
     if (error && error.code !== 'PGRST116') throw error;
     return data;
   },
+
+  // ============================================
+  // SaaS Plans
+  // ============================================
+
+  async getAllSaasPlans() {
+    const { data, error } = await supabase
+      .from('saas_plans')
+      .select('*')
+      .order('price', { ascending: true });
+    if (error) throw error;
+    return data;
+  },
+
+  async createSaasPlan(planData: any) {
+    const { data, error } = await supabase
+      .from('saas_plans')
+      .insert(planData)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateSaasPlan(id: string, planData: any) {
+    const { data, error } = await supabase
+      .from('saas_plans')
+      .update(planData)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteSaasPlan(id: string) {
+    const { error } = await supabase
+      .from('saas_plans')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+    return true;
+  }
 };

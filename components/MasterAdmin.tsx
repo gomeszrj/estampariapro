@@ -5,7 +5,7 @@ import {
   ShieldAlert, Users, Calendar, Activity, XCircle, Plus,
   LayoutList, CreditCard, Save, KeyRound,
   Copy, RefreshCw, Zap, CheckCheck,
-  PhoneCall, Mail, ChevronDown, ChevronUp
+  PhoneCall, Mail, ChevronDown, ChevronUp, Edit3
 } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -67,47 +67,55 @@ const PermissionsPanel = ({
   onChange,
   onApplyPreset,
   selectedPlan,
+  saasPlans,
+  isPlanEditor = false
 }: {
   permissions: Permissions;
   onChange: (key: PermissionKey) => void;
-  onApplyPreset?: (plan: string) => void;
+  onApplyPreset?: () => void;
   selectedPlan?: string;
+  saasPlans?: any[];
+  isPlanEditor?: boolean;
 }) => (
   <div className="space-y-3">
     {/* Locked items */}
-    <div className="bg-rose-500/5 border border-rose-500/20 rounded-2xl p-3 space-y-1.5">
-      <p className="text-[9px] font-black uppercase tracking-widest text-rose-400 mb-2">
-        Bloqueado para todos os assinantes (exclusivo Admin Master)
-      </p>
-      {[
-        { label: 'Extrator de Pedidos IA', desc: 'Usa chave de API privada' },
-        { label: 'Configurações de IA / API', desc: 'Ícone superior do header' },
-        { label: 'Gestão SaaS', desc: 'Painel de assinantes' },
-      ].map(item => (
-        <div key={item.label} className="flex items-center gap-2.5">
-          <div className="w-4 h-4 rounded border border-rose-500/40 bg-rose-500/10 flex items-center justify-center shrink-0">
-            <XCircle className="w-3 h-3 text-rose-500" />
+    {!isPlanEditor && (
+      <div className="bg-rose-500/5 border border-rose-500/20 rounded-2xl p-3 space-y-1.5">
+        <p className="text-[9px] font-black uppercase tracking-widest text-rose-400 mb-2">
+          Bloqueado para todos os assinantes (exclusivo Admin Master)
+        </p>
+        {[
+          { label: 'Extrator de Pedidos IA', desc: 'Usa chave de API privada' },
+          { label: 'Configurações de IA / API', desc: 'Ícone superior do header' },
+          { label: 'Gestão SaaS', desc: 'Painel de assinantes' },
+        ].map(item => (
+          <div key={item.label} className="flex items-center gap-2.5">
+            <div className="w-4 h-4 rounded border border-rose-500/40 bg-rose-500/10 flex items-center justify-center shrink-0">
+              <XCircle className="w-3 h-3 text-rose-500" />
+            </div>
+            <span className="text-[10px] text-slate-500 font-bold">
+              {item.label} <span className="text-slate-600">{item.desc}</span>
+            </span>
           </div>
-          <span className="text-[10px] text-slate-500 font-bold">
-            {item.label} <span className="text-slate-600">{item.desc}</span>
-          </span>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    )}
 
     {/* Header with preset button */}
-    {onApplyPreset && selectedPlan && (
-      <div className="flex items-center justify-between">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-          Módulos liberados
+    {!isPlanEditor && onApplyPreset && selectedPlan && saasPlans && saasPlans.length > 0 && (
+      <div className="flex items-center justify-between bg-indigo-500/5 border border-indigo-500/20 p-3 rounded-2xl">
+        <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">
+          Preset: {selectedPlan}
         </p>
-        <button
-          type="button"
-          onClick={() => onApplyPreset(selectedPlan)}
-          className="text-[9px] font-black uppercase tracking-widest text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-lg transition-all"
-        >
-          Limpar seleção
-        </button>
+        <div className="flex gap-2">
+           <button
+             type="button"
+             onClick={onApplyPreset}
+             className="text-[9px] font-black uppercase tracking-widest text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-lg transition-all"
+           >
+             Aplicar Padrão do Plano
+           </button>
+        </div>
       </div>
     )}
 
@@ -148,6 +156,7 @@ const MasterAdmin: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'ativos' | 'novo' | 'planos'>('ativos');
   const [tenants, setTenants] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<any[]>([]);
+  const [saasPlans, setSaasPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<'todos' | 'ativos' | 'vencidos' | 'bloqueados'>('todos');
   const [runningExpire, setRunningExpire] = useState(false);
@@ -155,8 +164,8 @@ const MasterAdmin: React.FC = () => {
   // ── New Tenant Form ──
   const [newName, setNewName] = useState('');
   const [newDomain, setNewDomain] = useState('');
-  const [newPlan, setNewPlan] = useState('Pro Plus');
-  const [newPrice, setNewPrice] = useState(149.90);
+  const [newPlan, setNewPlan] = useState('');
+  const [newPrice, setNewPrice] = useState(0);
   const [newCycle, setNewCycle] = useState('Mensal');
   const [newIsTrial, setNewIsTrial] = useState(false);
   const [newPaymentLink, setNewPaymentLink] = useState('');
@@ -186,6 +195,14 @@ const MasterAdmin: React.FC = () => {
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
 
+  // ── SaaS Plans Editor ──
+  const [editingPlanDb, setEditingPlanDb] = useState<any>(null);
+  const [dbPlanName, setDbPlanName] = useState('');
+  const [dbPlanPrice, setDbPlanPrice] = useState(0);
+  const [dbPlanCycle, setDbPlanCycle] = useState('Mensal');
+  const [dbPlanDesc, setDbPlanDesc] = useState('');
+  const [dbPlanPermissions, setDbPlanPermissions] = useState<Permissions>({ ...ALL_PERMISSIONS_OFF });
+
   // ── MP ──
   const [generatingMPLink, setGeneratingMPLink] = useState<string | null>(null);
 
@@ -193,33 +210,60 @@ const MasterAdmin: React.FC = () => {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [fetchedTenants, fetchedProfiles] = await Promise.all([
+      const [fetchedTenants, fetchedProfiles, fetchedPlans] = await Promise.all([
         tenantService.getAllTenants(),
         tenantService.getAllProfiles(),
+        tenantService.getAllSaasPlans()
       ]);
       setTenants(fetchedTenants || []);
       setProfiles(fetchedProfiles || []);
+      setSaasPlans(fetchedPlans || []);
+      
+      if (fetchedPlans && fetchedPlans.length > 0 && !newPlan) {
+        const defaultPlan = fetchedPlans[0];
+        setNewPlan(defaultPlan.name);
+        setNewPrice(Number(defaultPlan.price));
+        setNewCycle(defaultPlan.billing_cycle);
+        if (defaultPlan.permissions) {
+          setNewPermissions({ ...ALL_PERMISSIONS_OFF, ...defaultPlan.permissions });
+        }
+      }
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [newPlan]);
 
   useEffect(() => { load(); }, [load]);
 
   // ─── Toggle helpers ────────────────────────────────────────────────────────
-  const toggleNew = (key: PermissionKey) =>
-    setNewPermissions(prev => ({ ...prev, [key]: !prev[key] }));
+  const toggleNew = (key: PermissionKey) => setNewPermissions(prev => ({ ...prev, [key]: !prev[key] }));
+  const toggleEdit = (key: PermissionKey) => setEditPermissions(prev => ({ ...prev, [key]: !prev[key] }));
+  const togglePlanDb = (key: PermissionKey) => setDbPlanPermissions(prev => ({ ...prev, [key]: !prev[key] }));
 
-  const toggleEdit = (key: PermissionKey) =>
-    setEditPermissions(prev => ({ ...prev, [key]: !prev[key] }));
+  const applyPresetFromDb = (planName: string, target: 'new' | 'edit') => {
+    const plan = saasPlans.find(p => p.name === planName);
+    if (!plan) return;
+    const perms = { ...ALL_PERMISSIONS_OFF, ...(plan.permissions || {}) };
+    if (target === 'new') {
+        setNewPermissions(perms);
+        setNewPrice(Number(plan.price));
+        setNewCycle(plan.billing_cycle);
+    } else {
+        setEditPermissions(perms);
+    }
+  };
 
-  const clearPermissions = () =>
-    setNewPermissions({ ...ALL_PERMISSIONS_OFF });
+  const handlePlanChangeNew = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const pName = e.target.value;
+    setNewPlan(pName);
+    if (pName !== 'Trial 7 Dias') {
+        applyPresetFromDb(pName, 'new');
+    }
+  };
 
-  const clearEditPermissions = () =>
-    setEditPermissions({ ...ALL_PERMISSIONS_OFF });
+  const clearEditPermissions = () => setEditPermissions({ ...ALL_PERMISSIONS_OFF });
 
   // ─── Create Tenant ─────────────────────────────────────────────────────────
   const handleCreateTenant = async () => {
@@ -257,7 +301,6 @@ const MasterAdmin: React.FC = () => {
       alert('✅ Inquilino e Administrador Cadastrados com Sucesso!');
       setNewName(''); setNewDomain(''); setNewAdminEmail('');
       setNewAdminPassword(''); setNewAdminWhatsapp(''); setNewPaymentLink('');
-      setNewPermissions({ ...ALL_PERMISSIONS_OFF });
       setShowNewPermissions(false);
       setActiveTab('ativos');
       load();
@@ -282,7 +325,6 @@ const MasterAdmin: React.FC = () => {
     setResetUserId(null);
     setShowEditPermissions(false);
 
-    // Load existing permissions for this tenant's admin user
     setLoadingEditPerms(true);
     try {
       const tenantProfiles = profiles.filter(p => p.tenant_id === t.id);
@@ -322,7 +364,6 @@ const MasterAdmin: React.FC = () => {
         admin_email: editAdminEmail || null,
       });
 
-      // Save permissions for all profiles of this tenant
       const tenantProfiles = profiles.filter(p => p.tenant_id === editingTenant.id);
       for (const profile of tenantProfiles) {
         await tenantService.upsertUserPermissions(profile.id, editingTenant.id, editPermissions);
@@ -334,6 +375,34 @@ const MasterAdmin: React.FC = () => {
     } catch (e: any) {
       alert('Erro ao salvar: ' + (e?.message || 'Tente novamente.'));
     }
+  };
+
+  // ─── SaaS Plans DB ─────────────────────────────────────────────────────────
+  const openPlanDbEdit = (plan: any) => {
+      setEditingPlanDb(plan);
+      setDbPlanName(plan.name);
+      setDbPlanPrice(Number(plan.price));
+      setDbPlanCycle(plan.billing_cycle);
+      setDbPlanDesc(plan.description);
+      setDbPlanPermissions({ ...ALL_PERMISSIONS_OFF, ...(plan.permissions || {}) });
+  };
+
+  const handleSavePlanDb = async () => {
+      if (!editingPlanDb) return;
+      try {
+          await tenantService.updateSaasPlan(editingPlanDb.id, {
+              name: dbPlanName,
+              price: dbPlanPrice,
+              billing_cycle: dbPlanCycle,
+              description: dbPlanDesc,
+              permissions: dbPlanPermissions
+          });
+          alert('✅ Plano SaaS atualizado com sucesso!');
+          setEditingPlanDb(null);
+          load();
+      } catch (e: any) {
+          alert('Erro ao atualizar plano: ' + e.message);
+      }
   };
 
   // ─── Other handlers ────────────────────────────────────────────────────────
@@ -521,7 +590,6 @@ const MasterAdmin: React.FC = () => {
                       </div>
 
                       <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto">
-                        {/* Users */}
                         <div className="bg-slate-950 rounded-2xl p-3 border border-slate-800 w-full xl:w-48 hidden md:block">
                           <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
                             <Users className="w-3 h-3 inline mr-1" />Acessos ({tenantProfiles.length})
@@ -534,7 +602,6 @@ const MasterAdmin: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Actions */}
                         <div className="flex flex-col gap-2 w-full xl:w-44 shrink-0">
                           <button onClick={() => openEdit(t)} className="w-full px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black uppercase tracking-widest text-[10px] transition-all">
                             Editar / Módulos
@@ -580,7 +647,6 @@ const MasterAdmin: React.FC = () => {
               </div>
 
               <div className="space-y-4">
-                {/* Basic info */}
                 <div>
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block mb-1">Nome da Empresa</label>
                   <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Ex: Alfa Estamparia LTDA"
@@ -593,12 +659,13 @@ const MasterAdmin: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block mb-1">Plano</label>
-                    <select value={newPlan} onChange={e => setNewPlan(e.target.value)}
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block mb-1">Plano Base</label>
+                    <select value={newPlan} onChange={handlePlanChangeNew}
                       className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
-                      <option value="Starter">Starter</option>
-                      <option value="Pro Plus">Pro Plus</option>
-                      <option value="Enterprise">Enterprise</option>
+                      {saasPlans.map(plan => (
+                          <option key={plan.id} value={plan.name}>{plan.name}</option>
+                      ))}
+                      <option value="Trial 7 Dias">Trial 7 Dias</option>
                     </select>
                   </div>
                   <div>
@@ -617,7 +684,6 @@ const MasterAdmin: React.FC = () => {
                     className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
                 </div>
 
-                {/* Admin contact */}
                 <div className="border-t border-slate-800/50 pt-4 space-y-3">
                   <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-2"><Zap className="w-3 h-3" /> Contato do Admin</p>
                   <div className="grid grid-cols-2 gap-4">
@@ -639,13 +705,11 @@ const MasterAdmin: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Trial toggle */}
                 <div className="flex items-center gap-3 p-4 bg-indigo-500/5 border border-indigo-500/20 rounded-2xl">
                   <input type="checkbox" id="trial" checked={newIsTrial} onChange={e => setNewIsTrial(e.target.checked)} className="w-5 h-5 accent-indigo-600" />
                   <label htmlFor="trial" className="text-xs font-black text-indigo-400 uppercase tracking-widest cursor-pointer">Ativar Teste Grátis de 7 Dias</label>
                 </div>
 
-                {/* Permissions collapsible */}
                 <div className="border border-slate-800 rounded-2xl overflow-hidden">
                   <button
                     type="button"
@@ -654,7 +718,7 @@ const MasterAdmin: React.FC = () => {
                   >
                     <div className="flex items-center gap-3">
                       <LayoutList className="w-4 h-4 text-rose-400" />
-                      <span className="text-[11px] font-black uppercase tracking-widest text-rose-400">Módulos Liberados para este Assinante</span>
+                      <span className="text-[11px] font-black uppercase tracking-widest text-rose-400">Personalizar Módulos do Assinante</span>
                       <span className="text-[10px] font-bold text-slate-500">
                         ({Object.values(newPermissions).filter(Boolean).length}/{MODULE_LIST.length} ativos)
                       </span>
@@ -666,8 +730,9 @@ const MasterAdmin: React.FC = () => {
                       <PermissionsPanel
                         permissions={newPermissions}
                         onChange={toggleNew}
-                        onApplyPreset={clearPermissions}
+                        onApplyPreset={() => applyPresetFromDb(newPlan, 'new')}
                         selectedPlan={newPlan}
+                        saasPlans={saasPlans}
                       />
                     </div>
                   )}
@@ -689,49 +754,42 @@ const MasterAdmin: React.FC = () => {
               <div className="bg-emerald-900/10 border border-emerald-500/20 rounded-2xl p-4 flex items-start gap-3">
                 <Zap className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-black text-emerald-400 uppercase tracking-widest">Integração Mercado Pago Ativa</p>
-                  <p className="text-xs text-slate-400 mt-1">Planos vinculados à conta MP via secrets do Supabase. Pagamento aprovado → webhook renova automaticamente.</p>
+                  <p className="text-sm font-black text-emerald-400 uppercase tracking-widest">Editor Central de Planos</p>
+                  <p className="text-xs text-slate-400 mt-1">Configure o valor padrão e os módulos embarcados de cada plano. Isso facilitará a criação de novos usuários, pois as configurações serão pré-carregadas automaticamente ao escolher o plano no cadastro.</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {[
-                  { name: 'Starter', price: '99', desc: 'Operação básica de pedidos.', color: '', popular: false },
-                  { name: 'Pro Plus', price: '149', desc: 'Financeiro, Clientes e Loja.', color: 'border-indigo-500', popular: true },
-                  { name: 'Enterprise', price: '299', desc: 'Tudo liberado + relatórios.', color: '', popular: false },
-                ].map(p => (
-                  <div key={p.name} className={`bg-[#0f172a] p-8 rounded-[3rem] border ${p.color || 'border-slate-800'} shadow-xl relative`}>
-                    {p.popular && <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Mais Vendido</div>}
-                    <h3 className="text-2xl font-black text-slate-100 uppercase">{p.name}</h3>
-                    <p className="text-4xl font-black text-emerald-400 my-4">R$ {p.price}<span className="text-sm text-slate-500">/mês</span></p>
-                    <p className="text-sm font-medium text-slate-400">{p.desc}</p>
-                    <div className="mt-4 p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl">
-                      <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest">Módulos definidos individualmente</p>
-                      <p className="text-[10px] text-slate-500 mt-1">Configure os módulos de cada assinante na aba "Editar" do card.</p>
+                {saasPlans.map(p => (
+                  <div key={p.id} className={`bg-[#0f172a] p-8 rounded-[3rem] border ${p.is_popular ? 'border-indigo-500' : 'border-slate-800'} shadow-xl relative`}>
+                    {p.is_popular && <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Mais Vendido</div>}
+                    <div className="flex justify-between items-start">
+                        <h3 className="text-2xl font-black text-slate-100 uppercase">{p.name}</h3>
+                        <button onClick={() => openPlanDbEdit(p)} className="p-2 bg-slate-900 text-slate-400 hover:text-white rounded-xl transition-all" title="Editar Preset">
+                            <Edit3 className="w-4 h-4" />
+                        </button>
                     </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-3">
-                <h4 className="text-sm font-black text-slate-300 uppercase tracking-widest">Fluxo automático de cobrança</h4>
-                {[
-                  '1. Cadastre o tenant com e-mail e WhatsApp do admin',
-                  '2. Configure os módulos liberados pelo plano para ele',
-                  '3. Clique em "Gerar Link MP" no card do tenant',
-                  '4. Envie o link para o cliente assinar no checkout do MP',
-                  '5. Webhook confirma pagamento e renova automaticamente',
-                  '6. Diariamente às 08h: vencidos são bloqueados e avisos são enviados',
-                ].map((s, i) => (
-                  <div key={i} className="flex items-start gap-3 text-xs text-slate-400">
-                    <CheckCheck className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />{s}
+                    <p className="text-4xl font-black text-emerald-400 my-4">R$ {Number(p.price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}<span className="text-sm text-slate-500">/{p.billing_cycle === 'Mensal' ? 'mês' : p.billing_cycle === 'Semestral' ? 'semestre' : 'ano'}</span></p>
+                    <p className="text-sm font-medium text-slate-400">{p.description}</p>
+                    <div className="mt-4 p-4 bg-slate-900/50 border border-slate-800 rounded-xl space-y-2">
+                      <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest flex items-center justify-between">
+                          Módulos Ativos <span className="bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full">{Object.values(p.permissions || {}).filter(Boolean).length}</span>
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                          {Object.entries(p.permissions || {}).filter(([_, v]) => v).map(([k]) => {
+                              const mod = MODULE_LIST.find(m => m.key === k);
+                              if (!mod) return null;
+                              return <span key={k} className="text-[8px] uppercase tracking-widest text-slate-500 bg-slate-950 border border-slate-800 px-2 py-1 rounded-md">{mod.label.replace('└ ', '')}</span>;
+                          })}
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* ═══════════════ MODAL: EDIÇÃO ═══════════════ */}
+          {/* ═══════════════ MODAL: EDIÇÃO TENANT ═══════════════ */}
           {editingTenant && (
             <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-start justify-center p-4 overflow-y-auto">
               <div className="bg-[#0f172a] rounded-[3rem] w-full max-w-2xl p-8 border border-slate-800 shadow-2xl animate-in zoom-in-95 my-6">
@@ -753,9 +811,9 @@ const MasterAdmin: React.FC = () => {
                       <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Plano</label>
                       <select value={editPlan} onChange={e => setEditPlan(e.target.value)}
                         className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none">
-                        <option value="Starter">Starter</option>
-                        <option value="Pro Plus">Pro Plus</option>
-                        <option value="Enterprise">Enterprise</option>
+                        {saasPlans.map(plan => (
+                            <option key={plan.id} value={plan.name}>{plan.name}</option>
+                        ))}
                         <option value="Trial 7 Dias">Trial 7 Dias</option>
                       </select>
                     </div>
@@ -824,16 +882,12 @@ const MasterAdmin: React.FC = () => {
                     </button>
                     {showEditPermissions && !loadingEditPerms && (
                       <div className="p-4 border-t border-slate-800">
-                        <div className="flex items-center justify-between mb-3">
-                          <p className="text-[9px] text-slate-500 font-bold">Clique para ativar ou desativar cada módulo</p>
-                          <button type="button" onClick={clearEditPermissions}
-                            className="text-[9px] font-black uppercase text-slate-500 hover:text-rose-400 transition-colors">
-                            Desmarcar tudo
-                          </button>
-                        </div>
                         <PermissionsPanel
                           permissions={editPermissions}
                           onChange={toggleEdit}
+                          onApplyPreset={() => applyPresetFromDb(editPlan, 'edit')}
+                          selectedPlan={editPlan}
+                          saasPlans={saasPlans}
                         />
                       </div>
                     )}
@@ -887,6 +941,60 @@ const MasterAdmin: React.FC = () => {
                 <div className="mt-8 flex gap-3">
                   <button onClick={() => setEditingTenant(null)} className="flex-1 py-3 bg-slate-900 text-slate-400 rounded-xl font-black uppercase text-[10px]">Cancelar</button>
                   <button onClick={handleSaveEdit} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-black uppercase text-[10px] shadow-lg shadow-indigo-600/20">Salvar Alterações</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ═══════════════ MODAL: EDIÇÃO SaaS PLAN ═══════════════ */}
+          {editingPlanDb && (
+            <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[60] flex items-start justify-center p-4 overflow-y-auto">
+              <div className="bg-[#0f172a] rounded-[3rem] w-full max-w-xl p-8 border border-slate-800 shadow-2xl animate-in zoom-in-95 my-6">
+                 <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-black text-slate-100 uppercase tracking-tight flex items-center gap-2"><Edit3 className="w-5 h-5 text-indigo-400"/> Editar Preset: {editingPlanDb.name}</h3>
+                  <button onClick={() => setEditingPlanDb(null)} className="text-slate-500 hover:text-white"><XCircle /></button>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Nome do Plano</label>
+                    <input value={dbPlanName} onChange={e => setDbPlanName(e.target.value)}
+                      className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none focus:ring-1 focus:ring-indigo-500" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Valor Padrão (R$)</label>
+                        <input type="number" value={dbPlanPrice} onChange={e => setDbPlanPrice(Number(e.target.value))}
+                        className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none focus:ring-1 focus:ring-indigo-500" />
+                    </div>
+                     <div>
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Ciclo Padrão</label>
+                      <select value={dbPlanCycle} onChange={e => setDbPlanCycle(e.target.value)}
+                        className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none">
+                        <option value="Mensal">Mensal</option>
+                        <option value="Semestral">Semestral</option>
+                        <option value="Anual">Anual</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Descrição</label>
+                    <input value={dbPlanDesc} onChange={e => setDbPlanDesc(e.target.value)}
+                      className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none focus:ring-1 focus:ring-indigo-500" />
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-800/50 mt-4">
+                      <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-3">Módulos Ativados Neste Plano</p>
+                      <PermissionsPanel
+                          permissions={dbPlanPermissions}
+                          onChange={togglePlanDb}
+                          isPlanEditor={true}
+                      />
+                  </div>
+                </div>
+
+                <div className="mt-8 flex gap-3">
+                  <button onClick={() => setEditingPlanDb(null)} className="flex-1 py-3 bg-slate-900 text-slate-400 rounded-xl font-black uppercase text-[10px]">Cancelar</button>
+                  <button onClick={handleSavePlanDb} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-black uppercase text-[10px] shadow-lg shadow-indigo-600/20">Salvar Plano</button>
                 </div>
               </div>
             </div>
