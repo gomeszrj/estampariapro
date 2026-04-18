@@ -1,562 +1,900 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { tenantService } from '../services/tenantService';
-import { ShieldAlert, Users, Calendar, Activity, CheckCircle2, XCircle, Plus, LayoutList, CreditCard, Save, KeyRound, Eye, EyeOff } from 'lucide-react';
+import {
+  ShieldAlert, Users, Calendar, Activity, XCircle, Plus,
+  LayoutList, CreditCard, Save, KeyRound,
+  Copy, RefreshCw, Zap, CheckCheck,
+  PhoneCall, Mail, ChevronDown, ChevronUp
+} from 'lucide-react';
 
-const MasterAdmin: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'ativos' | 'novo' | 'planos'>('ativos');
+// ─── Types ───────────────────────────────────────────────────────────────────
+type PermissionKey =
+  | 'can_view_dashboard' | 'can_view_orders' | 'can_view_kanban' | 'can_view_art_queue'
+  | 'can_view_products' | 'can_view_catalog' | 'can_view_clients' | 'can_view_crm'
+  | 'can_view_inventory' | 'can_view_finance' | 'can_view_settings' | 'can_view_store'
+  | 'can_create_orders' | 'can_delete_orders' | 'can_export_reports';
 
-    const [tenants, setTenants] = useState<any[]>([]);
-    const [profiles, setProfiles] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [statusFilter, setStatusFilter] = useState<'todos' | 'ativos' | 'vencidos' | 'bloqueados'>('todos');
+type Permissions = Record<PermissionKey, boolean>;
 
-    // Form states
-    const [newName, setNewName] = useState('');
-    const [newDomain, setNewDomain] = useState('');
-    const [newPlan, setNewPlan] = useState('Pro Plus');
-    const [newPrice, setNewPrice] = useState(149.90);
-    const [newCycle, setNewCycle] = useState('Mensal');
-    const [newIsTrial, setNewIsTrial] = useState(false);
-    const [newPaymentLink, setNewPaymentLink] = useState('');
-    const [newAdminEmail, setNewAdminEmail] = useState('');
-    const [newAdminPassword, setNewAdminPassword] = useState('');
-    
-    // Edit Modal States
-    const [editingTenant, setEditingTenant] = useState<any>(null);
-    const [editName, setEditName] = useState('');
-    const [editPlan, setEditPlan] = useState('');
-    const [editPrice, setEditPrice] = useState(0);
-    const [editCycle, setEditCycle] = useState('');
-    const [editEndDate, setEditEndDate] = useState('');
-    const [editPaymentLink, setEditPaymentLink] = useState('');
-
-    // Password Reset States
-    const [resetUserId, setResetUserId] = useState<string | null>(null);
-    const [resetNewPassword, setResetNewPassword] = useState('');
-    const [showResetPassword, setShowResetPassword] = useState(false);
-    const [resettingPassword, setResettingPassword] = useState(false);
-
-    const load = async () => {
-        setLoading(true);
-        try {
-            const fetchedTenants = await tenantService.getAllTenants();
-            const fetchedProfiles = await tenantService.getAllProfiles();
-            setTenants(fetchedTenants || []);
-            setProfiles(fetchedProfiles || []);
-        } catch(e) {
-            console.error(e);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => { load(); }, []);
-
-    const handleCreateTenant = async () => {
-        if(!newName || !newDomain) return alert("Preencha o Nome e o Domínio.");
-        try {
-            const endDate = new Date();
-            endDate.setDate(endDate.getDate() + (newIsTrial ? 7 : 30));
-            
-            const tenant = await tenantService.createTenant({
-                name: newName,
-                domain: newDomain,
-                plan: newIsTrial ? 'Trial 7 Dias' : newPlan,
-                plan_price: newIsTrial ? 0 : newPrice,
-                billing_cycle: newCycle,
-                subscription_end_date: endDate.toISOString(),
-                payment_link: newPaymentLink,
-                active: true
-            });
-
-            // Provision the first Admin User
-            if (newAdminEmail && newAdminPassword && tenant?.id) {
-                await tenantService.createTenantAdmin(
-                    newAdminEmail,
-                    newAdminPassword,
-                    tenant.id,
-                    `Admin ${newName}`
-                );
-            }
-
-            alert("Inquilino e Administrador Cadastrados com Sucesso!");
-            setNewName('');
-            setNewDomain('');
-            setNewAdminEmail('');
-            setNewAdminPassword('');
-            setActiveTab('ativos');
-            load();
-        } catch(e) {
-            alert("Erro ao criar inquilino.");
-            console.error(e);
-        }
-    };
-
-    const handleUpdateActive = async (id: string, active: boolean) => {
-        await tenantService.updateTenant(id, { active });
-        load();
-    }
-
-    const handleSaveEdit = async () => {
-        if(!editingTenant) return;
-        try {
-            await tenantService.updateTenant(editingTenant.id, {
-                name: editName,
-                plan: editPlan,
-                plan_price: editPrice,
-                billing_cycle: editCycle,
-                subscription_end_date: editEndDate,
-                payment_link: editPaymentLink
-            });
-            setEditingTenant(null);
-            load();
-            alert("Dados do Inquilino atualizados!");
-        } catch(e) {
-            alert("Erro ao salvar alterações.");
-        }
-    };
-
-    const handleResetPassword = async (userId: string, userName: string) => {
-        if (!resetNewPassword || resetNewPassword.length < 6) {
-            return alert('A senha deve ter pelo menos 6 caracteres.');
-        }
-        if (!confirm(`Tem certeza que deseja redefinir a senha de "${userName}"?\n\nNova senha: ${resetNewPassword}`)) return;
-        setResettingPassword(true);
-        try {
-            await tenantService.resetUserPassword(userId, resetNewPassword);
-            alert(`Senha de "${userName}" redefinida com sucesso!\n\nNova senha: ${resetNewPassword}`);
-            setResetUserId(null);
-            setResetNewPassword('');
-        } catch (e: any) {
-            alert('Erro ao redefinir senha: ' + (e?.message || 'Erro desconhecido'));
-            console.error(e);
-        } finally {
-            setResettingPassword(false);
-        }
-    };
-
-    const openEdit = (t: any) => {
-        setEditingTenant(t);
-        setEditName(t.name);
-        setEditPlan(t.plan);
-        setEditPrice(t.plan_price);
-        setEditCycle(t.billing_cycle || 'Mensal');
-        setEditEndDate(t.subscription_end_date?.split('T')[0] || '');
-        setEditPaymentLink(t.payment_link || '');
-    };
-
-    const calculateDaysRemaining = (endDateStr: string) => {
-        if(!endDateStr) return 0;
-        const end = new Date(endDateStr);
-        const today = new Date();
-        const diff = end.getTime() - today.getTime();
-        return Math.ceil(diff / (1000 * 3600 * 24));
-    };
-
-    const getRemainingBgColor = (days: number) => {
-        if(days > 15) return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-        if(days > 5) return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-        if(days > 0) return 'bg-orange-500/10 text-orange-400 border-orange-500/20';
-        return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-    };
-
-    const mrr = tenants.filter(t => t.active).reduce((acc, current) => acc + Number(current.plan_price || 0), 0);
-    const defaultedTenants = tenants.filter(t => calculateDaysRemaining(t.subscription_end_date) <= 0 && t.active);
-    const totalInadimplencia = defaultedTenants.reduce((acc, curr) => acc + Number(curr.plan_price || 0), 0);
-
-    const filteredTenants = tenants.filter(t => {
-        if (statusFilter === 'todos') return true;
-        const days = calculateDaysRemaining(t.subscription_end_date);
-        if (statusFilter === 'ativos') return t.active && days > 0;
-        if (statusFilter === 'vencidos') return t.active && days <= 0;
-        if (statusFilter === 'bloqueados') return !t.active;
-        return true;
-    });
-
-    return (
-        <div className="animate-in slide-in-from-bottom-4 duration-500 p-6 max-w-7xl mx-auto space-y-8 pb-32">
-            <div className="flex flex-col md:flex-row justify-between items-center border-b border-slate-800 pb-6 gap-6">
-                <div>
-                    <h2 className="text-3xl font-black text-slate-100 uppercase tracking-tighter flex items-center justify-center md:justify-start gap-3">
-                        <ShieldAlert className="w-8 h-8 text-rose-500" /> Gestão SaaS
-                    </h2>
-                    <p className="text-slate-500 font-medium mt-2">Controle de Assinaturas e Inquilinos do Sistema.</p>
-                </div>
-
-                <div className="flex flex-wrap justify-center bg-slate-900 border border-slate-800 rounded-2xl p-1 gap-1 shadow-xl">
-                  <button
-                    onClick={() => setActiveTab('ativos')}
-                    className={`px-5 py-3 flex items-center gap-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'ativos' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'}`}
-                  >
-                    <Activity className="w-4 h-4"/> Assinantes
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('novo')}
-                    className={`px-5 py-3 flex items-center gap-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'novo' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'}`}
-                  >
-                    <Plus className="w-4 h-4"/> Cadastrar
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('planos')}
-                    className={`px-5 py-3 flex items-center gap-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'planos' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'}`}
-                  >
-                    <LayoutList className="w-4 h-4"/> Planos SaaS
-                  </button>
-                </div>
-            </div>
-
-            {loading ? (
-                <div className="text-slate-500 font-bold p-10 text-center">Carregando dados globais...</div>
-            ) : (
-                <>
-                {/* ---------- ABA: ASSINANTES ATIVOS ---------- */}
-                {activeTab === 'ativos' && (
-                    <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
-                        {/* KPI Dashboard */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                            <div className="bg-[#0f172a] p-6 rounded-3xl border border-slate-800 shadow-xl">
-                                <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1">Empresas</p>
-                                <p className="text-3xl font-black text-slate-100">{tenants.length}</p>
-                            </div>
-                            <div className="bg-[#0f172a] p-6 rounded-3xl border border-slate-800 shadow-xl">
-                                <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1">Assinaturas Ativas</p>
-                                <p className="text-3xl font-black text-emerald-400">{tenants.filter(t => t.active && calculateDaysRemaining(t.subscription_end_date) > 0).length}</p>
-                            </div>
-                            <div className="bg-rose-900/10 p-6 rounded-3xl border border-rose-500/20 shadow-xl">
-                                <p className="text-[10px] font-black uppercase text-rose-400 tracking-widest mb-1">Inadimplência</p>
-                                <div className="flex items-end gap-2">
-                                    <p className="text-3xl font-black text-rose-300">R$ {totalInadimplencia.toFixed(2).replace('.',',')}</p>
-                                    <span className="text-[10px] font-bold text-rose-500 mb-1">{defaultedTenants.length} lojas</span>
-                                </div>
-                            </div>
-                            <div className="bg-indigo-900/10 p-6 rounded-3xl border border-indigo-500/20 shadow-xl">
-                                <p className="text-[10px] font-black uppercase text-indigo-400 tracking-widest mb-1">Receita Mensal (MRR)</p>
-                                <p className="text-3xl font-black text-indigo-300">R$ {mrr.toFixed(2).replace('.',',')}</p>
-                            </div>
-                        </div>
-
-                        {/* Status Filters */}
-                        <div className="flex items-center gap-3 bg-slate-900/50 p-1.5 rounded-2xl border border-slate-800 w-fit">
-                            {(['todos', 'ativos', 'vencidos', 'bloqueados'] as const).map(f => (
-                                <button
-                                    key={f}
-                                    onClick={() => setStatusFilter(f)}
-                                    className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${statusFilter === f ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'}`}
-                                >
-                                    {f}
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="space-y-4">
-                            {filteredTenants.map(t => {
-                                const tenantProfiles = profiles.filter(p => p.tenant_id === t.id);
-                                const daysRemaining = calculateDaysRemaining(t.subscription_end_date);
-                                const isExpired = daysRemaining <= 0;
-
-                                return (
-                                    <div key={t.id} className="bg-[#0f172a] rounded-3xl p-6 border border-slate-800 shadow-lg flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6 hover:border-slate-700 transition-colors">
-                                        <div className="space-y-2 flex-1">
-                                            <div className="flex items-center gap-3">
-                                                <h3 className="text-xl font-black text-slate-100 uppercase tracking-tight">{t.name}</h3>
-                                                <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${t.active ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border border-rose-500/20'}`}>
-                                                    {t.active ? 'Ativo' : 'Bloqueado'}
-                                                </span>
-                                            </div>
-                                            <p className="text-sm font-medium text-slate-400 flex items-center gap-2">
-                                                ID: <span className="font-mono text-[10px] text-slate-500 bg-slate-900 px-2 py-1 rounded select-all">{t.id}</span>
-                                            </p>
-                                            
-                                            <div className="flex flex-wrap items-center gap-3 mt-4">
-                                                <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl">
-                                                    <CreditCard className="w-4 h-4 text-slate-500"/>
-                                                    <span className="text-[10px] font-black uppercase text-slate-300 tracking-widest">{t.plan} • R$ {Number(t.plan_price || 0).toFixed(2).replace('.',',')}</span>
-                                                    <span className="text-[9px] font-bold text-slate-500 bg-slate-950 px-1 rounded">{t.billing_cycle || 'Mensal'}</span>
-                                                </div>
-
-                                                <div className={`flex items-center gap-2 border px-3 py-1.5 rounded-xl ${getRemainingBgColor(daysRemaining)}`}>
-                                                    <Calendar className="w-4 h-4"/>
-                                                    <span className="text-[10px] font-black uppercase tracking-widest">
-                                                        {isExpired ? 'Assinatura Vencida' : `Vence em ${daysRemaining} dias`}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex flex-col sm:flex-row items-center gap-4 w-full xl:w-auto mt-4 xl:mt-0">
-                                            <div className="bg-slate-950 rounded-2xl p-4 border border-slate-800 w-full xl:w-64 shadow-inner hidden md:block">
-                                                <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2 flex items-center justify-between">
-                                                <span><Users className="w-4 h-4 inline mr-2 text-slate-400"/> Acessos Cadastrados ({tenantProfiles.length})</span>
-                                                </h4>
-                                                <div className="flex flex-wrap gap-1">
-                                                    {tenantProfiles.slice(0,3).map(p => (
-                                                        <span key={p.id} className="text-slate-400 bg-slate-900 px-2 py-1 rounded-md uppercase font-black text-[9px] tracking-widest border border-slate-800 truncate max-w-[100px]" title={p.full_name}>{p.full_name?.split(' ')[0] || 'Usuário'}</span>
-                                                    ))}
-                                                    {tenantProfiles.length > 3 && <span className="text-slate-500 text-[10px] font-bold">+{tenantProfiles.length - 3}</span>}
-                                                </div>
-                                            </div>
-                                            
-                                            <div className="flex flex-col gap-2 w-full xl:w-48 shrink-0">
-                                                <button onClick={() => openEdit(t)} className="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black uppercase tracking-widest text-[10px] transition-all">
-                                                    Editar Inquilino
-                                                </button>
-                                                <button onClick={() => handleUpdateActive(t.id, !t.active)} className={`w-full px-4 py-3 border rounded-xl font-black uppercase tracking-widest text-[10px] transition-all ${t.active ? 'bg-transparent border-rose-500/50 text-rose-500 hover:bg-rose-500/10' : 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/20'}`}>
-                                                    {t.active ? 'Suspender Acesso' : 'Reativar Acesso'}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
-
-                {/* ---------- ABA: NOVO ASSINANTE ---------- */}
-                {activeTab === 'novo' && (
-                    <div className="animate-in fade-in zoom-in-95 duration-300 max-w-2xl mx-auto space-y-6 bg-[#0f172a] p-8 md:p-10 rounded-[3rem] border border-slate-800 shadow-2xl">
-                        <div className="mb-8">
-                            <h3 className="text-2xl font-black text-slate-100 uppercase tracking-tighter flex items-center gap-3">
-                                <Plus className="w-6 h-6 text-indigo-500"/> Adicionar Estamparia
-                            </h3>
-                            <p className="text-slate-500 text-sm mt-2">Cadastre um novo cliente SaaS. O ambiente dele será criado e isolado na hora.</p>
-                        </div>
-
-                        <div className="space-y-5">
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block">Nome da Empresa</label>
-                                <input
-                                    value={newName}
-                                    onChange={e => setNewName(e.target.value)}
-                                    placeholder="Ex: Alfa Estamparia LTDA"
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                />
-                            </div>
-
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block">Domínio / Cód Identificador (Sem espaços)</label>
-                                <input
-                                    value={newDomain}
-                                    onChange={e => setNewDomain(e.target.value)}
-                                    placeholder="Ex: alfa-estamparia"
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block">Plano</label>
-                                    <select
-                                        value={newPlan}
-                                        onChange={e => setNewPlan(e.target.value)}
-                                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                    >
-                                        <option value="Starter">Starter (Básico)</option>
-                                        <option value="Pro Plus">Pro Plus</option>
-                                        <option value="Enterprise">Enterprise</option>
-                                    </select>
-                                </div>
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block">Ciclo</label>
-                                    <select
-                                        value={newCycle}
-                                        onChange={e => setNewCycle(e.target.value)}
-                                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                    >
-                                        <option value="Mensal">Mensal</option>
-                                        <option value="Semestral">Semestral</option>
-                                        <option value="Anual">Anual</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block">Valor Cobrado (R$)</label>
-                                <input
-                                    type="number"
-                                    value={newPrice}
-                                    onChange={e => setNewPrice(Number(e.target.value))}
-                                    placeholder="149.90"
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                />
-                            </div>
-
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block">Link de Pagamento / Renovação</label>
-                                <input
-                                    value={newPaymentLink}
-                                    onChange={e => setNewPaymentLink(e.target.value)}
-                                    placeholder="Ex: https://checkout.mercadopago.com.br/..."
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                />
-                            </div>
-
-                            <div className="flex items-center gap-3 p-4 bg-indigo-500/5 border border-indigo-500/20 rounded-2xl">
-                                <input 
-                                    type="checkbox" 
-                                    id="trial" 
-                                    checked={newIsTrial} 
-                                    onChange={e => setNewIsTrial(e.target.checked)}
-                                    className="w-5 h-5 accent-indigo-600"
-                                />
-                                <label htmlFor="trial" className="text-xs font-black text-indigo-400 uppercase tracking-widest cursor-pointer">Ativar Teste Grátis de 7 Dias</label>
-                            </div>
-                        </div>
-
-                        <div className="pt-6 border-t border-slate-800/50">
-                            <button
-                                onClick={handleCreateTenant}
-                                className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3"
-                            >
-                                <Save className="w-5 h-5"/> {newIsTrial ? 'Criar Ambiente de Teste' : 'Criar Ambiente Agora'}
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {/* ---------- ABA: PLANOS ---------- */}
-                {activeTab === 'planos' && (
-                    <div className="animate-in fade-in zoom-in-95 duration-300">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {[
-                                { name: 'Starter', price: '99', desc: 'Até 2 usuários. Controle de Pedidos Básico.' },
-                                { name: 'Pro Plus', price: '149', desc: 'Até 10 usuários. Módulo Financeiro + Loja Inclusos.', color: 'border-indigo-500', popular: true },
-                                { name: 'Enterprise', price: '299', desc: 'Usuários ilimitados. API Liberada.' }
-                            ].map(p => (
-                                <div key={p.name} className={`bg-[#0f172a] p-8 rounded-[3rem] border ${p.color || 'border-slate-800'} shadow-xl relative`}>
-                                    {p.popular && <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Mais Vendido</div>}
-                                    <h3 className="text-2xl font-black text-slate-100 uppercase">{p.name}</h3>
-                                    <p className="text-4xl font-black text-emerald-400 my-4">R$ {p.price}<span className="text-sm text-slate-500">/mês</span></p>
-                                    <p className="text-sm font-medium text-slate-400">{p.desc}</p>
-                                    <button className="mt-8 w-full py-3 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all">
-                                        Editar Detalhes
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-            {/* ---------- MODAL: EDIÇÃO ---------- */}
-            {editingTenant && (
-                <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
-                    <div className="bg-[#0f172a] rounded-[3rem] w-full max-w-xl p-8 border border-slate-800 shadow-2xl animate-in zoom-in-95">
-                        <div className="flex justify-between items-center mb-8">
-                            <h3 className="text-xl font-black text-slate-100 uppercase tracking-tight">Editar: {editingTenant.name}</h3>
-                            <button onClick={() => setEditingTenant(null)} className="text-slate-500 hover:text-white"><XCircle /></button>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Nome da Empresa</label>
-                                <input value={editName} onChange={e => setEditName(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none focus:ring-1 focus:ring-indigo-500"/>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Plano</label>
-                                    <select value={editPlan} onChange={e => setEditPlan(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none">
-                                        <option value="Starter">Starter</option>
-                                        <option value="Pro Plus">Pro Plus</option>
-                                        <option value="Enterprise">Enterprise</option>
-                                    </select>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Ciclo</label>
-                                    <select value={editCycle} onChange={e => setEditCycle(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none">
-                                        <option value="Mensal">Mensal</option>
-                                        <option value="Semestral">Semestral</option>
-                                        <option value="Anual">Anual</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Valor Cobrado (R$)</label>
-                                    <input type="number" value={editPrice} onChange={e => setEditPrice(Number(e.target.value))} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none"/>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Expiração da Assinatura</label>
-                                    <input type="date" value={editEndDate} onChange={e => setEditEndDate(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none"/>
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Link de Pagamento Individual</label>
-                                <input value={editPaymentLink} onChange={e => setEditPaymentLink(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none"/>
-                            </div>
-
-                            {/* PASSWORD RESET SECTION */}
-                            <div className="pt-4 border-t border-slate-800/50">
-                                <button
-                                    onClick={() => setShowResetPassword(!showResetPassword)}
-                                    className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-amber-500 hover:text-amber-400 transition-colors"
-                                >
-                                    <KeyRound className="w-4 h-4" />
-                                    {showResetPassword ? 'Ocultar Gerenciamento de Senhas' : 'Gerenciar Senhas de Acesso'}
-                                </button>
-
-                                {showResetPassword && (
-                                    <div className="mt-4 space-y-3 bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4">
-                                        <p className="text-[9px] font-bold text-amber-500/70 uppercase tracking-widest">Usuários deste Inquilino</p>
-                                        {profiles.filter(p => p.tenant_id === editingTenant.id).length === 0 ? (
-                                            <p className="text-sm text-slate-500">Nenhum usuário encontrado.</p>
-                                        ) : (
-                                            profiles.filter(p => p.tenant_id === editingTenant.id).map(p => (
-                                                <div key={p.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-950 p-3 rounded-xl border border-slate-800">
-                                                    <div>
-                                                        <p className="text-sm font-black text-slate-200">{p.full_name || 'Sem Nome'}</p>
-                                                        <p className="text-[10px] text-slate-500 font-mono">{p.role} • ID: {p.id.substring(0, 8)}...</p>
-                                                    </div>
-                                                    {resetUserId === p.id ? (
-                                                        <div className="flex items-center gap-2 w-full sm:w-auto">
-                                                            <input
-                                                                type="text"
-                                                                value={resetNewPassword}
-                                                                onChange={e => setResetNewPassword(e.target.value)}
-                                                                placeholder="Nova senha (min 6)"
-                                                                className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 font-bold outline-none focus:ring-1 focus:ring-amber-500 w-full sm:w-40"
-                                                            />
-                                                            <button
-                                                                onClick={() => handleResetPassword(p.id, p.full_name)}
-                                                                disabled={resettingPassword}
-                                                                className="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[10px] font-black uppercase tracking-widest whitespace-nowrap disabled:opacity-50"
-                                                            >
-                                                                {resettingPassword ? '...' : 'Salvar'}
-                                                            </button>
-                                                            <button
-                                                                onClick={() => { setResetUserId(null); setResetNewPassword(''); }}
-                                                                className="px-2 py-2 text-slate-500 hover:text-white"
-                                                            >
-                                                                <XCircle className="w-4 h-4" />
-                                                            </button>
-                                                        </div>
-                                                    ) : (
-                                                        <button
-                                                            onClick={() => { setResetUserId(p.id); setResetNewPassword(''); }}
-                                                            className="px-3 py-2 bg-slate-900 border border-amber-500/30 text-amber-500 hover:bg-amber-500/10 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"
-                                                        >
-                                                            <KeyRound className="w-3 h-3" /> Redefinir Senha
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            ))
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="mt-8 flex gap-3">
-                            <button onClick={() => setEditingTenant(null)} className="flex-1 py-3 bg-slate-900 text-slate-400 rounded-xl font-black uppercase text-[10px]">Cancelar</button>
-                            <button onClick={handleSaveEdit} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-black uppercase text-[10px] shadow-lg shadow-indigo-600/20">Salvar Alterações</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-                </>
-            )}
-        </div>
-    );
+// ─── Constants ───────────────────────────────────────────────────────────────
+const ALL_PERMISSIONS_OFF: Permissions = {
+  can_view_dashboard: false, can_view_orders: false, can_view_kanban: false,
+  can_view_art_queue: false, can_view_products: false, can_view_catalog: false,
+  can_view_clients: false, can_view_crm: false, can_view_inventory: false,
+  can_view_finance: false, can_view_settings: false, can_view_store: false,
+  can_create_orders: false, can_delete_orders: false, can_export_reports: false,
 };
+
+const MODULE_LIST: { key: PermissionKey; label: string; desc: string }[] = [
+  { key: 'can_view_dashboard',  label: 'Agenda / Dashboard',    desc: 'KPIs e visão geral de produção' },
+  { key: 'can_view_orders',     label: 'Pedidos',               desc: 'Lista de pedidos e detalhes' },
+  { key: 'can_create_orders',   label: '└ Criar Pedidos',       desc: 'Permissão para cadastrar novos pedidos' },
+  { key: 'can_delete_orders',   label: '└ Excluir Pedidos',     desc: 'Permissão para deletar pedidos' },
+  { key: 'can_view_kanban',     label: 'Kanban / Fluxo',        desc: 'Acompanhamento do fluxo de produção' },
+  { key: 'can_view_art_queue',  label: 'Fila de Arte',          desc: 'Painel de artes e aprovações' },
+  { key: 'can_view_products',   label: 'Produtos',              desc: 'Catálogo, preços e cadastro de produtos' },
+  { key: 'can_view_catalog',    label: 'Solicitações',          desc: 'Pedidos recebidos do catálogo público' },
+  { key: 'can_view_clients',    label: 'Clientes',              desc: 'Cadastro, histórico 360° e inadimplência' },
+  { key: 'can_view_crm',        label: 'Chats / CRM',           desc: 'Atendimento via WhatsApp integrado' },
+  { key: 'can_view_inventory',  label: 'Estoque',               desc: 'Controle de insumos e matéria-prima' },
+  { key: 'can_view_finance',    label: 'Financeiro',            desc: 'DRE, contas a pagar e receber' },
+  { key: 'can_export_reports',  label: '└ Exportar Relatórios', desc: 'Exportar PDFs e planilhas financeiras' },
+  { key: 'can_view_store',      label: 'Loja / Vitrine',        desc: 'Gerenciar loja e pedidos online' },
+  { key: 'can_view_settings',   label: 'Ajustes',               desc: 'Configurações da empresa' },
+];
+
+// ─── MP Status Badge ─────────────────────────────────────────────────────────
+const MPStatusBadge = ({ status }: { status: string }) => {
+  const cfg: Record<string, { label: string; cls: string }> = {
+    none:       { label: 'Sem MP',    cls: 'bg-slate-800 text-slate-400 border-slate-700' },
+    pending:    { label: 'Pendente',  cls: 'bg-amber-900/30 text-amber-400 border-amber-700/50' },
+    authorized: { label: 'Ativo ✓',  cls: 'bg-emerald-900/30 text-emerald-400 border-emerald-700/50' },
+    paused:     { label: 'Pausado',   cls: 'bg-blue-900/30 text-blue-400 border-blue-700/50' },
+    cancelled:  { label: 'Cancelado', cls: 'bg-rose-900/30 text-rose-400 border-rose-700/50' },
+  };
+  const c = cfg[status] || cfg.none;
+  return (
+    <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${c.cls}`}>
+      MP: {c.label}
+    </span>
+  );
+};
+
+// ─── Reusable Permission Toggles Panel ───────────────────────────────────────
+const PermissionsPanel = ({
+  permissions,
+  onChange,
+  onApplyPreset,
+  selectedPlan,
+}: {
+  permissions: Permissions;
+  onChange: (key: PermissionKey) => void;
+  onApplyPreset?: (plan: string) => void;
+  selectedPlan?: string;
+}) => (
+  <div className="space-y-3">
+    {/* Locked items */}
+    <div className="bg-rose-500/5 border border-rose-500/20 rounded-2xl p-3 space-y-1.5">
+      <p className="text-[9px] font-black uppercase tracking-widest text-rose-400 mb-2">
+        Bloqueado para todos os assinantes (exclusivo Admin Master)
+      </p>
+      {[
+        { label: 'Extrator de Pedidos IA', desc: 'Usa chave de API privada' },
+        { label: 'Configurações de IA / API', desc: 'Ícone superior do header' },
+        { label: 'Gestão SaaS', desc: 'Painel de assinantes' },
+      ].map(item => (
+        <div key={item.label} className="flex items-center gap-2.5">
+          <div className="w-4 h-4 rounded border border-rose-500/40 bg-rose-500/10 flex items-center justify-center shrink-0">
+            <XCircle className="w-3 h-3 text-rose-500" />
+          </div>
+          <span className="text-[10px] text-slate-500 font-bold">
+            {item.label} <span className="text-slate-600">{item.desc}</span>
+          </span>
+        </div>
+      ))}
+    </div>
+
+    {/* Header with preset button */}
+    {onApplyPreset && selectedPlan && (
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+          Módulos liberados
+        </p>
+        <button
+          type="button"
+          onClick={() => onApplyPreset(selectedPlan)}
+          className="text-[9px] font-black uppercase tracking-widest text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-lg transition-all"
+        >
+          Limpar seleção
+        </button>
+      </div>
+    )}
+
+    {/* Toggleable modules */}
+    <div className="grid grid-cols-1 gap-1.5">
+      {MODULE_LIST.map(item => (
+        <button
+          key={item.key}
+          type="button"
+          onClick={() => onChange(item.key)}
+          className={`flex items-center gap-3 w-full p-3 rounded-xl border text-left transition-all ${
+            permissions[item.key]
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+              : 'bg-slate-900/50 border-slate-800 text-slate-600 hover:border-slate-700 hover:text-slate-400'
+          }`}
+        >
+          <div className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 transition-all ${
+            permissions[item.key] ? 'bg-emerald-500 border-emerald-500' : 'border-slate-700 bg-slate-950'
+          }`}>
+            {permissions[item.key] && (
+              <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-[11px] font-black uppercase tracking-widest block leading-tight">{item.label}</span>
+            <span className="text-[9px] text-slate-500 leading-tight">{item.desc}</span>
+          </div>
+        </button>
+      ))}
+    </div>
+  </div>
+);
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+const MasterAdmin: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'ativos' | 'novo' | 'planos'>('ativos');
+  const [tenants, setTenants] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<'todos' | 'ativos' | 'vencidos' | 'bloqueados'>('todos');
+  const [runningExpire, setRunningExpire] = useState(false);
+
+  // ── New Tenant Form ──
+  const [newName, setNewName] = useState('');
+  const [newDomain, setNewDomain] = useState('');
+  const [newPlan, setNewPlan] = useState('Pro Plus');
+  const [newPrice, setNewPrice] = useState(149.90);
+  const [newCycle, setNewCycle] = useState('Mensal');
+  const [newIsTrial, setNewIsTrial] = useState(false);
+  const [newPaymentLink, setNewPaymentLink] = useState('');
+  const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [newAdminPassword, setNewAdminPassword] = useState('');
+  const [newAdminWhatsapp, setNewAdminWhatsapp] = useState('');
+  const [newPermissions, setNewPermissions] = useState<Permissions>({ ...ALL_PERMISSIONS_OFF });
+  const [showNewPermissions, setShowNewPermissions] = useState(false);
+
+  // ── Edit Modal ──
+  const [editingTenant, setEditingTenant] = useState<any>(null);
+  const [editName, setEditName] = useState('');
+  const [editPlan, setEditPlan] = useState('');
+  const [editPrice, setEditPrice] = useState(0);
+  const [editCycle, setEditCycle] = useState('');
+  const [editEndDate, setEditEndDate] = useState('');
+  const [editPaymentLink, setEditPaymentLink] = useState('');
+  const [editAdminWhatsapp, setEditAdminWhatsapp] = useState('');
+  const [editAdminEmail, setEditAdminEmail] = useState('');
+  const [editPermissions, setEditPermissions] = useState<Permissions>({ ...ALL_PERMISSIONS_OFF });
+  const [loadingEditPerms, setLoadingEditPerms] = useState(false);
+  const [showEditPermissions, setShowEditPermissions] = useState(false);
+
+  // ── Password Reset ──
+  const [resetUserId, setResetUserId] = useState<string | null>(null);
+  const [resetNewPassword, setResetNewPassword] = useState('');
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resettingPassword, setResettingPassword] = useState(false);
+
+  // ── MP ──
+  const [generatingMPLink, setGeneratingMPLink] = useState<string | null>(null);
+
+  // ─── Load ──────────────────────────────────────────────────────────────────
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [fetchedTenants, fetchedProfiles] = await Promise.all([
+        tenantService.getAllTenants(),
+        tenantService.getAllProfiles(),
+      ]);
+      setTenants(fetchedTenants || []);
+      setProfiles(fetchedProfiles || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  // ─── Toggle helpers ────────────────────────────────────────────────────────
+  const toggleNew = (key: PermissionKey) =>
+    setNewPermissions(prev => ({ ...prev, [key]: !prev[key] }));
+
+  const toggleEdit = (key: PermissionKey) =>
+    setEditPermissions(prev => ({ ...prev, [key]: !prev[key] }));
+
+  const clearPermissions = () =>
+    setNewPermissions({ ...ALL_PERMISSIONS_OFF });
+
+  const clearEditPermissions = () =>
+    setEditPermissions({ ...ALL_PERMISSIONS_OFF });
+
+  // ─── Create Tenant ─────────────────────────────────────────────────────────
+  const handleCreateTenant = async () => {
+    if (!newName || !newDomain) return alert('Preencha o Nome e o Domínio.');
+    if (!newAdminEmail || !newAdminPassword) return alert('Preencha o E-mail e a Senha do Administrador.');
+    try {
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + (newIsTrial ? 7 : 30));
+
+      const tenant = await tenantService.createTenant({
+        name: newName,
+        domain: newDomain,
+        plan: newIsTrial ? 'Trial 7 Dias' : newPlan,
+        plan_price: newIsTrial ? 0 : newPrice,
+        billing_cycle: newCycle,
+        subscription_end_date: endDate.toISOString(),
+        payment_link: newPaymentLink || null,
+        admin_email: newAdminEmail || null,
+        admin_whatsapp: newAdminWhatsapp || null,
+        active: true,
+      });
+
+      if (tenant?.id) {
+        await tenantService.createTenantAdmin(newAdminEmail, newAdminPassword, tenant.id, `Admin ${newName}`);
+
+        // Small delay for DB trigger to create the profile, then save permissions
+        await new Promise(r => setTimeout(r, 1500));
+        const allProfiles = await tenantService.getAllProfiles();
+        const newProfile = allProfiles?.find((p: any) => p.tenant_id === tenant.id);
+        if (newProfile?.id) {
+          await tenantService.upsertUserPermissions(newProfile.id, tenant.id, newPermissions);
+        }
+      }
+
+      alert('✅ Inquilino e Administrador Cadastrados com Sucesso!');
+      setNewName(''); setNewDomain(''); setNewAdminEmail('');
+      setNewAdminPassword(''); setNewAdminWhatsapp(''); setNewPaymentLink('');
+      setNewPermissions({ ...ALL_PERMISSIONS_OFF });
+      setShowNewPermissions(false);
+      setActiveTab('ativos');
+      load();
+    } catch (e: any) {
+      alert('Erro ao criar inquilino: ' + (e?.message || 'Verifique os dados e tente novamente.'));
+      console.error(e);
+    }
+  };
+
+  // ─── Open Edit Modal ───────────────────────────────────────────────────────
+  const openEdit = async (t: any) => {
+    setEditingTenant(t);
+    setEditName(t.name);
+    setEditPlan(t.plan);
+    setEditPrice(t.plan_price);
+    setEditCycle(t.billing_cycle || 'Mensal');
+    setEditEndDate(t.subscription_end_date?.split('T')[0] || '');
+    setEditPaymentLink(t.payment_link || '');
+    setEditAdminWhatsapp(t.admin_whatsapp || '');
+    setEditAdminEmail(t.admin_email || '');
+    setShowResetPassword(false);
+    setResetUserId(null);
+    setShowEditPermissions(false);
+
+    // Load existing permissions for this tenant's admin user
+    setLoadingEditPerms(true);
+    try {
+      const tenantProfiles = profiles.filter(p => p.tenant_id === t.id);
+      if (tenantProfiles.length > 0) {
+        const existingPerms = await tenantService.getUserPermissions(tenantProfiles[0].id);
+        if (existingPerms) {
+          const loaded: Permissions = { ...ALL_PERMISSIONS_OFF };
+          (Object.keys(ALL_PERMISSIONS_OFF) as PermissionKey[]).forEach(k => {
+            if (existingPerms[k] !== undefined) loaded[k] = existingPerms[k];
+          });
+          setEditPermissions(loaded);
+        } else {
+          setEditPermissions({ ...ALL_PERMISSIONS_OFF });
+        }
+      } else {
+        setEditPermissions({ ...ALL_PERMISSIONS_OFF });
+      }
+    } catch {
+      setEditPermissions({ ...ALL_PERMISSIONS_OFF });
+    } finally {
+      setLoadingEditPerms(false);
+    }
+  };
+
+  // ─── Save Edit ─────────────────────────────────────────────────────────────
+  const handleSaveEdit = async () => {
+    if (!editingTenant) return;
+    try {
+      await tenantService.updateTenant(editingTenant.id, {
+        name: editName,
+        plan: editPlan,
+        plan_price: editPrice,
+        billing_cycle: editCycle,
+        subscription_end_date: editEndDate ? new Date(editEndDate + 'T23:59:59').toISOString() : undefined,
+        payment_link: editPaymentLink || null,
+        admin_whatsapp: editAdminWhatsapp || null,
+        admin_email: editAdminEmail || null,
+      });
+
+      // Save permissions for all profiles of this tenant
+      const tenantProfiles = profiles.filter(p => p.tenant_id === editingTenant.id);
+      for (const profile of tenantProfiles) {
+        await tenantService.upsertUserPermissions(profile.id, editingTenant.id, editPermissions);
+      }
+
+      setEditingTenant(null);
+      load();
+      alert('✅ Dados do Inquilino e Permissões atualizados!');
+    } catch (e: any) {
+      alert('Erro ao salvar: ' + (e?.message || 'Tente novamente.'));
+    }
+  };
+
+  // ─── Other handlers ────────────────────────────────────────────────────────
+  const handleUpdateActive = async (id: string, active: boolean) => {
+    await tenantService.updateTenant(id, { active });
+    load();
+  };
+
+  const handleResetPassword = async (userId: string, userName: string) => {
+    if (!resetNewPassword || resetNewPassword.length < 6) return alert('A senha deve ter pelo menos 6 caracteres.');
+    if (!confirm(`Redefinir a senha de "${userName}"?\n\nNova senha: ${resetNewPassword}`)) return;
+    setResettingPassword(true);
+    try {
+      await tenantService.resetUserPassword(userId, resetNewPassword);
+      alert(`✅ Senha de "${userName}" redefinida!\n\nNova senha: ${resetNewPassword}`);
+      setResetUserId(null);
+      setResetNewPassword('');
+    } catch (e: any) {
+      alert('Erro: ' + (e?.message || 'Erro desconhecido'));
+    } finally {
+      setResettingPassword(false);
+    }
+  };
+
+  const handleGenerateMPLink = async (tenant: any) => {
+    if (!tenant.admin_email) return alert('Configure o e-mail do admin antes de gerar o link MP.');
+    setGeneratingMPLink(tenant.id);
+    try {
+      const result = await tenantService.generateMercadoPagoLink(
+        tenant.id, tenant.plan, tenant.admin_email, tenant.name
+      );
+      await navigator.clipboard.writeText(result.checkoutUrl).catch(() => {});
+      alert(`✅ Link MP gerado e copiado!\n\n${result.checkoutUrl}\n\nEnvie para o cliente assinar.`);
+      load();
+    } catch (e: any) {
+      alert('Erro ao gerar link MP: ' + (e?.message || 'Verifique os secrets no Supabase.'));
+    } finally {
+      setGeneratingMPLink(null);
+    }
+  };
+
+  const handleCopyLink = (link: string) => {
+    navigator.clipboard.writeText(link).then(() => alert('Link copiado!')).catch(() => {});
+  };
+
+  const handleRunExpireCheck = async () => {
+    if (!confirm('Executar verificação manual de vencimentos? Tenants vencidos serão bloqueados.')) return;
+    setRunningExpire(true);
+    try {
+      const result = await tenantService.runAutoExpireCheck();
+      alert(`Concluído!\n• ${result.expired} bloqueado(s)\n• ${result.notified} notificação(ões)`);
+      load();
+    } catch (e: any) {
+      alert('Erro: ' + e.message);
+    } finally {
+      setRunningExpire(false);
+    }
+  };
+
+  // ─── Computed ──────────────────────────────────────────────────────────────
+  const calcDaysRemaining = (endDateStr: string) => {
+    if (!endDateStr) return 0;
+    return Math.ceil((new Date(endDateStr).getTime() - Date.now()) / 86400000);
+  };
+
+  const daysColor = (days: number) => {
+    if (days > 15) return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+    if (days > 5)  return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+    if (days > 0)  return 'bg-orange-500/10 text-orange-400 border-orange-500/20';
+    return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+  };
+
+  const mrr = tenants.filter(t => t.active).reduce((s, t) => s + Number(t.plan_price || 0), 0);
+  const mpActive = tenants.filter(t => t.mp_subscription_status === 'authorized').length;
+  const overdueMRR = tenants.filter(t => calcDaysRemaining(t.subscription_end_date) <= 0 && t.active)
+    .reduce((s, t) => s + Number(t.plan_price || 0), 0);
+
+  const filteredTenants = tenants.filter(t => {
+    const d = calcDaysRemaining(t.subscription_end_date);
+    if (statusFilter === 'ativos')    return t.active && d > 0;
+    if (statusFilter === 'vencidos')  return t.active && d <= 0;
+    if (statusFilter === 'bloqueados') return !t.active;
+    return true;
+  });
+
+  // ─── Render ────────────────────────────────────────────────────────────────
+  return (
+    <div className="animate-in slide-in-from-bottom-4 duration-500 p-6 max-w-7xl mx-auto space-y-8 pb-32">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-center border-b border-slate-800 pb-6 gap-6">
+        <div>
+          <h2 className="text-3xl font-black text-slate-100 uppercase tracking-tighter flex items-center gap-3">
+            <ShieldAlert className="w-8 h-8 text-rose-500" /> Gestão SaaS
+          </h2>
+          <p className="text-slate-500 font-medium mt-2">Controle de Assinaturas, Módulos e Mercado Pago.</p>
+        </div>
+        <div className="flex flex-wrap gap-2 items-center">
+          <button
+            onClick={handleRunExpireCheck}
+            disabled={runningExpire}
+            className="flex items-center gap-2 px-4 py-3 bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
+          >
+            {runningExpire ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+            Verificar Vencimentos
+          </button>
+          <div className="flex bg-slate-900 border border-slate-800 rounded-2xl p-1 gap-1">
+            {(['ativos', 'novo', 'planos'] as const).map(tab => (
+              <button key={tab} onClick={() => setActiveTab(tab)}
+                className={`px-5 py-3 flex items-center gap-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'}`}>
+                {tab === 'ativos' && <Activity className="w-4 h-4" />}
+                {tab === 'novo' && <Plus className="w-4 h-4" />}
+                {tab === 'planos' && <LayoutList className="w-4 h-4" />}
+                {tab === 'ativos' ? 'Assinantes' : tab === 'novo' ? 'Cadastrar' : 'Planos SaaS'}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="text-slate-500 font-bold p-10 text-center animate-pulse">Carregando dados globais...</div>
+      ) : (
+        <>
+          {/* ═══════════════ ABA: ASSINANTES ═══════════════ */}
+          {activeTab === 'ativos' && (
+            <div className="space-y-6 animate-in fade-in duration-300">
+              {/* KPIs */}
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                {[
+                  { label: 'Empresas',       value: tenants.length,    cls: 'text-slate-100' },
+                  { label: 'Ativas',         value: tenants.filter(t => t.active && calcDaysRemaining(t.subscription_end_date) > 0).length, cls: 'text-emerald-400' },
+                  { label: 'MP Autorizado',  value: mpActive,          cls: 'text-indigo-400' },
+                  { label: 'Inadimplência',  value: `R$ ${overdueMRR.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, cls: 'text-rose-300' },
+                  { label: 'MRR',            value: `R$ ${mrr.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, cls: 'text-indigo-300' },
+                ].map((k, i) => (
+                  <div key={i} className="bg-[#0f172a] p-5 rounded-3xl border border-slate-800 shadow-xl">
+                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1">{k.label}</p>
+                    <p className={`text-2xl font-black ${k.cls}`}>{k.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Filters */}
+              <div className="flex items-center gap-2 bg-slate-900/50 p-1.5 rounded-2xl border border-slate-800 w-fit">
+                {(['todos', 'ativos', 'vencidos', 'bloqueados'] as const).map(f => (
+                  <button key={f} onClick={() => setStatusFilter(f)}
+                    className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${statusFilter === f ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'}`}>
+                    {f}
+                  </button>
+                ))}
+              </div>
+
+              {/* Tenant Cards */}
+              <div className="space-y-4">
+                {filteredTenants.length === 0 && (
+                  <p className="text-slate-500 text-center py-10 font-bold">Nenhum assinante neste filtro.</p>
+                )}
+                {filteredTenants.map(t => {
+                  const tenantProfiles = profiles.filter(p => p.tenant_id === t.id);
+                  const days = calcDaysRemaining(t.subscription_end_date);
+                  const mpStatus = t.mp_subscription_status || 'none';
+                  return (
+                    <div key={t.id} className="bg-[#0f172a] rounded-3xl p-6 border border-slate-800 shadow-lg flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6 hover:border-slate-700 transition-colors">
+                      <div className="space-y-2 flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-xl font-black text-slate-100 uppercase tracking-tight">{t.name}</h3>
+                          <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase border ${t.active ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border-rose-500/20'}`}>
+                            {t.active ? 'Ativo' : 'Bloqueado'}
+                          </span>
+                          <MPStatusBadge status={mpStatus} />
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                          <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl">
+                            <CreditCard className="w-4 h-4 text-slate-500" />
+                            <span className="text-[10px] font-black uppercase text-slate-300">{t.plan} · R$ {Number(t.plan_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                            <span className="text-[9px] text-slate-500 bg-slate-950 px-1 rounded">{t.billing_cycle || 'Mensal'}</span>
+                          </div>
+                          <div className={`flex items-center gap-2 border px-3 py-1.5 rounded-xl ${daysColor(days)}`}>
+                            <Calendar className="w-4 h-4" />
+                            <span className="text-[10px] font-black uppercase">{days <= 0 ? 'Vencida' : `${days}d restantes`}</span>
+                          </div>
+                          {t.admin_whatsapp && <span className="flex items-center gap-1 text-[9px] text-slate-500"><PhoneCall className="w-3 h-3" />{t.admin_whatsapp}</span>}
+                          {t.admin_email && <span className="flex items-center gap-1 text-[9px] text-slate-500"><Mail className="w-3 h-3" />{t.admin_email}</span>}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto">
+                        {/* Users */}
+                        <div className="bg-slate-950 rounded-2xl p-3 border border-slate-800 w-full xl:w-48 hidden md:block">
+                          <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
+                            <Users className="w-3 h-3 inline mr-1" />Acessos ({tenantProfiles.length})
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {tenantProfiles.slice(0, 3).map(p => (
+                              <span key={p.id} className="text-slate-400 bg-slate-900 px-2 py-1 rounded-md font-black text-[9px] uppercase border border-slate-800 truncate max-w-[80px]">{p.full_name?.split(' ')[0] || 'User'}</span>
+                            ))}
+                            {tenantProfiles.length > 3 && <span className="text-slate-500 text-[10px] font-bold">+{tenantProfiles.length - 3}</span>}
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex flex-col gap-2 w-full xl:w-44 shrink-0">
+                          <button onClick={() => openEdit(t)} className="w-full px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black uppercase tracking-widest text-[10px] transition-all">
+                            Editar / Módulos
+                          </button>
+                          {mpStatus === 'authorized' ? (
+                            <div className="w-full px-4 py-2.5 bg-emerald-900/20 border border-emerald-500/30 text-emerald-500 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 cursor-default">
+                              <CheckCheck className="w-3 h-3" /> MP Autorizado
+                            </div>
+                          ) : (
+                            <button onClick={() => handleGenerateMPLink(t)} disabled={generatingMPLink === t.id}
+                              className="w-full px-4 py-2.5 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-400 rounded-xl font-black uppercase text-[10px] transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                              {generatingMPLink === t.id ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                              Gerar Link MP
+                            </button>
+                          )}
+                          {t.payment_link && (
+                            <button onClick={() => handleCopyLink(t.payment_link)}
+                              className="w-full px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 transition-all">
+                              <Copy className="w-3 h-3" /> Copiar Link
+                            </button>
+                          )}
+                          <button onClick={() => handleUpdateActive(t.id, !t.active)}
+                            className={`w-full px-4 py-2.5 border rounded-xl font-black uppercase text-[10px] transition-all ${t.active ? 'border-rose-500/50 text-rose-500 hover:bg-rose-500/10' : 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/20'}`}>
+                            {t.active ? 'Suspender' : 'Reativar'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ═══════════════ ABA: NOVO ASSINANTE ═══════════════ */}
+          {activeTab === 'novo' && (
+            <div className="animate-in fade-in duration-300 max-w-2xl mx-auto space-y-5 bg-[#0f172a] p-8 md:p-10 rounded-[3rem] border border-slate-800 shadow-2xl">
+              <div>
+                <h3 className="text-2xl font-black text-slate-100 uppercase tracking-tighter flex items-center gap-3">
+                  <Plus className="w-6 h-6 text-indigo-500" /> Adicionar Estamparia
+                </h3>
+                <p className="text-slate-500 text-sm mt-1">Ambiente isolado criado na hora.</p>
+              </div>
+
+              <div className="space-y-4">
+                {/* Basic info */}
+                <div>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block mb-1">Nome da Empresa</label>
+                  <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Ex: Alfa Estamparia LTDA"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block mb-1">Domínio / Identificador</label>
+                  <input value={newDomain} onChange={e => setNewDomain(e.target.value)} placeholder="Ex: alfa-estamparia"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block mb-1">Plano</label>
+                    <select value={newPlan} onChange={e => setNewPlan(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                      <option value="Starter">Starter</option>
+                      <option value="Pro Plus">Pro Plus</option>
+                      <option value="Enterprise">Enterprise</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block mb-1">Ciclo</label>
+                    <select value={newCycle} onChange={e => setNewCycle(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                      <option value="Mensal">Mensal</option>
+                      <option value="Semestral">Semestral</option>
+                      <option value="Anual">Anual</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block mb-1">Valor (R$)</label>
+                  <input type="number" value={newPrice} onChange={e => setNewPrice(Number(e.target.value))}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
+                </div>
+
+                {/* Admin contact */}
+                <div className="border-t border-slate-800/50 pt-4 space-y-3">
+                  <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-2"><Zap className="w-3 h-3" /> Contato do Admin</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block mb-1">E-mail *</label>
+                      <input value={newAdminEmail} onChange={e => setNewAdminEmail(e.target.value)} placeholder="admin@empresa.com.br"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block mb-1">WhatsApp</label>
+                      <input value={newAdminWhatsapp} onChange={e => setNewAdminWhatsapp(e.target.value)} placeholder="11999999999"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block mb-1">Senha de Acesso *</label>
+                    <input type="password" value={newAdminPassword} onChange={e => setNewAdminPassword(e.target.value)} placeholder="Mínimo 6 caracteres"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
+                  </div>
+                </div>
+
+                {/* Trial toggle */}
+                <div className="flex items-center gap-3 p-4 bg-indigo-500/5 border border-indigo-500/20 rounded-2xl">
+                  <input type="checkbox" id="trial" checked={newIsTrial} onChange={e => setNewIsTrial(e.target.checked)} className="w-5 h-5 accent-indigo-600" />
+                  <label htmlFor="trial" className="text-xs font-black text-indigo-400 uppercase tracking-widest cursor-pointer">Ativar Teste Grátis de 7 Dias</label>
+                </div>
+
+                {/* Permissions collapsible */}
+                <div className="border border-slate-800 rounded-2xl overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPermissions(!showNewPermissions)}
+                    className="w-full flex items-center justify-between p-4 bg-slate-900/50 hover:bg-slate-900 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <LayoutList className="w-4 h-4 text-rose-400" />
+                      <span className="text-[11px] font-black uppercase tracking-widest text-rose-400">Módulos Liberados para este Assinante</span>
+                      <span className="text-[10px] font-bold text-slate-500">
+                        ({Object.values(newPermissions).filter(Boolean).length}/{MODULE_LIST.length} ativos)
+                      </span>
+                    </div>
+                    {showNewPermissions ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
+                  </button>
+                  {showNewPermissions && (
+                    <div className="p-4 border-t border-slate-800">
+                      <PermissionsPanel
+                        permissions={newPermissions}
+                        onChange={toggleNew}
+                        onApplyPreset={clearPermissions}
+                        selectedPlan={newPlan}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-800/50">
+                <button onClick={handleCreateTenant}
+                  className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3">
+                  <Save className="w-5 h-5" /> {newIsTrial ? 'Criar Ambiente de Teste' : 'Criar Ambiente Agora'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ═══════════════ ABA: PLANOS ═══════════════ */}
+          {activeTab === 'planos' && (
+            <div className="animate-in fade-in duration-300 space-y-6">
+              <div className="bg-emerald-900/10 border border-emerald-500/20 rounded-2xl p-4 flex items-start gap-3">
+                <Zap className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-black text-emerald-400 uppercase tracking-widest">Integração Mercado Pago Ativa</p>
+                  <p className="text-xs text-slate-400 mt-1">Planos vinculados à conta MP via secrets do Supabase. Pagamento aprovado → webhook renova automaticamente.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[
+                  { name: 'Starter', price: '99', desc: 'Operação básica de pedidos.', color: '', popular: false },
+                  { name: 'Pro Plus', price: '149', desc: 'Financeiro, Clientes e Loja.', color: 'border-indigo-500', popular: true },
+                  { name: 'Enterprise', price: '299', desc: 'Tudo liberado + relatórios.', color: '', popular: false },
+                ].map(p => (
+                  <div key={p.name} className={`bg-[#0f172a] p-8 rounded-[3rem] border ${p.color || 'border-slate-800'} shadow-xl relative`}>
+                    {p.popular && <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Mais Vendido</div>}
+                    <h3 className="text-2xl font-black text-slate-100 uppercase">{p.name}</h3>
+                    <p className="text-4xl font-black text-emerald-400 my-4">R$ {p.price}<span className="text-sm text-slate-500">/mês</span></p>
+                    <p className="text-sm font-medium text-slate-400">{p.desc}</p>
+                    <div className="mt-4 p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl">
+                      <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest">Módulos definidos individualmente</p>
+                      <p className="text-[10px] text-slate-500 mt-1">Configure os módulos de cada assinante na aba "Editar" do card.</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-3">
+                <h4 className="text-sm font-black text-slate-300 uppercase tracking-widest">Fluxo automático de cobrança</h4>
+                {[
+                  '1. Cadastre o tenant com e-mail e WhatsApp do admin',
+                  '2. Configure os módulos liberados pelo plano para ele',
+                  '3. Clique em "Gerar Link MP" no card do tenant',
+                  '4. Envie o link para o cliente assinar no checkout do MP',
+                  '5. Webhook confirma pagamento e renova automaticamente',
+                  '6. Diariamente às 08h: vencidos são bloqueados e avisos são enviados',
+                ].map((s, i) => (
+                  <div key={i} className="flex items-start gap-3 text-xs text-slate-400">
+                    <CheckCheck className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />{s}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ═══════════════ MODAL: EDIÇÃO ═══════════════ */}
+          {editingTenant && (
+            <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-start justify-center p-4 overflow-y-auto">
+              <div className="bg-[#0f172a] rounded-[3rem] w-full max-w-2xl p-8 border border-slate-800 shadow-2xl animate-in zoom-in-95 my-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-black text-slate-100 uppercase tracking-tight">Editar: {editingTenant.name}</h3>
+                  <button onClick={() => setEditingTenant(null)} className="text-slate-500 hover:text-white"><XCircle /></button>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Basic fields */}
+                  <div>
+                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Nome da Empresa</label>
+                    <input value={editName} onChange={e => setEditName(e.target.value)}
+                      className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none focus:ring-1 focus:ring-indigo-500" />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Plano</label>
+                      <select value={editPlan} onChange={e => setEditPlan(e.target.value)}
+                        className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none">
+                        <option value="Starter">Starter</option>
+                        <option value="Pro Plus">Pro Plus</option>
+                        <option value="Enterprise">Enterprise</option>
+                        <option value="Trial 7 Dias">Trial 7 Dias</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Ciclo</label>
+                      <select value={editCycle} onChange={e => setEditCycle(e.target.value)}
+                        className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none">
+                        <option value="Mensal">Mensal</option>
+                        <option value="Semestral">Semestral</option>
+                        <option value="Anual">Anual</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Valor (R$)</label>
+                      <input type="number" value={editPrice} onChange={e => setEditPrice(Number(e.target.value))}
+                        className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none" />
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Expiração</label>
+                      <input type="date" value={editEndDate} onChange={e => setEditEndDate(e.target.value)}
+                        className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Link de Pagamento</label>
+                    <input value={editPaymentLink} onChange={e => setEditPaymentLink(e.target.value)}
+                      className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none" />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-800/50">
+                    <div>
+                      <label className="text-[9px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-1"><PhoneCall className="w-3 h-3" /> WhatsApp Admin</label>
+                      <input value={editAdminWhatsapp} onChange={e => setEditAdminWhatsapp(e.target.value)} placeholder="11999999999"
+                        className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none focus:ring-1 focus:ring-emerald-500" />
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-1"><Mail className="w-3 h-3" /> E-mail Admin (MP)</label>
+                      <input value={editAdminEmail} onChange={e => setEditAdminEmail(e.target.value)} placeholder="admin@empresa.com"
+                        className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none focus:ring-1 focus:ring-emerald-500" />
+                    </div>
+                  </div>
+
+                  {/* ── Permissions in Edit ── */}
+                  <div className="border border-slate-800 rounded-2xl overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setShowEditPermissions(!showEditPermissions)}
+                      className="w-full flex items-center justify-between p-4 bg-slate-900/50 hover:bg-slate-900 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <LayoutList className="w-4 h-4 text-rose-400" />
+                        <span className="text-[11px] font-black uppercase tracking-widest text-rose-400">Módulos Liberados</span>
+                        {loadingEditPerms ? (
+                          <span className="text-[9px] text-slate-500 animate-pulse">Carregando...</span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-slate-500">
+                            ({Object.values(editPermissions).filter(Boolean).length}/{MODULE_LIST.length} ativos)
+                          </span>
+                        )}
+                      </div>
+                      {showEditPermissions ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
+                    </button>
+                    {showEditPermissions && !loadingEditPerms && (
+                      <div className="p-4 border-t border-slate-800">
+                        <div className="flex items-center justify-between mb-3">
+                          <p className="text-[9px] text-slate-500 font-bold">Clique para ativar ou desativar cada módulo</p>
+                          <button type="button" onClick={clearEditPermissions}
+                            className="text-[9px] font-black uppercase text-slate-500 hover:text-rose-400 transition-colors">
+                            Desmarcar tudo
+                          </button>
+                        </div>
+                        <PermissionsPanel
+                          permissions={editPermissions}
+                          onChange={toggleEdit}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Password Reset */}
+                  <div className="pt-2 border-t border-slate-800/50">
+                    <button onClick={() => setShowResetPassword(!showResetPassword)}
+                      className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-amber-500 hover:text-amber-400 transition-colors">
+                      <KeyRound className="w-4 h-4" />
+                      {showResetPassword ? 'Ocultar Senhas' : 'Gerenciar Senhas de Acesso'}
+                    </button>
+
+                    {showResetPassword && (
+                      <div className="mt-4 space-y-3 bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4">
+                        <p className="text-[9px] font-bold text-amber-500/70 uppercase tracking-widest">Usuários deste Inquilino</p>
+                        {profiles.filter(p => p.tenant_id === editingTenant.id).length === 0 ? (
+                          <p className="text-sm text-slate-500">Nenhum usuário encontrado.</p>
+                        ) : profiles.filter(p => p.tenant_id === editingTenant.id).map(p => (
+                          <div key={p.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-950 p-3 rounded-xl border border-slate-800">
+                            <div>
+                              <p className="text-sm font-black text-slate-200">{p.full_name || 'Sem Nome'}</p>
+                              <p className="text-[10px] text-slate-500 font-mono">{p.role} · {p.id.substring(0, 8)}...</p>
+                            </div>
+                            {resetUserId === p.id ? (
+                              <div className="flex items-center gap-2 w-full sm:w-auto">
+                                <input type="text" value={resetNewPassword} onChange={e => setResetNewPassword(e.target.value)}
+                                  placeholder="Nova senha (min 6)"
+                                  className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 font-bold outline-none focus:ring-1 focus:ring-amber-500 w-full sm:w-40" />
+                                <button onClick={() => handleResetPassword(p.id, p.full_name)} disabled={resettingPassword}
+                                  className="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[10px] font-black uppercase whitespace-nowrap disabled:opacity-50">
+                                  {resettingPassword ? '...' : 'Salvar'}
+                                </button>
+                                <button onClick={() => { setResetUserId(null); setResetNewPassword(''); }} className="text-slate-500 hover:text-white">
+                                  <XCircle className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ) : (
+                              <button onClick={() => { setResetUserId(p.id); setResetNewPassword(''); }}
+                                className="px-3 py-2 bg-slate-900 border border-amber-500/30 text-amber-500 hover:bg-amber-500/10 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 transition-all">
+                                <KeyRound className="w-3 h-3" /> Redefinir Senha
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-8 flex gap-3">
+                  <button onClick={() => setEditingTenant(null)} className="flex-1 py-3 bg-slate-900 text-slate-400 rounded-xl font-black uppercase text-[10px]">Cancelar</button>
+                  <button onClick={handleSaveEdit} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-black uppercase text-[10px] shadow-lg shadow-indigo-600/20">Salvar Alterações</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+};
+
 export default MasterAdmin;

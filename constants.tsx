@@ -4,14 +4,12 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '20.9';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 20.9 (Storage & Security Update):
-- Upload de Arquivos Corrigido: Criação do bucket de storage e mapeamento de MIME types para .psd, .cdr, .rar, .ai, .7z etc.
-- Tratamento de Erro Inteligente: Mensagens detalhadas por arquivo em caso de falha no upload (nome, tamanho, motivo).
-- OS de Produção Otimizada: Imagens em grid 3 por linha, sem duplicatas, com deduplicação automática de URLs.
-- Checklist de Produção Restaurado: Finalização, Impressão, Estampa, Separação, Costura e Conferência na OS.
-- Gestão de Senhas SaaS: Master Admin pode redefinir senhas de acesso dos administradores de cada inquilino.
-- Segurança Reforçada: Função segura no banco de dados para reset de senhas com criptografia bcrypt.`;
+export const SYSTEM_VERSION = '21.1';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.1 (Sistema de Permissões e Módulos):
+- Controle Granular de Módulos (RBAC): O Admin Master agora pode escolher exatamente quais telas (Módulos) cada empresa assinante pode ver e usar (Ex: habilitar Estoque só para plano Pro).
+- Ocultamento Seguro de IAS: Extrator de Pedidos com Inteligência Artificial e a janela de configuração de API Keys foram ocultados permanentemente dos assinantes. Agora, somente o Admin Master tem acesso a essa tecnologia central.
+- Autopreenchimento de Permissões: Adicionado botão "Aplicar Padrão do Plano" ao registrar assinantes, que marca/desmarca sozinho os recursos que o cliente terá direito conforme o pacote contratado.
+- Header Limpo: Assinantes agora veem sua própria tag "Administrador" e o ícone de configurações de robô não fica mais visível para eles.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [

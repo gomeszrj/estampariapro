@@ -237,19 +237,22 @@ const AuthenticatedApp: React.FC = () => {
             <div className="flex items-center gap-4 pl-8 border-l border-slate-800">
               <div className="text-right hidden md:block">
                 <p className="text-sm font-black text-slate-100 tracking-tight">{user?.email}</p>
-                <p className="text-[9px] text-indigo-500 font-black uppercase tracking-[0.2em]">Admin Master</p>
+                <p className="text-[9px] text-indigo-500 font-black uppercase tracking-[0.2em]">{isMasterAdmin ? 'Admin Master' : 'Administrador'}</p>
                 <button onClick={signOut} className="text-[10px] text-red-500 hover:text-red-400 font-bold uppercase tracking-widest mt-1">Sair</button>
               </div>
-              <button
-                onClick={() => setIsApiSettingsOpen(true)}
-                className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-black border border-indigo-500 shadow-lg shadow-indigo-600/20 hover:scale-105 transition-transform cursor-pointer relative group"
-                title="Configurar Integrações"
-              >
-                <UserIcon className="w-6 h-6" />
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-slate-900 rounded-full flex items-center justify-center border border-slate-800">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                </div>
-              </button>
+                {/* API / Integrations button — MASTER ADMIN ONLY */}
+                {isMasterAdmin && (
+                  <button
+                    onClick={() => setIsApiSettingsOpen(true)}
+                    className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-black border border-indigo-500 shadow-lg shadow-indigo-600/20 hover:scale-105 transition-transform cursor-pointer relative group"
+                    title="Configurar Integrações de IA"
+                  >
+                    <UserIcon className="w-6 h-6" />
+                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-slate-900 rounded-full flex items-center justify-center border border-slate-800">
+                      <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                    </div>
+                  </button>
+                )}
             </div>
           </div>
         </header>
