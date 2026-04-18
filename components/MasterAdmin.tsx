@@ -387,23 +387,53 @@ const MasterAdmin: React.FC = () => {
       setDbPlanPermissions({ ...ALL_PERMISSIONS_OFF, ...(plan.permissions || {}) });
   };
 
+  const openNewPlanDb = () => {
+      setEditingPlanDb({ isNew: true });
+      setDbPlanName('');
+      setDbPlanPrice(0);
+      setDbPlanCycle('Mensal');
+      setDbPlanDesc('');
+      setDbPlanPermissions({ ...ALL_PERMISSIONS_OFF });
+  };
+
   const handleSavePlanDb = async () => {
       if (!editingPlanDb) return;
       try {
-          await tenantService.updateSaasPlan(editingPlanDb.id, {
+          const payload = {
               name: dbPlanName,
               price: dbPlanPrice,
               billing_cycle: dbPlanCycle,
               description: dbPlanDesc,
               permissions: dbPlanPermissions
-          });
-          alert('✅ Plano SaaS atualizado com sucesso!');
+          };
+          
+          if (editingPlanDb.isNew) {
+              await tenantService.createSaasPlan(payload);
+              alert('✅ Novo plano criado com sucesso!');
+          } else {
+              await tenantService.updateSaasPlan(editingPlanDb.id, payload);
+              alert('✅ Plano atualizado com sucesso!');
+          }
           setEditingPlanDb(null);
           load();
       } catch (e: any) {
-          alert('Erro ao atualizar plano: ' + e.message);
+          alert('Erro ao salvar plano: ' + e.message);
       }
   };
+
+  const handleDeletePlanDb = async (id: string, name: string) => {
+      if (confirm(`Tem certeza que deseja excluir o plano "${name}"? Essa ação não afeta assinantes atuais, mas remove o preset da lista.`)) {
+          try {
+              await tenantService.deleteSaasPlan(id);
+              alert('✅ Plano excluído!');
+              setEditingPlanDb(null);
+              load();
+          } catch (e: any) {
+              alert('Erro ao excluir plano: ' + e.message);
+          }
+      }
+  };
+
 
   // ─── Other handlers ────────────────────────────────────────────────────────
   const handleUpdateActive = async (id: string, active: boolean) => {
@@ -751,12 +781,18 @@ const MasterAdmin: React.FC = () => {
           {/* ═══════════════ ABA: PLANOS ═══════════════ */}
           {activeTab === 'planos' && (
             <div className="animate-in fade-in duration-300 space-y-6">
-              <div className="bg-emerald-900/10 border border-emerald-500/20 rounded-2xl p-4 flex items-start gap-3">
-                <Zap className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-black text-emerald-400 uppercase tracking-widest">Editor Central de Planos</p>
-                  <p className="text-xs text-slate-400 mt-1">Configure o valor padrão e os módulos embarcados de cada plano. Isso facilitará a criação de novos usuários, pois as configurações serão pré-carregadas automaticamente ao escolher o plano no cadastro.</p>
+              <div className="flex items-center justify-between">
+                <div className="bg-emerald-900/10 border border-emerald-500/20 rounded-2xl p-4 flex items-start gap-3 flex-1 mr-4">
+                  <Zap className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-black text-emerald-400 uppercase tracking-widest">Editor Central de Planos</p>
+                    <p className="text-xs text-slate-400 mt-1">Configure o valor padrão e os módulos embarcados de cada plano. Isso facilitará a criação de novos usuários.</p>
+                  </div>
                 </div>
+                
+                <button onClick={openNewPlanDb} className="px-6 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all shadow-xl shadow-indigo-600/20 flex items-center gap-2 shrink-0">
+                  <Plus className="w-4 h-4" /> Novo Plano
+                </button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -765,7 +801,7 @@ const MasterAdmin: React.FC = () => {
                     {p.is_popular && <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Mais Vendido</div>}
                     <div className="flex justify-between items-start">
                         <h3 className="text-2xl font-black text-slate-100 uppercase">{p.name}</h3>
-                        <button onClick={() => openPlanDbEdit(p)} className="p-2 bg-slate-900 text-slate-400 hover:text-white rounded-xl transition-all" title="Editar Preset">
+                        <button onClick={() => openPlanDbEdit(p)} className="p-2 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all" title="Editar Preset">
                             <Edit3 className="w-4 h-4" />
                         </button>
                     </div>
@@ -994,6 +1030,11 @@ const MasterAdmin: React.FC = () => {
 
                 <div className="mt-8 flex gap-3">
                   <button onClick={() => setEditingPlanDb(null)} className="flex-1 py-3 bg-slate-900 text-slate-400 rounded-xl font-black uppercase text-[10px]">Cancelar</button>
+                  {!editingPlanDb.isNew && (
+                      <button onClick={() => handleDeletePlanDb(editingPlanDb.id, editingPlanDb.name)} className="px-6 py-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-xl font-black uppercase text-[10px] transition-all">
+                          Excluir
+                      </button>
+                  )}
                   <button onClick={handleSavePlanDb} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-black uppercase text-[10px] shadow-lg shadow-indigo-600/20">Salvar Plano</button>
                 </div>
               </div>
