@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { tenantService } from '../services/tenantService';
-import { ShieldAlert, Users, Calendar, Activity, CheckCircle2, XCircle, Plus, LayoutList, CreditCard, Save } from 'lucide-react';
+import { ShieldAlert, Users, Calendar, Activity, CheckCircle2, XCircle, Plus, LayoutList, CreditCard, Save, KeyRound, Eye, EyeOff } from 'lucide-react';
 
 const MasterAdmin: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'ativos' | 'novo' | 'planos'>('ativos');
@@ -29,6 +29,12 @@ const MasterAdmin: React.FC = () => {
     const [editCycle, setEditCycle] = useState('');
     const [editEndDate, setEditEndDate] = useState('');
     const [editPaymentLink, setEditPaymentLink] = useState('');
+
+    // Password Reset States
+    const [resetUserId, setResetUserId] = useState<string | null>(null);
+    const [resetNewPassword, setResetNewPassword] = useState('');
+    const [showResetPassword, setShowResetPassword] = useState(false);
+    const [resettingPassword, setResettingPassword] = useState(false);
 
     const load = async () => {
         setLoading(true);
@@ -107,6 +113,25 @@ const MasterAdmin: React.FC = () => {
             alert("Dados do Inquilino atualizados!");
         } catch(e) {
             alert("Erro ao salvar alterações.");
+        }
+    };
+
+    const handleResetPassword = async (userId: string, userName: string) => {
+        if (!resetNewPassword || resetNewPassword.length < 6) {
+            return alert('A senha deve ter pelo menos 6 caracteres.');
+        }
+        if (!confirm(`Tem certeza que deseja redefinir a senha de "${userName}"?\n\nNova senha: ${resetNewPassword}`)) return;
+        setResettingPassword(true);
+        try {
+            await tenantService.resetUserPassword(userId, resetNewPassword);
+            alert(`Senha de "${userName}" redefinida com sucesso!\n\nNova senha: ${resetNewPassword}`);
+            setResetUserId(null);
+            setResetNewPassword('');
+        } catch (e: any) {
+            alert('Erro ao redefinir senha: ' + (e?.message || 'Erro desconhecido'));
+            console.error(e);
+        } finally {
+            setResettingPassword(false);
         }
     };
 
@@ -459,6 +484,66 @@ const MasterAdmin: React.FC = () => {
                             <div className="space-y-2">
                                 <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Link de Pagamento Individual</label>
                                 <input value={editPaymentLink} onChange={e => setEditPaymentLink(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none"/>
+                            </div>
+
+                            {/* PASSWORD RESET SECTION */}
+                            <div className="pt-4 border-t border-slate-800/50">
+                                <button
+                                    onClick={() => setShowResetPassword(!showResetPassword)}
+                                    className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-amber-500 hover:text-amber-400 transition-colors"
+                                >
+                                    <KeyRound className="w-4 h-4" />
+                                    {showResetPassword ? 'Ocultar Gerenciamento de Senhas' : 'Gerenciar Senhas de Acesso'}
+                                </button>
+
+                                {showResetPassword && (
+                                    <div className="mt-4 space-y-3 bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4">
+                                        <p className="text-[9px] font-bold text-amber-500/70 uppercase tracking-widest">Usuários deste Inquilino</p>
+                                        {profiles.filter(p => p.tenant_id === editingTenant.id).length === 0 ? (
+                                            <p className="text-sm text-slate-500">Nenhum usuário encontrado.</p>
+                                        ) : (
+                                            profiles.filter(p => p.tenant_id === editingTenant.id).map(p => (
+                                                <div key={p.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                                    <div>
+                                                        <p className="text-sm font-black text-slate-200">{p.full_name || 'Sem Nome'}</p>
+                                                        <p className="text-[10px] text-slate-500 font-mono">{p.role} • ID: {p.id.substring(0, 8)}...</p>
+                                                    </div>
+                                                    {resetUserId === p.id ? (
+                                                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                                                            <input
+                                                                type="text"
+                                                                value={resetNewPassword}
+                                                                onChange={e => setResetNewPassword(e.target.value)}
+                                                                placeholder="Nova senha (min 6)"
+                                                                className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 font-bold outline-none focus:ring-1 focus:ring-amber-500 w-full sm:w-40"
+                                                            />
+                                                            <button
+                                                                onClick={() => handleResetPassword(p.id, p.full_name)}
+                                                                disabled={resettingPassword}
+                                                                className="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[10px] font-black uppercase tracking-widest whitespace-nowrap disabled:opacity-50"
+                                                            >
+                                                                {resettingPassword ? '...' : 'Salvar'}
+                                                            </button>
+                                                            <button
+                                                                onClick={() => { setResetUserId(null); setResetNewPassword(''); }}
+                                                                className="px-2 py-2 text-slate-500 hover:text-white"
+                                                            >
+                                                                <XCircle className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => { setResetUserId(p.id); setResetNewPassword(''); }}
+                                                            className="px-3 py-2 bg-slate-900 border border-amber-500/30 text-amber-500 hover:bg-amber-500/10 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"
+                                                        >
+                                                            <KeyRound className="w-3 h-3" /> Redefinir Senha
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
 

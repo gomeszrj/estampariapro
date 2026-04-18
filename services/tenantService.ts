@@ -30,5 +30,12 @@ export const tenantService = {
     });
     if (error) throw error;
     return data;
+  },
+  async resetUserPassword(userId: string, newPassword: string) {
+    const { error } = await supabase.rpc('reset_user_password', {
+      p_user_id: userId,
+      p_new_password: newPassword
+    });
+    if (error) throw error;
   }
 };
