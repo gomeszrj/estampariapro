@@ -314,7 +314,7 @@ const ArtQueue: React.FC = () => {
                     {uploadingOrder === entry.id ? (
                         <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Enviando...</>
                     ) : (
-                        <><Upload className="w-3.5 h-3.5" /> Subir Arquivo .PDF / Finalizado</>
+                        <><Upload className="w-3.5 h-3.5" /> Subir Arquivo Finalizado (WinRAR / ZIP / PDF)</>
                     )}
                     <input type="file" className="hidden" disabled={uploadingOrder === entry.id} onChange={(e) => handleUploadReadyFile(e, entry)} />
                  </label>
