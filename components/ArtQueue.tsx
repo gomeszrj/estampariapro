@@ -197,15 +197,11 @@ const ArtQueue: React.FC = () => {
   );
 
   const pending = filtered.filter(e => !e.art_created);
-  const inProgress = filtered.filter(e => e.art_created && !e.art_awaiting_approval);
-  const awaiting = filtered.filter(e => e.art_created && e.art_awaiting_approval && !e.art_approved);
-  const approved = filtered.filter(e => e.art_approved);
+  const approved = filtered.filter(e => e.art_created);
 
   const columns = [
-    { id: 'pending', label: 'Aguardando Arte', color: 'text-slate-400', bg: 'bg-slate-800/20', border: 'border-slate-700/40', dot: 'bg-slate-500', items: pending },
-    { id: 'inProgress', label: 'Arte Criada', color: 'text-indigo-400', bg: 'bg-indigo-900/10', border: 'border-indigo-700/30', dot: 'bg-indigo-500', items: inProgress },
-    { id: 'awaiting', label: 'Aguard. Aprovação', color: 'text-amber-400', bg: 'bg-amber-900/10', border: 'border-amber-700/30', dot: 'bg-amber-500', items: awaiting },
-    { id: 'approved', label: 'Arte Aprovada', color: 'text-emerald-400', bg: 'bg-emerald-900/10', border: 'border-emerald-700/30', dot: 'bg-emerald-500', items: approved },
+    { id: 'pending', label: 'Arte Recebida', color: 'text-amber-400', bg: 'bg-amber-900/10', border: 'border-amber-700/40', dot: 'bg-amber-500', items: pending },
+    { id: 'approved', label: 'Arte Finalizada', color: 'text-emerald-400', bg: 'bg-emerald-900/10', border: 'border-emerald-700/30', dot: 'bg-emerald-500', items: approved },
   ];
 
   const renderCard = (entry: ArtEntry) => {
@@ -229,9 +225,7 @@ const ArtQueue: React.FC = () => {
                 Rev.{entry.layout_revision}
               </span>
             )}
-            {entry.art_created && <span className="w-4 h-4 rounded-full bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center"><Check className="w-2.5 h-2.5 text-indigo-400" /></span>}
-            {entry.art_awaiting_approval && <span className="w-4 h-4 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center"><Clock className="w-2.5 h-2.5 text-amber-400" /></span>}
-            {entry.art_approved && <span className="w-4 h-4 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center"><CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" /></span>}
+            {entry.art_created && <span className="w-4 h-4 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center"><CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" /></span>}
             {isOpen ? <ChevronUp className="w-4 h-4 text-slate-600" /> : <ChevronDown className="w-4 h-4 text-slate-600" />}
           </div>
         </button>
@@ -334,11 +328,9 @@ const ArtQueue: React.FC = () => {
             </div>
 
             {/* Checkboxes */}
-            <div className="space-y-2">
+            <div className="space-y-2 mb-3">
               {[
-                { field: 'art_created' as const, label: 'Arte Criada', sub: 'Designer finalizou a arte', color: 'indigo', requires: null },
-                { field: 'art_awaiting_approval' as const, label: 'Aguardando Aprovação', sub: 'Arte enviada ao cliente', color: 'amber', requires: 'art_created' },
-                { field: 'art_approved' as const, label: 'Arte Aprovada', sub: 'Cliente aprovou o layout', color: 'emerald', requires: 'art_awaiting_approval' },
+                { field: 'art_created' as const, label: 'Arte Finalizada', sub: 'Designer concluiu e enviou a arte final', color: 'emerald', requires: null },
               ].map(({ field, label, sub, color, requires }) => {
                 const disabled = requires ? !entry[requires as keyof ArtEntry] : false;
                 const active = entry[field];
@@ -393,10 +385,8 @@ const ArtQueue: React.FC = () => {
         <div className="flex items-center gap-3">
           {/* Stats */}
           {[
-            { label: 'Pendentes', val: pending.length, color: 'text-slate-300' },
-            { label: 'Em Criação', val: inProgress.length, color: 'text-indigo-400' },
-            { label: 'Em Aprovação', val: awaiting.length, color: 'text-amber-400' },
-            { label: 'Aprovadas', val: approved.length, color: 'text-emerald-400' },
+            { label: 'Recebidas', val: pending.length, color: 'text-amber-400' },
+            { label: 'Finalizadas', val: approved.length, color: 'text-emerald-400' },
           ].map(s => (
             <div key={s.label} className="bg-slate-900 border border-slate-800 rounded-2xl px-3 py-2 text-center">
               <p className="text-[7px] text-slate-500 uppercase tracking-widest font-bold mb-0.5">{s.label}</p>
@@ -428,7 +418,7 @@ const ArtQueue: React.FC = () => {
       {loading ? (
         <div className="flex items-center justify-center py-20 text-slate-600 font-bold">Carregando...</div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {columns.map(col => (
             <div key={col.id} className={`rounded-3xl border ${col.border} ${col.bg} overflow-hidden`}>
               <div className="p-4 border-b border-slate-800/50 flex items-center gap-2">
