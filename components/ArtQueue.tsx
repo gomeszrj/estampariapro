@@ -163,25 +163,25 @@ const ArtQueue: React.FC = () => {
 
   const handleUploadReadyFile = async (e: React.ChangeEvent<HTMLInputElement>, entry: ArtEntry) => {
     const file = e.target.files?.[0];
-    if (!file || !entry.order_id) return;
+    if (!file) return;
     setUploadingOrder(entry.id);
     try {
       const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
       console.log(`[Upload Ready] Enviando: ${file.name} (${sizeMB}MB)`);
       const url = await orderService.uploadFile(file, `ready-files/${Date.now()}`);
 
-      // Get existing ready files from the orders array
-      const existingUrls = entry.orders?.ready_file_urls || [];
-      const newUrls = [...existingUrls, url];
+      if (entry.order_id) {
+          const existingUrls = entry.orders?.ready_file_urls || [];
+          const newUrls = [...existingUrls, url];
+          // Update Order directly: Append URL and push to PRODUCTION auto
+          await supabase.from('orders').update({ 
+              ready_file_urls: newUrls,
+              status: 'IN_PRODUCTION' 
+          }).eq('id', entry.order_id);
+      }
 
-      // Update Order directly: Append URL and push to PRODUCTION auto
-      await supabase.from('orders').update({ 
-          ready_file_urls: newUrls,
-          status: 'IN_PRODUCTION' 
-      }).eq('id', entry.order_id);
-
-      // Also mark as art_created on Fila de Arte automatically
-      await supabase.from('art_queue').update({ art_created: true }).eq('id', entry.id);
+      // Also mark as art_created on Fila de Arte automatically and save file locally
+      await supabase.from('art_queue').update({ art_created: true, ready_file_url: url }).eq('id', entry.id);
 
       // Refresh data
       await loadEntries();
@@ -292,23 +292,26 @@ const ArtQueue: React.FC = () => {
             )}
 
             {/* Integração com Pedido (Upload Arte Pronta P/ Produção) */}
-            {entry.orders && (
-              <div className="bg-emerald-900/10 border border-emerald-500/20 rounded-xl p-3">
-                 <div className="flex items-center justify-between mb-2">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-emerald-500 flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" /> Finalização (Arte Pronta P/ Impressão)
-                    </p>
-                 </div>
-                 
-                 <div className="mb-3 space-y-1">
-                    {(entry.orders.ready_file_urls || []).map((url: string, idx: number) => (
-                        <div key={idx} className="flex justify-between items-center text-[10px] bg-emerald-950/30 px-2 py-1.5 rounded border border-emerald-900/50">
-                            <span className="text-emerald-400/80 font-bold truncate pr-2">Arte Pronta {idx + 1}</span>
-                            <a href={url} target="_blank" rel="noopener noreferrer" className="text-emerald-500 hover:text-emerald-300 font-black uppercase">Ver</a>
-                        </div>
-                    ))}
-                 </div>
+            <div className="bg-emerald-900/10 border border-emerald-500/20 rounded-xl p-3">
+               <div className="flex items-center justify-between mb-2">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-emerald-500 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" /> Finalização (Arte Pronta P/ Impressão)
+                  </p>
+               </div>
+               
+               <div className="mb-3 space-y-1">
+                  {Array.from(new Set([
+                      ...(entry.orders?.ready_file_urls || []),
+                      (entry as any).ready_file_url
+                  ].filter(Boolean))).map((url: string, idx: number) => (
+                      <div key={idx} className="flex justify-between items-center text-[10px] bg-emerald-950/30 px-2 py-1.5 rounded border border-emerald-900/50">
+                          <span className="text-emerald-400/80 font-bold truncate pr-2">Arte Pronta {idx + 1}</span>
+                          <a href={url} target="_blank" rel="noopener noreferrer" className="text-emerald-500 hover:text-emerald-300 font-black uppercase">Baixar Arquivo</a>
+                      </div>
+                  ))}
+               </div>
 
+               {entry.art_created ? (
                  <label className={`w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed transition-all cursor-pointer text-[10px] font-black uppercase tracking-widest ${uploadingOrder === entry.id ? 'bg-slate-900 border-slate-700 text-slate-500' : 'bg-emerald-500/10 border-emerald-500/30 hover:border-emerald-500/60 text-emerald-500 hover:bg-emerald-500/20'}`}>
                     {uploadingOrder === entry.id ? (
                         <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Enviando...</>
@@ -317,8 +320,14 @@ const ArtQueue: React.FC = () => {
                     )}
                     <input type="file" className="hidden" disabled={uploadingOrder === entry.id} onChange={(e) => handleUploadReadyFile(e, entry)} />
                  </label>
-              </div>
-            )}
+               ) : (
+                 <div className="p-3 text-center border border-dashed border-emerald-900/50 bg-emerald-900/5 rounded-xl">
+                   <p className="text-[10px] font-bold text-emerald-600/60 uppercase tracking-widest leading-relaxed">
+                     Marque a caixa "Arte Finalizada" acima para destravar o botão de upload do arquivo pronto.
+                   </p>
+                 </div>
+               )}
+            </div>
 
             {/* Revision */}
             <div>

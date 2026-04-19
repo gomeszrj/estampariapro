@@ -89,21 +89,19 @@ export const orderService = {
         }
 
         // 3. Auto-sync to Art Queue
-        if (order.designFileUrls && order.designFileUrls.length > 0) {
-            try {
-                await supabase.from('art_queue').insert({
-                    order_id: orderData.id,
-                    client_name: orderData.client_name,
-                    order_reference: orderData.order_number,
-                    layout_url: order.layoutUrls ? order.layoutUrls[0] : null,
-                    notes: orderData.internal_notes || '',
-                    art_created: false,
-                    art_awaiting_approval: false,
-                    art_approved: false
-                });
-            } catch (e) {
-                console.error("Failed to auto-create art queue entry", e);
-            }
+        try {
+            await supabase.from('art_queue').insert({
+                order_id: orderData.id,
+                client_name: orderData.client_name,
+                order_reference: orderData.order_number,
+                layout_url: order.layoutUrls && order.layoutUrls.length > 0 ? order.layoutUrls[0] : null,
+                notes: orderData.internal_notes || '',
+                art_created: false,
+                art_awaiting_approval: false,
+                art_approved: false
+            });
+        } catch (e) {
+            console.error("Failed to auto-create art queue entry", e);
         }
 
         return this.getById(orderData.id);
