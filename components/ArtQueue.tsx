@@ -121,19 +121,18 @@ const ArtQueue: React.FC = () => {
     }
   };
 
-  const handleToggle = async (entry: ArtEntry, field: 'art_created' | 'art_awaiting_approval' | 'art_approved') => {
+  const handleToggle = async (entry: ArtEntry, field: 'art_created') => {
     const newValue = !entry[field];
     const updates: any = { [field]: newValue };
-    if (field === 'art_created' && !newValue) {
-      updates.art_awaiting_approval = false;
-      updates.art_approved = false;
-    }
-    if (field === 'art_awaiting_approval' && !newValue) {
-      updates.art_approved = false;
-    }
     try {
       const { error } = await supabase.from('art_queue').update(updates).eq('id', entry.id);
       if (error) throw error;
+      
+      // Auto-move Order to Production flow
+      if (field === 'art_created' && newValue && entry.order_id) {
+         await supabase.from('orders').update({ status: 'IN_PRODUCTION' }).eq('id', entry.order_id);
+      }
+
       setEntries(prev => prev.map(e => e.id === entry.id ? { ...e, ...updates } : e));
     } catch (e) {
       console.error(e);
@@ -175,12 +174,18 @@ const ArtQueue: React.FC = () => {
       const existingUrls = entry.orders?.ready_file_urls || [];
       const newUrls = [...existingUrls, url];
 
-      // Update Order directly
-      await supabase.from('orders').update({ ready_file_urls: newUrls }).eq('id', entry.order_id);
+      // Update Order directly: Append URL and push to PRODUCTION auto
+      await supabase.from('orders').update({ 
+          ready_file_urls: newUrls,
+          status: 'IN_PRODUCTION' 
+      }).eq('id', entry.order_id);
+
+      // Also mark as art_created on Fila de Arte automatically
+      await supabase.from('art_queue').update({ art_created: true }).eq('id', entry.id);
 
       // Refresh data
       await loadEntries();
-      alert('✅ Arquivo Final recebido com sucesso e vinculado à Produção!');
+      alert('✅ Arquivo Final recebido com sucesso! O Pedido foi movido automaticamente para a Produção!');
     } catch (err: any) {
       console.error(err);
       alert(`Erro no upload: ${err?.message || 'Falha na conexão.'}`);
