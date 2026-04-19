@@ -4,12 +4,12 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '21.1';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.1 (Sistema de Permissões e Módulos):
-- Controle Granular de Módulos (RBAC): O Admin Master agora pode escolher exatamente quais telas (Módulos) cada empresa assinante pode ver e usar (Ex: habilitar Estoque só para plano Pro).
-- Ocultamento Seguro de IAS: Extrator de Pedidos com Inteligência Artificial e a janela de configuração de API Keys foram ocultados permanentemente dos assinantes. Agora, somente o Admin Master tem acesso a essa tecnologia central.
-- Autopreenchimento de Permissões: Adicionado botão "Aplicar Padrão do Plano" ao registrar assinantes, que marca/desmarca sozinho os recursos que o cliente terá direito conforme o pacote contratado.
-- Header Limpo: Assinantes agora veem sua própria tag "Administrador" e o ícone de configurações de robô não fica mais visível para eles.`;
+export const SYSTEM_VERSION = '21.2';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.2 (Automação da Fila de Arte):
+- Integração Fila de Arte x Vendas: TODO pedido recém-criado em vendas (inclusive com os anexos do cliente) entra na Fila de Arte dos designers automaticamente.
+- Interface Kanban Simplificada: Fila reduzida a "Arte Recebida" e "Arte Finalizada" para ganho imediato de velocidade na usabilidade visual.
+- Gatilho Automático para Produção: Quando o designer marca o projeto como Finalizado e sobe o arquivo da estampa (PDF/WinRAR), o sistema magicamente arrasta a ordem de serviço para a aba "Em Produção".
+- Trava de Segurança no Upload: Para garantir que o arquivo enviado foi de fato concluído, o botão de fechar a arte fica escondido até a caixa final ser marcada propositalmente pelas equipes.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [
