@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   Palette, Plus, Check, Clock, CheckCircle2, Circle, Search,
-  Image, Hash, ChevronDown, ChevronUp, X, Save, Trash2, User,
-  FileText, AlertCircle
+  Image as ImageIcon, Hash, ChevronDown, ChevronUp, X, Save, Trash2, User,
+  FileText, AlertCircle, FileCode, Upload, Download, Loader2, ListOrdered
 } from 'lucide-react';
 import { supabase } from '../services/supabase';
+import { orderService } from '../services/orderService';
 
 interface ArtEntry {
   id: string;
@@ -17,6 +18,12 @@ interface ArtEntry {
   art_awaiting_approval: boolean;
   art_approved: boolean;
   created_at: string;
+  order_id?: string;
+  orders?: {
+    design_file_urls?: string[];
+    ready_file_urls?: string[];
+    order_items?: any[];
+  };
 }
 
 const emptyForm = {
@@ -36,14 +43,22 @@ const ArtQueue: React.FC = () => {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>('');
+  const [uploadingOrder, setUploadingOrder] = useState<string | null>(null);
 
   const loadEntries = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('art_queue')
-        .select('*')
+        .select(`
+          *,
+          orders(
+            id,
+            design_file_urls,
+            ready_file_urls,
+            order_items(product_name, fabric_name, grade_label, size, quantity)
+          )
+        `)
         .order('created_at', { ascending: true });
       if (error) throw error;
       setEntries(data || []);
@@ -147,6 +162,34 @@ const ArtQueue: React.FC = () => {
     }
   };
 
+  const handleUploadReadyFile = async (e: React.ChangeEvent<HTMLInputElement>, entry: ArtEntry) => {
+    const file = e.target.files?.[0];
+    if (!file || !entry.order_id) return;
+    setUploadingOrder(entry.id);
+    try {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+      console.log(`[Upload Ready] Enviando: ${file.name} (${sizeMB}MB)`);
+      const url = await orderService.uploadFile(file, `ready-files/${Date.now()}`);
+
+      // Get existing ready files from the orders array
+      const existingUrls = entry.orders?.ready_file_urls || [];
+      const newUrls = [...existingUrls, url];
+
+      // Update Order directly
+      await supabase.from('orders').update({ ready_file_urls: newUrls }).eq('id', entry.order_id);
+
+      // Refresh data
+      await loadEntries();
+      alert('✅ Arquivo Final recebido com sucesso e vinculado à Produção!');
+    } catch (err: any) {
+      console.error(err);
+      alert(`Erro no upload: ${err?.message || 'Falha na conexão.'}`);
+    } finally {
+      setUploadingOrder(null);
+      e.target.value = '';
+    }
+  };
+
   const filtered = entries.filter(e =>
     !search ||
     e.client_name.toLowerCase().includes(search.toLowerCase()) ||
@@ -198,14 +241,84 @@ const ArtQueue: React.FC = () => {
             {entry.layout_url && (
               <div className="rounded-xl overflow-hidden border border-slate-700 bg-slate-950">
                 <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest px-3 py-1.5 border-b border-slate-800 flex items-center gap-1.5">
-                  <Image className="w-3 h-3" /> Layout
+                  <ImageIcon className="w-3 h-3" /> Layout Original
                 </p>
                 <img src={entry.layout_url} alt="Layout" className="w-full max-h-40 object-contain p-2" />
               </div>
             )}
 
             {entry.notes && (
-              <div className="bg-slate-950/50 rounded-xl p-3 border border-slate-800 text-xs text-slate-400">{entry.notes}</div>
+              <div className="bg-slate-950/50 rounded-xl p-3 border border-slate-800 text-xs text-slate-400">
+                <p className="text-[9px] font-black uppercase text-slate-500 mb-2">Observações / Briefing:</p>
+                <div className="whitespace-pre-line leading-relaxed">{entry.notes}</div>
+              </div>
+            )}
+
+            {/* Integração com Pedido (Lista de Itens) */}
+            {entry.orders && entry.orders.order_items && entry.orders.order_items.length > 0 && (
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-3">
+                 <p className="text-[9px] font-black uppercase tracking-widest text-indigo-400 mb-2 flex items-center gap-1">
+                    <ListOrdered className="w-3 h-3" /> Itens Oficiais do Pedido
+                 </p>
+                 <div className="max-h-32 overflow-y-auto space-y-1 pr-1">
+                   {entry.orders.order_items.map((item: any, idx: number) => (
+                      <div key={idx} className="flex justify-between items-center text-[10px] bg-slate-950 px-2 py-1.5 rounded border border-slate-800">
+                        <span className="text-slate-300 font-bold truncate pr-2" title={item.product_name}>{item.product_name}</span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-slate-500 uppercase">{item.grade_label}</span>
+                          <span className="bg-slate-800 text-slate-300 px-1.5 rounded font-mono">{item.size}</span>
+                          <span className="text-indigo-400 font-black">x{item.quantity}</span>
+                        </div>
+                      </div>
+                   ))}
+                 </div>
+              </div>
+            )}
+
+            {/* Integração com Pedido (Download Arquivo Fonte) */}
+            {entry.orders && entry.orders.design_file_urls && entry.orders.design_file_urls.length > 0 && (
+              <div className="bg-amber-900/10 border border-amber-500/20 rounded-xl p-3">
+                 <p className="text-[9px] font-black uppercase tracking-widest text-amber-500 mb-2 flex items-center gap-1">
+                    <FileCode className="w-3 h-3" /> Arquivos Fonte do Cliente
+                 </p>
+                 <div className="space-y-1">
+                   {entry.orders.design_file_urls.map((url: string, idx: number) => (
+                      <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between bg-slate-950 border border-slate-800 hover:border-amber-500/50 hover:bg-amber-500/5 p-2 rounded-lg transition-colors group">
+                         <span className="text-[10px] text-slate-300 font-medium truncate pr-2">Acessar Arquivo (Download)</span>
+                         <Download className="w-3.5 h-3.5 text-amber-500/70 group-hover:text-amber-400" />
+                      </a>
+                   ))}
+                 </div>
+              </div>
+            )}
+
+            {/* Integração com Pedido (Upload Arte Pronta P/ Produção) */}
+            {entry.orders && (
+              <div className="bg-emerald-900/10 border border-emerald-500/20 rounded-xl p-3">
+                 <div className="flex items-center justify-between mb-2">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-emerald-500 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" /> Finalização (Arte Pronta P/ Impressão)
+                    </p>
+                 </div>
+                 
+                 <div className="mb-3 space-y-1">
+                    {(entry.orders.ready_file_urls || []).map((url: string, idx: number) => (
+                        <div key={idx} className="flex justify-between items-center text-[10px] bg-emerald-950/30 px-2 py-1.5 rounded border border-emerald-900/50">
+                            <span className="text-emerald-400/80 font-bold truncate pr-2">Arte Pronta {idx + 1}</span>
+                            <a href={url} target="_blank" rel="noopener noreferrer" className="text-emerald-500 hover:text-emerald-300 font-black uppercase">Ver</a>
+                        </div>
+                    ))}
+                 </div>
+
+                 <label className={`w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed transition-all cursor-pointer text-[10px] font-black uppercase tracking-widest ${uploadingOrder === entry.id ? 'bg-slate-900 border-slate-700 text-slate-500' : 'bg-emerald-500/10 border-emerald-500/30 hover:border-emerald-500/60 text-emerald-500 hover:bg-emerald-500/20'}`}>
+                    {uploadingOrder === entry.id ? (
+                        <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Enviando...</>
+                    ) : (
+                        <><Upload className="w-3.5 h-3.5" /> Subir Arquivo .PDF / Finalizado</>
+                    )}
+                    <input type="file" className="hidden" disabled={uploadingOrder === entry.id} onChange={(e) => handleUploadReadyFile(e, entry)} />
+                 </label>
+              </div>
             )}
 
             {/* Revision */}
@@ -407,7 +520,7 @@ const ArtQueue: React.FC = () => {
 
               {/* Image Upload */}
               <div>
-                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><Image className="w-3 h-3" /> Imagem do Layout (opcional)</label>
+                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><ImageIcon className="w-3 h-3" /> Imagem do Layout (opcional)</label>
                 {imagePreview ? (
                   <div className="relative rounded-xl overflow-hidden border border-slate-700">
                     <img src={imagePreview} className="w-full max-h-48 object-contain bg-slate-950" />
@@ -420,7 +533,7 @@ const ArtQueue: React.FC = () => {
                   </div>
                 ) : (
                   <label className="flex flex-col items-center justify-center gap-2 p-6 rounded-xl border-2 border-dashed border-slate-700 hover:border-indigo-500 cursor-pointer transition-all bg-slate-950 group">
-                    <Image className="w-8 h-8 text-slate-600 group-hover:text-indigo-400 transition-colors" />
+                    <ImageIcon className="w-8 h-8 text-slate-600 group-hover:text-indigo-400 transition-colors" />
                     <p className="text-xs font-bold text-slate-500 group-hover:text-slate-300 transition-colors">Clique para adicionar imagem</p>
                     <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                   </label>
