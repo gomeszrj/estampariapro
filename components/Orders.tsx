@@ -979,7 +979,14 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                     {/* Client & Date */}
                     <div className="space-y-4">
                       <div className="relative group">
-                        <label className={`block text-[9px] font-black uppercase tracking-widest ml-1 mb-1 ${!clientName ? 'text-rose-500' : 'text-slate-500'}`}>Cliente {!clientName && <span>*</span>}</label>
+                        <div className="flex justify-between items-center mb-1">
+                            <label className={`block text-[9px] font-black uppercase tracking-widest ml-1 ${!clientName ? 'text-rose-500' : 'text-slate-500'}`}>Cliente {!clientName && <span>*</span>}</label>
+                            {clientName && orders.some(o => o.clientName?.toLowerCase() === clientName.toLowerCase() && (o.paymentStatus === 'Pendente' || o.paymentStatus === 'Sinal (50%)' || o.paymentStatus === 'Sinal / Parcial') && o.status !== 'CANCELLED') && (
+                                <span className="text-[9px] bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded uppercase font-black tracking-widest animate-pulse border border-rose-500/30">
+                                    ⚠️ Inadimplente / Débito Pendente
+                                </span>
+                            )}
+                        </div>
                         <User className="absolute left-4 top-[2.2rem] text-slate-600 w-4 h-4 group-focus-within:text-indigo-400 transition-colors" />
                         <input
                           type="text"

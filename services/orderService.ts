@@ -104,6 +104,24 @@ export const orderService = {
             console.error("Failed to auto-create art queue entry", e);
         }
 
+        // 4. Integrar ao Módulo Financeiro
+        const paid = Number(orderData.amount_paid) || 0;
+        if (paid > 0 && orderData.payment_status && orderData.payment_status !== 'Pendente') {
+            try {
+                await supabase.from('transactions').insert({
+                    tenant_id: activeTenant,
+                    order_id: orderData.id,
+                    type: 'income',
+                    category: 'sale',
+                    amount: paid,
+                    description: `Pgt. Venda #${orderData.order_number} (${orderData.client_name})`,
+                    transaction_date: new Date().toISOString()
+                });
+            } catch (e) {
+                console.error("Failed to sync finance", e);
+            }
+        }
+
         return this.getById(orderData.id);
     },
 
@@ -199,6 +217,30 @@ export const orderService = {
                     .insert(dbItems);
 
                 if (insertError) throw insertError;
+            }
+        }
+
+        // --- NEW: Finance Sync on Update ---
+        if (updates.amountPaid !== undefined || updates.paymentStatus !== undefined) {
+            try {
+                // Delete old sales income for this order
+                await supabase.from('transactions').delete().match({ order_id: id, type: 'income', category: 'sale' });
+                
+                const currentOrder = await this.getById(id);
+                if (currentOrder && currentOrder.amountPaid && currentOrder.amountPaid > 0 && currentOrder.paymentStatus !== 'Pendente') {
+                    const activeTenant = await getActiveTenant();
+                    await supabase.from('transactions').insert({
+                        tenant_id: activeTenant,
+                        order_id: id,
+                        type: 'income',
+                        category: 'sale',
+                        amount: currentOrder.amountPaid,
+                        description: `Pgt. Venda #${currentOrder.orderNumber} (${currentOrder.clientName})`,
+                        transaction_date: new Date().toISOString()
+                    });
+                }
+            } catch (e) {
+                console.error("Failed to sync finance on update", e);
             }
         }
 

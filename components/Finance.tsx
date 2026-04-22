@@ -109,23 +109,22 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
 
   // --- CALCULATIONS ---
 
-  // 1. Revenue (From Orders)
-  // In v15.3, we still rely on Orders for Revenue until we implement "Accounts Receivable" fully.
-  const revenueOrders = orders.filter(o => o.status !== 'BUDGET'); // Exclude budgets
-  const totalRevenue = revenueOrders.reduce((acc, curr) => acc + curr.totalValue, 0);
+  // 1. Revenue (From Automated Accounts Receivable / Transactions)
+  const incomeTransactions = transactions.filter(t => t.type === 'income');
+  const totalRevenue = incomeTransactions.reduce((acc, curr) => acc + curr.amount, 0);
 
-  // 2. Production Costs (COGS) - Estimate based on current product cost
+  // 2. Production Costs (COGS) - Accrual basis (Based on placed orders)
+  const revenueOrders = orders.filter(o => o.status !== 'BUDGET');
   const productionCosts = revenueOrders.reduce((acc, order) => {
     return acc + order.items.reduce((itemAcc, item) => {
       const product = products.find(p => p.id === item.productId);
-      // Fallback: If product not found (deleted) or no cost, use 0.
-      // Ideally we should snapshot this in the OrderItem at purchase time.
       const unitCost = product?.costPrice || 0;
       return itemAcc + (unitCost * item.quantity);
     }, 0);
   }, 0);
 
-  // 3. Operating Expenses (From Transactions)
+  // 3. Operating Expenses (From Manual Transactions)
+  // Exclude 'material' if the user prefers COGS to handle materials, but here we'll sum all expenses
   const expenseTransactions = transactions.filter(t => t.type === 'expense');
   const operatingExpenses = expenseTransactions.reduce((acc, curr) => acc + curr.amount, 0);
 
@@ -137,15 +136,19 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
   // 5. Chart Data (Merge Orders & Transactions by Month)
   const monthlyData: Record<string, { revenue: number, expense: number, cost: number, profit: number }> = {};
 
-  // Process Revenue & Production Costs
+  // Process Revenue (From Receipts) instead of Orders
+  incomeTransactions.forEach(t => {
+    const key = t.date.slice(0, 7);
+    if (!monthlyData[key]) monthlyData[key] = { revenue: 0, expense: 0, cost: 0, profit: 0 };
+    monthlyData[key].revenue += t.amount;
+  });
+
+  // Process Cost (From Orders placed in month)
   revenueOrders.forEach(o => {
     if (!o.createdAt) return;
     const key = o.createdAt.slice(0, 7); // YYYY-MM
     if (!monthlyData[key]) monthlyData[key] = { revenue: 0, expense: 0, cost: 0, profit: 0 };
 
-    monthlyData[key].revenue += o.totalValue;
-
-    // Add Configured Cost for this order
     const orderCost = o.items.reduce((acc, item) => {
       const p = products.find(prod => prod.id === item.productId);
       return acc + ((p?.costPrice || 0) * item.quantity);
