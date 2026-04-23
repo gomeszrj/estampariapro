@@ -168,6 +168,7 @@ const MasterAdmin: React.FC = () => {
   const [newPrice, setNewPrice] = useState(0);
   const [newCycle, setNewCycle] = useState('Mensal');
   const [newIsTrial, setNewIsTrial] = useState(false);
+  const [newTrialDays, setNewTrialDays] = useState(7);
   const [newPaymentLink, setNewPaymentLink] = useState('');
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [newAdminPassword, setNewAdminPassword] = useState('');
@@ -271,12 +272,12 @@ const MasterAdmin: React.FC = () => {
     if (!newAdminEmail || !newAdminPassword) return alert('Preencha o E-mail e a Senha do Administrador.');
     try {
       const endDate = new Date();
-      endDate.setDate(endDate.getDate() + (newIsTrial ? 7 : 30));
+      endDate.setDate(endDate.getDate() + (newIsTrial ? newTrialDays : 30));
 
       const tenant = await tenantService.createTenant({
         name: newName,
         domain: newDomain,
-        plan: newIsTrial ? 'Trial 7 Dias' : newPlan,
+        plan: newIsTrial ? `Trial ${newTrialDays} Dias` : newPlan,
         plan_price: newIsTrial ? 0 : newPrice,
         billing_cycle: newCycle,
         subscription_end_date: endDate.toISOString(),
@@ -754,9 +755,18 @@ const MasterAdmin: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-4 bg-indigo-500/5 border border-indigo-500/20 rounded-2xl">
-                  <input type="checkbox" id="trial" checked={newIsTrial} onChange={e => setNewIsTrial(e.target.checked)} className="w-5 h-5 accent-indigo-600" />
-                  <label htmlFor="trial" className="text-xs font-black text-indigo-400 uppercase tracking-widest cursor-pointer">Ativar Teste Grátis de 7 Dias</label>
+                <div className="flex flex-col gap-3 p-4 bg-indigo-500/5 border border-indigo-500/20 rounded-2xl">
+                  <div className="flex items-center gap-3">
+                    <input type="checkbox" id="trial" checked={newIsTrial} onChange={e => setNewIsTrial(e.target.checked)} className="w-5 h-5 accent-indigo-600 cursor-pointer" />
+                    <label htmlFor="trial" className="text-xs font-black text-indigo-400 uppercase tracking-widest cursor-pointer">Ativar Teste Grátis (Trial)</label>
+                  </div>
+                  {newIsTrial && (
+                    <div className="pl-8 flex items-center gap-3 animate-in fade-in duration-300">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Duração (Dias):</label>
+                      <input type="number" min="1" max="365" value={newTrialDays} onChange={e => setNewTrialDays(Number(e.target.value))}
+                        className="w-20 bg-slate-900 border border-indigo-500/30 text-indigo-400 font-bold text-center rounded-lg py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all" />
+                    </div>
+                  )}
                 </div>
 
                 <div className="border border-slate-800 rounded-2xl overflow-hidden">
@@ -791,7 +801,7 @@ const MasterAdmin: React.FC = () => {
               <div className="pt-4 border-t border-slate-800/50">
                 <button onClick={handleCreateTenant}
                   className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3">
-                  <Save className="w-5 h-5" /> {newIsTrial ? 'Criar Ambiente de Teste' : 'Criar Ambiente Agora'}
+                  <Save className="w-5 h-5" /> {newIsTrial ? `Criar Teste de ${newTrialDays} Dias` : 'Criar Ambiente Agora'}
                 </button>
               </div>
             </div>
