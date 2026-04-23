@@ -129,7 +129,7 @@ const AuthenticatedApp: React.FC = () => {
   const renderContent = () => {
     switch (activeView) {
       case 'dashboard': return <Dashboard orders={orders} setOrders={setOrders} products={products} />;
-      case 'orders': return <Orders orders={orders} setOrders={setOrders} products={products} clients={clients} setClients={setClients} botDraft={botDraft} onDraftUsed={() => setBotDraft(null)} />;
+      case 'orders': return <Orders orders={orders} setOrders={setOrders} products={products} clients={clients} setClients={setClients} botDraft={botDraft} onDraftUsed={() => setBotDraft(null)} isMasterAdmin={isMasterAdmin} />;
       case 'kanban': return <Kanban orders={orders} setOrders={setOrders} />;
       case 'products': return <Products />;
       case 'store-control': return <StoreControl products={products} setProducts={setProducts} readOnly={false} />;

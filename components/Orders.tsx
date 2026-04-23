@@ -52,9 +52,10 @@ interface OrdersProps {
   setClients: React.Dispatch<React.SetStateAction<Client[]>>;
   botDraft?: { clientName: string; items: ParsedOrderItem[]; briefing: string } | null;
   onDraftUsed?: () => void;
+  isMasterAdmin?: boolean;
 }
 
-const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, setClients, botDraft, onDraftUsed }) => {
+const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, setClients, botDraft, onDraftUsed, isMasterAdmin }) => {
   const [activeTab, setActiveTab] = useState<'details' | 'items' | 'briefing'>('details');
   const [activeContext, setActiveContext] = useState<'production' | 'store'>('production'); // New: Switch between ERP and Store
   const [viewMode, setViewMode] = useState<'list' | 'board'>('list');
@@ -772,13 +773,15 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                         className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg transition-colors ${activeTab === 'items' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'text-slate-500 hover:text-slate-300'} ${isPartialEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
                         title={isPartialEditMode ? "Itens não podem ser editados em produção" : ""}
                       >Itens</button>
-                      <button
-                        onClick={() => !isPartialEditMode && setActiveTab('briefing')}
-                        className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg transition-colors flex items-center gap-1 ${activeTab === 'briefing' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'text-slate-500 hover:text-slate-300'} ${isPartialEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        title={isPartialEditMode ? "Briefing bloqueado em produção" : ""}
-                      >
-                        <Bot className="w-3 h-3" /> Briefing IA
-                      </button>
+                      {isMasterAdmin && (
+                        <button
+                          onClick={() => !isPartialEditMode && setActiveTab('briefing')}
+                          className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg transition-colors flex items-center gap-1 ${activeTab === 'briefing' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'text-slate-500 hover:text-slate-300'} ${isPartialEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          title={isPartialEditMode ? "Briefing bloqueado em produção" : ""}
+                        >
+                          <Bot className="w-3 h-3" /> Briefing IA
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
