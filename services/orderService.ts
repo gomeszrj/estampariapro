@@ -5,6 +5,11 @@ import { inventoryService } from './inventoryService';
 
 export const orderService = {
   async uploadFile(file: File, path: string): Promise<string> {
+    const MAX_MB = 50;
+    if (file.size > MAX_MB * 1024 * 1024) {
+      throw new Error(`O arquivo excedeu ${MAX_MB}MB. Para estabilidade e economia de servidor, por favor envie arquivos gigantes via Google Drive / WeTransfer e cole o link na descrição.`);
+    }
+
     const fileExt = (file.name.split('.').pop() || 'bin').toLowerCase();
     const safeName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${fileExt}`;
     const filePath = `${path}/${safeName}`;
