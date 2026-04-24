@@ -4,12 +4,12 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '21.2';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.2 (Automação da Fila de Arte):
-- Integração Fila de Arte x Vendas: TODO pedido recém-criado em vendas (inclusive com os anexos do cliente) entra na Fila de Arte dos designers automaticamente.
-- Interface Kanban Simplificada: Fila reduzida a "Arte Recebida" e "Arte Finalizada" para ganho imediato de velocidade na usabilidade visual.
-- Gatilho Automático para Produção: Quando o designer marca o projeto como Finalizado e sobe o arquivo da estampa (PDF/WinRAR), o sistema magicamente arrasta a ordem de serviço para a aba "Em Produção".
-- Trava de Segurança no Upload: Para garantir que o arquivo enviado foi de fato concluído, o botão de fechar a arte fica escondido até a caixa final ser marcada propositalmente pelas equipes.`;
+export const SYSTEM_VERSION = '21.3';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.3 (Atualização Financeira e Gestão de Assinantes):
+- Contas a Receber Sincronizadas: O fluxo de caixa/DRE principal agora calcula lucros puramente com base nas parcelas e sinais estritamente pagos nas Ordens, ignorando "esperanças de receita" e trazendo uma lealdade cirúrgica para o faturamento real diário.
+- Alarme de Cliente Inadimplente: Inserida uma trava visual 🚨 enorme piscando em vermelho na tela de "Novo Pedido" se o vendedor acidentalmente tentar fechar venda fiado para um cliente que possui Ordens de Serviço "Pendentes" de pagamento.
+- Painel SaaS Master: Administradores Masters agora podem adicionar quantos dias customizados de "Trial" (Teste Grátis) quiserem (Ex: 30Dias, 45Dias, etc) ao criar um novo assinante do ERP manualmente.
+- Clean UI Focus: O grande painel lateral com a Inteligência Artificial foi focado na conta Master, proporcionando abas incrivelmente focadas na interface dos seus revendedores/assinantes finais (Visão Single Column).`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [
