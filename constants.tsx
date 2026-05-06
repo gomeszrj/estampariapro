@@ -4,12 +4,11 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '21.3';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.3 (Atualização Financeira e Gestão de Assinantes):
-- Contas a Receber Sincronizadas: O fluxo de caixa/DRE principal agora calcula lucros puramente com base nas parcelas e sinais estritamente pagos nas Ordens, ignorando "esperanças de receita" e trazendo uma lealdade cirúrgica para o faturamento real diário.
-- Alarme de Cliente Inadimplente: Inserida uma trava visual 🚨 enorme piscando em vermelho na tela de "Novo Pedido" se o vendedor acidentalmente tentar fechar venda fiado para um cliente que possui Ordens de Serviço "Pendentes" de pagamento.
-- Painel SaaS Master: Administradores Masters agora podem adicionar quantos dias customizados de "Trial" (Teste Grátis) quiserem (Ex: 30Dias, 45Dias, etc) ao criar um novo assinante do ERP manualmente.
-- Clean UI Focus: O grande painel lateral com a Inteligência Artificial foi focado na conta Master, proporcionando abas incrivelmente focadas na interface dos seus revendedores/assinantes finais (Visão Single Column).`;
+export const SYSTEM_VERSION = '21.4';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.4 (Integração de CRM e Segurança Suprema):
+- CRM Flutuante Integrado: Novo painel persistente estilo "WhatsApp Web" que flutua na sua tela. Atenda seus clientes, use o funil inteligente (Aguardando / Respondidos) e navegue pelo Kanban e Financeiro simultaneamente sem perder o chat de vista.
+- Security Hardening: Aplicação agora blindada contra injeções XSS através de Cabeçalhos CSP estritos. Bibliotecas internas atualizadas mitigando dezenas de vulnerabilidades NPM. Segurança padrão enterprise!
+- Upgrade de Ordem de Serviço: As impressões agora exibem imagens de layout muito maiores e nítidas em um grid de 2 colunas com suporte flexível a altura, facilitando a vida do time de produção.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [
