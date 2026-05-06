@@ -42,17 +42,7 @@ export default defineConfig(({ mode }) => {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
     },
     build: {
-      chunkSizeWarningLimit: 1600,
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            vendor: ['react', 'react-dom'],
-            charts: ['recharts'],
-            icons: ['lucide-react'],
-            supabase: ['@supabase/supabase-js']
-          }
-        }
-      }
+      chunkSizeWarningLimit: 1600
     },
     resolve: {
       alias: {
