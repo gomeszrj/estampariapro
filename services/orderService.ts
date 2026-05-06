@@ -344,7 +344,7 @@ export const orderService = {
         // Now fetch details for these orders
         const { data: dbOrders, error: ordersError } = await supabase
             .from('orders')
-            .select('*')
+            .select('*, clients(whatsapp)')
             .in('id', activeOrderIds);
 
         if (ordersError) throw ordersError;
@@ -359,6 +359,7 @@ export const orderService = {
             return {
                 ...sessionData,
                 clientName: dbOrder.client_name,
+                clientPhone: dbOrder.clients?.whatsapp || '',
                 orderNumber: dbOrder.order_number,
                 status: dbOrder.status,
                 origin: dbOrder.origin,

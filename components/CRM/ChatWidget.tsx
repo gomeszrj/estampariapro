@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, X, Send, User, Loader2, Maximize2, Minimize2, CheckCircle2, Clock } from 'lucide-react';
+import { MessageSquare, X, Send, User, Loader2, Maximize2, Minimize2, CheckCircle2, Clock, Paperclip, Image as ImageIcon } from 'lucide-react';
 import { orderService } from '../../services/orderService';
 import { supabase } from '../../services/supabase';
 import { OrderMessage } from '../../types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { whatsappService } from '../../services/whatsappService';
 
 interface ChatSession {
     orderId: string;
     clientName: string;
+    clientPhone: string;
     orderNumber: string;
     status: string;
     lastMessage: string;
@@ -32,6 +34,8 @@ export const ChatWidget: React.FC = () => {
 
     const [newMessage, setNewMessage] = useState('');
     const [isSending, setIsSending] = useState(false);
+    const [uploadingMedia, setUploadingMedia] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     
     // Funnel Tabs
     const [activeTab, setActiveTab] = useState<'waiting' | 'answered' | 'all'>('waiting');
@@ -79,8 +83,6 @@ export const ChatWidget: React.FC = () => {
                             if (prev.find(m => m.id === newMsg.id)) return prev;
                             return [...prev, newMsg];
                         });
-                    } else if (newMsg.sender === 'client') {
-                        // Optional: Play a sound or show browser notification if chat is minimized/closed
                     }
                 }
             )
@@ -95,8 +97,6 @@ export const ChatWidget: React.FC = () => {
     useEffect(() => {
         if (activeSessionId) {
             loadMessages(activeSessionId);
-            
-            // Mark as read in our local state (unread = 0)
             setSessions(prev => prev.map(s => s.orderId === activeSessionId ? { ...s, unread: 0 } : s));
         }
     }, [activeSessionId]);
@@ -131,13 +131,19 @@ export const ChatWidget: React.FC = () => {
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newMessage.trim() || !activeSessionId) return;
+        if (!newMessage.trim() || !activeSessionId || !activeSession) return;
 
         setIsSending(true);
         try {
+            // 1. Send via Evolution API first
+            if (activeSession.clientPhone) {
+                await whatsappService.sendMessage(activeSession.clientPhone, newMessage.trim());
+            }
+
+            // 2. Save to our database
             const msg = await orderService.sendMessage(activeSessionId, 'store', newMessage.trim());
             
-            // Update UI optimistically
+            // 3. Update UI
             setMessages([...messages, msg]);
             setNewMessage('');
             
@@ -160,6 +166,43 @@ export const ChatWidget: React.FC = () => {
         } finally {
             setIsSending(false);
         }
+    };
+
+    const handleFileAttach = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !activeSessionId || !activeSession) return;
+        
+        setUploadingMedia(true);
+        try {
+            // 1. Convert to Base64 for WhatsApp sending
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => {
+                const base64 = reader.result as string;
+                
+                // 2. Send via Evolution API
+                if (activeSession.clientPhone) {
+                    await whatsappService.sendMedia(activeSession.clientPhone, base64, file.type, file.name);
+                }
+
+                // 3. Upload to Supabase Storage to keep in our history
+                const publicUrl = await orderService.uploadFile(file, `chat-media/${activeSessionId}`);
+                
+                // 4. Save to DB with a special markdown/tag format so we know it's media
+                const messageText = `[MEDIA]${publicUrl}`;
+                const msg = await orderService.sendMessage(activeSessionId, 'store', messageText);
+                
+                setMessages(prev => [...prev, msg]);
+                setUploadingMedia(false);
+            };
+        } catch (err) {
+            console.error(err);
+            alert("Erro ao enviar arquivo.");
+            setUploadingMedia(false);
+        }
+        
+        // Reset input
+        if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
     // Filter sessions based on CRM Funnel
@@ -324,6 +367,8 @@ export const ChatWidget: React.FC = () => {
                                             {messages.map((msg, idx) => {
                                                 const isStore = msg.sender === 'store';
                                                 const showDate = idx === 0 || new Date(msg.created_at).toDateString() !== new Date(messages[idx - 1].created_at).toDateString();
+                                                const isMedia = msg.message.startsWith('[MEDIA]');
+                                                const mediaUrl = isMedia ? msg.message.replace('[MEDIA]', '') : '';
 
                                                 return (
                                                     <React.Fragment key={msg.id}>
@@ -341,7 +386,13 @@ export const ChatWidget: React.FC = () => {
                                                                     : 'bg-slate-800 text-slate-200 rounded-tl-sm border border-slate-700/50'
                                                                 }`}
                                                             >
-                                                                <p className="whitespace-pre-wrap">{msg.message}</p>
+                                                                {isMedia ? (
+                                                                    <div className="rounded-xl overflow-hidden mb-1 border border-white/10">
+                                                                        <img src={mediaUrl} alt="Anexo" className="max-w-full max-h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity" onClick={() => window.open(mediaUrl, '_blank')} />
+                                                                    </div>
+                                                                ) : (
+                                                                    <p className="whitespace-pre-wrap">{msg.message}</p>
+                                                                )}
                                                                 <p className="text-[9px] font-bold mt-1 text-right opacity-60">
                                                                     {format(new Date(msg.created_at), "HH:mm")}
                                                                 </p>
@@ -359,6 +410,23 @@ export const ChatWidget: React.FC = () => {
                                 <div className="p-3 bg-slate-900/50 border-t border-slate-800/60 shrink-0">
                                     <form onSubmit={handleSendMessage} className="relative flex items-center gap-2">
                                         <input
+                                            type="file"
+                                            ref={fileInputRef}
+                                            onChange={handleFileAttach}
+                                            className="hidden"
+                                            accept="image/*,application/pdf"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            disabled={uploadingMedia}
+                                            className="w-12 h-12 shrink-0 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-xl flex items-center justify-center transition-colors border border-slate-700"
+                                            title="Anexar Arquivo"
+                                        >
+                                            {uploadingMedia ? <Loader2 className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5" />}
+                                        </button>
+
+                                        <input
                                             type="text"
                                             placeholder="Digite uma mensagem..."
                                             value={newMessage}
@@ -367,7 +435,7 @@ export const ChatWidget: React.FC = () => {
                                         />
                                         <button
                                             type="submit"
-                                            disabled={!newMessage.trim() || isSending}
+                                            disabled={!newMessage.trim() || isSending || uploadingMedia}
                                             className="w-12 h-12 shrink-0 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl flex items-center justify-center transition-colors shadow-lg shadow-indigo-600/20"
                                         >
                                             {isSending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5 ml-1" />}

@@ -9,7 +9,7 @@ import Settings from './components/Settings';
 import Finance from './components/Finance';
 import Clients from './components/Clients';
 import Login from './components/Login';
-import Chats from './components/Chats';
+import { WhatsAppManager } from './components/WhatsAppManager';
 import CatalogRequests from './components/CatalogRequests';
 import Inventory from './components/Inventory';
 import { CloudBot } from './components/CloudBot';
@@ -141,7 +141,7 @@ const AuthenticatedApp: React.FC = () => {
       case 'inventory': return <Inventory />;
       case 'art-queue': return <ArtQueue />;
       case 'cloudbot': return <CloudBot onCreateOrder={handleBotOrder} />;
-      case 'crm': return <Chats />;
+      case 'crm': return <WhatsAppManager />;
       case 'master-admin': return isMasterAdmin ? <MasterAdmin /> : null;
       default: return null;
     }

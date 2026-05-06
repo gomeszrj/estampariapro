@@ -75,7 +75,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
     can('can_view_products')   && { id: 'products',         label: 'Produtos',      icon: Package },
     can('can_view_catalog')    && { id: 'catalog-requests', label: 'Solicitações',  icon: Inbox },
     can('can_view_clients')    && { id: 'clients',          label: 'Clientes',      icon: Users },
-    can('can_view_crm')        && { id: 'crm',              label: 'Chats',         icon: MessageSquare },
+    can('can_view_crm')        && { id: 'crm',              label: 'Central WhatsApp', icon: MessageSquare },
     can('can_view_inventory')  && { id: 'inventory',        label: 'Estoque',       icon: Box },
     (isMasterAdmin && cloudBotEnabled) && { id: 'cloudbot', label: 'CloudBot Agent', icon: Bot },
     can('can_view_finance')    && { id: 'finance',          label: 'Financeiro',    icon: TrendingUp },
