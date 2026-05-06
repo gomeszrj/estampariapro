@@ -20,6 +20,7 @@ import ArtQueue from './components/ArtQueue';
 import MasterAdmin from './components/MasterAdmin';
 import { SubscriptionLock } from './components/SubscriptionLock';
 import { ForcePasswordChange } from './components/ForcePasswordChange';
+import { ChatWidget } from './components/CRM/ChatWidget';
 import { Bell, User as UserIcon, Share2, Menu, ExternalLink, Link as LinkIcon, Copy } from 'lucide-react';
 import { Order, Product, Client, OrderStatus, OrderType } from './types';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -258,6 +259,7 @@ const AuthenticatedApp: React.FC = () => {
         </header>
 
         <ApiSettingsModal isOpen={isApiSettingsOpen} onClose={() => setIsApiSettingsOpen(false)} />
+        <ChatWidget />
 
         <div className="p-4 md:p-10 max-w-[1600px] mx-auto w-full">
           <ErrorBoundary>

@@ -1,0 +1,390 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { MessageSquare, X, Send, User, Loader2, Maximize2, Minimize2, CheckCircle2, Clock } from 'lucide-react';
+import { orderService } from '../../services/orderService';
+import { supabase } from '../../services/supabase';
+import { OrderMessage } from '../../types';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
+interface ChatSession {
+    orderId: string;
+    clientName: string;
+    orderNumber: string;
+    status: string;
+    lastMessage: string;
+    lastMessageAt: string;
+    lastSender: string;
+    unread: number;
+    origin?: string;
+    assignedSeller?: string;
+}
+
+export const ChatWidget: React.FC = () => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [isMaximized, setIsMaximized] = useState(false);
+    
+    const [sessions, setSessions] = useState<ChatSession[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+
+    const [messages, setMessages] = useState<OrderMessage[]>([]);
+    const [loadingMessages, setLoadingMessages] = useState(false);
+
+    const [newMessage, setNewMessage] = useState('');
+    const [isSending, setIsSending] = useState(false);
+    
+    // Funnel Tabs
+    const [activeTab, setActiveTab] = useState<'waiting' | 'answered' | 'all'>('waiting');
+
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Initial load and polling for sessions
+    useEffect(() => {
+        loadSessions();
+        const interval = setInterval(loadSessions, 15000); // 15s poll
+        return () => clearInterval(interval);
+    }, []);
+
+    // Global listener for new messages via Supabase Realtime (on ANY chat)
+    useEffect(() => {
+        const channel = supabase
+            .channel('global_chat_messages')
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'order_messages' },
+                (payload) => {
+                    const newMsg = payload.new as OrderMessage;
+                    
+                    // Update sessions list globally
+                    setSessions(prev => {
+                        const exists = prev.find(s => s.orderId === newMsg.order_id);
+                        if (exists) {
+                            return prev.map(s => s.orderId === newMsg.order_id ? {
+                                ...s,
+                                lastMessage: newMsg.message,
+                                lastMessageAt: newMsg.created_at,
+                                lastSender: newMsg.sender,
+                                unread: newMsg.sender === 'client' && activeSessionId !== newMsg.order_id ? (s.unread + 1) : s.unread
+                            } : s).sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
+                        } else {
+                            // If it's a completely new chat, just reload sessions to get client info
+                            loadSessions();
+                            return prev;
+                        }
+                    });
+
+                    // If we are looking at this specific chat, append message
+                    if (activeSessionId === newMsg.order_id) {
+                        setMessages(prev => {
+                            if (prev.find(m => m.id === newMsg.id)) return prev;
+                            return [...prev, newMsg];
+                        });
+                    } else if (newMsg.sender === 'client') {
+                        // Optional: Play a sound or show browser notification if chat is minimized/closed
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [activeSessionId]);
+
+    // Load messages when active session changes
+    useEffect(() => {
+        if (activeSessionId) {
+            loadMessages(activeSessionId);
+            
+            // Mark as read in our local state (unread = 0)
+            setSessions(prev => prev.map(s => s.orderId === activeSessionId ? { ...s, unread: 0 } : s));
+        }
+    }, [activeSessionId]);
+
+    // Scroll to bottom on new messages
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages, isOpen, activeSessionId]);
+
+    const loadSessions = async () => {
+        try {
+            const data = await orderService.getChatSessions();
+            setSessions(data);
+        } catch (error) {
+            console.error('Error loading chat sessions:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const loadMessages = async (orderId: string) => {
+        setLoadingMessages(true);
+        try {
+            const msgs = await orderService.getMessages(orderId);
+            setMessages(msgs);
+        } catch (error) {
+            console.error('Error loading chat messages:', error);
+        } finally {
+            setLoadingMessages(false);
+        }
+    };
+
+    const handleSendMessage = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newMessage.trim() || !activeSessionId) return;
+
+        setIsSending(true);
+        try {
+            const msg = await orderService.sendMessage(activeSessionId, 'store', newMessage.trim());
+            
+            // Update UI optimistically
+            setMessages([...messages, msg]);
+            setNewMessage('');
+            
+            setSessions(prev => prev.map(s => {
+                if (s.orderId === activeSessionId) {
+                    return {
+                        ...s,
+                        lastMessage: msg.message,
+                        lastMessageAt: msg.created_at,
+                        lastSender: 'store',
+                        unread: 0
+                    };
+                }
+                return s;
+            }).sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()));
+
+        } catch (error) {
+            console.error('Error sending message:', error);
+            alert('Erro ao enviar mensagem');
+        } finally {
+            setIsSending(false);
+        }
+    };
+
+    // Filter sessions based on CRM Funnel
+    const filteredSessions = sessions.filter(session => {
+        if (activeTab === 'waiting') return session.lastSender === 'client' || session.unread > 0;
+        if (activeTab === 'answered') return session.lastSender === 'store';
+        return true; // 'all'
+    });
+
+    const activeSession = sessions.find(s => s.orderId === activeSessionId);
+    
+    // Total unread/waiting count for the bubble
+    const waitingCount = sessions.filter(s => s.lastSender === 'client' || s.unread > 0).length;
+
+    return (
+        <div className={`fixed z-[100] transition-all duration-300 ease-in-out flex flex-col ${
+            !isOpen 
+                ? 'bottom-6 right-6 w-16 h-16' 
+                : isMaximized 
+                    ? 'inset-4 w-auto h-auto' 
+                    : 'bottom-6 right-6 w-[800px] h-[600px] max-w-[calc(100vw-3rem)]'
+        }`}>
+            {/* FLOATING BUTTON (Minimized State) */}
+            {!isOpen && (
+                <button 
+                    onClick={() => setIsOpen(true)}
+                    className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center text-white shadow-[0_0_20px_rgba(79,70,229,0.4)] hover:scale-105 transition-transform relative group"
+                >
+                    <MessageSquare className="w-7 h-7" />
+                    {waitingCount > 0 && (
+                        <div className="absolute -top-2 -right-2 bg-rose-500 text-white text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center border-2 border-[#020617] shadow-lg animate-pulse">
+                            {waitingCount}
+                        </div>
+                    )}
+                </button>
+            )}
+
+            {/* OPEN CRM WIDGET */}
+            {isOpen && (
+                <div className="flex-1 bg-[#020617] border border-slate-700/60 rounded-2xl shadow-2xl flex overflow-hidden ring-1 ring-white/10 relative">
+                    
+                    {/* WIDGET SIDEBAR (Chat List) */}
+                    <div className={`${activeSessionId && !isMaximized ? 'hidden md:flex' : 'flex'} w-full md:w-80 flex-col bg-[#0f172a] border-r border-slate-800/60`}>
+                        {/* Header & Controls */}
+                        <div className="p-4 border-b border-slate-800/60 flex justify-between items-center bg-slate-900/50">
+                            <h3 className="font-black text-slate-100 flex items-center gap-2">
+                                <MessageSquare className="w-4 h-4 text-indigo-400" />
+                                CRM <span className="text-xs text-slate-500 font-medium ml-1">WhatsApp</span>
+                            </h3>
+                            <div className="flex items-center gap-1">
+                                <button onClick={() => setIsMaximized(!isMaximized)} className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors hidden md:block">
+                                    {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                                </button>
+                                <button onClick={() => setIsOpen(false)} className="p-1.5 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-slate-800 transition-colors">
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* CRM Funnel Tabs */}
+                        <div className="p-3 bg-slate-900/30 border-b border-slate-800/60">
+                            <div className="flex bg-slate-950/50 rounded-lg p-1 gap-1 border border-slate-800/30">
+                                <button
+                                    onClick={() => setActiveTab('waiting')}
+                                    className={`flex-1 flex items-center justify-center gap-1.5 text-[9px] font-black py-2 rounded-md transition-all uppercase tracking-widest ${activeTab === 'waiting' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+                                >
+                                    <Clock className="w-3 h-3" /> Aguarda
+                                    {waitingCount > 0 && <span className="ml-1 bg-white/20 px-1.5 rounded-full text-white">{waitingCount}</span>}
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('answered')}
+                                    className={`flex-1 flex items-center justify-center gap-1.5 text-[9px] font-black py-2 rounded-md transition-all uppercase tracking-widest ${activeTab === 'answered' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+                                >
+                                    <CheckCircle2 className="w-3 h-3" /> Resp.
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('all')}
+                                    className={`flex-1 flex items-center justify-center gap-1.5 text-[9px] font-black py-2 rounded-md transition-all uppercase tracking-widest ${activeTab === 'all' ? 'bg-slate-700 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+                                >
+                                    Todos
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* List */}
+                        <div className="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-hide">
+                            {loading ? (
+                                <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-indigo-500" /></div>
+                            ) : filteredSessions.length === 0 ? (
+                                <div className="text-center py-8 text-slate-500 text-xs font-medium">Nenhuma conversa na fila.</div>
+                            ) : (
+                                filteredSessions.map(session => (
+                                    <button
+                                        key={session.orderId}
+                                        onClick={() => setActiveSessionId(session.orderId)}
+                                        className={`w-full text-left p-3 rounded-xl transition-all flex gap-3
+                                            ${activeSessionId === session.orderId
+                                                ? 'bg-indigo-600/10 border border-indigo-500/30'
+                                                : 'hover:bg-slate-800/50 border border-transparent'
+                                            }`}
+                                    >
+                                        <div className="relative">
+                                            <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center shrink-0 border border-slate-700">
+                                                <User className="w-5 h-5 text-slate-400" />
+                                            </div>
+                                            {session.lastSender === 'client' && (
+                                                <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-rose-500 rounded-full border-2 border-[#0f172a]"></div>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex justify-between items-baseline mb-0.5">
+                                                <h4 className="text-sm font-bold text-slate-200 truncate pr-2">{session.clientName}</h4>
+                                                <span className="text-[9px] font-bold text-slate-500 whitespace-nowrap">
+                                                    {format(new Date(session.lastMessageAt), "HH:mm")}
+                                                </span>
+                                            </div>
+                                            <p className={`text-xs truncate ${session.lastSender === 'client' ? 'text-slate-300 font-medium' : 'text-slate-500'}`}>
+                                                {session.lastSender === 'store' ? 'Você: ' : ''}{session.lastMessage}
+                                            </p>
+                                        </div>
+                                    </button>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    {/* WIDGET MAIN CHAT AREA */}
+                    <div className={`${!activeSessionId && !isMaximized ? 'hidden md:flex' : 'flex'} flex-1 flex-col bg-[#020617]`}>
+                        {activeSessionId && activeSession ? (
+                            <>
+                                {/* Chat Header */}
+                                <div className="h-16 border-b border-slate-800/60 flex items-center gap-3 px-4 bg-slate-900/30 shrink-0">
+                                    <button 
+                                        onClick={() => setActiveSessionId(null)} 
+                                        className="md:hidden p-1.5 text-slate-400 hover:text-white rounded-lg bg-slate-800/50"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                    <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center">
+                                        <User className="w-5 h-5 text-slate-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-bold text-slate-100">{activeSession.clientName}</h3>
+                                        <p className="text-[9px] text-indigo-400 uppercase tracking-widest font-black">
+                                            {activeSession.origin === 'support' ? 'Lead / Suporte' : `Pedido #${activeSession.orderNumber}`}
+                                        </p>
+                                    </div>
+                                    {/* Mobile Minimize */}
+                                    <div className="ml-auto md:hidden">
+                                        <button onClick={() => setIsOpen(false)} className="p-2 text-slate-400 hover:text-rose-400">
+                                            <Minimize2 className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Messages */}
+                                <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide bg-[#0b1120]">
+                                    {loadingMessages ? (
+                                        <div className="flex justify-center items-center h-full"><Loader2 className="w-6 h-6 animate-spin text-indigo-500" /></div>
+                                    ) : (
+                                        <>
+                                            {messages.map((msg, idx) => {
+                                                const isStore = msg.sender === 'store';
+                                                const showDate = idx === 0 || new Date(msg.created_at).toDateString() !== new Date(messages[idx - 1].created_at).toDateString();
+
+                                                return (
+                                                    <React.Fragment key={msg.id}>
+                                                        {showDate && (
+                                                            <div className="flex justify-center my-4">
+                                                                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest bg-slate-900/80 px-3 py-1 rounded-full border border-slate-800">
+                                                                    {format(new Date(msg.created_at), "dd 'de' MMM", { locale: ptBR })}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                        <div className={`flex ${isStore ? 'justify-end' : 'justify-start'}`}>
+                                                            <div className={`max-w-[85%] rounded-2xl p-3 shadow-sm text-sm
+                                                                ${isStore
+                                                                    ? 'bg-indigo-600 text-white rounded-tr-sm shadow-indigo-900/20'
+                                                                    : 'bg-slate-800 text-slate-200 rounded-tl-sm border border-slate-700/50'
+                                                                }`}
+                                                            >
+                                                                <p className="whitespace-pre-wrap">{msg.message}</p>
+                                                                <p className="text-[9px] font-bold mt-1 text-right opacity-60">
+                                                                    {format(new Date(msg.created_at), "HH:mm")}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </React.Fragment>
+                                                );
+                                            })}
+                                            <div ref={messagesEndRef} />
+                                        </>
+                                    )}
+                                </div>
+
+                                {/* Input */}
+                                <div className="p-3 bg-slate-900/50 border-t border-slate-800/60 shrink-0">
+                                    <form onSubmit={handleSendMessage} className="relative flex items-center gap-2">
+                                        <input
+                                            type="text"
+                                            placeholder="Digite uma mensagem..."
+                                            value={newMessage}
+                                            onChange={e => setNewMessage(e.target.value)}
+                                            className="flex-1 bg-[#020617] border border-slate-700 rounded-xl py-3 pl-4 pr-4 text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm shadow-inner"
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={!newMessage.trim() || isSending}
+                                            className="w-12 h-12 shrink-0 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl flex items-center justify-center transition-colors shadow-lg shadow-indigo-600/20"
+                                        >
+                                            {isSending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5 ml-1" />}
+                                        </button>
+                                    </form>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="flex-1 flex flex-col items-center justify-center text-slate-500 bg-[#0b1120]">
+                                <MessageSquare className="w-12 h-12 opacity-10 mb-4" />
+                                <h3 className="text-sm font-bold text-slate-400">Nenhum chat selecionado</h3>
+                                <p className="text-xs mt-1">Selecione uma conversa para atender.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
