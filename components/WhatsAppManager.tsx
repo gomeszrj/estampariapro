@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Smartphone, QrCode, Hash, Loader2, CheckCircle2, AlertCircle, RefreshCw, Power } from 'lucide-react';
 import { whatsappService } from '../services/whatsappService';
+import { CRMFullScreen } from './CRM/CRMFullScreen';
 
 export const WhatsAppManager: React.FC = () => {
     const [connectionState, setConnectionState] = useState<'loading' | 'connected' | 'disconnected' | 'qr'>('loading');
@@ -67,6 +68,10 @@ export const WhatsAppManager: React.FC = () => {
         setLoadingAction(false);
     };
 
+    if (connectionState === 'connected') {
+        return <CRMFullScreen onLogout={handleLogout} />;
+    }
+
     return (
         <div className="max-w-4xl mx-auto space-y-6 animate-in slide-in-from-bottom-4 duration-500">
             <header className="mb-8">
@@ -74,7 +79,7 @@ export const WhatsAppManager: React.FC = () => {
                     <Smartphone className="w-8 h-8 text-emerald-500" />
                     Central WhatsApp
                 </h2>
-                <p className="text-slate-500 font-medium">Gerencie a conexão do seu aparelho (Evolution API).</p>
+                <p className="text-slate-500 font-medium">Conecte seu WhatsApp para habilitar o Mega CRM.</p>
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
