@@ -4,11 +4,11 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '21.4';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.4 (Integração de CRM e Segurança Suprema):
-- CRM Flutuante Integrado: Novo painel persistente estilo "WhatsApp Web" que flutua na sua tela. Atenda seus clientes, use o funil inteligente (Aguardando / Respondidos) e navegue pelo Kanban e Financeiro simultaneamente sem perder o chat de vista.
-- Security Hardening: Aplicação agora blindada contra injeções XSS através de Cabeçalhos CSP estritos. Bibliotecas internas atualizadas mitigando dezenas de vulnerabilidades NPM. Segurança padrão enterprise!
-- Upgrade de Ordem de Serviço: As impressões agora exibem imagens de layout muito maiores e nítidas em um grid de 2 colunas com suporte flexível a altura, facilitando a vida do time de produção.`;
+export const SYSTEM_VERSION = '21.5';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.5 (O Mega CRM e Conexão Nativa):
+- Mega CRM Full Screen: Uma aba totalmente nova de 'Central WhatsApp'. Escaneie o QR Code ou digite seu telefone para receber o Pairing Code (sem uso de câmera). Ao conectar, a tela se transforma em um CRM idêntico ao WhatsApp Web.
+- Envio de Imagens e PDFs: Agora você pode enviar fotos das artes finais, PDFs e documentos diretamente pelo chat do ERP. Os arquivos ficam salvos no histórico da OS e são disparados instantaneamente para o WhatsApp do cliente.
+- Chat Widget Aprimorado: O botão flutuante de chat te acompanha pelo sistema inteiro e agora também suporta envio de mídias pesadas através do ícone de anexo (📎).`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [
