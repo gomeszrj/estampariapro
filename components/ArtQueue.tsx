@@ -14,6 +14,7 @@ interface ArtEntry {
   layout_revision?: string;
   notes?: string;
   layout_url?: string;
+  art_started?: boolean;
   art_created: boolean;
   art_awaiting_approval: boolean;
   art_approved: boolean;
@@ -121,7 +122,7 @@ const ArtQueue: React.FC = () => {
     }
   };
 
-  const handleToggle = async (entry: ArtEntry, field: 'art_created') => {
+  const handleToggle = async (entry: ArtEntry, field: 'art_created' | 'art_started') => {
     const newValue = !entry[field];
     const updates: any = { [field]: newValue };
     try {
@@ -129,8 +130,12 @@ const ArtQueue: React.FC = () => {
       if (error) throw error;
       
       // Auto-move Order to Production flow
-      if (field === 'art_created' && newValue && entry.order_id) {
-         await supabase.from('orders').update({ status: 'IN_PRODUCTION' }).eq('id', entry.order_id);
+      if (field === 'art_started' && newValue && entry.order_id) {
+         await supabase.from('orders').update({ status: 'FINALIZATION' }).eq('id', entry.order_id);
+      } else if (field === 'art_created' && newValue && entry.order_id) {
+         // Note: If they upload a file, handleUploadReadyFile handles moving to IN_PRODUCTION with IMPRESSAO step.
+         // This is a manual override fallback just in case they check the box without uploading.
+         await supabase.from('orders').update({ status: 'IN_PRODUCTION', "production_step": 'IMPRESSAO' }).eq('id', entry.order_id);
       }
 
       setEntries(prev => prev.map(e => e.id === entry.id ? { ...e, ...updates } : e));
@@ -176,7 +181,8 @@ const ArtQueue: React.FC = () => {
           // Update Order directly: Append URL and push to PRODUCTION auto
           await supabase.from('orders').update({ 
               ready_file_urls: newUrls,
-              status: 'IN_PRODUCTION' 
+              status: 'IN_PRODUCTION',
+              "production_step": 'IMPRESSAO'
           }).eq('id', entry.order_id);
       }
 
@@ -280,14 +286,22 @@ const ArtQueue: React.FC = () => {
                  <p className="text-[9px] font-black uppercase tracking-widest text-amber-500 mb-2 flex items-center gap-1">
                     <FileCode className="w-3 h-3" /> Arquivos Fonte do Cliente
                  </p>
-                 <div className="space-y-1">
-                   {entry.orders.design_file_urls.map((url: string, idx: number) => (
-                      <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between bg-slate-950 border border-slate-800 hover:border-amber-500/50 hover:bg-amber-500/5 p-2 rounded-lg transition-colors group">
-                         <span className="text-[10px] text-slate-300 font-medium truncate pr-2">Acessar Arquivo (Download)</span>
-                         <Download className="w-3.5 h-3.5 text-amber-500/70 group-hover:text-amber-400" />
-                      </a>
-                   ))}
-                 </div>
+                 {entry.art_started ? (
+                   <div className="space-y-1">
+                     {entry.orders.design_file_urls.map((url: string, idx: number) => (
+                        <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between bg-slate-950 border border-slate-800 hover:border-amber-500/50 hover:bg-amber-500/5 p-2 rounded-lg transition-colors group">
+                           <span className="text-[10px] text-slate-300 font-medium truncate pr-2">Acessar Arquivo (Download)</span>
+                           <Download className="w-3.5 h-3.5 text-amber-500/70 group-hover:text-amber-400" />
+                        </a>
+                     ))}
+                   </div>
+                 ) : (
+                   <div className="p-3 text-center border border-dashed border-amber-900/50 bg-amber-900/5 rounded-xl">
+                     <p className="text-[10px] font-bold text-amber-600/60 uppercase tracking-widest leading-relaxed">
+                       Marque a caixa "Iniciar Arte" abaixo para destravar o download dos arquivos.
+                     </p>
+                   </div>
+                 )}
               </div>
             )}
 
@@ -344,7 +358,8 @@ const ArtQueue: React.FC = () => {
             {/* Checkboxes */}
             <div className="space-y-2 mb-3">
               {[
-                { field: 'art_created' as const, label: 'Arte Finalizada', sub: 'Designer concluiu e enviou a arte final', color: 'emerald', requires: null },
+                { field: 'art_started' as const, label: 'Iniciar Arte (Liberar Arquivos)', sub: 'Destrava os arquivos do cliente para download e move pedido para Em Arte', color: 'indigo', requires: null },
+                { field: 'art_created' as const, label: 'Arte Finalizada', sub: 'Designer concluiu e enviou a arte final', color: 'emerald', requires: 'art_started' },
               ].map(({ field, label, sub, color, requires }) => {
                 const disabled = requires ? !entry[requires as keyof ArtEntry] : false;
                 const active = entry[field];

@@ -459,6 +459,7 @@ const mapOrderFromDB = (dbItem: any): Order => ({
     delayReason: dbItem.delay_reason,
     fiscalKey: dbItem.fiscal_key,
     clientTeam: dbItem.client_team,
+    productionStep: dbItem.production_step,
     items: dbItem.items?.map(mapOrderItemFromDB) || []
 });
 
@@ -487,6 +488,7 @@ const mapOrderToDB = (appItem: Partial<Order>) => {
     if (appItem.delayReason) dbItem.delay_reason = appItem.delayReason;
     if (appItem.fiscalKey) dbItem.fiscal_key = appItem.fiscalKey;
     if (appItem.clientTeam) dbItem.client_team = appItem.clientTeam;
+    if (appItem.productionStep !== undefined) dbItem.production_step = appItem.productionStep;
     return dbItem;
 };
 

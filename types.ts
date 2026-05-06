@@ -81,6 +81,7 @@ export interface Order {
   layoutRevision?: string; // Art Queue: revision/layout number
   fiscalKey?: string; // Simulated NFe Access Key
   clientTeam?: string; // Turma/Time (from Store)
+  productionStep?: string; // IMPRESSAO, PRENSA, COSTURA, CONFERENCIA
 }
 
 export interface Product {

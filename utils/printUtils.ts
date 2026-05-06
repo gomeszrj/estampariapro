@@ -172,7 +172,7 @@ export async function printServiceOrder(order: Order) {
              </div>
           </div>
 
-          <!-- LAYOUT IMAGES - Grid 3 per row, no duplicates -->
+          <!-- LAYOUT IMAGES - Grid 2 per row, no duplicates -->
           ${(() => {
             // Collect all unique layout URLs (deduplicate)
             const allUrls: string[] = [];
@@ -189,11 +189,11 @@ export async function printServiceOrder(order: Order) {
              <div class="section-title" style="border-bottom: 1px solid #000; margin-bottom: 10px;">
                 Layouts Aprovados (${allUrls.length})
              </div>
-             <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;">
+             <div style="display: flex; flex-wrap: wrap; gap: 16px; justify-content: center;">
                 ${allUrls.map((url, idx) => `
-                   <div style="flex: 0 0 calc(33.333% - 6px); max-width: calc(33.333% - 6px); text-align: center;">
-                      <img src="${url}" alt="Layout ${idx + 1}" style="width: 100%; max-height: 5cm; object-fit: contain; border: 1px solid #e5e7eb; border-radius: 6px; background: #f9fafb;" />
-                      <div style="font-size: 7pt; font-weight: 700; color: #666; margin-top: 3px;">LAYOUT ${idx + 1}</div>
+                   <div style="flex: 0 0 calc(50% - 8px); max-width: calc(50% - 8px); text-align: center;">
+                      <img src="${url}" alt="Layout ${idx + 1}" style="width: 100%; max-height: 12cm; object-fit: contain; border: 1px solid #e5e7eb; border-radius: 6px; background: #f9fafb;" />
+                      <div style="font-size: 8pt; font-weight: 700; color: #666; margin-top: 4px;">LAYOUT ${idx + 1}</div>
                    </div>
                 `).join('')}
              </div>
