@@ -4,11 +4,15 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '21.5';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.5 (O Mega CRM e Conexão Nativa):
-- Mega CRM Full Screen: Uma aba totalmente nova de 'Central WhatsApp'. Escaneie o QR Code ou digite seu telefone para receber o Pairing Code (sem uso de câmera). Ao conectar, a tela se transforma em um CRM idêntico ao WhatsApp Web.
-- Envio de Imagens e PDFs: Agora você pode enviar fotos das artes finais, PDFs e documentos diretamente pelo chat do ERP. Os arquivos ficam salvos no histórico da OS e são disparados instantaneamente para o WhatsApp do cliente.
-- Chat Widget Aprimorado: O botão flutuante de chat te acompanha pelo sistema inteiro e agora também suporta envio de mídias pesadas através do ícone de anexo (📎).`;
+export const SYSTEM_VERSION = '21.6';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.6 (Blindagem Total Multi-Tenant):
+- Performance 10x: 18 índices criados em todas as tabelas para consultas instantâneas por tenant.
+- Senhas Seguras (LGPD): Senhas de clientes agora são criptografadas com bcrypt. Senhas antigas foram migradas automaticamente.
+- Storage Blindado: Arquivos de cada empresa são isolados e protegidos contra listagem pública.
+- Funções Protegidas: Funções administrativas do banco agora são inacessíveis por usuários não autorizados.
+- Auto-Expire Corrigido: Verificação de vencimento de assinaturas agora funciona corretamente com autenticação.
+- Estabilidade React: Correção de hooks e imports que poderiam causar crashes intermitentes.
+- RBAC Ativo: Módulos do sistema respeitam as permissões configuradas por plano SaaS.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [
