@@ -1,26 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, X, Send, User, Loader2, Maximize2, Minimize2, CheckCircle2, Clock, Paperclip, Image as ImageIcon } from 'lucide-react';
-import { orderService } from '../../services/orderService';
-import { supabase } from '../../services/supabase';
-import { OrderMessage } from '../../types';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { chatService, ChatSession } from '../../services/chatService';
 import { whatsappService } from '../../services/whatsappService';
 
-interface ChatSession {
-    orderId: string;
-    clientName: string;
-    clientPhone: string;
-    orderNumber: string;
-    status: string;
-    lastMessage: string;
-    lastMessageAt: string;
-    lastSender: string;
-    unread: number;
-    origin?: string;
-    assignedSeller?: string;
-}
-
+// ChatSession imported from chatService
 export const ChatWidget: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [isMaximized, setIsMaximized] = useState(false);
@@ -55,21 +38,20 @@ export const ChatWidget: React.FC = () => {
             .channel('global_chat_messages')
             .on(
                 'postgres_changes',
-                { event: 'INSERT', schema: 'public', table: 'order_messages' },
+                { event: 'INSERT', schema: 'public', table: 'messages' },
                 (payload) => {
-                    const newMsg = payload.new as OrderMessage;
+                    const newMsg = payload.new as any;
                     
                     // Update sessions list globally
                     setSessions(prev => {
-                        const exists = prev.find(s => s.orderId === newMsg.order_id);
+                        const exists = prev.find(s => s.id === newMsg.chat_id);
                         if (exists) {
-                            return prev.map(s => s.orderId === newMsg.order_id ? {
+                            return prev.map(s => s.id === newMsg.chat_id ? {
                                 ...s,
-                                lastMessage: newMsg.message,
-                                lastMessageAt: newMsg.created_at,
-                                lastSender: newMsg.sender,
-                                unread: newMsg.sender === 'client' && activeSessionId !== newMsg.order_id ? (s.unread + 1) : s.unread
-                            } : s).sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
+                                last_message: newMsg.content,
+                                last_message_at: newMsg.created_at,
+                                unread_count: newMsg.sender_type === 'contact' && activeSessionId !== newMsg.chat_id ? (s.unread_count + 1) : s.unread_count
+                            } : s).sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
                         } else {
                             // If it's a completely new chat, just reload sessions to get client info
                             loadSessions();
@@ -78,7 +60,7 @@ export const ChatWidget: React.FC = () => {
                     });
 
                     // If we are looking at this specific chat, append message
-                    if (activeSessionId === newMsg.order_id) {
+                    if (activeSessionId === newMsg.chat_id) {
                         setMessages(prev => {
                             if (prev.find(m => m.id === newMsg.id)) return prev;
                             return [...prev, newMsg];
@@ -97,7 +79,7 @@ export const ChatWidget: React.FC = () => {
     useEffect(() => {
         if (activeSessionId) {
             loadMessages(activeSessionId);
-            setSessions(prev => prev.map(s => s.orderId === activeSessionId ? { ...s, unread: 0 } : s));
+            setSessions(prev => prev.map(s => s.id === activeSessionId ? { ...s, unread_count: 0 } : s));
         }
     }, [activeSessionId]);
 
@@ -108,7 +90,7 @@ export const ChatWidget: React.FC = () => {
 
     const loadSessions = async () => {
         try {
-            const data = await orderService.getChatSessions();
+            const data = await chatService.getChatSessions();
             setSessions(data);
         } catch (error) {
             console.error('Error loading chat sessions:', error);
@@ -117,10 +99,10 @@ export const ChatWidget: React.FC = () => {
         }
     };
 
-    const loadMessages = async (orderId: string) => {
+    const loadMessages = async (chatId: string) => {
         setLoadingMessages(true);
         try {
-            const msgs = await orderService.getMessages(orderId);
+            const msgs = await chatService.getMessages(chatId);
             setMessages(msgs);
         } catch (error) {
             console.error('Error loading chat messages:', error);
@@ -136,29 +118,29 @@ export const ChatWidget: React.FC = () => {
         setIsSending(true);
         try {
             // 1. Send via Evolution API first
-            if (activeSession.clientPhone) {
-                await whatsappService.sendMessage(activeSession.clientPhone, newMessage.trim());
+            if (activeSession.whatsapp_id) {
+                const phone = activeSession.whatsapp_id.split('@')[0];
+                await whatsappService.sendMessage(phone, newMessage.trim());
             }
 
             // 2. Save to our database
-            const msg = await orderService.sendMessage(activeSessionId, 'store', newMessage.trim());
+            const msg = await chatService.sendMessage(activeSessionId, 'store', newMessage.trim());
             
             // 3. Update UI
             setMessages([...messages, msg]);
             setNewMessage('');
             
             setSessions(prev => prev.map(s => {
-                if (s.orderId === activeSessionId) {
+                if (s.id === activeSessionId) {
                     return {
                         ...s,
-                        lastMessage: msg.message,
-                        lastMessageAt: msg.created_at,
-                        lastSender: 'store',
-                        unread: 0
+                        last_message: msg.message,
+                        last_message_at: msg.created_at,
+                        unread_count: 0
                     };
                 }
                 return s;
-            }).sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()));
+            }).sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime()));
 
         } catch (error) {
             console.error('Error sending message:', error);
@@ -174,6 +156,14 @@ export const ChatWidget: React.FC = () => {
         
         setUploadingMedia(true);
         try {
+            // Get tenant_id for storage isolation
+            const { data: { user } } = await supabase.auth.getUser();
+            let tenantPrefix = 'default';
+            if (user) {
+                const { data: profile } = await supabase.from('profiles').select('tenant_id').eq('id', user.id).single();
+                if (profile?.tenant_id) tenantPrefix = profile.tenant_id;
+            }
+
             // 1. Convert to Base64 for WhatsApp sending
             const reader = new FileReader();
             reader.readAsDataURL(file);
@@ -181,16 +171,18 @@ export const ChatWidget: React.FC = () => {
                 const base64 = reader.result as string;
                 
                 // 2. Send via Evolution API
-                if (activeSession.clientPhone) {
-                    await whatsappService.sendMedia(activeSession.clientPhone, base64, file.type, file.name);
+                if (activeSession.whatsapp_id) {
+                    const phone = activeSession.whatsapp_id.split('@')[0];
+                    await whatsappService.sendMedia(phone, base64, file.type, file.name);
                 }
 
-                // 3. Upload to Supabase Storage to keep in our history
-                const publicUrl = await orderService.uploadFile(file, `chat-media/${activeSessionId}`);
+                // 3. Upload to Supabase Storage with tenant isolation
+                const storagePath = `${tenantPrefix}/chat-media/${activeSessionId}/${file.name}`;
+                const publicUrl = await supabase.storage.from('orders').upload(storagePath, file, {upsert: true}).then(d => supabase.storage.from('orders').getPublicUrl(storagePath).data.publicUrl);
                 
                 // 4. Save to DB with a special markdown/tag format so we know it's media
                 const messageText = `[MEDIA]${publicUrl}`;
-                const msg = await orderService.sendMessage(activeSessionId, 'store', messageText);
+                const msg = await chatService.sendMessage(activeSessionId, 'store', messageText);
                 
                 setMessages(prev => [...prev, msg]);
                 setUploadingMedia(false);
@@ -205,17 +197,17 @@ export const ChatWidget: React.FC = () => {
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
-    // Filter sessions based on CRM Funnel
     const filteredSessions = sessions.filter(session => {
-        if (activeTab === 'waiting') return session.lastSender === 'client' || session.unread > 0;
-        if (activeTab === 'answered') return session.lastSender === 'store';
+        const isClientLast = session.unread_count > 0;
+        if (activeTab === 'waiting') return isClientLast;
+        if (activeTab === 'answered') return !isClientLast;
         return true; // 'all'
     });
 
-    const activeSession = sessions.find(s => s.orderId === activeSessionId);
+    const activeSession = sessions.find(s => s.id === activeSessionId);
     
     // Total unread/waiting count for the bubble
-    const waitingCount = sessions.filter(s => s.lastSender === 'client' || s.unread > 0).length;
+    const waitingCount = sessions.filter(s => s.unread_count > 0).length;
 
     return (
         <div className={`fixed z-[100] transition-all duration-300 ease-in-out flex flex-col ${
@@ -296,10 +288,10 @@ export const ChatWidget: React.FC = () => {
                             ) : (
                                 filteredSessions.map(session => (
                                     <button
-                                        key={session.orderId}
-                                        onClick={() => setActiveSessionId(session.orderId)}
+                                        key={session.id}
+                                        onClick={() => setActiveSessionId(session.id)}
                                         className={`w-full text-left p-3 rounded-xl transition-all flex gap-3
-                                            ${activeSessionId === session.orderId
+                                            ${activeSessionId === session.id
                                                 ? 'bg-indigo-600/10 border border-indigo-500/30'
                                                 : 'hover:bg-slate-800/50 border border-transparent'
                                             }`}
@@ -308,19 +300,19 @@ export const ChatWidget: React.FC = () => {
                                             <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center shrink-0 border border-slate-700">
                                                 <User className="w-5 h-5 text-slate-400" />
                                             </div>
-                                            {session.lastSender === 'client' && (
+                                            {session.unread_count > 0 && (
                                                 <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-rose-500 rounded-full border-2 border-[#0f172a]"></div>
                                             )}
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex justify-between items-baseline mb-0.5">
-                                                <h4 className="text-sm font-bold text-slate-200 truncate pr-2">{session.clientName}</h4>
+                                                <h4 className="text-sm font-bold text-slate-200 truncate pr-2">{session.client_name}</h4>
                                                 <span className="text-[9px] font-bold text-slate-500 whitespace-nowrap">
-                                                    {format(new Date(session.lastMessageAt), "HH:mm")}
+                                                    {format(new Date(session.last_message_at), "HH:mm")}
                                                 </span>
                                             </div>
-                                            <p className={`text-xs truncate ${session.lastSender === 'client' ? 'text-slate-300 font-medium' : 'text-slate-500'}`}>
-                                                {session.lastSender === 'store' ? 'Você: ' : ''}{session.lastMessage}
+                                            <p className={`text-xs truncate ${session.unread_count > 0 ? 'text-slate-300 font-medium' : 'text-slate-500'}`}>
+                                                {session.last_message}
                                             </p>
                                         </div>
                                     </button>
@@ -345,10 +337,12 @@ export const ChatWidget: React.FC = () => {
                                         <User className="w-5 h-5 text-slate-400" />
                                     </div>
                                     <div>
-                                        <h3 className="text-sm font-bold text-slate-100">{activeSession.clientName}</h3>
-                                        <p className="text-[9px] text-indigo-400 uppercase tracking-widest font-black">
-                                            {activeSession.origin === 'support' ? 'Lead / Suporte' : `Pedido #${activeSession.orderNumber}`}
-                                        </p>
+                                        <h3 className="text-sm font-bold text-slate-100">{activeSession.client_name}</h3>
+                                        {activeSession.active_order_number && (
+                                            <p className="text-[9px] text-indigo-400 uppercase tracking-widest font-black">
+                                                Pedido #{activeSession.active_order_number}
+                                            </p>
+                                        )}
                                     </div>
                                     {/* Mobile Minimize */}
                                     <div className="ml-auto md:hidden">

@@ -10,9 +10,17 @@ export const orderService = {
       throw new Error(`O arquivo excedeu ${MAX_MB}MB. Para estabilidade e economia de servidor, por favor envie arquivos gigantes via Google Drive / WeTransfer e cole o link na descrição.`);
     }
 
+    // Get tenant_id for storage isolation
+    const { data: { user } } = await supabase.auth.getUser();
+    let tenantPrefix = 'default';
+    if (user) {
+      const { data: profile } = await supabase.from('profiles').select('tenant_id').eq('id', user.id).single();
+      if (profile?.tenant_id) tenantPrefix = profile.tenant_id;
+    }
+
     const fileExt = (file.name.split('.').pop() || 'bin').toLowerCase();
     const safeName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${fileExt}`;
-    const filePath = `${path}/${safeName}`;
+    const filePath = `${tenantPrefix}/${path}/${safeName}`;
 
     // Map common design file extensions to proper MIME types
     // Browsers don't know MIME types for .cdr, .psd, .ai etc., causing upload rejection
@@ -114,7 +122,6 @@ export const orderService = {
         if (paid > 0 && orderData.payment_status && orderData.payment_status !== 'Pendente') {
             try {
                 await supabase.from('transactions').insert({
-                    tenant_id: activeTenant,
                     order_id: orderData.id,
                     type: 'income',
                     category: 'sale',
@@ -233,9 +240,7 @@ export const orderService = {
                 
                 const currentOrder = await this.getById(id);
                 if (currentOrder && currentOrder.amountPaid && currentOrder.amountPaid > 0 && currentOrder.paymentStatus !== 'Pendente') {
-                    const activeTenant = await getActiveTenant();
                     await supabase.from('transactions').insert({
-                        tenant_id: activeTenant,
                         order_id: id,
                         type: 'income',
                         category: 'sale',

@@ -82,8 +82,16 @@ export const settingsService = {
     },
 
     saveSettings: async (settings: CompanySettings) => {
+        // Get the current user's tenant_id to scope the settings record
+        const { data: { user } } = await supabase.auth.getUser();
+        let settingsId = 'default';
+        if (user) {
+            const { data: profile } = await supabase.from('profiles').select('tenant_id').eq('id', user.id).single();
+            if (profile?.tenant_id) settingsId = profile.tenant_id;
+        }
+
         const payload = {
-            id: 'company_main',
+            id: settingsId,
             name: settings.name,
             cnpj: settings.cnpj,
             address: settings.address,
@@ -106,13 +114,21 @@ export const settingsService = {
     },
 
     uploadLogo: async (file: File): Promise<string> => {
+        // Get tenant_id for storage isolation
+        const { data: { user } } = await supabase.auth.getUser();
+        let tenantPrefix = 'default';
+        if (user) {
+            const { data: profile } = await supabase.from('profiles').select('tenant_id').eq('id', user.id).single();
+            if (profile?.tenant_id) tenantPrefix = profile.tenant_id;
+        }
+
         const fileExt = file.name.split('.').pop();
         const fileName = `logo-${Date.now()}.${fileExt}`;
-        const filePath = `${fileName}`;
+        const filePath = `${tenantPrefix}/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
             .from('company-assets')
-            .upload(filePath, file);
+            .upload(filePath, file, { upsert: true });
 
         if (uploadError) {
             throw uploadError;
