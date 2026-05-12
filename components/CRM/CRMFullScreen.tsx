@@ -2,24 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Send, User, Loader2, CheckCircle2, Clock, Paperclip, Search, Menu, Filter, Power } from 'lucide-react';
 import { orderService } from '../../services/orderService';
 import { supabase } from '../../services/supabase';
-import { OrderMessage } from '../../types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { chatService, ChatSession } from '../../services/chatService';
+import { OrderMessage } from '../../types';
 import { whatsappService } from '../../services/whatsappService';
-
-interface ChatSession {
-    orderId: string;
-    clientName: string;
-    clientPhone: string;
-    orderNumber: string;
-    status: string;
-    lastMessage: string;
-    lastMessageAt: string;
-    lastSender: string;
-    unread: number;
-    origin?: string;
-    assignedSeller?: string;
-}
 
 interface CRMFullScreenProps {
     onLogout: () => void;
@@ -58,25 +45,24 @@ export const CRMFullScreen: React.FC<CRMFullScreenProps> = ({ onLogout }) => {
                 'postgres_changes',
                 { event: 'INSERT', schema: 'public', table: 'order_messages' },
                 (payload) => {
-                    const newMsg = payload.new as OrderMessage;
+                    const newMsg = payload.new as any;
                     
                     setSessions(prev => {
-                        const exists = prev.find(s => s.orderId === newMsg.order_id);
+                        const exists = prev.find(s => s.id === newMsg.chat_id);
                         if (exists) {
-                            return prev.map(s => s.orderId === newMsg.order_id ? {
+                            return prev.map(s => s.id === newMsg.chat_id ? {
                                 ...s,
-                                lastMessage: newMsg.message,
-                                lastMessageAt: newMsg.created_at,
-                                lastSender: newMsg.sender,
-                                unread: newMsg.sender === 'client' && activeSessionId !== newMsg.order_id ? (s.unread + 1) : s.unread
-                            } : s).sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
+                                last_message: newMsg.content,
+                                last_message_at: newMsg.created_at,
+                                unread_count: newMsg.sender_type === 'contact' && activeSessionId !== newMsg.chat_id ? (s.unread_count + 1) : s.unread_count
+                            } : s).sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
                         } else {
                             loadSessions();
                             return prev;
                         }
                     });
 
-                    if (activeSessionId === newMsg.order_id) {
+                    if (activeSessionId === newMsg.chat_id) {
                         setMessages(prev => {
                             if (prev.find(m => m.id === newMsg.id)) return prev;
                             return [...prev, newMsg];
@@ -94,7 +80,7 @@ export const CRMFullScreen: React.FC<CRMFullScreenProps> = ({ onLogout }) => {
     useEffect(() => {
         if (activeSessionId) {
             loadMessages(activeSessionId);
-            setSessions(prev => prev.map(s => s.orderId === activeSessionId ? { ...s, unread: 0 } : s));
+            setSessions(prev => prev.map(s => s.id === activeSessionId ? { ...s, unread_count: 0 } : s));
         }
     }, [activeSessionId]);
 
@@ -104,7 +90,7 @@ export const CRMFullScreen: React.FC<CRMFullScreenProps> = ({ onLogout }) => {
 
     const loadSessions = async () => {
         try {
-            const data = await orderService.getChatSessions();
+            const data = await chatService.getChatSessions();
             setSessions(data);
         } catch (error) {
             console.error('Error loading chat sessions:', error);
@@ -113,10 +99,10 @@ export const CRMFullScreen: React.FC<CRMFullScreenProps> = ({ onLogout }) => {
         }
     };
 
-    const loadMessages = async (orderId: string) => {
+    const loadMessages = async (chatId: string) => {
         setLoadingMessages(true);
         try {
-            const msgs = await orderService.getMessages(orderId);
+            const msgs = await chatService.getMessages(chatId);
             setMessages(msgs);
         } catch (error) {
             console.error('Error loading chat messages:', error);
@@ -125,7 +111,7 @@ export const CRMFullScreen: React.FC<CRMFullScreenProps> = ({ onLogout }) => {
         }
     };
 
-    const activeSession = sessions.find(s => s.orderId === activeSessionId);
+    const activeSession = sessions.find(s => s.id === activeSessionId);
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -133,21 +119,23 @@ export const CRMFullScreen: React.FC<CRMFullScreenProps> = ({ onLogout }) => {
 
         setIsSending(true);
         try {
-            if (activeSession.clientPhone) {
-                await whatsappService.sendMessage(activeSession.clientPhone, newMessage.trim());
+            if (activeSession.whatsapp_id) {
+                // remove @s.whatsapp.net to send
+                const phone = activeSession.whatsapp_id.split('@')[0];
+                await whatsappService.sendMessage(phone, newMessage.trim());
             }
 
-            const msg = await orderService.sendMessage(activeSessionId, 'store', newMessage.trim());
+            const msg = await chatService.sendMessage(activeSessionId, 'store', newMessage.trim());
             
             setMessages([...messages, msg]);
             setNewMessage('');
             
             setSessions(prev => prev.map(s => {
-                if (s.orderId === activeSessionId) {
-                    return { ...s, lastMessage: msg.message, lastMessageAt: msg.created_at, lastSender: 'store', unread: 0 };
+                if (s.id === activeSessionId) {
+                    return { ...s, last_message: msg.message, last_message_at: msg.created_at, unread_count: 0 };
                 }
                 return s;
-            }).sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()));
+            }).sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime()));
 
         } catch (error) {
             console.error('Error sending message:', error);
@@ -167,12 +155,13 @@ export const CRMFullScreen: React.FC<CRMFullScreenProps> = ({ onLogout }) => {
             reader.readAsDataURL(file);
             reader.onload = async () => {
                 const base64 = reader.result as string;
-                if (activeSession.clientPhone) {
-                    await whatsappService.sendMedia(activeSession.clientPhone, base64, file.type, file.name);
+                if (activeSession.whatsapp_id) {
+                    const phone = activeSession.whatsapp_id.split('@')[0];
+                    await whatsappService.sendMedia(phone, base64, file.type, file.name);
                 }
                 const publicUrl = await orderService.uploadFile(file, `chat-media/${activeSessionId}`);
                 const messageText = `[MEDIA]${publicUrl}`;
-                const msg = await orderService.sendMessage(activeSessionId, 'store', messageText);
+                const msg = await chatService.sendMessage(activeSessionId, 'store', messageText);
                 setMessages(prev => [...prev, msg]);
                 setUploadingMedia(false);
             };
@@ -185,10 +174,13 @@ export const CRMFullScreen: React.FC<CRMFullScreenProps> = ({ onLogout }) => {
     };
 
     const filteredSessions = sessions.filter(session => {
-        const matchesSearch = session.clientName.toLowerCase().includes(searchQuery.toLowerCase()) || session.orderNumber.includes(searchQuery);
+        const matchesSearch = session.client_name.toLowerCase().includes(searchQuery.toLowerCase()) || (session.active_order_number && session.active_order_number.includes(searchQuery));
         if (!matchesSearch) return false;
-        if (activeTab === 'waiting') return session.lastSender === 'client' || session.unread > 0;
-        if (activeTab === 'answered') return session.lastSender === 'store' && session.unread === 0;
+        
+        const isClientLast = session.unread_count > 0; // Simple heuristic for answered vs waiting
+        
+        if (activeTab === 'waiting') return isClientLast;
+        if (activeTab === 'answered') return !isClientLast;
         return true;
     });
 
@@ -258,28 +250,38 @@ export const CRMFullScreen: React.FC<CRMFullScreenProps> = ({ onLogout }) => {
                     ) : (
                         filteredSessions.map(session => (
                             <div 
-                                key={session.orderId}
-                                onClick={() => setActiveSessionId(session.orderId)}
-                                className={`p-4 cursor-pointer transition-colors hover:bg-slate-800/40 flex items-start gap-4 ${activeSessionId === session.orderId ? 'bg-slate-800/60 border-l-4 border-indigo-500' : 'border-l-4 border-transparent'}`}
+                                key={session.id}
+                                onClick={() => setActiveSessionId(session.id)}
+                                className={`p-4 cursor-pointer transition-colors hover:bg-slate-800/40 flex items-start gap-4 ${activeSessionId === session.id ? 'bg-slate-800/60 border-l-4 border-indigo-500' : 'border-l-4 border-transparent'}`}
                             >
-                                <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center shrink-0 border border-slate-700">
+                                <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center shrink-0 border border-slate-700 relative">
                                     <User className="w-6 h-6 text-slate-400" />
+                                    {session.active_order_id && (
+                                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-indigo-500 rounded-full border-2 border-[#0b1120] flex items-center justify-center">
+                                            <span className="text-[8px] font-bold text-white">#</span>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between mb-1">
-                                        <h3 className="text-sm font-bold text-slate-200 truncate pr-2">{session.clientName}</h3>
+                                        <h3 className="text-sm font-bold text-slate-200 truncate pr-2">{session.client_name}</h3>
                                         <span className="text-[10px] text-slate-500 shrink-0">
-                                            {format(new Date(session.lastMessageAt), "HH:mm")}
+                                            {format(new Date(session.last_message_at), "HH:mm")}
                                         </span>
                                     </div>
-                                    <p className={`text-xs truncate ${session.unread > 0 ? 'text-slate-300 font-bold' : 'text-slate-500'}`}>
-                                        {session.lastSender === 'store' && <CheckCircle2 className="w-3 h-3 inline mr-1 text-slate-600" />}
-                                        {session.lastMessage.startsWith('[MEDIA]') ? '📷 Imagem' : session.lastMessage}
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${session.tag === 'Atendimento' ? 'bg-indigo-500/20 text-indigo-400' : session.tag === 'Arte' ? 'bg-fuchsia-500/20 text-fuchsia-400' : session.tag === 'Orçamento' ? 'bg-orange-500/20 text-orange-400' : session.tag === 'Dúvidas' ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-700 text-slate-300'}`}>
+                                            {session.tag}
+                                        </span>
+                                    </div>
+                                    <p className={`text-xs truncate ${session.unread_count > 0 ? 'text-slate-300 font-bold' : 'text-slate-500'}`}>
+                                        {session.unread_count === 0 && <CheckCircle2 className="w-3 h-3 inline mr-1 text-slate-600" />}
+                                        {session.last_message.startsWith('[MEDIA]') ? '📷 Imagem' : session.last_message}
                                     </p>
                                 </div>
-                                {session.unread > 0 && (
-                                    <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/20">
-                                        <span className="text-[10px] font-bold text-white">{session.unread}</span>
+                                {session.unread_count > 0 && (
+                                    <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/20 mt-1">
+                                        <span className="text-[10px] font-bold text-white">{session.unread_count}</span>
                                     </div>
                                 )}
                             </div>
@@ -293,17 +295,32 @@ export const CRMFullScreen: React.FC<CRMFullScreenProps> = ({ onLogout }) => {
                 {activeSessionId && activeSession ? (
                     <>
                         {/* Chat Header */}
-                        <div className="p-4 bg-slate-900/80 border-b border-slate-800/60 flex items-center gap-4 shrink-0 shadow-sm z-10">
-                            <button onClick={() => setActiveSessionId(null)} className="md:hidden p-2 text-slate-400 hover:text-white">
-                                <Menu className="w-5 h-5" />
-                            </button>
-                            <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700">
-                                <User className="w-5 h-5 text-slate-400" />
+                        <div className="p-4 bg-slate-900/80 border-b border-slate-800/60 flex items-center justify-between shrink-0 shadow-sm z-10">
+                            <div className="flex items-center gap-4">
+                                <button onClick={() => setActiveSessionId(null)} className="md:hidden p-2 text-slate-400 hover:text-white">
+                                    <Menu className="w-5 h-5" />
+                                </button>
+                                <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700">
+                                    <User className="w-5 h-5 text-slate-400" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-slate-100 flex items-center gap-2">
+                                        {activeSession.client_name}
+                                        <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${activeSession.tag === 'Atendimento' ? 'bg-indigo-500/20 text-indigo-400' : activeSession.tag === 'Arte' ? 'bg-fuchsia-500/20 text-fuchsia-400' : activeSession.tag === 'Orçamento' ? 'bg-orange-500/20 text-orange-400' : activeSession.tag === 'Dúvidas' ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-700 text-slate-300'}`}>
+                                            {activeSession.tag}
+                                        </span>
+                                    </h3>
+                                    <p className="text-xs text-slate-500">{activeSession.whatsapp_id.split('@')[0]}</p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 className="font-bold text-slate-100">{activeSession.clientName}</h3>
-                                <p className="text-xs text-slate-500">Pedido #{activeSession.orderNumber} • {activeSession.status}</p>
-                            </div>
+                            
+                            {/* ACTIVE ORDER CARD IN HEADER */}
+                            {activeSession.active_order_id && (
+                                <div className="bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-2 flex flex-col items-end">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Pedido Ativo #{activeSession.active_order_number}</span>
+                                    <span className="text-xs font-medium text-slate-300">{activeSession.active_order_status}</span>
+                                </div>
+                            )}
                         </div>
 
                         {/* Messages Area - WhatsApp Pattern Background */}

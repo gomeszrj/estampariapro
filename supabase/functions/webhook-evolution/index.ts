@@ -55,30 +55,31 @@ serve(async (req) => {
                 // For performance, we might just look for exact match if clients have clean phones.
                 // Let's assume we just create the chat without client linkage if not found.
 
-                // Try to link
                 let clientId = null;
-                // Search client (this might be slow if many clients, but ok for MVP)
-                // Using Edge Function, we can do a query.
-                // Ideally we should have a 'whatsapp' column in clients that is indexed/unique.
-                // For now, let's leave clientId null if not strictly found or let user link it later.
+                let clientName = "Cliente Desconhecido";
 
                 const { data: client } = await supabase
                     .from("clients")
-                    .select("id")
+                    .select("id, name")
                     .ilike("phone", `%${cleanPhone.substring(2)}%`) // Try to match ignoring country code?
                     .limit(1)
                     .single();
 
-                if (client) clientId = client.id;
+                if (client) {
+                    clientId = client.id;
+                    clientName = client.name;
+                }
 
                 const { data: newChat, error: chatError } = await supabase
                     .from("chats")
                     .insert({
                         whatsapp_id: remoteJid,
                         client_id: clientId,
+                        client_name: clientName,
                         status: "open",
                         last_message: content,
-                        unread_count: fromMe ? 0 : 1
+                        unread_count: fromMe ? 0 : 1,
+                        tag: "Novo"
                     })
                     .select()
                     .single();
@@ -97,14 +98,77 @@ serve(async (req) => {
                     .eq("id", chat.id);
             }
 
-            // Insert Message
-            await supabase.from("messages").insert({
-                chat_id: chat.id,
-                content: content,
-                sender_type: fromMe ? "user" : "contact",
-                message_type: "text", // Handle images later
-                external_id: key.id
-            });
+            // Check for Bot Commands if message is from Client
+            let autoReply = null;
+            let updatedTag = null;
+
+            if (!fromMe) {
+                // Check if it's the very first message
+                const { count } = await supabase
+                    .from("messages")
+                    .select("*", { count: "exact", head: true })
+                    .eq("chat_id", chat.id);
+
+                if (count === 1) { // The one we just inserted is the first
+                    autoReply = `Olá! Bem-vindo(a) à nossa Estamparia. 🚀\n\nComo podemos te ajudar hoje? Digite o número da opção desejada:\n\n1️⃣ Atendimento\n2️⃣ Criação de Artes\n3️⃣ Orçamentos\n4️⃣ Dúvidas`;
+                } else if (chat.tag === "Novo") {
+                    // Check if they are responding to the menu
+                    const opt = content.trim();
+                    if (opt === "1") {
+                        updatedTag = "Atendimento";
+                        autoReply = "Ótimo! Um de nossos atendentes já vai falar com você.";
+                    } else if (opt === "2") {
+                        updatedTag = "Arte";
+                        autoReply = "Maravilha! Você será direcionado para o time de Criação de Artes.";
+                    } else if (opt === "3") {
+                        updatedTag = "Orçamento";
+                        autoReply = "Legal! Já vamos te passar a nossa tabela de valores e montar seu orçamento.";
+                    } else if (opt === "4") {
+                        updatedTag = "Dúvidas";
+                        autoReply = "Tudo bem! Pode mandar a sua dúvida que vamos te ajudar.";
+                    }
+                }
+            }
+
+            if (updatedTag) {
+                await supabase.from("chats").update({ tag: updatedTag }).eq("id", chat.id);
+            }
+
+            if (autoReply) {
+                // 1. Send via Evolution API (requires fetching server URL and Global Key from env or db)
+                const evoUrl = Deno.env.get("EVOLUTION_API_URL");
+                const evoKey = Deno.env.get("EVOLUTION_API_KEY");
+                const instanceName = Deno.env.get("EVOLUTION_INSTANCE_NAME") || "GomeszSpeedPrint";
+
+                if (evoUrl && evoKey) {
+                    try {
+                        await fetch(`${evoUrl}/message/sendText/${instanceName}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'apikey': evoKey
+                            },
+                            body: JSON.stringify({
+                                number: remoteJid,
+                                options: { delay: 1200, presence: "composing" },
+                                textMessage: { text: autoReply }
+                            })
+                        });
+
+                        // 2. Insert the bot's reply into messages table
+                        await supabase.from("messages").insert({
+                            chat_id: chat.id,
+                            content: autoReply,
+                            sender_type: "store",
+                            message_type: "text",
+                            external_id: `bot-${Date.now()}`
+                        });
+
+                    } catch (e) {
+                        console.error("Failed to send autoReply via Evolution:", e);
+                    }
+                }
+            }
         }
 
         return new Response(JSON.stringify({ success: true }), {

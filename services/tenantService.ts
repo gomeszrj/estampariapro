@@ -94,9 +94,15 @@ export const tenantService = {
    * Manually trigger the auto-expire check (for testing or manual runs by master admin)
    */
   async runAutoExpireCheck(): Promise<{ expired: number; notified: number }> {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Sessão expirada. Faça login novamente.');
+
     const response = await fetch(`${SUPABASE_URL}/functions/v1/auto-expire-tenants`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
       body: '{}',
     });
 

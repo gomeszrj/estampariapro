@@ -53,13 +53,14 @@ const AuthenticatedApp: React.FC = () => {
 
   const isPublicCatalog = new URLSearchParams(window.location.search).get('view') === 'public_catalog' || window.location.pathname === '/catalogo';
   const isClientPortal = new URLSearchParams(window.location.search).get('view') === 'client_portal' || !!localStorage.getItem('client_session');
+  const isMasterAdmin = user?.email === 'admin@estamparia.com';
 
-  // Show Login if no session AND not in public catalog mode AND not in client portal
-  if (!session && !isPublicCatalog && !isClientPortal) {
-    return <Login />;
-  }
+  const [botDraft, setBotDraft] = useState<{ clientName: string; items: any[]; briefing: string } | null>(null);
 
   useEffect(() => {
+    // Skip data loading if no session and not in public mode
+    if (!session && !isPublicCatalog && !isClientPortal) return;
+
     const loadData = async () => {
       setLoading(true);
       try {
@@ -108,12 +109,12 @@ const AuthenticatedApp: React.FC = () => {
     const handleRefresh = () => loadData();
     window.addEventListener('refreshData', handleRefresh);
     return () => window.removeEventListener('refreshData', handleRefresh);
-  }, [isPublicCatalog]);
+  }, [isPublicCatalog, session]);
 
-  // Removed legacy LocalStorage effects
-
-
-  const [botDraft, setBotDraft] = useState<{ clientName: string; items: any[]; briefing: string } | null>(null);
+  // Show Login if no session AND not in public catalog mode AND not in client portal
+  if (!session && !isPublicCatalog && !isClientPortal) {
+    return <Login />;
+  }
 
   const handleBotOrder = (data: { clientName: string; items: any[]; briefing: string }) => {
     setBotDraft(data);
@@ -161,8 +162,6 @@ const AuthenticatedApp: React.FC = () => {
   if (isTrackerView) {
     return <OrderTracker orderId={trackerOrderId} onBack={() => window.location.href = '/'} />;
   }
-
-  const isMasterAdmin = user?.email === 'admin@estamparia.com';
 
   // Subscription Logic (Lock System)
   const isSubscriberBlocked = () => {

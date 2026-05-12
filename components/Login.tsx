@@ -4,7 +4,7 @@ import { orderService } from '../services/orderService';
 import { Lock, Mail, AlertCircle, Search, Truck, Package, ArrowRight, Phone, User, Store } from 'lucide-react';
 import { STATUS_CONFIG } from '../constants';
 import { Order } from '../types';
-import { clientService } from '../services/clientService.ts';
+import { clientService } from '../services/clientService';
 
 const Login: React.FC = () => {
     const [email, setEmail] = useState(''); // Serves as email or phone

@@ -2,8 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, X, Send, User, Loader2, Maximize2, Minimize2, CheckCircle2, Clock, Paperclip, Image as ImageIcon } from 'lucide-react';
 import { chatService, ChatSession } from '../../services/chatService';
 import { whatsappService } from '../../services/whatsappService';
+import { supabase } from '../../services/supabase';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { OrderMessage } from '../../types';
 
-// ChatSession imported from chatService
 export const ChatWidget: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [isMaximized, setIsMaximized] = useState(false);

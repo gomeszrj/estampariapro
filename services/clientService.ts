@@ -73,43 +73,24 @@ export const clientService = {
     async getByPhoneAndPassword(loginIdentifier: string, password: string): Promise<Client | null> {
         if (!loginIdentifier || !password) return null;
 
-        const isEmail = loginIdentifier.includes('@');
-        const cleanIdentifier = loginIdentifier.replace(/\D/g, '');
-
-        if (isEmail) {
-            // Se for email, busca exato pelo e-mail e confere a senha
-            const { data, error } = await supabase
-                .from('clients')
-                .select('*')
-                .ilike('email', loginIdentifier.trim())
-                .eq('password', password)
-                .single();
-
-            if (error || !data) return null;
-            return data as Client;
-        }
-
-        // Se for número (Doc ou Zap), buscamos todos que tenham esse password
-        // E filtramos no JS, pois o whatsapp pode estar formatado (11) 99999-9999
-        // e o cleanIdentifier é apenas os números. Fazer LIKE no postgresql com regex é pesado/inviável via SDK padrão sem RPC.
-        const { data, error } = await supabase
-            .from('clients')
-            .select('*')
-            .eq('password', password);
+        // Use server-side password verification (bcrypt hash)
+        const { data, error } = await supabase.rpc('verify_client_login', {
+            p_identifier: loginIdentifier.trim(),
+            p_password: password
+        });
 
         if (error || !data || data.length === 0) return null;
 
-        // Procura entre os usuários com essa senha, aquele que bate o documento ou últimas 8 casas d zap
-        const matched = data.find(c => {
-            const dbPhone = (c.whatsapp || '').replace(/\D/g, '');
-            const dbDoc = (c.document || '').replace(/\D/g, '');
+        // Return full client data
+        const match = data[0];
+        const { data: fullClient, error: fetchError } = await supabase
+            .from('clients')
+            .select('*')
+            .eq('id', match.id)
+            .single();
 
-            const matchesPhone = dbPhone && cleanIdentifier.length >= 8 && dbPhone.endsWith(cleanIdentifier.slice(-8));
-            const matchesDoc = dbDoc && dbDoc === cleanIdentifier;
-
-            return matchesPhone || matchesDoc;
-        });
-
-        return (matched as Client) || null;
+        if (fetchError || !fullClient) return null;
+        return fullClient as Client;
     }
 };
+
