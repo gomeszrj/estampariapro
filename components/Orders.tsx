@@ -31,18 +31,20 @@ import {
   Upload
 } from 'lucide-react';
 import { getWhatsAppLink, getStatusUpdateMessage } from '../utils/whatsappUtils';
-import { parseOrderText, ParsedOrderItem } from '../services/aiService';
+import { ParsedOrderItem } from '../services/aiService';
 import { FABRICS, STATUS_CONFIG, GRADES } from '../constants';
 import { Order, OrderStatus, OrderType, Product, Client, OrderItem, PaymentStatus, OrderMessage } from '../types';
 import { printServiceOrder, printInvoice } from '../utils/printUtils';
 import { orderService } from '../services/orderService';
 import { clientService } from '../services/clientService';
 import { financeService } from '../services/financeService';
-import { supabase } from '../services/supabase';
 import { notify } from './ui/toast';
 import { ConfirmModal } from './ui/ConfirmModal';
 
 import { ProductionBoard } from './ProductionBoard';
+import OrderAiBriefing from './Orders/OrderAiBriefing';
+import OrderItemsForm from './Orders/OrderItemsForm';
+import OrderChatDrawer from './Orders/OrderChatDrawer';
 
 // ... (existing imports)
 
@@ -62,7 +64,6 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
   const [activeContext, setActiveContext] = useState<'production' | 'store'>('production'); // New: Switch between ERP and Store
   const [viewMode, setViewMode] = useState<'list' | 'board'>('list');
   const [isAdding, setIsAdding] = useState(false);
-  const [isAiProcessing, setIsAiProcessing] = useState(false);
 
   // Filter Orders based on Context
   const contextOrders = orders.filter(o => {
@@ -98,7 +99,6 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
   }, [clients]);
 
   const [isSaving, setIsSaving] = useState(false);
-  const [aiText, setAiText] = useState('');
   const [parsedItems, setParsedItems] = useState<ParsedOrderItem[]>([]);
   const [clientName, setClientName] = useState('');
   const [deliveryDate, setDeliveryDate] = useState('');
@@ -121,57 +121,9 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
 
   // Chat State
   const [chatOrder, setChatOrder] = useState<Order | null>(null);
-  const [chatMessages, setChatMessages] = useState<OrderMessage[]>([]);
-  const [chatInput, setChatInput] = useState('');
-  const [isSendingChat, setIsSendingChat] = useState(false);
 
-  const openChat = async (order: Order) => {
+  const openChat = (order: Order) => {
     setChatOrder(order);
-    try {
-      const msgs = await orderService.getMessages(order.id);
-      setChatMessages(msgs);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  React.useEffect(() => {
-    if (chatOrder) {
-      const channel = supabase
-        .channel(`store_chat_${chatOrder.id}`)
-        .on(
-          'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'order_messages', filter: `order_id=eq.${chatOrder.id}` },
-          (payload) => {
-            const newMsg = payload.new as OrderMessage;
-            setChatMessages(prev => {
-              if (prev.find(m => m.id === newMsg.id)) return prev;
-              return [...prev, newMsg];
-            });
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
-  }, [chatOrder]);
-
-  const sendChatMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatInput.trim() || !chatOrder) return;
-    setIsSendingChat(true);
-    try {
-      const msg = await orderService.sendMessage(chatOrder.id, 'store', chatInput);
-      setChatMessages(prev => [...prev, msg]);
-      setChatInput('');
-    } catch (e) {
-      console.error(e);
-      notify.error('Erro ao enviar mensagem.');
-    } finally {
-      setIsSendingChat(false);
-    }
   };
 
   // Watch for Bot Draft
@@ -192,166 +144,6 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
       }
     }
   }, [botDraft]);
-
-  const handleAiParse = async () => {
-    if (!aiText) return;
-    setIsAiProcessing(true);
-    try {
-      // Safe access to products, defaulting to empty array if undefined
-      const safeProducts = Array.isArray(products) ? products : [];
-      const items = await parseOrderText(aiText, safeProducts.map(p => ({ id: p.id, name: p.name })));
-
-      if (!items || items.length === 0) {
-        notify.warning('A IA não conseguiu identificar itens no texto. Tente reformular.');
-        return;
-      }
-
-      // 1. Sort Sizes Ascending (Kids -> Adult -> Special)
-      const getSizeWeight = (size: string) => {
-        const s = size.toUpperCase().trim();
-        // Numeric (Kids) first
-        if (!isNaN(parseInt(s))) return parseInt(s);
-        const weights: Record<string, number> = {
-          'PP': 100, 'P': 101, 'M': 102, 'G': 103, 'GG': 104,
-          'XG': 105, 'XXG': 106, 'G1': 107, 'G2': 108, 'G3': 109,
-          'ESP': 200, 'ESP1': 201, 'ESP2': 202
-        };
-        return weights[s] || 999;
-      };
-
-      // Grouping: Layout -> Product (Group) -> Grade (SubGroup) -> Size
-      const groups: Record<number, Record<string, Record<string, Record<string, { quantity: number, names: string[], fabric: string }>>>> = {};
-
-      const teamName = items[0]?.teamName || "NOME DA EQUIPE";
-
-      items.forEach(item => {
-        const layout = item.layoutNumber || 9999;
-        const product = (item.product || 'Produto Personalizado').toUpperCase();
-
-        const size = (item.size || 'UN').toUpperCase();
-
-        let grade = (item.grade || 'MASCULINO').toUpperCase();
-        if (grade.includes('FEM')) grade = 'FEMININO';
-        else if (grade.includes('INF') || grade.includes('UX')) grade = 'INFANTIL';
-        else if (grade.includes('UNI') || size === 'UN') grade = 'UNIDADE';
-        else grade = 'MASCULINO'; // Default
-        const fabric = item.fabric || '';
-
-        if (!groups[layout]) groups[layout] = {};
-        if (!groups[layout][product]) groups[layout][product] = {};
-        if (!groups[layout][product][grade]) groups[layout][product][grade] = {};
-        if (!groups[layout][product][grade][size]) {
-          groups[layout][product][grade][size] = { quantity: 0, names: [], fabric };
-        }
-
-        groups[layout][product][grade][size].quantity += item.quantity || 0;
-        if (item.names) groups[layout][product][grade][size].names.push(...item.names);
-        if (fabric && !groups[layout][product][grade][size].fabric) {
-          groups[layout][product][grade][size].fabric = fabric;
-        }
-      });
-
-      let formattedOutput = 'LISTA DE CONFERENCIA\n\n';
-
-      // Iterate Layouts
-      Object.keys(groups).sort((a, b) => parseInt(a) - parseInt(b)).forEach(layoutKey => {
-        const layoutNum = parseInt(layoutKey);
-        const productsMap = groups[layoutNum];
-
-        Object.keys(productsMap).sort().forEach(product => {
-          // Layout Header
-          const layoutLabel = layoutNum === 9999 ? '' : ` ${layoutNum}`;
-          formattedOutput += `LAYOUT${layoutLabel} - ${product}\n\n`;
-
-          const gradesMap = productsMap[product];
-          const gradeOrder = ['MASCULINO', 'FEMININO', 'INFANTIL', 'UNISSEX', 'UNIDADE'];
-          const sortedGrades = Object.keys(gradesMap).sort((a, b) => {
-            return gradeOrder.indexOf(a) - gradeOrder.indexOf(b);
-          });
-
-          sortedGrades.forEach(grade => {
-            formattedOutput += `--- ${grade} ---\n`;
-            
-            const sizes = gradesMap[grade];
-            Object.keys(sizes).sort((a, b) => getSizeWeight(a) - getSizeWeight(b)).forEach(size => {
-              const data = sizes[size];
-              const formatAgeSize = (s: string) => {
-                if (!isNaN(parseInt(s)) && !(s || '').toLowerCase().includes('ano')) return `${s} ANOS`;
-                return s;
-              };
-              const displaySizeHeader = formatAgeSize(size);
-
-              formattedOutput += `TAMANHO - ${displaySizeHeader}\n`;
-
-              data.names.forEach(name => {
-                const displayName = name.toUpperCase().trim();
-                formattedOutput += `1 - ${displayName} - ${displaySizeHeader}\n`;
-              });
-
-              const missing = Math.max(0, data.quantity - data.names.length);
-              for (let i = 0; i < missing; i++) {
-                formattedOutput += `1 - [SEM NOME] - ${displaySizeHeader}\n`;
-              }
-              formattedOutput += `\n`; // Space between size groups
-            });
-          });
-        });
-      });
-
-      setInternalNotes(prev => (prev ? prev + '\n\n' : '') + formattedOutput.trim());
-
-      const aggregatedItems: ParsedOrderItem[] = [];
-      Object.keys(groups).sort((a, b) => parseInt(a) - parseInt(b)).forEach(layoutKey => {
-        const layoutNum = parseInt(layoutKey);
-        const productsMap = groups[layoutNum];
-
-        Object.keys(productsMap).sort().forEach(product => {
-          const gradesMap = productsMap[product];
-          const gradeOrder = ['MASCULINO', 'FEMININO', 'INFANTIL', 'UNISSEX', 'UNIDADE'];
-          const sortedGrades = Object.keys(gradesMap).sort((a, b) => {
-            return gradeOrder.indexOf(a) - gradeOrder.indexOf(b);
-          });
-
-          sortedGrades.forEach(grade => {
-            const sizes = gradesMap[grade];
-            Object.keys(sizes).sort((a, b) => getSizeWeight(a) - getSizeWeight(b)).forEach(size => {
-              const data = sizes[size];
-              const formattedGrade = grade.charAt(0).toUpperCase() + grade.slice(1).toLowerCase();
-              aggregatedItems.push({
-                product: product,
-                grade: formattedGrade as any,
-                size: size,
-                quantity: data.quantity,
-                fabric: data.fabric || ''
-              });
-            });
-          });
-        });
-      });
-
-      setParsedItems(prev => [...prev, ...aggregatedItems]);
-
-    } catch (e: any) {
-      console.error(e);
-      // Improve error message for user
-      let msg = e?.message || "Erro desconhecido";
-
-      // Try to parse JSON error message if it looks like one
-      if (typeof msg === 'string' && (msg.startsWith('{') || msg.includes('429'))) {
-        if (msg.includes('429') || msg.includes('quota')) {
-          msg = "Limite de uso da IA excedido (Cota Grátis). Aguarde alguns segundos e tente novamente.";
-        }
-      }
-
-      if (msg.includes("API key")) {
-        notify.error('Erro de Chave API: Verifique sua chave Gemini nos Ajustes.');
-      } else {
-        notify.error(`Erro ao processar com IA: ${msg}`);
-      }
-    } finally {
-      setIsAiProcessing(false);
-    }
-  };
 
   const updateItem = (index: number, field: keyof ParsedOrderItem, value: any) => {
     setParsedItems(prev => {
@@ -516,7 +308,6 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
     setInternalNotes('');
     setDelayReason('');
     setParsedItems([]);
-    setAiText('');
     setPaymentStatus(PaymentStatus.PENDING);
     setCustomAmountPaid('');
     setDiscountValue('');
@@ -1026,7 +817,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                         <MessageSquare className="w-3 h-3" /> Informações Internas / Lista
                       </label>
                       <textarea
-                        value={internalNotes}
+value={internalNotes}
                         onChange={(e) => setInternalNotes(e.target.value)}
                         placeholder="Cole a lista ou deixe observações..."
                         className="w-full h-40 p-4 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none font-medium resize-none shadow-inner leading-relaxed"
@@ -1037,31 +828,13 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                   {/* AI Helper Column */}
                   {isMasterAdmin && (
                     <div className="space-y-4">
-                      <div className="bg-indigo-900/10 p-6 rounded-[2rem] border border-indigo-500/20 h-full flex flex-col">
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
-                            <Wand2 className="w-4 h-4 text-indigo-400" />
-                          </div>
-                          <h4 className="font-black text-indigo-300 uppercase tracking-wider text-xs">Extrator de Pedidos</h4>
-                        </div>
-                        <p className="text-[10px] text-indigo-300/60 font-medium mb-4 leading-relaxed">
-                          Cole o texto do WhatsApp aqui para a IA identificar itens, tamanhos e quantidades automaticamente.
-                        </p>
-                        <textarea
-                          className="w-full flex-1 p-4 bg-slate-950/50 border border-indigo-500/10 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-indigo-900/30 text-xs text-indigo-200 font-medium mb-4 resize-none"
-                          placeholder="Ex: 'Quero 10 camisetas P e 5 M...'"
-                          value={aiText}
-                          onChange={(e) => setAiText(e.target.value)}
-                        />
-                        <button
-                          onClick={handleAiParse}
-                          disabled={isAiProcessing || !aiText}
-                          className="w-full py-4 bg-indigo-600 text-white rounded-xl font-black flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-indigo-700 transition-all uppercase text-[10px] tracking-[0.2em] shadow-lg shadow-indigo-600/20"
-                        >
-                          <span>{isAiProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}</span>
-                          Processar Texto
-                        </button>
-                      </div>
+                      <OrderAiBriefing
+                        products={products}
+                        onItemsParsed={(aggregatedItems, formattedOutput) => {
+                          setInternalNotes(prev => (prev ? prev + '\n\n' : '') + formattedOutput.trim());
+                          setParsedItems(prev => [...prev, ...aggregatedItems]);
+                        }}
+                      />
                     </div>
                   )}
                 </div>
@@ -1069,138 +842,19 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
 
               {/* TAB: ITEMS (Original Right Column content) */}
               {activeTab === 'items' && (
-                <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-                  <div className="flex justify-between items-center mb-4">
-                    <h4 className="font-black text-slate-100 flex items-center gap-3 text-lg tracking-tighter uppercase">
-                      <ShoppingCart className="w-5 h-5 text-indigo-400" />
-                      Itens do Pedido ({parsedItems.length})
-                    </h4>
-                    <button
-                      onClick={addNewManualItem}
-                      className="text-[9px] font-black uppercase text-indigo-400 bg-indigo-500/10 px-5 py-2.5 rounded-xl hover:bg-indigo-500/20 transition-all border border-indigo-500/20 tracking-widest flex items-center gap-2"
-                    >
-                      <Plus className="w-3 h-3" /> Adicionar
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-6">
-                    {/* ... Previous Item Mapping Logic reused here ... */}
-                    {parsedItems.length === 0 ? (
-                      <div className="py-20 flex flex-col items-center justify-center text-slate-800 border-2 border-dashed border-slate-800 rounded-[2rem]">
-                        <ShoppingCart className="w-16 h-16 mb-4 opacity-10" />
-                        <p className="font-black uppercase tracking-[0.3em] text-[10px] opacity-40">Nenhum item adicionado</p>
-                      </div>
-                    ) : (
-                      parsedItems.map((item, idx) => {
-                        // Re-use Logic for Dropdowns
-                        const selectedProduct = productsByName.get((item.product || '').toLowerCase());
-                        // ... (Same Logic as before, just inline render for cleanliness in replacement)
-                        let allowedGradesObj: Record<string, string[]> | undefined;
-                        if (selectedProduct?.allowedGrades) {
-                          if (Array.isArray(selectedProduct.allowedGrades)) {
-                            allowedGradesObj = {};
-                            selectedProduct.allowedGrades.forEach((g: string) => {
-                              const cfg = GRADES.find(gconfig => gconfig.label === g);
-                              if (cfg && allowedGradesObj) allowedGradesObj[g] = cfg.sizes;
-                            });
-                          } else {
-                            allowedGradesObj = selectedProduct.allowedGrades as Record<string, string[]>;
-                          }
-                        }
-                        const allowedGradeLabels = allowedGradesObj ? Object.keys(allowedGradesObj) : GRADES.map((g: any) => g.label);
-                        let allowedGradesList = GRADES.filter((g: any) => allowedGradeLabels.includes(g.label));
-                        
-                        if (allowedGradesList.length === 0) {
-                            allowedGradesList = [{ label: 'Unidade', sizes: ['UN'] }];
-                        }
-
-                        let currentGradeLabel = item.grade || 'Masculino';
-                        if (!allowedGradesList.find((g: any) => g.label === currentGradeLabel)) {
-                            currentGradeLabel = allowedGradesList[0].label;
-                        }
-
-                        const specificAllowedSizes = allowedGradesObj ? allowedGradesObj[currentGradeLabel] : null;
-                        const currentGradeConfig = GRADES.find((g: any) => g.label === currentGradeLabel) || allowedGradesList[0];
-                        const availableSizes = specificAllowedSizes || currentGradeConfig.sizes;
-
-                        return ( // RENDER ITEM
-                          <div key={idx} className="bg-[#0f172a] p-5 rounded-[1.5rem] border border-slate-800 shadow-sm relative group hover:border-indigo-500/30 transition-colors">
-                            <div className="absolute top-4 right-4 z-10">
-                              <button onClick={() => removeItem(idx)} className="text-slate-600 hover:text-rose-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                              <div className="md:col-span-4 space-y-1">
-                                <label className="text-[8px] font-black text-slate-600 uppercase tracking-wider ml-1">Produto</label>
-                                <input
-                                  list={`prod-list-${idx}`}
-                                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-3 text-xs font-bold text-white uppercase focus:border-indigo-500 outline-none"
-                                  value={item.product}
-                                  onChange={(e) => updateItem(idx, 'product', e.target.value)}
-                                  placeholder="Busque..."
-                                />
-                                <datalist id={`prod-list-${idx}`}>{(products || []).map(p => <option key={p.id} value={p.name} />)}</datalist>
-                              </div>
-                              <div className="md:col-span-8 flex gap-4">
-                                <div className="flex-1 space-y-1">
-                                  <label className="text-[8px] font-black text-slate-600 uppercase tracking-wider ml-1">Grade</label>
-                                  <select className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-3 text-xs font-bold text-slate-300 outline-none uppercase" value={currentGradeLabel} onChange={e => updateItem(idx, 'grade', e.target.value)}>
-                                    {allowedGradesList.map((g: any) => <option key={g.label} value={g.label}>{g.label}</option>)}
-                                  </select>
-                                </div>
-                                <div className="flex-1 space-y-1">
-                                  <label className="text-[8px] font-black text-slate-600 uppercase tracking-wider ml-1">Tamanho</label>
-                                  <select className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-3 text-xs font-bold text-slate-300 outline-none" value={availableSizes.includes(item.size || '') ? item.size : availableSizes[0]} onChange={e => updateItem(idx, 'size', e.target.value)}>
-                                    {availableSizes.map((s: any) => <option key={s} value={s}>{s}</option>)}
-                                  </select>
-                                </div>
-                                <div className="w-24 space-y-1">
-                                  <label className="text-[8px] font-black text-slate-600 uppercase tracking-wider ml-1 text-center block">Qtd</label>
-                                  <input type="number" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-2 py-3 text-xs font-black text-indigo-400 text-center outline-none" value={item.quantity === 0 ? '' : item.quantity} onChange={e => {
-                                    const val = parseInt(e.target.value);
-                                    updateItem(idx, 'quantity', isNaN(val) ? 0 : val);
-                                  }} />
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-
-                  {/* Footer Actions */}
-                  <div className="mt-8 pt-8 border-t border-slate-800 flex items-center justify-between sticky bottom-0 bg-[#0f172a] pb-2">
-                    <div className="flex gap-8">
-                      <div>
-                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Custo Estimado</p>
-                        <p className="text-xl font-bold text-slate-400">R$ {(parsedItems.reduce((acc, curr) => {
-                          const prod = productsByName.get((curr.product || '').trim().toLowerCase());
-                          return acc + (curr.quantity || 0) * (prod?.costPrice || 0);
-                        }, 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                      </div>
-                      <div>
-                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Lucro Previsto</p>
-                        <p className="text-xl font-bold text-emerald-500">R$ {(parsedItems.reduce((acc, curr) => {
-                          const prod = productsByName.get((curr.product || '').trim().toLowerCase());
-                          const revenue = (curr.quantity || 0) * (prod ? prod.basePrice : 35);
-                          const cost = (curr.quantity || 0) * (prod?.costPrice || 0);
-                          return acc + (revenue - cost);
-                        }, 0) - (typeof discountValue === 'number' ? discountValue : (parseFloat(discountValue.toString()) || 0))).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                      </div>
-                      <div>
-                        <p className="text-[9px] text-emerald-500 font-bold uppercase tracking-widest">Total com Desconto</p>
-                        <p className="text-3xl font-black text-slate-100">R$ {Math.max(0, parsedItems.reduce((acc, curr) => {
-                          const prod = productsByName.get((curr.product || '').trim().toLowerCase());
-                          return acc + (curr.quantity || 0) * (prod ? prod.basePrice : 35);
-                        }, 0) - (typeof discountValue === 'number' ? discountValue : (parseFloat(discountValue.toString()) || 0))).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-4">
-                      <button onClick={handleCloseModal} className="px-6 py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:bg-slate-800">Cancelar</button>
-                      <button onClick={handleFinalize} disabled={isSaving} className="px-10 py-4 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-indigo-700 disabled:opacity-50">{isSaving ? 'Salvando...' : 'Finalizar Pedido'}</button>
-                    </div>
-                  </div>
-                </div>
+                <OrderItemsForm
+                  parsedItems={parsedItems}
+                  products={products}
+                  productsByName={productsByName}
+                  updateItem={updateItem}
+                  removeItem={removeItem}
+                  addNewManualItem={addNewManualItem}
+                  discountValue={discountValue}
+                  setDiscountValue={setDiscountValue}
+                  isSaving={isSaving}
+                  handleCloseModal={handleCloseModal}
+                  handleFinalize={handleFinalize}
+                />
               )}
 
               {/* TAB: BRIEFING IA (New) */}
@@ -1513,68 +1167,10 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
 
       {/* CHAT MODAL */}
       {chatOrder && (
-        <div className="fixed inset-0 bg-[#020617]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0f172a] rounded-3xl w-full max-w-lg shadow-2xl border border-slate-800 flex flex-col h-[70vh] max-h-[800px] overflow-hidden animate-in zoom-in-95 duration-200">
-            {/* Header */}
-            <div className="p-6 border-b border-slate-800 bg-[#1e293b]/50 flex justify-between items-center shrink-0">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-400">
-                  <MessageSquare className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-black text-slate-100">{chatOrder.clientName}</h3>
-                  <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Pedido #{chatOrder.orderNumber}</p>
-                </div>
-              </div>
-              <button onClick={() => setChatOrder(null)} className="p-2 text-slate-400 hover:text-white transition-colors bg-slate-800 rounded-full">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-950/20">
-              {chatMessages.map(msg => {
-                const isStore = msg.sender === 'store';
-                return (
-                  <div key={msg.id} className={`flex ${isStore ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] rounded-2xl p-4 ${isStore ? 'bg-indigo-600 text-white rounded-tr-sm' : 'bg-slate-800 text-slate-200 rounded-tl-sm border border-slate-700'}`}>
-                      <p className="text-sm font-medium">{msg.message}</p>
-                      <p className={`text-[9px] font-bold mt-2 text-right opacity-70`}>
-                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-              {chatMessages.length === 0 && (
-                <div className="h-full flex flex-col items-center justify-center text-slate-500 opacity-50 gap-4">
-                  <MessageSquare className="w-12 h-12" />
-                  <p className="text-sm font-bold text-center">Nenhuma mensagem ainda.<br />Inicie o atendimento com foco neste pedido.</p>
-                </div>
-              )}
-            </div>
-
-            {/* Input Form */}
-            <div className="p-4 bg-[#1e293b]/50 border-t border-slate-800 shrink-0">
-              <form onSubmit={sendChatMessage} className="relative">
-                <input
-                  type="text"
-                  className="w-full bg-[#0f172a] border border-slate-700/50 rounded-xl py-3.5 pl-4 pr-12 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm font-medium transition-all"
-                  placeholder="Mensagem..."
-                  value={chatInput}
-                  onChange={e => setChatInput(e.target.value)}
-                />
-                <button
-                  type="submit"
-                  disabled={!chatInput.trim() || isSendingChat}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg flex items-center justify-center transition-colors shadow-lg shadow-indigo-600/20"
-                >
-                  <Send className="w-4 h-4 ml-0.5" />
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
+        <OrderChatDrawer
+          chatOrder={chatOrder}
+          onClose={() => setChatOrder(null)}
+        />
       )}
 
       {/* Confirm: Delete Order */}
