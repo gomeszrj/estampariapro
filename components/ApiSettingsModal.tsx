@@ -29,9 +29,7 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose }) 
         if (isOpen) {
             setKeys({
                 supabaseUrl: getConfig(CONFIG_KEYS.SUPABASE_URL) || '',
-                supabaseKey: getConfig(CONFIG_KEYS.SUPABASE_ANON_KEY) || '',
-                geminiKey: getConfig(CONFIG_KEYS.GEMINI_API_KEY) || '',
-                openaiKey: getConfig(CONFIG_KEYS.OPENAI_API_KEY) || ''
+                supabaseKey: getConfig(CONFIG_KEYS.SUPABASE_ANON_KEY) || ''
             });
         }
     }, [isOpen]);
@@ -42,8 +40,6 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose }) 
         // Restore saving to LocalStorage because the app depends on it if not using .env
         localStorage.setItem(CONFIG_KEYS.SUPABASE_URL, keys.supabaseUrl);
         localStorage.setItem(CONFIG_KEYS.SUPABASE_ANON_KEY, keys.supabaseKey);
-        localStorage.setItem(CONFIG_KEYS.GEMINI_API_KEY, keys.geminiKey);
-        localStorage.setItem(CONFIG_KEYS.OPENAI_API_KEY, keys.openaiKey);
 
         // Save Evolution API Config
         if (evolutionStore.url) localStorage.setItem('evolution_api_url', evolutionStore.url);
@@ -125,27 +121,10 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose }) 
                         <h4 className="text-xs font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2">
                             <Brain className="w-4 h-4" /> Inteligência Artificial
                         </h4>
-                        <div className="space-y-3">
-                            <div>
-                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">Gemini API Key</label>
-                                <input
-                                    type="password"
-                                    value={keys.geminiKey}
-                                    onChange={e => setKeys(prev => ({ ...prev, geminiKey: e.target.value }))}
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 text-xs font-mono focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                                    placeholder="AIzaSy..."
-                                />
-                            </div>
-                            <div>
-                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">OpenAI API Key (Opcional)</label>
-                                <input
-                                    type="password"
-                                    value={keys.openaiKey}
-                                    onChange={e => setKeys(prev => ({ ...prev, openaiKey: e.target.value }))}
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 text-xs font-mono focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                                    placeholder="sk-..."
-                                />
-                            </div>
+                        <div className="p-3 bg-[#0f172a] border border-slate-800 rounded-2xl">
+                            <p className="text-xs text-slate-400 leading-relaxed">
+                                As chaves de Inteligência Artificial (Gemini / OpenAI) agora são gerenciadas com segurança diretamente no **Backend (Edge Functions do Supabase)** para evitar exposição no navegador.
+                            </p>
                         </div>
                     </div>
 
