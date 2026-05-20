@@ -54,7 +54,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) =>
   const revenueMonth = React.useMemo(() => {
     const currentMonth = new Date().toISOString().slice(0, 7);
     return orders
-      .filter(o => o.createdAt.startsWith(currentMonth))
+      .filter(o => (o.createdAt || '').startsWith(currentMonth))
       .reduce((acc, curr) => acc + curr.totalValue, 0);
   }, [orders]);
 

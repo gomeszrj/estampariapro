@@ -42,23 +42,25 @@ if (typeof window !== 'undefined') {
   window.addEventListener('load', () => sessionStorage.removeItem('chunk_reload'));
 }
 
-// Dynamic Page/View Imports for lazy loading (Performance FASE 2)
-const Dashboard = lazyRetry(() => import('./components/Dashboard'));
-const Orders = lazyRetry(() => import('./components/Orders'));
-const Kanban = lazyRetry(() => import('./components/Kanban'));
-const StoreControl = lazyRetry(() => import('./components/StoreControl'));
-const Products = lazyRetry(() => import('./components/Products'));
-const Settings = lazyRetry(() => import('./components/Settings'));
-const Finance = lazyRetry(() => import('./components/Finance'));
-const Clients = lazyRetry(() => import('./components/Clients'));
-const CatalogRequests = lazyRetry(() => import('./components/CatalogRequests'));
-const Inventory = lazyRetry(() => import('./components/Inventory'));
-const ArtQueue = lazyRetry(() => import('./components/ArtQueue'));
-const MasterAdmin = lazyRetry(() => import('./components/MasterAdmin'));
+// Core Page/View Imports (Static imports to prevent chunk loading errors in production)
+import Dashboard from './components/Dashboard';
+import Orders from './components/Orders';
+import Kanban from './components/Kanban';
+import StoreControl from './components/StoreControl';
+import Products from './components/Products';
+import Settings from './components/Settings';
+import Finance from './components/Finance';
+import Clients from './components/Clients';
+import CatalogRequests from './components/CatalogRequests';
+import Inventory from './components/Inventory';
+import ArtQueue from './components/ArtQueue';
+import MasterAdmin from './components/MasterAdmin';
 
-// Dynamic Portals/Sub-systems
-const CloudBot = lazyRetry(() => import('./components/CloudBot').then(m => ({ default: m.CloudBot })));
-const WhatsAppManager = lazyRetry(() => import('./components/WhatsAppManager').then(m => ({ default: m.WhatsAppManager })));
+// Sub-systems / CRM
+import { CloudBot } from './components/CloudBot';
+import { WhatsAppManager } from './components/WhatsAppManager';
+
+// Separate Portals / Public entry-points (Keep lazy to keep initial load small)
 const ClientPortal = lazyRetry(() => import('./components/ClientPortal'));
 const PublicStore = lazyRetry(() => import('./components/PublicStore'));
 const OrderTracker = lazyRetry(() => import('./components/OrderTracker'));
