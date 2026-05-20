@@ -7,6 +7,8 @@ import {
   Copy, RefreshCw, Zap, CheckCheck,
   PhoneCall, Mail, ChevronDown, ChevronUp, Edit3
 } from 'lucide-react';
+import { notify } from './ui/toast';
+import { ConfirmModal } from './ui/ConfirmModal';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type PermissionKey =
@@ -161,6 +163,39 @@ const MasterAdmin: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'todos' | 'ativos' | 'vencidos' | 'bloqueados'>('todos');
   const [runningExpire, setRunningExpire] = useState(false);
 
+  // ── Dynamic Confirm Modal State ──
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    variant: 'danger' | 'warning' | 'info' | 'success';
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    variant: 'warning',
+  });
+
+  const requestConfirm = (
+    title: string,
+    message: string,
+    onConfirm: () => void,
+    variant: 'danger' | 'warning' | 'info' | 'success' = 'warning'
+  ) => {
+    setConfirmConfig({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+      },
+      variant,
+    });
+  };
+
   // ── New Tenant Form ──
   const [newName, setNewName] = useState('');
   const [newDomain, setNewDomain] = useState('');
@@ -268,8 +303,8 @@ const MasterAdmin: React.FC = () => {
 
   // ─── Create Tenant ─────────────────────────────────────────────────────────
   const handleCreateTenant = async () => {
-    if (!newName || !newDomain) return alert('Preencha o Nome e o Domínio.');
-    if (!newAdminEmail || !newAdminPassword) return alert('Preencha o E-mail e a Senha do Administrador.');
+    if (!newName || !newDomain) return notify.warning('Preencha o Nome e o Domínio.');
+    if (!newAdminEmail || !newAdminPassword) return notify.warning('Preencha o E-mail e a Senha do Administrador.');
     try {
       const endDate = new Date();
       endDate.setDate(endDate.getDate() + (newIsTrial ? newTrialDays : 30));
@@ -299,14 +334,14 @@ const MasterAdmin: React.FC = () => {
         }
       }
 
-      alert('✅ Inquilino e Administrador Cadastrados com Sucesso!');
+      notify.success('Inquilino e Administrador Cadastrados com Sucesso!');
       setNewName(''); setNewDomain(''); setNewAdminEmail('');
       setNewAdminPassword(''); setNewAdminWhatsapp(''); setNewPaymentLink('');
       setShowNewPermissions(false);
       setActiveTab('ativos');
       load();
     } catch (e: any) {
-      alert('Erro ao criar inquilino: ' + (e?.message || 'Verifique os dados e tente novamente.'));
+      notify.error('Erro ao criar inquilino: ' + (e?.message || 'Verifique os dados e tente novamente.'));
       console.error(e);
     }
   };
@@ -372,9 +407,9 @@ const MasterAdmin: React.FC = () => {
 
       setEditingTenant(null);
       load();
-      alert('✅ Dados do Inquilino e Permissões atualizados!');
+      notify.success('Dados do Inquilino e Permissões atualizados!');
     } catch (e: any) {
-      alert('Erro ao salvar: ' + (e?.message || 'Tente novamente.'));
+      notify.error('Erro ao salvar: ' + (e?.message || 'Tente novamente.'));
     }
   };
 
@@ -410,29 +445,34 @@ const MasterAdmin: React.FC = () => {
           
           if (editingPlanDb.isNew) {
               await tenantService.createSaasPlan(payload);
-              alert('✅ Novo plano criado com sucesso!');
+              notify.success('Novo plano criado com sucesso!');
           } else {
               await tenantService.updateSaasPlan(editingPlanDb.id, payload);
-              alert('✅ Plano atualizado com sucesso!');
+              notify.success('Plano atualizado com sucesso!');
           }
           setEditingPlanDb(null);
           load();
       } catch (e: any) {
-          alert('Erro ao salvar plano: ' + e.message);
+          notify.error('Erro ao salvar plano: ' + e.message);
       }
   };
 
   const handleDeletePlanDb = async (id: string, name: string) => {
-      if (confirm(`Tem certeza que deseja excluir o plano "${name}"? Essa ação não afeta assinantes atuais, mas remove o preset da lista.`)) {
-          try {
-              await tenantService.deleteSaasPlan(id);
-              alert('✅ Plano excluído!');
-              setEditingPlanDb(null);
-              load();
-          } catch (e: any) {
-              alert('Erro ao excluir plano: ' + e.message);
-          }
-      }
+    requestConfirm(
+      'Excluir Plano SaaS',
+      `Tem certeza que deseja excluir o plano "${name}"? Essa ação não afeta assinantes atuais, mas remove o preset da lista.`,
+      async () => {
+        try {
+          await tenantService.deleteSaasPlan(id);
+          notify.success('Plano excluído!');
+          setEditingPlanDb(null);
+          load();
+        } catch (e: any) {
+          notify.error('Erro ao excluir plano: ' + e.message);
+        }
+      },
+      'danger'
+    );
   };
 
 
@@ -443,67 +483,85 @@ const MasterAdmin: React.FC = () => {
   };
 
   const handleDeleteTenant = async (id: string, name: string) => {
-    if (confirm(`⚠️ ALERTA DE EXCLUSÃO!\n\nTem certeza que deseja DELETAR PERMANENTEMENTE o assinante "${name}"?\nTodos os dados (pedidos, clientes, produtos) serão perdidos.\n\nEssa ação NÃO PODE SER DESFEITA!`)) {
-      try {
-        await tenantService.deleteTenant(id);
-        alert(`✅ Assinante "${name}" excluído com sucesso!`);
-        load();
-      } catch (e: any) {
-        alert('Erro ao excluir assinante: ' + (e?.message || 'Erro desconhecido. Verifique as restrições do banco.'));
-        console.error(e);
-      }
-    }
+    requestConfirm(
+      'ALERTA DE EXCLUSÃO PERMANENTE!',
+      `Tem certeza que deseja DELETAR PERMANENTEMENTE o assinante "${name}"? Todos os dados (pedidos, clientes, produtos) serão perdidos. Essa ação NÃO PODE SER DESFEITA!`,
+      async () => {
+        try {
+          await tenantService.deleteTenant(id);
+          notify.success(`Assinante "${name}" excluído com sucesso!`);
+          load();
+        } catch (e: any) {
+          notify.error('Erro ao excluir assinante: ' + (e?.message || 'Erro desconhecido. Verifique as restrições do banco.'));
+          console.error(e);
+        }
+      },
+      'danger'
+    );
   };
 
   const handleResetPassword = async (userId: string, userName: string) => {
-    if (!resetNewPassword || resetNewPassword.length < 6) return alert('A senha deve ter pelo menos 6 caracteres.');
-    if (!confirm(`Redefinir a senha de "${userName}"?\n\nNova senha: ${resetNewPassword}`)) return;
-    setResettingPassword(true);
-    try {
-      await tenantService.resetUserPassword(userId, resetNewPassword);
-      alert(`✅ Senha de "${userName}" redefinida!\n\nNova senha: ${resetNewPassword}`);
-      setResetUserId(null);
-      setResetNewPassword('');
-    } catch (e: any) {
-      alert('Erro: ' + (e?.message || 'Erro desconhecido'));
-    } finally {
-      setResettingPassword(false);
-    }
+    if (!resetNewPassword || resetNewPassword.length < 6) return notify.warning('A senha deve ter pelo menos 6 caracteres.');
+    
+    requestConfirm(
+      'Redefinir Senha',
+      `Redefinir a senha de "${userName}"? Nova senha: ${resetNewPassword}`,
+      async () => {
+        setResettingPassword(true);
+        try {
+          await tenantService.resetUserPassword(userId, resetNewPassword);
+          notify.success(`Senha de "${userName}" redefinida! Nova senha: ${resetNewPassword}`);
+          setResetUserId(null);
+          setResetNewPassword('');
+        } catch (e: any) {
+          notify.error('Erro: ' + (e?.message || 'Erro desconhecido'));
+        } finally {
+          setResettingPassword(false);
+        }
+      },
+      'warning'
+    );
   };
 
   const handleGenerateMPLink = async (tenant: any) => {
-    if (!tenant.admin_email) return alert('Configure o e-mail do admin antes de gerar o link MP.');
+    if (!tenant.admin_email) return notify.warning('Configure o e-mail do admin antes de gerar o link MP.');
     setGeneratingMPLink(tenant.id);
     try {
       const result = await tenantService.generateMercadoPagoLink(
         tenant.id, tenant.plan, tenant.admin_email, tenant.name
       );
       await navigator.clipboard.writeText(result.checkoutUrl).catch(() => {});
-      alert(`✅ Link MP gerado e copiado!\n\n${result.checkoutUrl}\n\nEnvie para o cliente assinar.`);
+      notify.success('Link Mercado Pago gerado e copiado para a área de transferência!');
       load();
     } catch (e: any) {
-      alert('Erro ao gerar link MP: ' + (e?.message || 'Verifique os secrets no Supabase.'));
+      notify.error('Erro ao gerar link MP: ' + (e?.message || 'Verifique os secrets no Supabase.'));
     } finally {
       setGeneratingMPLink(null);
     }
   };
 
   const handleCopyLink = (link: string) => {
-    navigator.clipboard.writeText(link).then(() => alert('Link copiado!')).catch(() => {});
+    navigator.clipboard.writeText(link).then(() => notify.success('Link copiado!')).catch(() => {});
   };
 
   const handleRunExpireCheck = async () => {
-    if (!confirm('Executar verificação manual de vencimentos? Tenants vencidos serão bloqueados.')) return;
-    setRunningExpire(true);
-    try {
-      const result = await tenantService.runAutoExpireCheck();
-      alert(`Concluído!\n• ${result.expired} bloqueado(s)\n• ${result.notified} notificação(ões)`);
-      load();
-    } catch (e: any) {
-      alert('Erro: ' + e.message);
-    } finally {
-      setRunningExpire(false);
-    }
+    requestConfirm(
+      'Verificar Vencimentos',
+      'Executar verificação manual de vencimentos? Tenants vencidos serão bloqueados.',
+      async () => {
+        setRunningExpire(true);
+        try {
+          const result = await tenantService.runAutoExpireCheck();
+          notify.success(`Concluído! • ${result.expired} bloqueado(s) • ${result.notified} notificação(ões)`);
+          load();
+        } catch (e: any) {
+          notify.error('Erro: ' + e.message);
+        } finally {
+          setRunningExpire(false);
+        }
+      },
+      'warning'
+    );
   };
 
   // ─── Computed ──────────────────────────────────────────────────────────────
@@ -1069,6 +1127,15 @@ const MasterAdmin: React.FC = () => {
               </div>
             </div>
           )}
+          {/* Dynamic Confirmation Modal */}
+          <ConfirmModal
+            isOpen={confirmConfig.isOpen}
+            title={confirmConfig.title}
+            message={confirmConfig.message}
+            variant={confirmConfig.variant}
+            onConfirm={confirmConfig.onConfirm}
+            onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+          />
         </>
       )}
     </div>

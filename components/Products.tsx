@@ -3,6 +3,8 @@ import { Package, Search, Plus, Trash2, Edit2, Save, X, AlertCircle, Check, Imag
 import { productService } from '../services/productService';
 import { Product } from '../types';
 import { FABRICS, GRADES } from '../constants';
+import { notify } from './ui/toast';
+import { ConfirmModal } from './ui/ConfirmModal';
 
 const Products: React.FC = () => {
     const [products, setProducts] = useState<Product[]>([]);
@@ -13,6 +15,7 @@ const Products: React.FC = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
     const [isProcessingImage, setIsProcessingImage] = useState(false);
+    const [confirmDeleteProductId, setConfirmDeleteProductId] = useState<string | null>(null);
 
     // Filter Logic
     const filtered = React.useMemo(() => {
@@ -59,19 +62,23 @@ const Products: React.FC = () => {
             setEditingProduct(null);
         } catch (error) {
             console.error("Error saving product", error);
-            alert("Erro ao salvar produto.");
+            notify.error('Erro ao salvar produto.');
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (confirm('Tem certeza? Isso pode afetar pedidos existentes.')) {
-            try {
-                await productService.delete(id);
-                setProducts(prev => prev.filter(p => p.id !== id));
-            } catch (error) {
-                console.error("Error deleting product", error);
-                alert("Erro ao excluir produto.");
-            }
+    const handleDelete = (id: string) => {
+        setConfirmDeleteProductId(id);
+    };
+
+    const doDeleteProduct = async (id: string) => {
+        try {
+            await productService.delete(id);
+            setProducts(prev => prev.filter(p => p.id !== id));
+            setIsEditing(false);
+            notify.success('Produto excluído.');
+        } catch (error) {
+            console.error("Error deleting product", error);
+            notify.error('Erro ao excluir produto.');
         }
     };
 
@@ -476,6 +483,16 @@ const Products: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            <ConfirmModal
+                isOpen={!!confirmDeleteProductId}
+                title="Excluir Produto"
+                message="Tem certeza? Isso pode afetar pedidos existentes. Esta ação não pode ser desfeita."
+                variant="danger"
+                confirmLabel="Excluir"
+                onConfirm={() => { if (confirmDeleteProductId) doDeleteProduct(confirmDeleteProductId); setConfirmDeleteProductId(null); }}
+                onCancel={() => setConfirmDeleteProductId(null)}
+            />
         </div>
     );
 };

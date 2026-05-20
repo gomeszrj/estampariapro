@@ -9,6 +9,7 @@ import { settingsService } from '../services/settingsService';
 import { tenantService } from '../services/tenantService';
 import { supabase } from '../services/supabase';
 import { SYSTEM_VERSION } from '../constants';
+import { notify } from './ui/toast';
 
 interface SidebarProps {
   activeView: string;
@@ -86,7 +87,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
   const handleCopyLink = (path: string) => {
     const fullUrl = `${window.location.origin}${path}`;
     navigator.clipboard.writeText(fullUrl);
-    alert('Link copiado para a área de transferência!');
+    notify.success('Link copiado!');
   };
 
   return (

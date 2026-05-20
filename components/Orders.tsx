@@ -39,6 +39,8 @@ import { orderService } from '../services/orderService';
 import { clientService } from '../services/clientService';
 import { financeService } from '../services/financeService';
 import { supabase } from '../services/supabase';
+import { notify } from './ui/toast';
+import { ConfirmModal } from './ui/ConfirmModal';
 
 import { ProductionBoard } from './ProductionBoard';
 
@@ -104,14 +106,18 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
   const [delayReason, setDelayReason] = useState('');
   const [orderType, setOrderType] = useState<OrderType>(OrderType.SALE);
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(PaymentStatus.PENDING);
-  const [customAmountPaid, setCustomAmountPaid] = useState<number | string>(''); // For UI input
-  const [discountValue, setDiscountValue] = useState<number | string>(''); // For UI input
+  const [customAmountPaid, setCustomAmountPaid] = useState<number | string>('');
+  const [discountValue, setDiscountValue] = useState<number | string>('');
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const [isPartialEditMode, setIsPartialEditMode] = useState(false);
   const [newOrderBriefing, setNewOrderBriefing] = useState('');
   const [layoutUrls, setLayoutUrls] = useState<string[]>([]);
   const [designFileUrls, setDesignFileUrls] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Confirm modal states (UX-001)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmPaymentOrder, setConfirmPaymentOrder] = useState<Order | null>(null);
 
   // Chat State
   const [chatOrder, setChatOrder] = useState<Order | null>(null);
@@ -162,7 +168,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
       setChatInput('');
     } catch (e) {
       console.error(e);
-      alert('Erro ao enviar mensagem.');
+      notify.error('Erro ao enviar mensagem.');
     } finally {
       setIsSendingChat(false);
     }
@@ -196,7 +202,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
       const items = await parseOrderText(aiText, safeProducts.map(p => ({ id: p.id, name: p.name })));
 
       if (!items || items.length === 0) {
-        alert("A IA não conseguiu identificar itens no texto. Tente reformular.");
+        notify.warning('A IA não conseguiu identificar itens no texto. Tente reformular.');
         return;
       }
 
@@ -338,9 +344,9 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
       }
 
       if (msg.includes("API key")) {
-        alert("Erro de Chave API: Verifique se sua chave Gemini está configurada corretamente nos Ajustes.");
+        notify.error('Erro de Chave API: Verifique sua chave Gemini nos Ajustes.');
       } else {
-        alert(`Erro ao processar com IA: ${msg}`);
+        notify.error(`Erro ao processar com IA: ${msg}`);
       }
     } finally {
       setIsAiProcessing(false);
@@ -463,7 +469,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
       setDesignFileUrls(prev => [...prev, ...successUrls]);
     }
     if (errors.length > 0) {
-      alert(`Erro ao enviar ${errors.length} arquivo(s):\n\n${errors.join('\n')}\n\nVerifique se você está logado no sistema.`);
+      notify.error(`Erro ao enviar ${errors.length} arquivo(s). Verifique se você está logado no sistema.`);
     }
     setIsUploading(false);
     e.target.value = '';
@@ -521,15 +527,18 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
     setIsPartialEditMode(false);
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Tem certeza que deseja excluir este pedido?')) {
-      try {
-        await orderService.delete(id);
-        window.dispatchEvent(new Event('refreshData'));
-      } catch (error) {
-        console.error("Error deleting order", error);
-        alert("Erro ao excluir pedido.");
-      }
+  const handleDelete = (id: string) => {
+    setConfirmDeleteId(id);
+  };
+
+  const doDelete = async (id: string) => {
+    try {
+      await orderService.delete(id);
+      window.dispatchEvent(new Event('refreshData'));
+      notify.success('Pedido excluído.');
+    } catch (error) {
+      console.error("Error deleting order", error);
+      notify.error('Erro ao excluir pedido.');
     }
   };
 
@@ -670,7 +679,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
       handleCloseModal();
     } catch (e) {
       console.error("Error saving order", e);
-      alert("Erro ao salvar pedido");
+      notify.error('Erro ao salvar pedido.');
     } finally {
       setIsSaving(false);
     }
@@ -678,22 +687,18 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
 
   const isOrderLate = deliveryDate && new Date(deliveryDate) < new Date();
 
-  const handleReceivePayment = async (order: Order) => {
+  const handleReceivePayment = (order: Order) => {
     if (order.paymentStatus === PaymentStatus.FULL) return;
+    setConfirmPaymentOrder(order);
+  };
 
-    if (!confirm(`Confirmar recebimento INTEGRAL de R$ ${order.totalValue.toLocaleString('pt-BR')} para o pedido #${order.orderNumber}?\n\nIsso gerará um lançamento de receita no financeiro.`)) {
-      return;
-    }
-
+  const doReceivePayment = async (order: Order) => {
     setIsSaving(true);
     try {
-      // 1. Update Order Status
       await orderService.update(order.id, {
         paymentStatus: PaymentStatus.FULL,
         amountPaid: order.totalValue
       });
-
-      // 2. Create Finance Transaction
       await financeService.create({
         type: 'income',
         category: 'sale',
@@ -701,14 +706,11 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
         description: `Recebimento Pedido #${order.orderNumber} - ${order.clientName}`,
         date: new Date().toISOString()
       });
-
-      // 3. Refresh
       window.dispatchEvent(new Event('refreshData'));
-      alert("Pagamento registrado com sucesso!");
-
+      notify.success('Pagamento registrado com sucesso!');
     } catch (error) {
       console.error("Error receiving payment:", error);
-      alert("Erro ao registrar pagamento.");
+      notify.error('Erro ao registrar pagamento.');
     } finally {
       setIsSaving(false);
     }
@@ -1342,18 +1344,17 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                           <button
                             onClick={async (e) => {
                               e.stopPropagation();
-                              if (!confirm('Iniciar conferência deste pedido?')) return;
                               try {
                                 const newStatus = OrderStatus.STORE_CONFERENCE;
                                 await orderService.update(order.id, { status: newStatus });
                                 setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: newStatus } : o));
-
+                                notify.info('Conferência iniciada.');
                                 const client = clientsByName.get((order.clientName || '').toLowerCase());
                                 if (client?.whatsapp) {
                                   const msg = getStatusUpdateMessage(order, newStatus);
                                   window.open(getWhatsAppLink(client.whatsapp, msg), '_blank');
                                 }
-                              } catch (err) { console.error(err); alert('Erro ao atualizar status'); }
+                              } catch (err) { console.error(err); notify.error('Erro ao atualizar status.'); }
                             }}
                             className="flex-1 text-slate-400 hover:text-violet-400 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all flex justify-center items-center"
                             title="Iniciar Conferência"
@@ -1365,18 +1366,17 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                           <button
                             onClick={async (e) => {
                               e.stopPropagation();
-                              if (!confirm('Finalizar conferência e aguardar aprovação?')) return;
                               try {
                                 const newStatus = OrderStatus.STORE_CHECKED;
                                 await orderService.update(order.id, { status: newStatus });
                                 setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: newStatus } : o));
-
+                                notify.success('Conferência finalizada! Aguardando aprovação.');
                                 const client = clientsByName.get((order.clientName || '').toLowerCase());
                                 if (client?.whatsapp) {
                                   const msg = getStatusUpdateMessage(order, newStatus);
                                   window.open(getWhatsAppLink(client.whatsapp, msg), '_blank');
                                 }
-                              } catch (err) { console.error(err); alert('Erro ao atualizar status'); }
+                              } catch (err) { console.error(err); notify.error('Erro ao atualizar status.'); }
                             }}
                             className="flex-1 text-slate-400 hover:text-teal-400 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all flex justify-center items-center"
                             title="Finalizar Conferência"
@@ -1388,18 +1388,17 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                           <button
                             onClick={async (e) => {
                               e.stopPropagation();
-                              if (!confirm('Confirmar pedido e mover para Produção?')) return;
                               try {
                                 const newStatus = OrderStatus.RECEIVED;
                                 await orderService.update(order.id, { status: newStatus });
                                 setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: newStatus } : o));
-
+                                notify.success('Pedido confirmado e movido para Produção!');
                                 const client = clientsByName.get((order.clientName || '').toLowerCase());
                                 if (client?.whatsapp) {
                                   const msg = getStatusUpdateMessage(order, newStatus);
                                   window.open(getWhatsAppLink(client.whatsapp, msg), '_blank');
                                 }
-                              } catch (err) { console.error(err); alert('Erro ao atualizar status'); }
+                              } catch (err) { console.error(err); notify.error('Erro ao atualizar status.'); }
                             }}
                             className="flex-1 text-slate-400 hover:text-emerald-400 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all flex justify-center items-center"
                             title="Confirmar e Mover para Produção"
@@ -1488,7 +1487,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                             const portalLink = `${window.location.origin}/?view=client_portal`;
                             const msg = `Olá! Acompanhe o status do seu pedido #${order.orderNumber} em nosso Portal do Cliente:\n\n🔗 ${portalLink}\n\nUse seu WhatsApp e o Número do Pedido (${order.orderNumber}) para acessar.`;
                             navigator.clipboard.writeText(msg);
-                            alert("Link e instruções do Portal copiados para a área de transferência! Cole no WhatsApp do cliente.");
+                            notify.success('Link do Portal copiado! Cole no WhatsApp do cliente.');
                           }}
                           className="flex-1 text-slate-400 hover:text-cyan-400 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all flex justify-center items-center"
                           title="Copiar Link do Portal do Cliente"
@@ -1576,6 +1575,30 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
             </div>
           </div>
         </div>
+      )}
+
+      {/* Confirm: Delete Order */}
+      <ConfirmModal
+        isOpen={!!confirmDeleteId}
+        title="Excluir Pedido"
+        message="Tem certeza que deseja excluir este pedido? Esta ação não pode ser desfeita."
+        variant="danger"
+        confirmLabel="Excluir"
+        onConfirm={() => { if (confirmDeleteId) doDelete(confirmDeleteId); setConfirmDeleteId(null); }}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
+
+      {/* Confirm: Receive Payment */}
+      {confirmPaymentOrder && (
+        <ConfirmModal
+          isOpen={true}
+          title="Confirmar Recebimento"
+          message={`Confirmar recebimento INTEGRAL de R$ ${confirmPaymentOrder.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} para o Pedido #${confirmPaymentOrder.orderNumber}?\n\nIsso gerará um lançamento de receita no financeiro.`}
+          variant="success"
+          confirmLabel="Confirmar Pagamento"
+          onConfirm={() => { doReceivePayment(confirmPaymentOrder); setConfirmPaymentOrder(null); }}
+          onCancel={() => setConfirmPaymentOrder(null)}
+        />
       )}
     </div>
   );

@@ -20,6 +20,7 @@ import {
 import { Order, OrderStatus, Product } from '../types';
 import { printServiceOrder } from '../utils/printUtils';
 import { orderService } from '../services/orderService';
+import { notify } from './ui/toast';
 
 interface DashboardProps {
   orders: Order[];
@@ -133,10 +134,10 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) =>
 
       setSelectedOrder({ ...selectedOrder, ...updates });
       setIsEditing(false);
-      alert("Alterações salvas com sucesso!");
+      notify.success('Alterações salvas com sucesso!');
     } catch (error) {
       console.error("Failed to update order", error);
-      alert("Erro ao salvar alterações. Tente novamente.");
+      notify.error('Erro ao salvar alterações. Tente novamente.');
     } finally {
       setIsSaving(false);
     }

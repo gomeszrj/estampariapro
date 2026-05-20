@@ -3,6 +3,7 @@ import { Package, Clock, CheckCircle, Truck, Search, ArrowRight, ShoppingCart, M
 import { orderService } from '../services/orderService';
 import { supabase } from '../services/supabase';
 import { Order, OrderStatus, OrderMessage } from '../types';
+import { notify } from './ui/toast';
 
 interface OrderTrackerProps {
     orderId?: string;
@@ -144,7 +145,7 @@ const OrderTracker: React.FC<OrderTrackerProps> = ({ orderId, onBack }) => {
             setNewMessage('');
         } catch (err) {
             console.error(err);
-            alert('Falha ao enviar mensagem.');
+            notify.error('Falha ao enviar mensagem.');
         } finally {
             setSending(false);
         }

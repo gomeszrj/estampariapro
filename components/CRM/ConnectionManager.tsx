@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { evolutionService, EvolutionStatus } from '../../services/evolutionService';
 import { Loader2, RefreshCw, LogOut, QrCode as QrIcon, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { ConfirmModal } from '../ui/ConfirmModal';
 
 export const ConnectionManager: React.FC = () => {
     const [status, setStatus] = useState<EvolutionStatus>({ state: 'connecting', status: 'Verificando...' });
     const [qrCode, setQrCode] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
     const checkConnection = async () => {
         setIsLoading(true);
@@ -34,12 +36,15 @@ export const ConnectionManager: React.FC = () => {
     }, [status.state]);
 
     const handleLogout = async () => {
-        if (confirm('Tem certeza que deseja desconectar o WhatsApp?')) {
-            setIsLoading(true);
-            await evolutionService.logout();
-            setQrCode(null);
-            await checkConnection();
-        }
+        setShowLogoutConfirm(true);
+    };
+
+    const confirmLogout = async () => {
+        setShowLogoutConfirm(false);
+        setIsLoading(true);
+        await evolutionService.logout();
+        setQrCode(null);
+        await checkConnection();
     };
 
     return (
@@ -95,6 +100,15 @@ export const ConnectionManager: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            <ConfirmModal
+                isOpen={showLogoutConfirm}
+                title="Desconectar WhatsApp"
+                message="Tem certeza que deseja desconectar o WhatsApp? A instância será desconectada do aparelho atual."
+                variant="warning"
+                onConfirm={confirmLogout}
+                onCancel={() => setShowLogoutConfirm(false)}
+            />
         </div>
     );
 };

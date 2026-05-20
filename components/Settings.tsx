@@ -3,6 +3,8 @@ import { Building2, Save, Upload, Globe, Phone, Mail, FileText, Landmark, Camera
 import { teamService } from '../services/teamService';
 import { settingsService, CompanySettings } from '../services/settingsService';
 import { TeamMember, UserRole } from '../types';
+import { notify } from './ui/toast';
+import { ConfirmModal } from './ui/ConfirmModal';
 
 const Settings: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'company' | 'team' | 'bot'>('company');
@@ -34,6 +36,7 @@ const Settings: React.FC = () => {
 
   const [saved, setSaved] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [confirmDeleteMemberId, setConfirmDeleteMemberId] = useState<string | null>(null);
 
   useEffect(() => {
     loadSettings();
@@ -79,15 +82,18 @@ const Settings: React.FC = () => {
       setNewMemberPassword('');
       loadTeam();
     } catch (e) {
-      alert("Erro ao adicionar membro (Verifique se a tabela team_members existe no Supabase)");
+      notify.error('Erro ao adicionar membro. Verifique a tabela team_members no Supabase.');
     }
   };
 
-  const handleDeleteMember = async (id: string) => {
-    if (confirm("Remover este membro da equipe?")) {
-      await teamService.delete(id);
-      loadTeam();
-    }
+  const handleDeleteMember = (id: string) => {
+    setConfirmDeleteMemberId(id);
+  };
+
+  const doDeleteMember = async (id: string) => {
+    await teamService.delete(id);
+    notify.success('Membro removido.');
+    loadTeam();
   };
 
   const handleUpdatePassword = async (id: string) => {
@@ -98,7 +104,7 @@ const Settings: React.FC = () => {
       setEditPasswordValue('');
       loadTeam();
     } catch(e) {
-      alert("Erro ao alterar senha.");
+      notify.error('Erro ao alterar senha.');
     }
   };
 
@@ -111,7 +117,7 @@ const Settings: React.FC = () => {
       setTimeout(() => setSaved(false), 3000);
     } catch (error) {
       console.error("Error saving settings", error);
-      alert("Erro ao salvar configurações.");
+      notify.error('Erro ao salvar configurações.');
     }
   };
 
@@ -129,7 +135,7 @@ const Settings: React.FC = () => {
         setCompany(prev => ({ ...prev, logo_url: publicUrl }));
       } catch (error) {
         console.error(error);
-        alert("Erro ao fazer upload da imagem. Tente novamente.");
+        notify.error('Erro ao fazer upload da imagem. Tente novamente.');
       } finally {
         setIsLoadingSettings(false);
       }
@@ -569,6 +575,16 @@ const Settings: React.FC = () => {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!confirmDeleteMemberId}
+        title="Remover Membro"
+        message="Tem certeza que deseja remover este membro da equipe?"
+        variant="danger"
+        confirmLabel="Remover"
+        onConfirm={() => { if (confirmDeleteMemberId) doDeleteMember(confirmDeleteMemberId); setConfirmDeleteMemberId(null); }}
+        onCancel={() => setConfirmDeleteMemberId(null)}
+      />
     </div>
   );
 };

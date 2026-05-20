@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { teamService } from '../services/teamService';
 import { TeamMember } from '../types';
+import { notify } from './ui/toast';
 
 interface ChatSession {
     orderId: string;
@@ -144,7 +145,7 @@ const Chats: React.FC = () => {
             }).sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()));
         } catch (error) {
             console.error('Error sending message:', error);
-            alert('Erro ao enviar mensagem');
+            notify.error('Erro ao enviar mensagem');
         } finally {
             setIsSending(false);
         }
@@ -157,7 +158,7 @@ const Chats: React.FC = () => {
             setSessions(prev => prev.map(s => s.orderId === activeSessionId ? { ...s, assignedSeller: sellerId } : s));
         } catch (e) {
             console.error(e);
-            alert('Erro ao atribuir vendedor');
+            notify.error('Erro ao atribuir vendedor');
         }
     };
 

@@ -5,6 +5,7 @@ import { productService } from '../services/productService';
 import { catalogOrderService } from '../services/catalogOrderService';
 import { GRADES } from '../constants';
 import { CompanySettings, settingsService } from '../services/settingsService';
+import { notify } from './ui/toast';
 
 // --- Types ---
 interface CartItem {
@@ -124,7 +125,7 @@ const PublicStore: React.FC = () => {
 
     const handleCheckout = async () => {
         if (!clientName || !clientPhone || cart.length === 0) {
-            alert("Preencha seu nome e telefone para enviar o pedido.");
+            notify.warning('Preencha seu nome e telefone para enviar o pedido.');
             return;
         }
 
@@ -157,7 +158,7 @@ const PublicStore: React.FC = () => {
             setCheckoutSuccess(true);
         } catch (error) {
             console.error("Checkout error", error);
-            alert("Erro ao enviar pedido. Tente novamente.");
+            notify.error('Erro ao enviar pedido. Tente novamente.');
         }
     };
 

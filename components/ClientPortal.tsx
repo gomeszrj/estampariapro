@@ -6,6 +6,7 @@ import { settingsService } from '../services/settingsService';
 import { Order, OrderMessage } from '../types';
 import { STATUS_CONFIG } from '../constants';
 import ClientLogin from './ClientLogin';
+import { notify } from './ui/toast';
 
 const ClientPortal: React.FC = () => {
     const [clientSession, setClientSession] = useState<{ id: string; name: string; phone: string } | null>(null);
@@ -129,7 +130,7 @@ const ClientPortal: React.FC = () => {
             setNewMessage('');
         } catch (e) {
             console.error(e);
-            alert('Falha ao enviar mensagem.');
+            notify.error('Falha ao enviar mensagem.');
         } finally {
             setSending(false);
         }

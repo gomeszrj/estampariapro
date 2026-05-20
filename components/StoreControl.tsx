@@ -38,6 +38,7 @@ import { clientService } from '../services/clientService';
 import { orderService } from '../services/orderService';
 import { financeService } from '../services/financeService';
 import { inventoryService } from '../services/inventoryService';
+import { notify } from './ui/toast';
 
 interface CatalogProps {
   products: Product[];
@@ -242,7 +243,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
   const handleGenerateDescription = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!editingProduct?.name) {
-      alert("Nome obrigatório");
+      notify.warning('O nome do produto é obrigatório.');
       return;
     }
     setIsGeneratingDescription(true);
@@ -257,7 +258,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
 
   const handleSaveProduct = async () => {
     if (!editingProduct.name || !editingProduct.basePrice) {
-      alert("Nome e Preço obrigatórios");
+      notify.warning('O nome e o preço de venda são obrigatórios.');
       return;
     }
     // Save Logic (Create or Update)
@@ -305,11 +306,11 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
   const handlePOSCheckout = async () => {
     if (cart.length === 0) return;
     if (!selectedClientId) {
-      alert("Selecione um cliente para finalizar a venda.");
+      notify.warning('Selecione um cliente para finalizar a venda.');
       return;
     }
     if (cart.some(i => !i.size)) {
-      alert("Selecione o tamanho dos itens.");
+      notify.warning('Por favor, selecione o tamanho de todos os itens do carrinho.');
       return;
     }
 
@@ -355,10 +356,10 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
 
       // 3. Clear
       setCart([]);
-      alert("Venda registrada com sucesso!");
+      notify.success('Venda registrada com sucesso! Estoque e Financeiro atualizados.');
     } catch (e) {
       console.error("Error POS checkout", e);
-      alert("Erro ao finalizar venda.");
+      notify.error('Erro ao finalizar venda.');
     } finally {
       setIsSubmittingOrder(false);
     }
@@ -366,8 +367,8 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
 
   // --- CHECKOUT (PUBLIC) ---
   const handlePublicCheckout = async () => {
-    if (!clientForm.name || !clientForm.phone) { alert("Nome e Whats obrigatórios"); return; }
-    if (cart.some(i => !i.size)) { alert("Selecione tamanhos"); return; }
+    if (!clientForm.name || !clientForm.phone) { notify.warning('Nome e WhatsApp são obrigatórios.'); return; }
+    if (cart.some(i => !i.size)) { notify.warning('Por favor, selecione os tamanhos de todos os itens.'); return; }
 
     setIsSubmittingOrder(true);
     try {
@@ -381,12 +382,12 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
         totalEstimated: 0
       };
       await catalogOrderService.create(orderData);
-      alert("Solicitação enviada!");
+      notify.success('Solicitação enviada com sucesso!');
       setCart([]);
       setIsCartOpen(false);
     } catch (e) {
       console.error(e);
-      alert("Erro ao enviar.");
+      notify.error('Erro ao enviar solicitação.');
     } finally { setIsSubmittingOrder(false); }
   };
 

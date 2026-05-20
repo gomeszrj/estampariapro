@@ -2,7 +2,6 @@
 import React from 'react';
 import { Order, OrderStatus } from '../types';
 import { STATUS_CONFIG } from '../constants';
-// Add missing Calendar icon import
 import { Clock, AlertCircle, MoreHorizontal, ChevronRight, ChevronLeft, ArrowRightCircle, Printer, Calendar, Search, Users, Download, Upload, FileCode, ImageIcon, Loader2 } from 'lucide-react';
 import { printServiceOrder } from '../utils/printUtils';
 import { getWhatsAppLink, getStatusUpdateMessage } from '../utils/whatsappUtils';
@@ -10,6 +9,7 @@ import { clientService } from '../services/clientService';
 import { orderService } from '../services/orderService';
 import { whatsappService } from '../services/whatsappService';
 import { Client } from '../types';
+import { notify } from './ui/toast';
 
 const statuses = [
   OrderStatus.RECEIVED,
@@ -166,11 +166,11 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ order, onMove }) => {
                                 readyFileUrls: updatedReadyFiles,
                                 artCreated: true 
                             });
-                            alert("Arte final enviada com sucesso!");
+                            notify.success('Arte final enviada com sucesso!');
                             window.location.reload();
                         } catch (err) {
                             console.error(err);
-                            alert("Erro ao enviar arte final.");
+                            notify.error('Erro ao enviar arte final.');
                         }
                     }} 
                 />
@@ -316,7 +316,7 @@ const Kanban: React.FC<KanbanProps> = ({ orders, setOrders }) => {
       await orderService.update(id, { status: newStatus });
     } catch (error) {
       console.error("Failed to update order status:", error);
-      alert("Erro ao salvar o novo status. Recarregue a página.");
+      notify.error('Erro ao salvar o novo status. Recarregue a página.');
     }
   };
 

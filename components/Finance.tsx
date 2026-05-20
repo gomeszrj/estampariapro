@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { Order, OrderStatus, Product, Transaction } from '../types';
 import { financeService } from '../services/financeService';
+import { notify } from './ui/toast';
 
 interface FinanceProps {
   orders: Order[];
@@ -99,9 +100,10 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
       setTransactions(prev => [created, ...prev]);
       setIsAdding(false);
       setNewTransaction({ type: 'expense', category: 'other', date: new Date().toISOString().split('T')[0] });
+      notify.success('Transação registrada!');
     } catch (error) {
       console.error("Failed to save transaction", error);
-      alert("Erro ao salvar transação");
+      notify.error('Erro ao salvar transação.');
     } finally {
       setSaving(false);
     }

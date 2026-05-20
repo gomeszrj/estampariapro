@@ -7,6 +7,7 @@ import { ptBR } from 'date-fns/locale';
 import { chatService, ChatSession } from '../../services/chatService';
 import { OrderMessage } from '../../types';
 import { whatsappService } from '../../services/whatsappService';
+import { notify } from '../ui/toast';
 
 interface CRMFullScreenProps {
     onLogout: () => void;
@@ -139,7 +140,7 @@ export const CRMFullScreen: React.FC<CRMFullScreenProps> = ({ onLogout }) => {
 
         } catch (error) {
             console.error('Error sending message:', error);
-            alert('Erro ao enviar mensagem');
+            notify.error('Erro ao enviar mensagem');
         } finally {
             setIsSending(false);
         }
@@ -167,7 +168,7 @@ export const CRMFullScreen: React.FC<CRMFullScreenProps> = ({ onLogout }) => {
             };
         } catch (err) {
             console.error(err);
-            alert("Erro ao enviar arquivo.");
+            notify.error('Erro ao enviar arquivo.');
             setUploadingMedia(false);
         }
         if (fileInputRef.current) fileInputRef.current.value = '';

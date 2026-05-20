@@ -6,6 +6,7 @@ import { supabase } from '../../services/supabase';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { OrderMessage } from '../../types';
+import { notify } from '../ui/toast';
 
 export const ChatWidget: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -147,7 +148,7 @@ export const ChatWidget: React.FC = () => {
 
         } catch (error) {
             console.error('Error sending message:', error);
-            alert('Erro ao enviar mensagem');
+            notify.error('Erro ao enviar mensagem.');
         } finally {
             setIsSending(false);
         }
@@ -192,7 +193,7 @@ export const ChatWidget: React.FC = () => {
             };
         } catch (err) {
             console.error(err);
-            alert("Erro ao enviar arquivo.");
+            notify.error('Erro ao enviar arquivo.');
             setUploadingMedia(false);
         }
         

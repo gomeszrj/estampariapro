@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Smartphone, QrCode, Hash, Loader2, CheckCircle2, AlertCircle, RefreshCw, Power } from 'lucide-react';
 import { whatsappService } from '../services/whatsappService';
 import { CRMFullScreen } from './CRM/CRMFullScreen';
+import { notify } from './ui/toast';
 
 export const WhatsAppManager: React.FC = () => {
     const [connectionState, setConnectionState] = useState<'loading' | 'connected' | 'disconnected' | 'qr'>('loading');
@@ -39,7 +40,7 @@ export const WhatsAppManager: React.FC = () => {
             setQrCode(qr);
             setConnectionState('qr');
         } else {
-            alert('Falha ao gerar QR Code. Verifique se a Evolution API está rodando e configurada em Configurações.');
+            notify.error('Falha ao gerar QR Code. Verifique se a Evolution API está rodando e configurada em Configurações.');
         }
         setLoadingAction(false);
     };
@@ -54,7 +55,7 @@ export const WhatsAppManager: React.FC = () => {
             setPairingCode(code);
             setConnectionState('qr');
         } else {
-            alert('Falha ao solicitar Pairing Code. Verifique o número e a Evolution API.');
+            notify.error('Falha ao solicitar Pairing Code. Verifique o número e a Evolution API.');
         }
         setLoadingAction(false);
     };

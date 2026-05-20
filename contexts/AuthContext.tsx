@@ -5,6 +5,7 @@ import { Session, User } from '@supabase/supabase-js';
 interface AuthContextType {
     session: Session | null;
     user: User | null;
+    isMasterAdmin: boolean;
     loading: boolean;
     signOut: () => Promise<void>;
 }
@@ -12,6 +13,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
     session: null,
     user: null,
+    isMasterAdmin: false,
     loading: true,
     signOut: async () => { },
 });
@@ -19,7 +21,25 @@ const AuthContext = createContext<AuthContextType>({
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [session, setSession] = useState<Session | null>(null);
     const [user, setUser] = useState<User | null>(null);
+    const [isMasterAdmin, setIsMasterAdmin] = useState(false);
     const [loading, setLoading] = useState(true);
+
+    // SEC-002: Load master admin status from the database (not hardcoded email)
+    const loadAdminStatus = async (userId: string) => {
+        try {
+            const { data } = await supabase
+                .from('profiles')
+                .select('is_master_admin')
+                .eq('id', userId)
+                .single();
+            setIsMasterAdmin(!!data?.is_master_admin);
+        } catch {
+            // If column doesn't exist yet, fall back to the legacy email check
+            // TODO: Run migration to add is_master_admin column and remove this fallback
+            const { data: { user: currentUser } } = await supabase.auth.getUser();
+            setIsMasterAdmin(currentUser?.email === 'admin@estamparia.com');
+        }
+    };
 
     useEffect(() => {
         let mounted = true;
@@ -32,10 +52,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
         }, 5000);
 
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        supabase.auth.getSession().then(async ({ data: { session } }) => {
             if (mounted) {
                 setSession(session);
                 setUser(session?.user ?? null);
+                if (session?.user) await loadAdminStatus(session.user.id);
                 setLoading(false);
             }
         }).catch(err => {
@@ -43,10 +64,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (mounted) setLoading(false);
         });
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
             if (mounted) {
                 setSession(session);
                 setUser(session?.user ?? null);
+                if (session?.user) await loadAdminStatus(session.user.id);
+                else setIsMasterAdmin(false);
                 setLoading(false);
             }
         });
@@ -63,7 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     return (
-        <AuthContext.Provider value={{ session, user, loading, signOut }}>
+        <AuthContext.Provider value={{ session, user, isMasterAdmin, loading, signOut }}>
             {!loading && children}
         </AuthContext.Provider>
     );

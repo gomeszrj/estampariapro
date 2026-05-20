@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Order, OrderStatus } from '../types';
 import { orderService } from '../services/orderService';
+import { notify } from './ui/toast';
 import {
     Clock,
     RotateCw,
@@ -58,7 +59,7 @@ export const ProductionBoard: React.FC<ProductionBoardProps> = ({ orders, onOrde
                 onOrderUpdate(); // Refresh parent
             } catch (error) {
                 console.error("Failed to move card:", error);
-                alert("Erro ao mover card. Tente novamente.");
+                notify.error('Erro ao mover card. Tente novamente.');
             } finally {
                 setIsUpdating(false);
                 setDraggedOrderId(null);

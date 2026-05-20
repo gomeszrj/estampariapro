@@ -33,10 +33,12 @@ import { SYSTEM_VERSION, LATEST_RELEASE_NOTES } from './constants';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { tenantService } from './services/tenantService';
 import { supabase } from './services/supabase';
+import { Toaster, toast } from 'sonner';
+import { notify } from './components/ui/toast';
 
 
 const AuthenticatedApp: React.FC = () => {
-  const { session, user, signOut } = useAuth();
+  const { session, user, isMasterAdmin, signOut } = useAuth(); // SEC-002: isMasterAdmin from context
   const [activeView, setActiveView] = useState('dashboard');
   const [companyName, setCompanyName] = useState('Minha Estamparia');
   const [isApiSettingsOpen, setIsApiSettingsOpen] = useState(false);
@@ -50,10 +52,6 @@ const AuthenticatedApp: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [tenantData, setTenantData] = useState<any>(null);
   const [mustChangePassword, setMustChangePassword] = useState(false);
-
-  const isPublicCatalog = new URLSearchParams(window.location.search).get('view') === 'public_catalog' || window.location.pathname === '/catalogo';
-  const isClientPortal = new URLSearchParams(window.location.search).get('view') === 'client_portal' || !!localStorage.getItem('client_session');
-  const isMasterAdmin = user?.email === 'admin@estamparia.com';
 
   const [botDraft, setBotDraft] = useState<{ clientName: string; items: any[]; briefing: string } | null>(null);
 
@@ -121,10 +119,13 @@ const AuthenticatedApp: React.FC = () => {
     setActiveView('orders');
   };
 
+  const isPublicCatalog = new URLSearchParams(window.location.search).get('view') === 'public_catalog' || window.location.pathname === '/catalogo';
+  const isClientPortal = new URLSearchParams(window.location.search).get('view') === 'client_portal' || !!localStorage.getItem('client_session');
+
   const handleCopyLink = (path: string) => {
     const fullUrl = `${window.location.origin}${path}`;
     navigator.clipboard.writeText(fullUrl);
-    alert('Link copiado para a área de transferência!');
+    toast.success('Link copiado para a área de transferência!');
     setIsLinksOpen(false);
   };
 
@@ -224,7 +225,7 @@ const AuthenticatedApp: React.FC = () => {
 
           <div className="flex items-center gap-4 md:gap-8">
             <button
-              onClick={() => alert(`Sistema Estamparia.AI Atualizado (v${SYSTEM_VERSION})\n\n${LATEST_RELEASE_NOTES}\n\nObrigado por utilizar nosso sistema!`)}
+              onClick={() => notify.info(`Sistema Estamparia.AI v${SYSTEM_VERSION} - Novidades:\n\n${LATEST_RELEASE_NOTES}`)}
               className="relative px-3 py-2 text-slate-400 hover:text-indigo-400 transition-all bg-slate-800/30 rounded-xl border border-slate-700/50 group flex items-center gap-3"
               title={`Ver Novidades da Versão ${SYSTEM_VERSION}`}
             >
@@ -273,6 +274,17 @@ const AuthenticatedApp: React.FC = () => {
 const App: React.FC = () => {
   return (
     <AuthProvider>
+      <Toaster
+        position="top-right"
+        richColors
+        toastOptions={{
+          style: {
+            background: '#1e293b',
+            border: '1px solid #334155',
+            color: '#f1f5f9',
+          },
+        }}
+      />
       <AuthenticatedApp />
     </AuthProvider>
   );

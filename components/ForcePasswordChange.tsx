@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
 import { supabase } from '../services/supabase';
-import { KeyRound, ShieldCheck, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { KeyRound, ShieldCheck, Eye, EyeOff, CheckCircle2, AlertCircle } from 'lucide-react';
+import { notify } from './ui/toast';
 
 interface ForcePasswordChangeProps {
   onComplete: () => void;
@@ -12,20 +13,18 @@ export const ForcePasswordChange: React.FC<ForcePasswordChangeProps> = ({ onComp
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleUpdate = async () => {
-    if (newPassword.length < 6) return alert("A senha deve ter pelo menos 6 caracteres.");
-    if (newPassword !== confirmPassword) return alert("As senhas não conferem.");
+    setError('');
+    if (newPassword.length < 6) { setError('A senha deve ter pelo menos 6 caracteres.'); return; }
+    if (newPassword !== confirmPassword) { setError('As senhas não conferem.'); return; }
 
     setLoading(true);
     try {
-      // 1. Update Auth Password
-      const { error: authError } = await supabase.auth.updateUser({
-        password: newPassword
-      });
+      const { error: authError } = await supabase.auth.updateUser({ password: newPassword });
       if (authError) throw authError;
 
-      // 2. Mark profile as change completed
       const { data: { user } } = await supabase.auth.getUser();
       const { error: profileError } = await supabase
         .from('profiles')
@@ -34,10 +33,10 @@ export const ForcePasswordChange: React.FC<ForcePasswordChangeProps> = ({ onComp
       
       if (profileError) throw profileError;
 
-      alert("Senha atualizada com sucesso! Bem-vindo ao sistema.");
+      notify.success('Senha atualizada! Bem-vindo ao sistema.');
       onComplete();
     } catch (e: any) {
-      alert("Erro ao atualizar senha: " + e.message);
+      setError('Erro ao atualizar senha: ' + e.message);
     } finally {
       setLoading(false);
     }
@@ -89,7 +88,18 @@ export const ForcePasswordChange: React.FC<ForcePasswordChangeProps> = ({ onComp
                     <CheckCircle2 size={12} className={newPassword.length >= 6 ? 'text-emerald-500' : 'text-slate-700'} />
                     Mínimo 6 caracteres
                 </li>
+                <li className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                    <CheckCircle2 size={12} className={confirmPassword.length > 0 && newPassword === confirmPassword ? 'text-emerald-500' : 'text-slate-700'} />
+                    Senhas conferem
+                </li>
             </ul>
+
+            {error && (
+              <div className="flex items-start gap-2 bg-red-950/50 border border-red-900/50 rounded-xl p-3">
+                <AlertCircle size={14} className="text-red-400 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-red-300 font-medium">{error}</p>
+              </div>
+            )}
 
             <button 
                 onClick={handleUpdate}

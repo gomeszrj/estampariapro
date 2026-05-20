@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '../../services/supabase';
 import { Send, Paperclip, MoreVertical, Smile } from 'lucide-react';
 import { evolutionService } from '../../services/evolutionService';
+import { notify } from '../ui/toast';
 
 interface Message {
     id: string;
@@ -84,7 +85,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chatId, clientName, what
             setNewMessage('');
         } catch (e) {
             console.error("Error sending message:", e);
-            alert("Erro ao enviar mensagem via WhatsApp. Verifique a conexão.");
+            notify.error('Erro ao enviar mensagem via WhatsApp. Verifique a conexão.');
         } finally {
             setSending(false);
         }

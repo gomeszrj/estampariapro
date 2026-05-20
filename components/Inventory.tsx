@@ -5,6 +5,8 @@ import { orderService } from '../services/orderService';
 import { productService } from '../services/productService';
 import { InventoryItem, OrderStatus } from '../types';
 import { financeService } from '../services/financeService';
+import { notify } from './ui/toast';
+import { ConfirmModal } from './ui/ConfirmModal';
 
 const Inventory: React.FC = () => {
     const [materials, setMaterials] = useState<InventoryItem[]>([]);
@@ -21,6 +23,7 @@ const Inventory: React.FC = () => {
     const [purchaseQty, setPurchaseQty] = useState<string>('');
     const [purchaseCost, setPurchaseCost] = useState<string>('');
     const [purchaseDesc, setPurchaseDesc] = useState('');
+    const [confirmDeleteItemId, setConfirmDeleteItemId] = useState<string | null>(null);
 
     const openPurchaseModal = (item: InventoryItem) => {
         setPurchaseItem(item);
@@ -37,7 +40,7 @@ const Inventory: React.FC = () => {
         const cost = parseFloat(purchaseCost); // Total Cost
 
         if (isNaN(qty) || isNaN(cost) || qty <= 0) {
-            alert("Por favor, insira valores válidos.");
+            notify.warning('Por favor, insira valores válidos.');
             return;
         }
 
@@ -62,11 +65,10 @@ const Inventory: React.FC = () => {
             // 4. Close
             setIsPurchasing(false);
             setPurchaseItem(null);
-            alert("Compra registrada com sucesso! Estoque e Financeiro atualizados.");
-
+            notify.success('Compra registrada! Estoque e Financeiro atualizados.');
         } catch (error) {
             console.error("Purchase failed:", error);
-            alert("Erro ao registrar compra.");
+            notify.error('Erro ao registrar compra.');
         } finally {
             setIsSaving(false);
         }
@@ -140,7 +142,7 @@ const Inventory: React.FC = () => {
 
         } catch (error) {
             console.error("Error calculating purchasing needs:", error);
-            alert("Erro ao calcular necessidades de compra.");
+            notify.error('Erro ao calcular necessidades de compra.');
         } finally {
             setCalculating(false);
         }
@@ -172,21 +174,24 @@ const Inventory: React.FC = () => {
             setNewMaterial({ category: 'Fabric', unit: 'und' });
         } catch (error) {
             console.error("Failed to create item:", error);
-            alert("Erro ao criar item.");
+            notify.error('Erro ao criar item.');
         } finally {
             setIsSaving(false);
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (confirm('Tem certeza que deseja remover este item do banco de dados?')) {
-            try {
-                await inventoryService.delete(id);
-                setMaterials(prev => prev.filter(m => m.id !== id));
-            } catch (error) {
-                console.error("Failed to delete item:", error);
-                alert("Erro ao excluir item.");
-            }
+    const handleDelete = (id: string) => {
+        setConfirmDeleteItemId(id);
+    };
+
+    const doDeleteItem = async (id: string) => {
+        try {
+            await inventoryService.delete(id);
+            setMaterials(prev => prev.filter(m => m.id !== id));
+            notify.success('Item removido do estoque.');
+        } catch (error) {
+            console.error("Failed to delete item:", error);
+            notify.error('Erro ao excluir item.');
         }
     };
 
@@ -518,8 +523,20 @@ const Inventory: React.FC = () => {
                     )}
                 </div>
             )}
+
+            <ConfirmModal
+                isOpen={!!confirmDeleteItemId}
+                title="Remover Item do Estoque"
+                message="Tem certeza que deseja remover este item do banco de dados? Esta ação não pode ser desfeita."
+                variant="danger"
+                confirmLabel="Remover"
+                onConfirm={() => { if (confirmDeleteItemId) doDeleteItem(confirmDeleteItemId); setConfirmDeleteItemId(null); }}
+                onCancel={() => setConfirmDeleteItemId(null)}
+            />
         </div>
     );
+
+    // ConfirmModal rendered after the main return above via portal logic - use ConfirmModal inline
 };
 
 export default Inventory;

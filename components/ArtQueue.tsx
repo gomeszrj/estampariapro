@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { orderService } from '../services/orderService';
+import { notify } from './ui/toast';
+import { ConfirmModal } from './ui/ConfirmModal';
 
 interface ArtEntry {
   id: string;
@@ -42,9 +44,11 @@ const ArtQueue: React.FC = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [imagePreview, setImagePreview] = useState('');
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [uploadingOrder, setUploadingOrder] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const loadEntries = async () => {
     setLoading(true);
@@ -96,7 +100,7 @@ const ArtQueue: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!form.client_name.trim()) { alert('Informe o nome do cliente.'); return; }
+    if (!form.client_name.trim()) { notify.warning('Informe o nome do cliente.'); return; }
     setSaving(true);
     try {
       const { error } = await supabase.from('art_queue').insert({
@@ -114,9 +118,10 @@ const ArtQueue: React.FC = () => {
       setImagePreview('');
       setShowForm(false);
       loadEntries();
+      notify.success('Arte cadastrada na fila!');
     } catch (e) {
       console.error(e);
-      alert('Erro ao cadastrar arte.');
+      notify.error('Erro ao cadastrar arte.');
     } finally {
       setSaving(false);
     }
@@ -141,7 +146,7 @@ const ArtQueue: React.FC = () => {
       setEntries(prev => prev.map(e => e.id === entry.id ? { ...e, ...updates } : e));
     } catch (e) {
       console.error(e);
-      alert('Erro ao atualizar status.');
+      notify.error('Erro ao atualizar status.');
     }
   };
 
@@ -153,14 +158,19 @@ const ArtQueue: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Remover esta arte da fila?')) return;
+    setConfirmDelete(id);
+  };
+
+  const doDelete = async (id: string) => {
     setDeletingId(id);
+    setConfirmDelete(null);
     try {
       await supabase.from('art_queue').delete().eq('id', id);
       setEntries(prev => prev.filter(e => e.id !== id));
+      notify.success('Arte removida da fila.');
     } catch (e) {
       console.error(e);
-      alert('Erro ao remover.');
+      notify.error('Erro ao remover.');
     } finally {
       setDeletingId(null);
     }
@@ -191,10 +201,10 @@ const ArtQueue: React.FC = () => {
 
       // Refresh data
       await loadEntries();
-      alert('✅ Arquivo Final recebido com sucesso! O Pedido foi movido automaticamente para a Produção!');
+      notify.success('Arquivo Final recebido! O Pedido foi movido para a Produção.');
     } catch (err: any) {
       console.error(err);
-      alert(`Erro no upload: ${err?.message || 'Falha na conexão.'}`);
+      notify.error(`Erro no upload: ${err?.message || 'Falha na conexão.'}`);
     } finally {
       setUploadingOrder(null);
       e.target.value = '';
@@ -578,6 +588,16 @@ const ArtQueue: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={!!confirmDelete}
+        title="Remover da Fila?"
+        message="Esta arte será removida permanentemente da fila de arte."
+        confirmLabel="Remover"
+        variant="danger"
+        onConfirm={() => confirmDelete && doDelete(confirmDelete)}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 };

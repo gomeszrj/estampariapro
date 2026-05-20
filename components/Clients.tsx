@@ -3,6 +3,8 @@ import { Search, UserPlus, Edit2, Phone, Mail, Trash2, X, Save, User, ShoppingBa
 import { Client, Order, OrderStatus, CatalogOrder } from '../types.ts';
 import { clientService } from '../services/clientService.ts';
 import { catalogOrderService } from '../services/catalogOrderService.ts';
+import { notify } from './ui/toast';
+import { ConfirmModal } from './ui/ConfirmModal';
 
 interface ClientsProps {
   clients: Client[];
@@ -16,6 +18,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
   const [profileTab, setProfileTab] = useState<'active' | 'history' | 'info' | 'catalog'>('active');
   const [clientCatalogOrders, setClientCatalogOrders] = useState<CatalogOrder[]>([]);
+  const [confirmDeleteClient, setConfirmDeleteClient] = useState<{id: string; name: string; orderCount: number} | null>(null);
 
   const filteredClients = React.useMemo(() => {
     const searchLower = searchTerm.toLowerCase();
@@ -109,35 +112,28 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
       window.dispatchEvent(new Event('refreshData'));
     } catch (e) {
       console.error("Error saving client:", e);
-      alert("Erro ao salvar cliente.");
+      notify.error('Erro ao salvar cliente.');
     }
   };
 
-  const handleDelete = async (id: string, name: string) => {
+  const handleDelete = (id: string, name: string) => {
     const orderCount = getClientOrderCount(id);
+    setConfirmDeleteClient({ id, name, orderCount });
+  };
 
-    if (orderCount > 0) {
-      if (confirm(`ATENÇÃO: Este cliente possui ${orderCount} pedido(s) vinculados!\n\nExcluir este cliente apagará PERMANENTEMENTE todo o histórico de pedidos dele também.\n\nDeseja realizar a "Exclusão Real" e limpar tudo?`)) {
-        try {
-          await clientService.deleteWithCascade(id);
-          window.dispatchEvent(new Event('refreshData'));
-          setViewingClient(null);
-        } catch (e) {
-          console.error("Error deleting cascade:", e);
-          alert("Erro ao excluir: " + e);
-        }
-      }
-      return;
-    }
-
-    if (confirm(`Tem certeza que deseja excluir o cliente "${name}" permanentemente?`)) {
-      try {
+  const doDeleteClient = async (id: string, name: string, cascade: boolean) => {
+    try {
+      if (cascade) {
+        await clientService.deleteWithCascade(id);
+      } else {
         await clientService.delete(id);
-        window.dispatchEvent(new Event('refreshData'));
-      } catch (e) {
-        console.error("Error deleting client:", e);
-        alert("Erro ao excluir cliente. Verifique se não há dados vinculados.");
       }
+      window.dispatchEvent(new Event('refreshData'));
+      setViewingClient(null);
+      notify.success(`Cliente "${name}" excluído.`);
+    } catch (e) {
+      console.error('Error deleting client:', e);
+      notify.error('Erro ao excluir cliente.');
     }
   };
 
@@ -511,6 +507,26 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Confirm: Delete Client */}
+      {confirmDeleteClient && (
+        <ConfirmModal
+          isOpen={true}
+          title={confirmDeleteClient.orderCount > 0 ? 'Excluir Cliente e Pedidos' : `Excluir "${confirmDeleteClient.name}"`}
+          message={
+            confirmDeleteClient.orderCount > 0
+              ? `ATENÇÃO: Este cliente possui ${confirmDeleteClient.orderCount} pedido(s) vinculados!\n\nExcluir apagará PERMANENTEMENTE o cliente e todo seu histórico de pedidos.\n\nEsta ação NÃO PODE SER DESFEITA!`
+              : `Tem certeza que deseja excluir o cliente "${confirmDeleteClient.name}" permanentemente?`
+          }
+          variant="danger"
+          confirmLabel="Excluir Permanentemente"
+          onConfirm={() => {
+            doDeleteClient(confirmDeleteClient.id, confirmDeleteClient.name, confirmDeleteClient.orderCount > 0);
+            setConfirmDeleteClient(null);
+          }}
+          onCancel={() => setConfirmDeleteClient(null)}
+        />
       )}
     </div>
   );

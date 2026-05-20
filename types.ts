@@ -133,7 +133,8 @@ export interface TeamMember {
   role: UserRole;
   active: boolean;
   email?: string;
-  visible_password?: string;
+  // NOTE: visible_password was removed (SEC-001) — never store passwords in plaintext.
+  // Authentication is handled by Supabase Auth. Team members should use Supabase Auth accounts.
   createdAt?: string;
 }
 
