@@ -1,26 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Sidebar from './components/Sidebar';
-import Dashboard from './components/Dashboard';
-import Orders from './components/Orders';
-import Kanban from './components/Kanban';
-import StoreControl from './components/StoreControl';
-import Products from './components/Products';
-import Settings from './components/Settings';
-import Finance from './components/Finance';
-import Clients from './components/Clients';
 import Login from './components/Login';
-import { WhatsAppManager } from './components/WhatsAppManager';
-import CatalogRequests from './components/CatalogRequests';
-import Inventory from './components/Inventory';
-import { CloudBot } from './components/CloudBot';
-import OrderTracker from './components/OrderTracker';
-import PublicStore from './components/PublicStore';
-import ClientPortal from './components/ClientPortal';
-import ArtQueue from './components/ArtQueue';
-import MasterAdmin from './components/MasterAdmin';
 import { SubscriptionLock } from './components/SubscriptionLock';
 import { ForcePasswordChange } from './components/ForcePasswordChange';
 import { ChatWidget } from './components/CRM/ChatWidget';
+import { PageSkeleton } from './components/ui/SkeletonLoader';
 import { Bell, User as UserIcon, Share2, Menu, ExternalLink, Link as LinkIcon, Copy } from 'lucide-react';
 import { Order, Product, Client, OrderStatus, OrderType } from './types';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -35,6 +19,27 @@ import { tenantService } from './services/tenantService';
 import { supabase } from './services/supabase';
 import { Toaster, toast } from 'sonner';
 import { notify } from './components/ui/toast';
+
+// Dynamic Page/View Imports for lazy loading (Performance FASE 2)
+const Dashboard = React.lazy(() => import('./components/Dashboard'));
+const Orders = React.lazy(() => import('./components/Orders'));
+const Kanban = React.lazy(() => import('./components/Kanban'));
+const StoreControl = React.lazy(() => import('./components/StoreControl'));
+const Products = React.lazy(() => import('./components/Products'));
+const Settings = React.lazy(() => import('./components/Settings'));
+const Finance = React.lazy(() => import('./components/Finance'));
+const Clients = React.lazy(() => import('./components/Clients'));
+const CatalogRequests = React.lazy(() => import('./components/CatalogRequests'));
+const Inventory = React.lazy(() => import('./components/Inventory'));
+const ArtQueue = React.lazy(() => import('./components/ArtQueue'));
+const MasterAdmin = React.lazy(() => import('./components/MasterAdmin'));
+
+// Dynamic Portals/Sub-systems
+const CloudBot = React.lazy(() => import('./components/CloudBot').then(m => ({ default: m.CloudBot })));
+const WhatsAppManager = React.lazy(() => import('./components/WhatsAppManager').then(m => ({ default: m.WhatsAppManager })));
+const ClientPortal = React.lazy(() => import('./components/ClientPortal'));
+const PublicStore = React.lazy(() => import('./components/PublicStore'));
+const OrderTracker = React.lazy(() => import('./components/OrderTracker'));
 
 
 const AuthenticatedApp: React.FC = () => {
@@ -150,18 +155,30 @@ const AuthenticatedApp: React.FC = () => {
   };
 
   if (isClientPortal) {
-    return <ClientPortal />;
+    return (
+      <Suspense fallback={<PageSkeleton />}>
+        <ClientPortal />
+      </Suspense>
+    );
   }
 
   if (isPublicCatalog) {
-    return <PublicStore />;
+    return (
+      <Suspense fallback={<PageSkeleton />}>
+        <PublicStore />
+      </Suspense>
+    );
   }
 
   const isTrackerView = new URLSearchParams(window.location.search).get('view') === 'tracker';
   const trackerOrderId = new URLSearchParams(window.location.search).get('order') || undefined;
 
   if (isTrackerView) {
-    return <OrderTracker orderId={trackerOrderId} onBack={() => window.location.href = '/'} />;
+    return (
+      <Suspense fallback={<PageSkeleton />}>
+        <OrderTracker orderId={trackerOrderId} onBack={() => window.location.href = '/'} />
+      </Suspense>
+    );
   }
 
   // Subscription Logic (Lock System)
@@ -263,7 +280,9 @@ const AuthenticatedApp: React.FC = () => {
 
         <div className="p-4 md:p-10 max-w-[1600px] mx-auto w-full">
           <ErrorBoundary>
-            {renderContent()}
+            <Suspense fallback={<PageSkeleton />}>
+              {renderContent()}
+            </Suspense>
           </ErrorBoundary>
         </div>
       </main>
