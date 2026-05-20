@@ -22,26 +22,46 @@ import { supabase } from './services/supabase';
 import { Toaster, toast } from 'sonner';
 import { notify } from './components/ui/toast';
 
+// Helper: retry dynamic imports — auto-reload on stale chunk (after deploy)
+const lazyRetry = (importFn: () => Promise<any>) =>
+  React.lazy(() =>
+    importFn().catch(() => {
+      // Chunk failed — likely stale cache after a new deploy
+      // Only reload once to avoid infinite loops
+      const hasReloaded = sessionStorage.getItem('chunk_reload');
+      if (!hasReloaded) {
+        sessionStorage.setItem('chunk_reload', '1');
+        window.location.reload();
+      }
+      return importFn(); // retry once more in case reload was prevented
+    })
+  );
+
+// Clear the reload flag on successful page load
+if (typeof window !== 'undefined') {
+  window.addEventListener('load', () => sessionStorage.removeItem('chunk_reload'));
+}
+
 // Dynamic Page/View Imports for lazy loading (Performance FASE 2)
-const Dashboard = React.lazy(() => import('./components/Dashboard'));
-const Orders = React.lazy(() => import('./components/Orders'));
-const Kanban = React.lazy(() => import('./components/Kanban'));
-const StoreControl = React.lazy(() => import('./components/StoreControl'));
-const Products = React.lazy(() => import('./components/Products'));
-const Settings = React.lazy(() => import('./components/Settings'));
-const Finance = React.lazy(() => import('./components/Finance'));
-const Clients = React.lazy(() => import('./components/Clients'));
-const CatalogRequests = React.lazy(() => import('./components/CatalogRequests'));
-const Inventory = React.lazy(() => import('./components/Inventory'));
-const ArtQueue = React.lazy(() => import('./components/ArtQueue'));
-const MasterAdmin = React.lazy(() => import('./components/MasterAdmin'));
+const Dashboard = lazyRetry(() => import('./components/Dashboard'));
+const Orders = lazyRetry(() => import('./components/Orders'));
+const Kanban = lazyRetry(() => import('./components/Kanban'));
+const StoreControl = lazyRetry(() => import('./components/StoreControl'));
+const Products = lazyRetry(() => import('./components/Products'));
+const Settings = lazyRetry(() => import('./components/Settings'));
+const Finance = lazyRetry(() => import('./components/Finance'));
+const Clients = lazyRetry(() => import('./components/Clients'));
+const CatalogRequests = lazyRetry(() => import('./components/CatalogRequests'));
+const Inventory = lazyRetry(() => import('./components/Inventory'));
+const ArtQueue = lazyRetry(() => import('./components/ArtQueue'));
+const MasterAdmin = lazyRetry(() => import('./components/MasterAdmin'));
 
 // Dynamic Portals/Sub-systems
-const CloudBot = React.lazy(() => import('./components/CloudBot').then(m => ({ default: m.CloudBot })));
-const WhatsAppManager = React.lazy(() => import('./components/WhatsAppManager').then(m => ({ default: m.WhatsAppManager })));
-const ClientPortal = React.lazy(() => import('./components/ClientPortal'));
-const PublicStore = React.lazy(() => import('./components/PublicStore'));
-const OrderTracker = React.lazy(() => import('./components/OrderTracker'));
+const CloudBot = lazyRetry(() => import('./components/CloudBot').then(m => ({ default: m.CloudBot })));
+const WhatsAppManager = lazyRetry(() => import('./components/WhatsAppManager').then(m => ({ default: m.WhatsAppManager })));
+const ClientPortal = lazyRetry(() => import('./components/ClientPortal'));
+const PublicStore = lazyRetry(() => import('./components/PublicStore'));
+const OrderTracker = lazyRetry(() => import('./components/OrderTracker'));
 
 
 const AuthenticatedApp: React.FC = () => {
