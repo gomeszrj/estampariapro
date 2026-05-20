@@ -39,12 +39,11 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose }) 
     const handleSave = () => {
         setLoading(true);
 
-        // Save to LocalStorage (Standard Config)
-        // DO NOT SAVE to LocalStorage to prevent credential exposure in frontend
-        localStorage.removeItem(CONFIG_KEYS.SUPABASE_URL);
-        localStorage.removeItem(CONFIG_KEYS.SUPABASE_ANON_KEY);
-        localStorage.removeItem(CONFIG_KEYS.GEMINI_API_KEY);
-        localStorage.removeItem(CONFIG_KEYS.OPENAI_API_KEY);
+        // Restore saving to LocalStorage because the app depends on it if not using .env
+        localStorage.setItem(CONFIG_KEYS.SUPABASE_URL, keys.supabaseUrl);
+        localStorage.setItem(CONFIG_KEYS.SUPABASE_ANON_KEY, keys.supabaseKey);
+        localStorage.setItem(CONFIG_KEYS.GEMINI_API_KEY, keys.geminiKey);
+        localStorage.setItem(CONFIG_KEYS.OPENAI_API_KEY, keys.openaiKey);
 
         // Save Evolution API Config
         if (evolutionStore.url) localStorage.setItem('evolution_api_url', evolutionStore.url);
@@ -64,14 +63,22 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose }) 
             <div className="bg-[#0f172a] rounded-[2rem] border border-slate-800 w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
 
                 {/* Header */}
-                <div className="p-8 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-600/20">
+                <div className="p-8 border-b border-slate-800 flex justify-between items-start bg-slate-900/50">
+                    <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-600/20 shrink-0">
                             <Key className="w-6 h-6" />
                         </div>
                         <div>
-                            <h3 className="text-xl font-black text-slate-100 uppercase tracking-tighter">API Config</h3>
-                            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Chaves de Acesso e Integração</p>
+                            <h2 className="text-xl font-black text-white uppercase tracking-wider">Ajustes de Sistema & API</h2>
+                            <p className="text-sm text-slate-400 mt-1">
+                                Configure as credenciais externas do sistema.
+                            </p>
+                            <div className="mt-3 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3">
+                                <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                                <div className="text-xs text-red-200">
+                                    <strong>Aviso de Segurança:</strong> Salvar credenciais aqui as manterá no <code className="bg-red-500/20 px-1 rounded">LocalStorage</code> do navegador, onde podem ser vistas no "Inspecionar" por quem usar este computador. Para segurança máxima em produção, adicione-as nas variáveis de ambiente (.env / Vercel) e deixe estes campos em branco.
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <button onClick={onClose} className="text-slate-500 hover:text-white bg-slate-800/50 hover:bg-slate-800 p-2 rounded-xl transition-all">
