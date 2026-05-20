@@ -46,6 +46,9 @@ const OrderTracker = React.lazy(() => import('./components/OrderTracker'));
 
 const AuthenticatedApp: React.FC = () => {
   const { session, user, isMasterAdmin, signOut } = useAuth(); // SEC-002: isMasterAdmin from context
+  const isPublicCatalog = new URLSearchParams(window.location.search).get('view') === 'public_catalog' || window.location.pathname === '/catalogo';
+  const isClientPortal = new URLSearchParams(window.location.search).get('view') === 'client_portal' || !!localStorage.getItem('client_session');
+  
   const [activeView, setActiveView] = useState('dashboard');
   const [companyName, setCompanyName] = useState('Minha Estamparia');
   const [isApiSettingsOpen, setIsApiSettingsOpen] = useState(false);
@@ -130,9 +133,6 @@ const AuthenticatedApp: React.FC = () => {
     setBotDraft(data);
     setActiveView('orders');
   };
-
-  const isPublicCatalog = new URLSearchParams(window.location.search).get('view') === 'public_catalog' || window.location.pathname === '/catalogo';
-  const isClientPortal = new URLSearchParams(window.location.search).get('view') === 'client_portal' || !!localStorage.getItem('client_session');
 
   const handleCopyLink = (path: string) => {
     const fullUrl = `${window.location.origin}${path}`;
