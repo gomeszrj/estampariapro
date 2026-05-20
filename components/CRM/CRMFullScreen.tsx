@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
     MessageSquare, Send, User, Loader2, CheckCircle2, Clock, Paperclip, Search, Menu, Filter, Power,
     ChevronRight, Edit3, Save, Phone, Tag, ShieldAlert, Award, FileText, Check, Copy, Flame, 
-    ThermometerSnowflake, Activity, ExternalLink
+    ThermometerSnowflake, Activity, ExternalLink, Plus, Trash2, Zap, Sparkles
 } from 'lucide-react';
 import { orderService } from '../../services/orderService';
 import { supabase } from '../../services/supabase';
@@ -40,6 +40,27 @@ export const CRMFullScreen: React.FC<CRMFullScreenProps> = ({ onLogout }) => {
     const [internalNotes, setInternalNotes] = useState('');
     const [isSavingNotes, setIsSavingNotes] = useState(false);
     const [isUpdatingTag, setIsUpdatingTag] = useState(false);
+
+    // Premium Enhancements States
+    const [showQuickReplies, setShowQuickReplies] = useState(false);
+    const [localTasks, setLocalTasks] = useState<{ id: string; text: string; completed: boolean; createdAt: string }[]>([]);
+    const [newTaskText, setNewTaskText] = useState('');
+
+    const quickReplies = [
+        { label: '👋 Boas-vindas', text: 'Olá! Seja muito bem-vindo à EstampariaPro. Como posso ajudar com os seus produtos personalizados hoje?' },
+        { label: '💰 Orçamento', text: 'Olá! O seu orçamento está sendo elaborado pela nossa equipe e logo te enviaremos todos os valores e opções de tecido!' },
+        { label: '🎨 Arte Aprovada', text: 'Ótimo! A sua arte foi aprovada e enviada para o nosso setor de produção. Em breve seu pedido estará pronto!' },
+        { label: '🚀 Produção', text: 'Seu pedido já entrou na esteira de produção! Estamos estampando com todo o carinho e qualidade EstampariaPro.' },
+        { label: '📦 Pronto', text: 'Excelente notícia! Seu pedido está pronto para ser retirado ou despachado. Aguardamos sua confirmação!' },
+    ];
+
+    const getGlowClass = (temp: 'frio' | 'morno' | 'quente' | null, isActive: boolean) => {
+        if (!temp) return isActive ? 'border-[#FF7A59] shadow-lg shadow-orange-500/10' : 'border-slate-800';
+        if (temp === 'frio') return 'border-blue-500/80 ring-2 ring-blue-500/20 shadow-lg shadow-blue-500/20';
+        if (temp === 'morno') return 'border-amber-500/80 ring-2 ring-amber-500/20 shadow-lg shadow-amber-500/20';
+        if (temp === 'quente') return 'border-rose-500 ring-4 ring-rose-500/30 shadow-xl shadow-rose-500/30 animate-pulse';
+        return '';
+    };
 
     // Initial load and polling for sessions
     useEffect(() => {
@@ -100,6 +121,18 @@ export const CRMFullScreen: React.FC<CRMFullScreenProps> = ({ onLogout }) => {
 
             const savedNotes = localStorage.getItem(`crm_notes_${activeSessionId}`) || '';
             setInternalNotes(savedNotes);
+
+            // Load local tasks
+            const savedTasks = localStorage.getItem(`crm_tasks_${activeSessionId}`);
+            if (savedTasks) {
+                try {
+                    setLocalTasks(JSON.parse(savedTasks));
+                } catch (e) {
+                    setLocalTasks([]);
+                }
+            } else {
+                setLocalTasks([]);
+            }
         }
     }, [activeSessionId]);
 
@@ -208,6 +241,38 @@ export const CRMFullScreen: React.FC<CRMFullScreenProps> = ({ onLogout }) => {
             setIsSavingNotes(false);
             notify.success('Notas salvas com sucesso!');
         }, 400);
+    };
+
+    // Operator Task Action Handlers
+    const handleAddTask = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newTaskText.trim() || !activeSessionId) return;
+        const newTask = {
+            id: Math.random().toString(36).substring(2, 9),
+            text: newTaskText.trim(),
+            completed: false,
+            createdAt: new Date().toISOString()
+        };
+        const updatedTasks = [...localTasks, newTask];
+        setLocalTasks(updatedTasks);
+        localStorage.setItem(`crm_tasks_${activeSessionId}`, JSON.stringify(updatedTasks));
+        setNewTaskText('');
+        notify.success('Tarefa adicionada!');
+    };
+
+    const handleToggleTask = (taskId: string) => {
+        if (!activeSessionId) return;
+        const updatedTasks = localTasks.map(t => t.id === taskId ? { ...t, completed: !t.completed } : t);
+        setLocalTasks(updatedTasks);
+        localStorage.setItem(`crm_tasks_${activeSessionId}`, JSON.stringify(updatedTasks));
+    };
+
+    const handleDeleteTask = (taskId: string) => {
+        if (!activeSessionId) return;
+        const updatedTasks = localTasks.filter(t => t.id !== taskId);
+        setLocalTasks(updatedTasks);
+        localStorage.setItem(`crm_tasks_${activeSessionId}`, JSON.stringify(updatedTasks));
+        notify.success('Tarefa excluída');
     };
 
     const handleUpdateTag = async (newTag: string) => {
@@ -372,9 +437,9 @@ export const CRMFullScreen: React.FC<CRMFullScreenProps> = ({ onLogout }) => {
                                     <div className="relative shrink-0">
                                         <div className={`w-11 h-11 rounded-full flex items-center justify-center text-xs font-black border transition-all duration-300 ${
                                             isActive 
-                                                ? 'bg-gradient-to-tr from-[#FF7A59] to-orange-600 border-orange-500 text-white' 
-                                                : 'bg-[#111625] border-slate-800 text-slate-400'
-                                        }`}>
+                                                ? 'bg-gradient-to-tr from-[#FF7A59] to-orange-600 text-white' 
+                                                : 'bg-[#111625] text-slate-400'
+                                        } ${getGlowClass(savedTemp as any, isActive)}`}>
                                             {initials}
                                         </div>
                                         {/* Status Dot */}
@@ -526,6 +591,40 @@ export const CRMFullScreen: React.FC<CRMFullScreenProps> = ({ onLogout }) => {
 
                         {/* Input Area */}
                         <div className="p-4 bg-[#111625] border-t border-slate-800/60 shrink-0">
+                            
+                            {/* Quick Replies Panel */}
+                            <div className="max-w-4xl mx-auto mb-3">
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowQuickReplies(!showQuickReplies)}
+                                        className="text-[10px] font-black uppercase tracking-widest text-[#FF7A59] hover:text-orange-400 flex items-center gap-1.5 transition-colors duration-300"
+                                    >
+                                        <Zap className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+                                        {showQuickReplies ? 'Ocultar Respostas Rápidas' : 'Respostas Rápidas'}
+                                    </button>
+                                </div>
+                                
+                                {showQuickReplies && (
+                                    <div className="flex flex-wrap gap-2 p-3 bg-[#0A0D16] border border-slate-800/80 rounded-2xl animate-in slide-in-from-bottom-2 duration-300 max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800">
+                                        {quickReplies.map((qr, index) => (
+                                            <button
+                                                key={index}
+                                                type="button"
+                                                onClick={() => {
+                                                    setNewMessage(prev => prev ? `${prev} ${qr.text}` : qr.text);
+                                                    setShowQuickReplies(false);
+                                                    notify.success('Template inserido!');
+                                                }}
+                                                className="text-xs font-semibold bg-[#111625] hover:bg-[#1c243c] border border-slate-800/80 hover:border-orange-500/20 px-3 py-1.5 rounded-xl text-slate-300 hover:text-[#FF7A59] transition-all duration-300 flex items-center gap-1"
+                                            >
+                                                {qr.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
                             <form onSubmit={handleSendMessage} className="max-w-4xl mx-auto relative flex items-center gap-3">
                                 <input
                                     type="file"
@@ -590,7 +689,12 @@ export const CRMFullScreen: React.FC<CRMFullScreenProps> = ({ onLogout }) => {
 
                         {/* Customer overview block */}
                         <div className="bg-[#111625]/50 border border-slate-800/80 rounded-2xl p-4 flex flex-col items-center text-center">
-                            <div className="w-14 h-14 bg-gradient-to-tr from-[#FF7A59] to-orange-600 rounded-2xl flex items-center justify-center text-lg font-black text-white shadow-xl shadow-orange-500/10 mb-3 border border-orange-400/20">
+                            <div className={`w-14 h-14 bg-gradient-to-tr from-[#FF7A59] to-orange-600 rounded-2xl flex items-center justify-center text-lg font-black text-white shadow-xl shadow-orange-500/10 mb-3 border transition-all duration-300 ${
+                                leadTemperature === 'quente' ? 'border-rose-500 ring-4 ring-rose-500/20 shadow-rose-500/30 animate-pulse' :
+                                leadTemperature === 'morno' ? 'border-amber-500 ring-2 ring-amber-500/10 shadow-amber-500/10' :
+                                leadTemperature === 'frio' ? 'border-blue-500 ring-2 ring-blue-500/10 shadow-blue-500/10' :
+                                'border-orange-400/20'
+                            }`}>
                                 {getInitials(activeSession.client_name)}
                             </div>
                             <h4 className="font-bold text-slate-200 text-sm truncate max-w-full">{activeSession.client_name}</h4>
@@ -731,6 +835,143 @@ export const CRMFullScreen: React.FC<CRMFullScreenProps> = ({ onLogout }) => {
                                 </div>
                             </div>
                         )}
+
+                        {/* Milestone Timeline Card (Dynamic Client-Side) */}
+                        <div className="bg-[#111625]/30 border border-slate-800/80 rounded-2xl p-4 space-y-4">
+                            <div>
+                                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Marcos do Contato</span>
+                                <h4 className="font-bold text-slate-200 text-xs mt-0.5">Timeline de Evolução</h4>
+                            </div>
+                            
+                            <div className="relative pl-4 border-l border-slate-800 space-y-4 pt-1">
+                                {/* Milestone 1: Atendimento Iniciado */}
+                                <div className="relative flex items-start gap-3">
+                                    <div className="absolute -left-[21px] w-2.5 h-2.5 rounded-full border bg-emerald-500 border-emerald-400" />
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase tracking-wider text-slate-300">Atendimento Iniciado</p>
+                                        <p className="text-[9px] text-slate-500 font-bold mt-0.5">Sessão criada no sistema</p>
+                                    </div>
+                                </div>
+                                
+                                {/* Milestone 2: Primeira Mensagem */}
+                                <div className="relative flex items-start gap-3">
+                                    <div className={`absolute -left-[21px] w-2.5 h-2.5 rounded-full border transition-all duration-300 ${
+                                        messages.length > 0 
+                                            ? 'bg-emerald-500 border-emerald-400' 
+                                            : 'bg-[#111625] border-slate-800'
+                                    }`} />
+                                    <div>
+                                        <p className={`text-[10px] font-black uppercase tracking-wider ${messages.length > 0 ? 'text-slate-300' : 'text-slate-600'}`}>Primeira Mensagem</p>
+                                        <p className="text-[9px] text-slate-500 font-bold mt-0.5">
+                                            {messages.length > 0 ? 'Conversa em andamento' : 'Aguardando envio'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Milestone 3: Classificação */}
+                                <div className="relative flex items-start gap-3">
+                                    <div className={`absolute -left-[21px] w-2.5 h-2.5 rounded-full border transition-all duration-300 ${
+                                        leadTemperature 
+                                            ? 'bg-emerald-500 border-emerald-400' 
+                                            : 'bg-[#111625] border-slate-800'
+                                    }`} />
+                                    <div>
+                                        <p className={`text-[10px] font-black uppercase tracking-wider ${leadTemperature ? 'text-slate-300' : 'text-slate-600'}`}>Lead Classificado</p>
+                                        <p className="text-[9px] text-slate-500 font-bold mt-0.5">
+                                            {leadTemperature ? `Definido como ${leadTemperature.toUpperCase()}` : 'Sem temperatura definida'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Milestone 4: Notas de Operação */}
+                                <div className="relative flex items-start gap-3">
+                                    <div className={`absolute -left-[21px] w-2.5 h-2.5 rounded-full border transition-all duration-300 ${
+                                        internalNotes.trim() 
+                                            ? 'bg-emerald-500 border-emerald-400' 
+                                            : 'bg-[#111625] border-slate-800'
+                                    }`} />
+                                    <div>
+                                        <p className={`text-[10px] font-black uppercase tracking-wider ${internalNotes.trim() ? 'text-slate-300' : 'text-slate-600'}`}>Notas Registradas</p>
+                                        <p className="text-[9px] text-slate-500 font-bold mt-0.5">
+                                            {internalNotes.trim() ? 'Detalhes salvos para produção' : 'Sem observações ainda'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Milestone 5: Pedido Ativo */}
+                                <div className="relative flex items-start gap-3">
+                                    <div className={`absolute -left-[21px] w-2.5 h-2.5 rounded-full border transition-all duration-300 ${
+                                        activeSession.active_order_id 
+                                            ? 'bg-emerald-500 border-emerald-400' 
+                                            : 'bg-[#111625] border-slate-800'
+                                    }`} />
+                                    <div>
+                                        <p className={`text-[10px] font-black uppercase tracking-wider ${activeSession.active_order_id ? 'text-slate-300' : 'text-slate-600'}`}>Pedido Vinculado</p>
+                                        <p className="text-[9px] text-slate-500 font-bold mt-0.5">
+                                            {activeSession.active_order_id ? `Pedido #${activeSession.active_order_number} vinculado` : 'Sem pedido ativo'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Operator Tasks Widget (localStorage linked) */}
+                        <div className="bg-[#111625]/40 border border-slate-800/80 rounded-2xl p-4 space-y-4">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
+                                <Plus className="w-3.5 h-3.5 text-indigo-400" />
+                                Tarefas do Atendente
+                            </label>
+                            
+                            {/* Task Form */}
+                            <form onSubmit={handleAddTask} className="flex gap-2">
+                                <input
+                                    type="text"
+                                    placeholder="Nova tarefa..."
+                                    value={newTaskText}
+                                    onChange={(e) => setNewTaskText(e.target.value)}
+                                    className="flex-1 bg-[#0A0D16] border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-[#FF7A59] transition-all duration-300 font-semibold"
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={!newTaskText.trim()}
+                                    className="p-2 bg-[#FF7A59] hover:bg-orange-600 disabled:opacity-50 text-white rounded-xl flex items-center justify-center transition-all duration-300"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                </button>
+                            </form>
+
+                            {/* Task List */}
+                            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                                {localTasks.length === 0 ? (
+                                    <p className="text-[10px] text-slate-600 font-bold uppercase tracking-wider text-center py-2">Sem tarefas pendentes</p>
+                                ) : (
+                                    localTasks.map(t => (
+                                        <div key={t.id} className="flex items-center justify-between bg-[#0A0D16]/50 border border-slate-800/60 p-2.5 rounded-xl transition-all duration-300 hover:border-slate-800">
+                                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={t.completed}
+                                                    onChange={() => handleToggleTask(t.id)}
+                                                    className="w-4 h-4 rounded border-slate-800 text-[#FF7A59] focus:ring-[#FF7A59] bg-[#0A0D16] cursor-pointer"
+                                                />
+                                                <span className={`text-xs font-semibold truncate ${
+                                                    t.completed ? 'text-slate-600 line-through' : 'text-slate-300'
+                                                }`}>
+                                                    {t.text}
+                                                </span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDeleteTask(t.id)}
+                                                className="text-slate-600 hover:text-rose-500 p-1 rounded-lg transition-colors ml-1"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
 
                         {/* Internal Operator Notes Widget (localStorage linked) */}
                         <div className="bg-[#111625]/40 border border-slate-800/80 rounded-2xl p-4 space-y-3">
