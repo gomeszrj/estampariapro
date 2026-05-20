@@ -24,18 +24,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [isMasterAdmin, setIsMasterAdmin] = useState(false);
     const [loading, setLoading] = useState(true);
 
-    // SEC-002: Load master admin status from the database (not hardcoded email)
+    // SEC-002: Load master admin status from the database profile + email check
+    // NOTE: The profiles table does NOT have is_master_admin or is_master columns.
+    // Master admin is determined by: role='admin' + email='admin@estamparia.com'
     const loadAdminStatus = async (userId: string) => {
         try {
-            const { data } = await supabase
+            const { data: profile } = await supabase
                 .from('profiles')
-                .select('is_master_admin')
+                .select('role')
                 .eq('id', userId)
                 .single();
-            setIsMasterAdmin(!!data?.is_master_admin);
+
+            const { data: { user: currentUser } } = await supabase.auth.getUser();
+            const isMaster = currentUser?.email === 'admin@estamparia.com' && profile?.role === 'admin';
+            setIsMasterAdmin(isMaster);
         } catch {
-            // If column doesn't exist yet, fall back to the legacy email check
-            // TODO: Run migration to add is_master_admin column and remove this fallback
+            // Fallback: check email only
             const { data: { user: currentUser } } = await supabase.auth.getUser();
             setIsMasterAdmin(currentUser?.email === 'admin@estamparia.com');
         }

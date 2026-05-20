@@ -20,7 +20,7 @@ create policy "Users can view audit logs of their own tenant" on audit_logs
   using (
     tenant_id = (select tenant_id from profiles where profiles.id = auth.uid()) 
     OR 
-    (select is_master from profiles where profiles.id = auth.uid()) = true
+    (auth.jwt() ->> 'email') = 'admin@estamparia.com'
   );
 
 -- Policy for inserts (authenticated users can insert audit logs)
