@@ -4,12 +4,13 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '21.7';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.7 (Modularização e Performance SaaS):
-- Modularização do MasterAdmin: Decomposição do painel monolítico de 67KB (~1140 linhas) em subcomponentes isolados (SaaSOverview, SaaSCreateForm, SaaSPlansList, SaaSEditModal, SaaSPlanModal, PermissionsPanel, types) reduzindo o arquivo principal para menos de 250 linhas.
-- Isolamento de Estado de Modais: Prevenção de re-renderizações indesejadas no grid de assinantes durante digitação em modais ou formulários.
-- Gestão de Senhas Aprimorada: Modal editável simplificado com fluxo isolado para redefinição de senhas administrativas Supabase de inquilinos.
-- Totalmente Compatível: Compilação de produção via Vite e TypeScript validada e livre de regressões.`;
+export const SYSTEM_VERSION = '21.8';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.8 (SaaS Performance & WhatsApp Integrado):
+- TanStack React Query: Cache inteligente global e invalidação de estado ativa por 5 minutos, poupando consultas redundantes e dando renderizações instantâneas.
+- Paginação Supabase Range: Carregamento de pedidos paginado nativamente no banco de dados para suportar altos volumes com máxima fluidez.
+- Alertas de Estoque Baixo em Tempo Real: Badge de alerta premium piscante na barra superior com navegação direta para gerenciamento de materiais.
+- Notificações WhatsApp Automatizadas: Clientes recebem avisos imediatos por WhatsApp sempre que o status do seu pedido é alterado.
+- Tabela e Serviço de Auditoria: Rastreamento completo de atividades críticas para segurança SaaS.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [

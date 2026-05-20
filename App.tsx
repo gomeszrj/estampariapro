@@ -1,16 +1,18 @@
 import React, { useState, useEffect, Suspense } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Sidebar from './components/Sidebar';
 import Login from './components/Login';
 import { SubscriptionLock } from './components/SubscriptionLock';
 import { ForcePasswordChange } from './components/ForcePasswordChange';
 import { ChatWidget } from './components/CRM/ChatWidget';
 import { PageSkeleton } from './components/ui/SkeletonLoader';
-import { Bell, User as UserIcon, Share2, Menu, ExternalLink, Link as LinkIcon, Copy } from 'lucide-react';
+import { Bell, User as UserIcon, Share2, Menu, ExternalLink, Link as LinkIcon, Copy, AlertTriangle } from 'lucide-react';
 import { Order, Product, Client, OrderStatus, OrderType } from './types';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { clientService } from './services/clientService';
 import { productService } from './services/productService';
 import { orderService } from './services/orderService';
+import { inventoryService } from './services/inventoryService';
 import { settingsService } from './services/settingsService';
 import ApiSettingsModal from './components/ApiSettingsModal';
 import { SYSTEM_VERSION, LATEST_RELEASE_NOTES } from './constants';
@@ -55,6 +57,7 @@ const AuthenticatedApp: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lowStockCount, setLowStockCount] = useState(0);
   const [tenantData, setTenantData] = useState<any>(null);
   const [mustChangePassword, setMustChangePassword] = useState(false);
 
@@ -72,14 +75,18 @@ const AuthenticatedApp: React.FC = () => {
           const fetchedProducts = await productService.getAll();
           setProducts(fetchedProducts);
         } else {
-          const [fetchedClients, fetchedProducts, fetchedOrders] = await Promise.all([
+          const [fetchedClients, fetchedProducts, fetchedOrders, fetchedInventory] = await Promise.all([
             clientService.getAll(),
             productService.getAll(),
-            orderService.getAll()
+            orderService.getAll(),
+            inventoryService.getAll().catch(() => [])
           ]);
           setClients(fetchedClients);
           setProducts(fetchedProducts);
           setOrders(fetchedOrders);
+          
+          const lowStock = (fetchedInventory || []).filter((item: any) => item.quantity <= (item.minLevel || 10));
+          setLowStockCount(lowStock.length);
 
           // Get Tenant Status and Profile data
           const { data: profile } = await supabase.from('profiles').select('tenant_id, require_password_change').eq('id', user?.id).single();
@@ -241,6 +248,17 @@ const AuthenticatedApp: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-4 md:gap-8">
+            {lowStockCount > 0 && (
+              <button
+                onClick={() => setActiveView('inventory')}
+                className="flex items-center gap-2 px-3 py-2 bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/20 text-rose-400 rounded-xl text-xs font-black uppercase tracking-wider transition-all animate-pulse"
+                title={`${lowStockCount} itens com estoque baixo!`}
+              >
+                <AlertTriangle className="w-4 h-4 text-rose-500" />
+                <span className="hidden sm:inline">Estoque Baixo:</span>
+                <span className="bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">{lowStockCount}</span>
+              </button>
+            )}
             <button
               onClick={() => notify.info(`Sistema Estamparia.AI v${SYSTEM_VERSION} - Novidades:\n\n${LATEST_RELEASE_NOTES}`)}
               className="relative px-3 py-2 text-slate-400 hover:text-indigo-400 transition-all bg-slate-800/30 rounded-xl border border-slate-700/50 group flex items-center gap-3"
@@ -290,22 +308,34 @@ const AuthenticatedApp: React.FC = () => {
   );
 };
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 10, // 10 minutes
+    },
+  },
+});
+
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <Toaster
-        position="top-right"
-        richColors
-        toastOptions={{
-          style: {
-            background: '#1e293b',
-            border: '1px solid #334155',
-            color: '#f1f5f9',
-          },
-        }}
-      />
-      <AuthenticatedApp />
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <Toaster
+          position="top-right"
+          richColors
+          toastOptions={{
+            style: {
+              background: '#1e293b',
+              border: '1px solid #334155',
+              color: '#f1f5f9',
+            },
+          }}
+        />
+        <AuthenticatedApp />
+      </AuthProvider>
+    </QueryClientProvider>
   );
 };
 

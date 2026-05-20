@@ -76,6 +76,28 @@ export const orderService = {
         return data?.map(mapOrderFromDB) as Order[];
     },
 
+    async getPaginated(page: number = 1, pageSize: number = 10) {
+        const from = (page - 1) * pageSize;
+        const to = from + pageSize - 1;
+
+        const { data, error, count } = await supabase
+            .from('orders')
+            .select(`
+        *,
+        items:order_items(*),
+        clients(name)
+      `, { count: 'exact' })
+            .neq('origin', 'support')
+            .order('created_at', { ascending: false })
+            .range(from, to);
+
+        if (error) throw error;
+        return {
+            orders: data?.map(mapOrderFromDB) as Order[],
+            totalCount: count || 0
+        };
+    },
+
     async create(order: Omit<Order, 'id'>) {
         // 1. Create Order
         const dbOrder = mapOrderToDB(order);
@@ -206,6 +228,33 @@ export const orderService = {
             .single();
 
         if (error) throw error;
+
+        // --- NEW: WhatsApp Notification on Status Change ---
+        if (updates.status) {
+            try {
+                const order = await this.getById(id);
+                if (order.clientId) {
+                    const { clientService } = await import('./clientService');
+                    const client = await clientService.getAll().then(list => list.find(c => c.id === order.clientId));
+                    if (client && client.phone) {
+                        const statusLabels: Record<string, string> = {
+                            [OrderStatus.RECEIVED]: 'Recebido / Separando',
+                            [OrderStatus.FINALIZATION]: 'Em Arte / Aprovação',
+                            [OrderStatus.IN_PRODUCTION]: 'Em Produção',
+                            [OrderStatus.FINISHED]: 'Pronto / Entregue'
+                        };
+                        const statusLabel = statusLabels[updates.status] || updates.status;
+                        const message = `Olá, ${client.name}! O status do seu pedido #${order.orderNumber || order.id.slice(0, 6)} foi atualizado para: *${statusLabel}*. Agradecemos a preferência!`;
+                        
+                        const { whatsappService } = await import('./whatsappService');
+                        await whatsappService.sendMessage(client.phone, message);
+                        console.log(`[WhatsApp] Sent status update to ${client.phone}`);
+                    }
+                }
+            } catch (whatsappError) {
+                console.error("Failed to send WhatsApp status update notification:", whatsappError);
+            }
+        }
 
         // --- NEW: Update Items ---
         if (updates.items) {
