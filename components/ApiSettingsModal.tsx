@@ -40,10 +40,11 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose }) 
         setLoading(true);
 
         // Save to LocalStorage (Standard Config)
-        localStorage.setItem(CONFIG_KEYS.SUPABASE_URL, keys.supabaseUrl);
-        localStorage.setItem(CONFIG_KEYS.SUPABASE_ANON_KEY, keys.supabaseKey);
-        localStorage.setItem(CONFIG_KEYS.GEMINI_API_KEY, keys.geminiKey);
-        localStorage.setItem(CONFIG_KEYS.OPENAI_API_KEY, keys.openaiKey);
+        // DO NOT SAVE to LocalStorage to prevent credential exposure in frontend
+        localStorage.removeItem(CONFIG_KEYS.SUPABASE_URL);
+        localStorage.removeItem(CONFIG_KEYS.SUPABASE_ANON_KEY);
+        localStorage.removeItem(CONFIG_KEYS.GEMINI_API_KEY);
+        localStorage.removeItem(CONFIG_KEYS.OPENAI_API_KEY);
 
         // Save Evolution API Config
         if (evolutionStore.url) localStorage.setItem('evolution_api_url', evolutionStore.url);

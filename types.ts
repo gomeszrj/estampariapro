@@ -7,7 +7,8 @@ export enum OrderStatus {
   // Loja Virtual Flow
   STORE_REQUEST = 'STORE_REQUEST',       // Solicitação recebida
   STORE_CONFERENCE = 'STORE_CONFERENCE', // Em conferência
-  STORE_CHECKED = 'STORE_CHECKED'        // Pedido conferido (Ready for Sales Approval)
+  STORE_CHECKED = 'STORE_CHECKED',       // Pedido conferido (Ready for Sales Approval)
+  CANCELLED = 'CANCELLED'
 }
 
 export enum OrderType {

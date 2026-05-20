@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../services/supabase';
-import { orderService } from '../services/orderService';
+
 import { Lock, Mail, AlertCircle, Search, Truck, Package, ArrowRight, Phone, User, Store } from 'lucide-react';
 import { STATUS_CONFIG } from '../constants';
 import { Order } from '../types';

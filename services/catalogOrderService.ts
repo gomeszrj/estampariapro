@@ -163,5 +163,41 @@ export const catalogOrderService = {
             createdAt: d.created_at,
             notes: d.notes
         }));
+    },
+
+    async getAll(): Promise<CatalogOrder[]> {
+        const { data, error } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('origin', 'store')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching all catalog orders:', error);
+            return [];
+        }
+
+        return data.map((d: any) => ({
+            id: d.id,
+            clientId: d.client_id,
+            clientName: d.client_name,
+            clientPhone: '', 
+            clientTeam: d.client_team,
+            items: d.items || [],
+            totalEstimated: d.total_value,
+            status: d.status === OrderStatus.STORE_REQUEST ? 'pending' : (d.status === OrderStatus.CANCELLED ? 'rejected' : 'approved'),
+            createdAt: d.created_at,
+            notes: d.notes
+        }));
+    },
+
+    async updateStatus(id: string, status: 'approved' | 'rejected') {
+        const newStatus = status === 'approved' ? OrderStatus.RECEIVED : OrderStatus.CANCELLED;
+        const { error } = await supabase
+            .from('orders')
+            .update({ status: newStatus })
+            .eq('id', id);
+
+        if (error) throw error;
     }
 };
