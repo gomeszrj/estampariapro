@@ -2,6 +2,8 @@ import { supabase } from './supabase';
 import { Order, OrderItem, OrderStatus } from '../types';
 import { productService } from './productService';
 import { inventoryService } from './inventoryService';
+import { clientService } from './clientService';
+import { whatsappService } from './whatsappService';
 
 export const orderService = {
   async uploadFile(file: File, path: string): Promise<string> {
@@ -234,7 +236,6 @@ export const orderService = {
             try {
                 const order = await this.getById(id);
                 if (order.clientId) {
-                    const { clientService } = await import('./clientService');
                     const client = await clientService.getAll().then(list => list.find(c => c.id === order.clientId));
                     if (client && client.phone) {
                         const statusLabels: Record<string, string> = {
@@ -246,7 +247,6 @@ export const orderService = {
                         const statusLabel = statusLabels[updates.status] || updates.status;
                         const message = `Olá, ${client.name}! O status do seu pedido #${order.orderNumber || order.id.slice(0, 6)} foi atualizado para: *${statusLabel}*. Agradecemos a preferência!`;
                         
-                        const { whatsappService } = await import('./whatsappService');
                         await whatsappService.sendMessage(client.phone, message);
                         console.log(`[WhatsApp] Sent status update to ${client.phone}`);
                     }

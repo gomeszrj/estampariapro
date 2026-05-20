@@ -431,7 +431,6 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
 
       if (!clientIdToUse) {
         // Create client first
-        const { clientService } = await import('../services/clientService');
         const newClient = await clientService.create({ name: clientName, whatsapp: '', email: '' });
         clientIdToUse = newClient.id;
       }
