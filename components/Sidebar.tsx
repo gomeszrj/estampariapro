@@ -58,12 +58,12 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
   }, []);
 
   // ── Helper: can this user see a module? ──
-  // MasterAdmin sees everything. For tenants, check DB permission.
-  // If permissions haven't loaded yet, show nothing on tenant side (avoids flash).
+  // MasterAdmin sees everything. For admins without explicit permissions, default to full access.
+  // For tenants with explicit permissions, use the DB record.
   const can = (permKey: string): boolean => {
     if (isMasterAdmin) return true;
     if (!permsLoaded)  return false;
-    if (!permissions)  return false;            // No permissions record = no access
+    if (!permissions)  return true;     // No permissions record = admin default (full access)
     return !!permissions[permKey];
   };
 
