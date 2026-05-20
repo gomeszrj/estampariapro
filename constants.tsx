@@ -4,8 +4,9 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '21.8';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.8 (SaaS Performance & WhatsApp Integrado):
+export const SYSTEM_VERSION = '21.8.1';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.8.1 (SaaS Performance & Correção de Inicialização):
+- Correção de Inicialização: Resolvido travamento em tela azul eliminando conflitos de importmap de CDN vs React Query local.
 - TanStack React Query: Cache inteligente global e invalidação de estado ativa por 5 minutos, poupando consultas redundantes e dando renderizações instantâneas.
 - Paginação Supabase Range: Carregamento de pedidos paginado nativamente no banco de dados para suportar altos volumes com máxima fluidez.
 - Alertas de Estoque Baixo em Tempo Real: Badge de alerta premium piscante na barra superior com navegação direta para gerenciamento de materiais.
