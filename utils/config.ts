@@ -18,7 +18,13 @@ export const getConfig = (key: string): string => {
         return process.env[key];
     }
 
-    return '';
+    // 4. Default Fallback Credentials (Production database and APIs)
+    const DEFAULTS: Record<string, string> = {
+        'VITE_SUPABASE_URL': 'https://mdpsrbmfzaosuvhamvbs.supabase.co',
+        'VITE_SUPABASE_ANON_KEY': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kcHNyYm1memFvc3V2aGFtdmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzNTkxNjgsImV4cCI6MjA4NDkzNTE2OH0.FieQkWGUZ-iRx6XHqk8vNaa9NnNuPtkSFn6f7W5vO_U'
+    };
+
+    return DEFAULTS[key] || '';
 };
 
 // Keys mapping
