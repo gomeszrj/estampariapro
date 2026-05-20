@@ -4,15 +4,12 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '21.6';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.6 (Blindagem Total Multi-Tenant):
-- Performance 10x: 18 índices criados em todas as tabelas para consultas instantâneas por tenant.
-- Senhas Seguras (LGPD): Senhas de clientes agora são criptografadas com bcrypt. Senhas antigas foram migradas automaticamente.
-- Storage Blindado: Arquivos de cada empresa são isolados e protegidos contra listagem pública.
-- Funções Protegidas: Funções administrativas do banco agora são inacessíveis por usuários não autorizados.
-- Auto-Expire Corrigido: Verificação de vencimento de assinaturas agora funciona corretamente com autenticação.
-- Estabilidade React: Correção de hooks e imports que poderiam causar crashes intermitentes.
-- RBAC Ativo: Módulos do sistema respeitam as permissões configuradas por plano SaaS.`;
+export const SYSTEM_VERSION = '21.7';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.7 (Modularização e Performance SaaS):
+- Modularização do MasterAdmin: Decomposição do painel monolítico de 67KB (~1140 linhas) em subcomponentes isolados (SaaSOverview, SaaSCreateForm, SaaSPlansList, SaaSEditModal, SaaSPlanModal, PermissionsPanel, types) reduzindo o arquivo principal para menos de 250 linhas.
+- Isolamento de Estado de Modais: Prevenção de re-renderizações indesejadas no grid de assinantes durante digitação em modais ou formulários.
+- Gestão de Senhas Aprimorada: Modal editável simplificado com fluxo isolado para redefinição de senhas administrativas Supabase de inquilinos.
+- Totalmente Compatível: Compilação de produção via Vite e TypeScript validada e livre de regressões.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [
