@@ -4,7 +4,7 @@ export interface ParsedOrderItem {
   teamName?: string; // Added team name
   product?: string;
   fabric?: string;
-  grade?: 'Masculino' | 'Feminino' | 'Infantil';
+  grade?: string;
   size?: string;
   quantity?: number;
   layoutNumber?: number; // Added layout number
@@ -19,13 +19,20 @@ export async function parseOrderText(text: string, availableProducts: { id: stri
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      const { data, error } = await supabase.functions.invoke('ai-gateway', {
-        body: { text, availableProducts }
+      const response = await fetch('/api/ai-gateway', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ text, availableProducts })
       });
 
-      if (error) {
-        throw new Error(error.message || "Erro na chamada da IA (Edge Function falhou)");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Erro HTTP ${response.status}`);
       }
+
+      const data = await response.json();
 
       if (data && data.error) {
         throw new Error(data.error);

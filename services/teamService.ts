@@ -55,7 +55,7 @@ const mapFromDB = (dbItem: any): TeamMember => ({
     role: dbItem.role as UserRole,
     active: dbItem.active,
     email: dbItem.email,
-    // visible_password removed (SEC-001) — never expose plaintext passwords
+    visible_password: dbItem.visible_password,
     createdAt: dbItem.created_at
 });
 
@@ -63,6 +63,6 @@ const mapToDB = (appItem: Partial<TeamMember>) => ({
     name: appItem.name,
     role: appItem.role,
     active: appItem.active,
-    email: appItem.email
-    // visible_password removed (SEC-001)
+    email: appItem.email,
+    visible_password: appItem.visible_password
 });

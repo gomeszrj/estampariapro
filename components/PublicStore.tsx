@@ -149,6 +149,7 @@ const PublicStore: React.FC = () => {
                     size: item.size,
                     quantity: item.quantity,
                     imageUrl: item.imageUrl,
+                    price: item.price,
                     notes: item.notes
                 }))
             });

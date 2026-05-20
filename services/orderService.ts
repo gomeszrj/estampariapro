@@ -237,7 +237,7 @@ export const orderService = {
                 const order = await this.getById(id);
                 if (order.clientId) {
                     const client = await clientService.getAll().then(list => list.find(c => c.id === order.clientId));
-                    if (client && client.phone) {
+                    if (client && client.whatsapp) {
                         const statusLabels: Record<string, string> = {
                             [OrderStatus.RECEIVED]: 'Recebido / Separando',
                             [OrderStatus.FINALIZATION]: 'Em Arte / Aprovação',
@@ -247,8 +247,8 @@ export const orderService = {
                         const statusLabel = statusLabels[updates.status] || updates.status;
                         const message = `Olá, ${client.name}! O status do seu pedido #${order.orderNumber || order.id.slice(0, 6)} foi atualizado para: *${statusLabel}*. Agradecemos a preferência!`;
                         
-                        await whatsappService.sendMessage(client.phone, message);
-                        console.log(`[WhatsApp] Sent status update to ${client.phone}`);
+                        await whatsappService.sendMessage(client.whatsapp, message);
+                        console.log(`[WhatsApp] Sent status update to ${client.whatsapp}`);
                     }
                 }
             } catch (whatsappError) {

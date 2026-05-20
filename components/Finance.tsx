@@ -27,7 +27,7 @@ import {
   Loader2,
   X
 } from 'lucide-react';
-import { Order, OrderStatus, Product, Transaction } from '../types';
+import { Order, OrderStatus, OrderType, Product, Transaction } from '../types';
 import { financeService } from '../services/financeService';
 import { notify } from './ui/toast';
 
@@ -116,7 +116,7 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
   const totalRevenue = incomeTransactions.reduce((acc, curr) => acc + curr.amount, 0);
 
   // 2. Production Costs (COGS) - Accrual basis (Based on placed orders)
-  const revenueOrders = orders.filter(o => o.status !== 'BUDGET');
+  const revenueOrders = orders.filter(o => o.orderType !== OrderType.BUDGET);
   const productionCosts = revenueOrders.reduce((acc, order) => {
     return acc + order.items.reduce((itemAcc, item) => {
       const product = products.find(p => p.id === item.productId);

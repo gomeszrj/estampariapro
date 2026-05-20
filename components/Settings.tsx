@@ -20,6 +20,7 @@ const Settings: React.FC = () => {
     evolution_api_url: '',
     evolution_api_key: '',
     evolution_instance_name: '',
+    cloudbot_enabled: false,
   });
 
   // Team State
@@ -388,6 +389,18 @@ const Settings: React.FC = () => {
                         className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                       />
                     </div>
+                    <div className="space-y-3 col-span-full md:col-span-1">
+                      <label className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] flex items-center gap-2 ml-1">
+                        <Globe className="w-4 h-4 text-indigo-500" /> <span>Site Oficial</span>
+                      </label>
+                      <input
+                        name="website"
+                        value={company.website || ''}
+                        onChange={handleChange}
+                        placeholder="https://www.suaempresa.com"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                      />
+                    </div>
                     <div className="col-span-full space-y-3">
                       <label className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] flex items-center gap-2 ml-1">
                         <Globe className="w-4 h-4 text-indigo-500" /> <span>Endereço da Sede</span>
@@ -405,9 +418,8 @@ const Settings: React.FC = () => {
                         <Landmark className="w-4 h-4 text-indigo-500" /> <span>Informações Financeiras (PIX / Dados Bancários)</span>
                       </label>
                       <textarea
-                        name="bankInfo"
-                        // Handle potential property name mismatch safely
-                        value={company.bankInfo || company.bank_info || ''}
+                        name="bank_info"
+                        value={company.bank_info || ''}
                         onChange={handleChange}
                         placeholder="Descreva aqui como o cliente deve realizar o pagamento..."
                         className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all h-32 resize-none"

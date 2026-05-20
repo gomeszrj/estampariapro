@@ -181,7 +181,10 @@ const MasterAdmin: React.FC = () => {
   };
 
   const handleGenerateMPLink = async (tenant: any) => {
-    if (!tenant.admin_email) return notify.warning('Configure o e-mail do admin antes de gerar o link MP.');
+    if (!tenant.admin_email) {
+      notify.warning('Configure o e-mail do admin antes de gerar o link MP.');
+      return;
+    }
     setGeneratingMPLink(tenant.id);
     try {
       const result = await tenantService.generateMercadoPagoLink(

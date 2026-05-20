@@ -56,7 +56,7 @@ export const chatService = {
         }));
     },
 
-    async getMessages(chatId: string) {
+    async getMessages(chatId: string): Promise<OrderMessage[]> {
         const { data, error } = await supabase
             .from('messages')
             .select('*')
@@ -69,13 +69,13 @@ export const chatService = {
         return (data || []).map(msg => ({
             id: msg.id,
             order_id: msg.chat_id, // We reuse order_id as chat_id in UI
-            sender: msg.sender_type === 'store' ? 'store' : 'client',
+            sender: (msg.sender_type === 'store' ? 'store' : 'client') as 'store' | 'client',
             message: msg.content,
             created_at: msg.created_at
         }));
     },
 
-    async sendMessage(chatId: string, sender: 'client' | 'store', message: string) {
+    async sendMessage(chatId: string, sender: 'client' | 'store', message: string): Promise<OrderMessage> {
         const { data, error } = await supabase
             .from('messages')
             .insert([{ 
@@ -99,7 +99,7 @@ export const chatService = {
         return {
             id: data.id,
             order_id: data.chat_id,
-            sender: data.sender_type === 'store' ? 'store' : 'client',
+            sender: (data.sender_type === 'store' ? 'store' : 'client') as 'store' | 'client',
             message: data.content,
             created_at: data.created_at
         };

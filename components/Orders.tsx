@@ -239,7 +239,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
   };
 
   const handleDesignFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
+    const files = Array.from(e.target.files || []) as File[];
     if (files.length === 0) return;
     setIsUploading(true);
     const successUrls: string[] = [];

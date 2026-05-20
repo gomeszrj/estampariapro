@@ -67,7 +67,7 @@ export const ProductionBoard: React.FC<ProductionBoardProps> = ({ orders, onOrde
         }
     };
 
-    const filteredOrders = orders.filter(o => o.status !== 'delivered' && o.status !== 'cancelled');
+    const filteredOrders = orders.filter(o => (o.status as string) !== 'delivered' && (o.status as string) !== 'cancelled' && o.status !== OrderStatus.CANCELLED);
 
     return (
         <div className="grid grid-cols-3 gap-3" style={{ height: 'calc(100vh - 200px)' }}>

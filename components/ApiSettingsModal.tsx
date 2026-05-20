@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, X, Key, Database, Brain, RefreshCw, MessageCircle } from 'lucide-react';
+import { Save, X, Key, Database, Brain, RefreshCw, MessageCircle, AlertCircle } from 'lucide-react';
 import { getConfig, CONFIG_KEYS } from '../utils/config';
 
 interface ApiSettingsModalProps {
@@ -19,9 +19,7 @@ const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({ isOpen, onClose }) 
     // Removing the separate `apiKey` state as it's not used in the new save logic for Gemini.
     const [keys, setKeys] = useState({
         supabaseUrl: '',
-        supabaseKey: '',
-        geminiKey: '',
-        openaiKey: ''
+        supabaseKey: ''
     });
     const [loading, setLoading] = useState(false);
 

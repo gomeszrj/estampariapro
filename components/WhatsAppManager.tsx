@@ -94,7 +94,7 @@ export const WhatsAppManager: React.FC = () => {
                         </>
                     )}
 
-                    {connectionState === 'connected' && (
+                    {(connectionState as string) === 'connected' && (
                         <>
                             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-3xl rounded-full"></div>
                             <CheckCircle2 className="w-20 h-20 text-emerald-500 mb-4" />
@@ -127,7 +127,7 @@ export const WhatsAppManager: React.FC = () => {
                 </div>
 
                 {/* CONNECTION METHODS */}
-                <div className={`space-y-6 ${(connectionState === 'connected' || connectionState === 'loading') ? 'opacity-30 pointer-events-none' : ''}`}>
+                <div className={`space-y-6 ${((connectionState as string) === 'connected' || connectionState === 'loading') ? 'opacity-30 pointer-events-none' : ''}`}>
                     
                     {/* QR CODE METHOD */}
                     <div className="bg-[#0f172a] p-6 rounded-[2rem] border border-slate-800 shadow-xl relative overflow-hidden group">
