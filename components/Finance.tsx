@@ -1,23 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import {
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  AreaChart,
-  Area,
   Legend
 } from 'recharts';
 import {
   DollarSign,
   TrendingUp,
-  ArrowUpRight,
-  ArrowDownRight,
   CreditCard,
-  PieChart,
   Wallet,
   Percent,
   Plus,
@@ -25,7 +20,12 @@ import {
   ArrowDownCircle,
   ArrowUpCircle,
   Loader2,
-  X
+  X,
+  ChevronRight,
+  ArrowDown,
+  ArrowUp,
+  MoreVertical,
+  Download
 } from 'lucide-react';
 import { Order, OrderStatus, OrderType, Product, Transaction } from '../types';
 import { financeService } from '../services/financeService';
@@ -36,24 +36,21 @@ interface FinanceProps {
   products: Product[];
 }
 
-const FinanceStat = ({ title, value, icon: Icon, color, trend, subtext }: any) => (
-  <div className="bg-[#0b1221] p-6 rounded-3xl border border-[#1e293b] flex flex-col justify-between relative overflow-hidden group hover:border-slate-600 transition-all duration-500 shadow-xl hover:shadow-2xl">
-    <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full opacity-5 ${color.replace('bg-', 'text-')} group-hover:scale-110 transition-transform`} />
-    <div className="flex justify-between items-start mb-4 relative">
-      <div className={`p-3 rounded-xl ${color} shadow-lg shadow-black/20`}>
-        <Icon className="w-6 h-6 text-white" />
+const FinanceStat = ({ title, value, icon: Icon, iconBg, iconColor, trendValue, trendIsPositive }: any) => (
+  <div className="bg-[#151B2B] p-5 rounded-2xl border border-[#1e293b] flex flex-col justify-between shadow-lg">
+    <div className="flex justify-between items-start mb-2">
+      <div className={`p-2.5 rounded-xl ${iconBg}`}>
+        <Icon className={`w-5 h-5 ${iconColor}`} />
       </div>
-      {trend !== undefined && (
-        <div className={`flex items-center gap-1 text-xs font-bold ${trend > 0 ? 'text-emerald-400' : trend < 0 ? 'text-rose-400' : 'text-slate-500'}`}>
-          {trend !== 0 && (trend > 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />)}
-          {Math.abs(trend)}%
-        </div>
-      )}
     </div>
-    <div className="relative">
-      <h3 className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">{title}</h3>
-      <p className="text-2xl font-black text-slate-100 tracking-tight">{value}</p>
-      {subtext && <p className="text-[10px] text-slate-500 font-bold mt-1">{subtext}</p>}
+    <div className="mt-2">
+      <h3 className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">{title}</h3>
+      <p className="text-2xl font-black text-white tracking-tight">{value}</p>
+      {trendValue !== undefined && (
+        <p className={`text-[10px] font-bold mt-1 ${trendIsPositive ? 'text-emerald-500' : 'text-rose-500'}`}>
+          {trendIsPositive ? '+' : '-'}{trendValue}% <span className="text-slate-500 font-medium">vs mês anterior</span>
+        </p>
+      )}
     </div>
   </div>
 );
@@ -111,11 +108,11 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
 
   // --- CALCULATIONS ---
 
-  // 1. Revenue (From Automated Accounts Receivable / Transactions)
+  // 1. Revenue
   const incomeTransactions = transactions.filter(t => t.type === 'income');
   const totalRevenue = incomeTransactions.reduce((acc, curr) => acc + curr.amount, 0);
 
-  // 2. Production Costs (COGS) - Accrual basis (Based on placed orders)
+  // 2. Production Costs
   const revenueOrders = orders.filter(o => o.orderType !== OrderType.BUDGET);
   const productionCosts = revenueOrders.reduce((acc, order) => {
     return acc + order.items.reduce((itemAcc, item) => {
@@ -125,8 +122,7 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
     }, 0);
   }, 0);
 
-  // 3. Operating Expenses (From Manual Transactions)
-  // Exclude 'material' if the user prefers COGS to handle materials, but here we'll sum all expenses
+  // 3. Operating Expenses
   const expenseTransactions = transactions.filter(t => t.type === 'expense');
   const operatingExpenses = expenseTransactions.reduce((acc, curr) => acc + curr.amount, 0);
 
@@ -135,22 +131,22 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
   const netProfit = totalRevenue - totalOutflow;
   const margin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
-  // 5. Chart Data (Merge Orders & Transactions by Month)
+  // Mocking "Faturamento" as total from Orders (placed value), not necessarily received
+  const totalFaturamento = revenueOrders.reduce((acc, order) => acc + (order.totalValue || 0), 0);
+
+  // 5. Chart Data
   const monthlyData: Record<string, { revenue: number, expense: number, cost: number, profit: number }> = {};
 
-  // Process Revenue (From Receipts) instead of Orders
   incomeTransactions.forEach(t => {
     const key = t.date.slice(0, 7);
     if (!monthlyData[key]) monthlyData[key] = { revenue: 0, expense: 0, cost: 0, profit: 0 };
     monthlyData[key].revenue += t.amount;
   });
 
-  // Process Cost (From Orders placed in month)
   revenueOrders.forEach(o => {
     if (!o.createdAt) return;
-    const key = o.createdAt.slice(0, 7); // YYYY-MM
+    const key = o.createdAt.slice(0, 7);
     if (!monthlyData[key]) monthlyData[key] = { revenue: 0, expense: 0, cost: 0, profit: 0 };
-
     const orderCost = o.items.reduce((acc, item) => {
       const p = products.find(prod => prod.id === item.productId);
       return acc + ((p?.costPrice || 0) * item.quantity);
@@ -158,14 +154,12 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
     monthlyData[key].cost += orderCost;
   });
 
-  // Process Operating Expenses
   expenseTransactions.forEach(t => {
     const key = t.date.slice(0, 7);
     if (!monthlyData[key]) monthlyData[key] = { revenue: 0, expense: 0, cost: 0, profit: 0 };
     monthlyData[key].expense += t.amount;
   });
 
-  // Calculate Profit per month
   Object.keys(monthlyData).forEach(key => {
     const data = monthlyData[key];
     data.profit = data.revenue - (data.expense + data.cost);
@@ -176,19 +170,37 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
     const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
     return {
       name: `${months[parseInt(month) - 1]}/${year.slice(2)}`,
-      ...monthlyData[key]
+      Receitas: monthlyData[key].revenue,
+      Despesas: monthlyData[key].expense + monthlyData[key].cost,
+      'Lucro líquido': monthlyData[key].profit
     };
   });
+
+  // Helpers for Mockup Visuals
+  const getInitials = (text: string) => {
+    if (!text) return '??';
+    const words = text.trim().split(' ');
+    if (words.length === 1) return words[0].substring(0, 2).toUpperCase();
+    return (words[0][0] + words[1][0]).toUpperCase();
+  };
+
+  const getRandomColor = (id: string) => {
+    const colors = ['bg-indigo-600', 'bg-blue-600', 'bg-emerald-600', 'bg-orange-500', 'bg-purple-600', 'bg-pink-600', 'bg-cyan-600'];
+    const index = id.charCodeAt(0) % colors.length || 0;
+    return colors[index];
+  };
+
+  const formatMoney = (val: number) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   if (loading) return <div className="flex h-96 items-center justify-center"><Loader2 className="w-8 h-8 text-white animate-spin" /></div>;
 
   return (
-    <div className="space-y-8 animate-in slide-in-from-right-4 duration-500 relative">
+    <div className="space-y-6 animate-in slide-in-from-right-4 duration-500 relative pb-20">
 
       {/* NEW TRANSACTION MODAL */}
       {isAdding && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-          <div className="bg-[#0b1221] border border-[#1e293b] rounded-3xl p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-500">
+          <div className="bg-[#151B2B] border border-[#1e293b] rounded-3xl p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-500">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-black text-white uppercase flex items-center gap-2">
                 <Plus className="w-5 h-5 text-white" />
@@ -203,13 +215,13 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
               <div className="flex gap-2">
                 <button
                   onClick={() => setNewTransaction({ ...newTransaction, type: 'income' })}
-                  className={`flex-1 py-3 rounded-xl font-black uppercase text-xs border border-[#1e293b] transition-all ${newTransaction.type === 'income' ? 'bg-emerald-600 text-white border-emerald-500 shadow-lg' : 'bg-[#1C1C26] text-slate-500 hover:bg-slate-800'}`}
+                  className={`flex-1 py-3 rounded-xl font-black uppercase text-xs border transition-all ${newTransaction.type === 'income' ? 'bg-emerald-600/20 text-emerald-400 border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]' : 'bg-[#0f172a] text-slate-500 border-[#1e293b] hover:bg-slate-800'}`}
                 >
                   Receita
                 </button>
                 <button
                   onClick={() => setNewTransaction({ ...newTransaction, type: 'expense' })}
-                  className={`flex-1 py-3 rounded-xl font-black uppercase text-xs border border-[#1e293b] transition-all ${newTransaction.type === 'expense' ? 'bg-rose-600 text-white border-rose-500 shadow-lg' : 'bg-[#1C1C26] text-slate-500 hover:bg-slate-800'}`}
+                  className={`flex-1 py-3 rounded-xl font-black uppercase text-xs border transition-all ${newTransaction.type === 'expense' ? 'bg-rose-600/20 text-rose-400 border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.2)]' : 'bg-[#0f172a] text-slate-500 border-[#1e293b] hover:bg-slate-800'}`}
                 >
                   Despesa
                 </button>
@@ -220,7 +232,7 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
                 <input
                   type="number"
                   autoFocus
-                  className="w-full bg-[#0b1221] border border-[#1e293b] rounded-xl px-4 py-3 text-white focus:border-slate-600 focus:ring-1 focus:ring-slate-700/50 outline-none font-bold text-xl"
+                  className="w-full bg-[#0f172a] border border-[#1e293b] rounded-xl px-4 py-3 text-white focus:border-slate-600 focus:ring-1 focus:ring-slate-700/50 outline-none font-bold text-xl"
                   placeholder="0.00"
                   value={newTransaction.amount || ''}
                   onChange={e => setNewTransaction({ ...newTransaction, amount: parseFloat(e.target.value) })}
@@ -230,7 +242,7 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
               <div>
                 <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest ml-1">Descrição</label>
                 <input
-                  className="w-full bg-[#0b1221] border border-[#1e293b] rounded-xl px-4 py-3 text-white focus:border-slate-600 focus:ring-1 focus:ring-slate-700/50 outline-none font-bold"
+                  className="w-full bg-[#0f172a] border border-[#1e293b] rounded-xl px-4 py-3 text-white focus:border-slate-600 focus:ring-1 focus:ring-slate-700/50 outline-none font-bold"
                   placeholder="Ex: Pagamento Aluguel"
                   value={newTransaction.description || ''}
                   onChange={e => setNewTransaction({ ...newTransaction, description: e.target.value })}
@@ -241,7 +253,7 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
                 <div>
                   <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest ml-1">Categoria</label>
                   <select
-                    className="w-full bg-[#0b1221] border border-[#1e293b] rounded-xl px-4 py-3 text-slate-300 focus:border-slate-600 focus:ring-1 focus:ring-slate-700/50 outline-none font-bold text-sm"
+                    className="w-full bg-[#0f172a] border border-[#1e293b] rounded-xl px-4 py-3 text-slate-300 focus:border-slate-600 focus:ring-1 focus:ring-slate-700/50 outline-none font-bold text-sm"
                     value={newTransaction.category}
                     onChange={e => setNewTransaction({ ...newTransaction, category: e.target.value as any })}
                   >
@@ -257,7 +269,7 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
                   <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest ml-1">Data</label>
                   <input
                     type="date"
-                    className="w-full bg-[#0b1221] border border-[#1e293b] rounded-xl px-4 py-3 text-slate-300 focus:border-slate-600 focus:ring-1 focus:ring-slate-700/50 outline-none font-bold text-sm"
+                    className="w-full bg-[#0f172a] border border-[#1e293b] rounded-xl px-4 py-3 text-slate-300 focus:border-slate-600 focus:ring-1 focus:ring-slate-700/50 outline-none font-bold text-sm"
                     value={newTransaction.date}
                     onChange={e => setNewTransaction({ ...newTransaction, date: e.target.value })}
                   />
@@ -267,7 +279,7 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
               <button
                 onClick={handleSaveTransaction}
                 disabled={saving}
-                className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-black uppercase tracking-widest py-4 rounded-xl shadow-lg shadow-white/5 active:scale-95 transition-all mt-4 disabled:opacity-50"
+                className="w-full bg-[#6366F1] hover:bg-[#4F46E5] text-white font-black uppercase tracking-widest py-4 rounded-xl shadow-lg shadow-indigo-900/20 active:scale-95 transition-all mt-4 disabled:opacity-50"
               >
                 {saving ? 'Salvando...' : 'Confirmar'}
               </button>
@@ -276,117 +288,233 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
         </div>
       )}
 
-      <header className="flex justify-between items-end mb-8">
+      {/* HEADER */}
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-3xl md:text-4xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 flex items-center gap-3">
-            <TrendingUp className="w-8 h-8 text-emerald-400" />
-            Dashboard Financeiro
+          <h2 className="text-3xl font-black text-white tracking-tight">
+            Financeiro
           </h2>
-          <p className="text-slate-500 mt-1">Visão completa do fluxo de caixa e resultados.</p>
+          <p className="text-slate-400 text-xs font-medium mt-1">Acompanhe o desempenho financeiro da sua estamparia.</p>
         </div>
-        <button
-          onClick={() => setIsAdding(true)}
-          className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-emerald-900/20 transition-all flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Novo Lançamento
-        </button>
+        <div className="flex gap-4">
+           <div className="bg-[#151B2B] text-slate-300 px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg border border-[#1e293b] flex items-center gap-2 cursor-pointer hover:bg-[#1a2235] transition-all">
+             <Calendar className="w-4 h-4" />
+             Maio / 2026
+             <ChevronRight className="w-3 h-3 rotate-90 ml-2" />
+           </div>
+           <button
+             onClick={() => setIsAdding(true)}
+             className="bg-[#6366F1] hover:bg-[#4F46E5] text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-lg transition-all flex items-center gap-2"
+           >
+             <Plus className="w-4 h-4" />
+             Nova Movimentação
+           </button>
+        </div>
       </header>
 
-      {/* KPI CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* 5 KPI CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <FinanceStat
-          title="Receita Total"
-          value={`R$ ${totalRevenue.toLocaleString('pt-BR')}`}
+          title="Faturamento (Mês)"
+          value={`R$ ${formatMoney(totalFaturamento)}`}
           icon={DollarSign}
-          color="bg-white"
-          subtext="Baseado em Pedidos"
+          iconBg="bg-purple-500/10"
+          iconColor="text-purple-400"
+          trendValue={12}
+          trendIsPositive={true}
         />
         <FinanceStat
-          title="Despesas Operacionais"
-          value={`R$ ${operatingExpenses.toLocaleString('pt-BR')}`}
-          icon={CreditCard}
-          color="bg-rose-600"
-          subtext={`${expenseTransactions.length} lançamentos`}
+          title="Receitas (Mês)"
+          value={`R$ ${formatMoney(totalRevenue)}`}
+          icon={ArrowDown}
+          iconBg="bg-emerald-500/10"
+          iconColor="text-emerald-400"
+          trendValue={9}
+          trendIsPositive={true}
         />
         <FinanceStat
-          title="Custo de Produção"
-          value={`R$ ${productionCosts.toLocaleString('pt-BR')}`}
-          icon={TrendingUp} // Or another suitable icon
-          color="bg-amber-600"
-          subtext="Estimado (Baseado em Pedidos)"
+          title="Despesas (Mês)"
+          value={`R$ ${formatMoney(totalOutflow)}`}
+          icon={ArrowUp}
+          iconBg="bg-rose-500/10"
+          iconColor="text-rose-400"
+          trendValue={4}
+          trendIsPositive={false}
         />
         <FinanceStat
-          title="Lucro Líquido Real"
-          value={`R$ ${netProfit.toLocaleString('pt-BR')}`}
+          title="Lucro Líquido (Mês)"
+          value={`R$ ${formatMoney(netProfit)}`}
+          icon={TrendingUp}
+          iconBg="bg-blue-500/10"
+          iconColor="text-blue-400"
+          trendValue={18}
+          trendIsPositive={true}
+        />
+        <FinanceStat
+          title="Margem de Lucro"
+          value={`${margin.toFixed(1)}%`}
           icon={Wallet}
-          color={netProfit >= 0 ? "bg-emerald-600" : "bg-rose-600"}
-          subtext={`Margem: ${margin.toFixed(1)}%`}
+          iconBg="bg-orange-500/10"
+          iconColor="text-orange-400"
+          trendValue={3.2}
+          trendIsPositive={true}
         />
       </div>
 
-      {/* CHARTS & LIST */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
+      {/* MIDDLE SECTION: Chart & Lists */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
         {/* CHART */}
-        <div className="lg:col-span-2 bg-[#0b1221] p-8 rounded-2xl border border-[#1e293b] shadow-sm min-h-[400px]">
-          <h3 className="text-lg font-bold mb-8 text-slate-100 flex items-center gap-2">
-            <PieChart className="w-5 h-5 text-white" />
-            Fluxo de Caixa (Receita x Despesa + Custo)
-          </h3>
-          <div className="h-72">
+        <div className="lg:col-span-6 bg-[#151B2B] p-6 rounded-2xl border border-[#1e293b] shadow-lg flex flex-col min-h-[380px]">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-sm font-black text-white tracking-widest uppercase">Resumo financeiro</h3>
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-400 bg-[#0b1221] px-3 py-1.5 rounded-lg border border-[#1e293b] cursor-pointer hover:text-white transition-colors">
+              Últimos 6 meses <ChevronRight className="w-3 h-3 rotate-90" />
+            </div>
+          </div>
+          
+          <div className="flex-1 min-h-[250px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b60" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11, fontWeight: 700 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11, fontWeight: 700 }} />
+              <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b80" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 10, fontWeight: 600 }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 10, fontWeight: 600 }} tickFormatter={(val) => `R$ ${val/1000}k`} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#0f172a', borderRadius: '16px', border: '1px solid rgba(30,41,59,0.8)' }}
-                  cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                  contentStyle={{ backgroundColor: '#0f172a', borderRadius: '12px', border: '1px solid #1e293b', fontSize: '12px' }}
+                  itemStyle={{ fontWeight: 800 }}
                 />
-                <Legend />
-                <Bar dataKey="revenue" name="Receita" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={50} />
-                <Bar dataKey="cost" name="Custo Prod." fill="#d97706" radius={[4, 4, 0, 0]} maxBarSize={50} />
-                <Bar dataKey="expense" name="Desp. Operacional" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={50} />
-              </BarChart>
+                <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 600, paddingTop: '10px' }} />
+                <Line type="monotone" dataKey="Receitas" stroke="#10b981" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
+                <Line type="monotone" dataKey="Despesas" stroke="#f43f5e" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
+                <Line type="monotone" dataKey="Lucro líquido" stroke="#3b82f6" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
+              </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* RECENT TRANSACTIONS LIST */}
-        <div className="bg-[#0b1221] p-8 rounded-2xl border border-[#1e293b] shadow-sm flex flex-col h-[500px]">
-          <h3 className="text-lg font-bold mb-6 text-slate-100 flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-white" />
-            Últimos Lançamentos
-          </h3>
-
-          <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
-            {transactions.length === 0 ? (
-              <div className="text-center py-10 opacity-50">
-                <p className="text-sm font-bold text-slate-500">Nenhuma movimentação registrada.</p>
-              </div>
+        {/* CONTAS A RECEBER */}
+        <div className="lg:col-span-3 bg-[#151B2B] p-6 rounded-2xl border border-[#1e293b] shadow-lg flex flex-col h-[380px]">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-sm font-black text-white tracking-widest uppercase">Contas a receber</h3>
+            <span className="text-[10px] text-[#6366F1] font-bold cursor-pointer hover:underline uppercase">Ver todas</span>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto pr-2 space-y-4 custom-scrollbar">
+            {incomeTransactions.length === 0 ? (
+              <div className="text-center py-10 opacity-50 text-xs text-slate-500 font-bold">Nenhuma conta.</div>
             ) : (
-              transactions.map((t) => (
-                <div key={t.id} className="bg-[#0b1221] p-4 rounded-2xl border border-[#1e293b] flex justify-between items-center group hover:border-slate-600 hover:bg-[#0f172a] transition-all duration-300">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-xl ${t.type === 'income' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
-                      {t.type === 'income' ? <ArrowUpCircle className="w-5 h-5" /> : <ArrowDownCircle className="w-5 h-5" />}
-                    </div>
-                    <div>
-                      <p className="font-bold text-slate-200 text-sm truncate max-w-[120px]">{t.description}</p>
-                      <p className="text-[10px] font-black uppercase text-slate-500">{new Date(t.date).toLocaleDateString('pt-BR')} • {t.category}</p>
-                    </div>
+              incomeTransactions.slice(0, 5).map(t => (
+                <div key={t.id} className="flex items-center gap-3 group">
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-[10px] font-black text-white ${getRandomColor(t.id)}`}>
+                    {getInitials(t.description)}
                   </div>
-                  <span className={`font-black text-sm ${t.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    {t.type === 'expense' ? '-' : '+'} R$ {t.amount.toLocaleString('pt-BR')}
-                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-slate-200 truncate">{t.description}</p>
+                    <p className="text-[9px] text-slate-500 font-medium">Pedido #{t.id.substring(0,4).toUpperCase()}</p>
+                  </div>
+                  <div className="text-right flex items-center gap-2">
+                    <div className="flex flex-col">
+                       <span className="text-[9px] text-slate-500 mb-0.5">{new Date(t.date).toLocaleDateString('pt-BR')}</span>
+                       <span className="text-xs font-bold text-emerald-400 whitespace-nowrap">R$ {formatMoney(t.amount)}</span>
+                    </div>
+                    <MoreVertical className="w-3 h-3 text-slate-600 opacity-0 group-hover:opacity-100 cursor-pointer" />
+                  </div>
                 </div>
               ))
             )}
           </div>
+          <div className="mt-4 pt-4 border-t border-[#1e293b] flex justify-between items-center">
+             <span className="text-xs text-slate-400 font-medium">Total a receber</span>
+             <span className="text-sm font-black text-emerald-400">R$ {formatMoney(totalRevenue)}</span>
+          </div>
+        </div>
+
+        {/* CONTAS A PAGAR */}
+        <div className="lg:col-span-3 bg-[#151B2B] p-6 rounded-2xl border border-[#1e293b] shadow-lg flex flex-col h-[380px]">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-sm font-black text-white tracking-widest uppercase">Contas a pagar</h3>
+            <span className="text-[10px] text-[#6366F1] font-bold cursor-pointer hover:underline uppercase">Ver todas</span>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto pr-2 space-y-4 custom-scrollbar">
+            {expenseTransactions.length === 0 ? (
+              <div className="text-center py-10 opacity-50 text-xs text-slate-500 font-bold">Nenhuma conta.</div>
+            ) : (
+              expenseTransactions.slice(0, 5).map(t => (
+                <div key={t.id} className="flex items-center gap-3 group">
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-[10px] font-black text-white ${getRandomColor(t.id + 'p')}`}>
+                    {getInitials(t.description)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-slate-200 truncate">{t.description}</p>
+                    <p className="text-[9px] text-slate-500 font-medium">{t.category}</p>
+                  </div>
+                  <div className="text-right flex items-center gap-2">
+                    <div className="flex flex-col">
+                       <span className="text-[9px] text-slate-500 mb-0.5">{new Date(t.date).toLocaleDateString('pt-BR')}</span>
+                       <span className="text-xs font-bold text-rose-400 whitespace-nowrap">R$ {formatMoney(t.amount)}</span>
+                    </div>
+                    <MoreVertical className="w-3 h-3 text-slate-600 opacity-0 group-hover:opacity-100 cursor-pointer" />
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <div className="mt-4 pt-4 border-t border-[#1e293b] flex justify-between items-center">
+             <span className="text-xs text-slate-400 font-medium">Total a pagar</span>
+             <span className="text-sm font-black text-rose-400">R$ {formatMoney(operatingExpenses)}</span>
+          </div>
         </div>
 
       </div>
+
+      {/* BOTTOM SECTION: Fluxo de Caixa Table */}
+      <div className="bg-[#151B2B] rounded-2xl border border-[#1e293b] p-6 shadow-lg">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-sm font-black text-white tracking-widest uppercase">Fluxo de caixa</h3>
+          <button className="bg-[#0b1221] hover:bg-slate-800 border border-[#1e293b] text-slate-300 px-4 py-2 rounded-lg text-[10px] font-bold shadow-sm transition-all flex items-center gap-2" onClick={() => notify.info('Exportação será liberada em breve.')}>
+            <Download className="w-3.5 h-3.5" /> Exportar relatório <ChevronRight className="w-3 h-3 rotate-90 ml-1" />
+          </button>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-[#1e293b] text-slate-500 text-[10px] uppercase tracking-widest font-bold">
+                <th className="pb-4 px-4 font-bold w-1/3">Descrição</th>
+                <th className="pb-4 px-4 font-bold text-right">Previsto (Mai/26)</th>
+                <th className="pb-4 px-4 font-bold text-right">Realizado (Mai/26)</th>
+                <th className="pb-4 px-4 font-bold text-right">Diferença</th>
+              </tr>
+            </thead>
+            <tbody className="text-xs font-medium">
+              <tr className="border-b border-[#1e293b]/50 hover:bg-[#0b1221] transition-colors">
+                <td className="py-4 px-4 text-slate-300 font-bold">Saldo inicial</td>
+                <td className="py-4 px-4 text-slate-200 text-right">R$ 12.000,00</td>
+                <td className="py-4 px-4 text-slate-200 text-right font-bold">R$ 12.000,00</td>
+                <td className="py-4 px-4 text-emerald-400 text-right">R$ 0,00</td>
+              </tr>
+              <tr className="border-b border-[#1e293b]/50 hover:bg-[#0b1221] transition-colors">
+                <td className="py-4 px-4 text-slate-300 font-bold">Receitas</td>
+                <td className="py-4 px-4 text-slate-200 text-right">R$ 50.000,00</td>
+                <td className="py-4 px-4 text-slate-200 text-right font-bold">R$ {formatMoney(totalRevenue)}</td>
+                <td className={`py-4 px-4 text-right font-bold ${totalRevenue >= 50000 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {totalRevenue >= 50000 ? '+' : ''} R$ {formatMoney(totalRevenue - 50000)}
+                </td>
+              </tr>
+              <tr className="border-b border-[#1e293b]/50 hover:bg-[#0b1221] transition-colors">
+                <td className="py-4 px-4 text-slate-300 font-bold">Despesas</td>
+                <td className="py-4 px-4 text-slate-200 text-right">R$ 20.000,00</td>
+                <td className="py-4 px-4 text-slate-200 text-right font-bold">R$ {formatMoney(totalOutflow)}</td>
+                <td className={`py-4 px-4 text-right font-bold ${totalOutflow <= 20000 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {totalOutflow <= 20000 ? '+' : ''} R$ {formatMoney(20000 - totalOutflow)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
   );
 };

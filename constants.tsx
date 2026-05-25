@@ -3,14 +3,15 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '21.8.6';
+export const SYSTEM_VERSION = '21.8.7';
 export const APP_NAME = 'Gomesz Speed Print';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.8.6 (Otimização Visual do Dashboard):
-- Agenda de Entregas Redesenhada: 
-  * Substituímos a tabela tradicional da Agenda por um formato de 'Cards Compactos'.
-  * A Data de Entrega agora ganha destaque máximo com números grandes (destacando o dia) em caixas estilizadas.
-  * Cores dinâmicas na data continuam avisando visualmente sobre prazos (Vermelho = Atrasado, Amarelo = Próximo, Escuro = No Prazo).
-  * O visual limpo e arredondado acompanha a identidade SaaS Premium da plataforma.`;
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.8.7 (Novo Módulo Financeiro):
+- Transformação total do Painel Financeiro:
+  * 5 novos Indicadores chave (Faturamento, Receitas, Despesas, Lucro e Margem).
+  * Gráfico de Linhas Dinâmico para acompanhar histórico de forma luxuosa.
+  * Listas de 'Contas a Receber' e 'Contas a Pagar' em tempo real.
+  * Quadro Analítico de Fluxo de Caixa integrado.
+  * Novo esquema de cores exclusivo para o módulo (#151B2B) mantendo coerência com o SaaS Premium.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [
