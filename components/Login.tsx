@@ -96,6 +96,9 @@ const Login: React.FC = () => {
         window.location.href = `/?view=tracker&order=${trackNumber}`;
     };
 
+    // ── LOGIN CARD ────────────────────────────────────────────────────────────
+    const [showPassword, setShowPassword] = useState(false);
+
     // ── SPLASH SCREEN ─────────────────────────────────────────────────────────
     if (splashVisible && splashSettings.enabled) {
         return (
@@ -165,9 +168,6 @@ const Login: React.FC = () => {
             </div>
         );
     }
-
-    // ── LOGIN CARD ────────────────────────────────────────────────────────────
-    const [showPassword, setShowPassword] = useState(false);
 
     return (
         <div className="min-h-screen bg-[#05050A] text-white flex select-none font-['Inter'] relative overflow-hidden">

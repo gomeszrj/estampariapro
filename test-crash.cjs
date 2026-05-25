@@ -1,32 +1,23 @@
 const puppeteer = require('puppeteer');
+
 (async () => {
     try {
-        console.log("Launching browser...");
-        const browser = await puppeteer.launch();
+        const browser = await puppeteer.launch({ headless: "new" });
         const page = await browser.newPage();
         
-        page.on('pageerror', error => {
-            console.log('--- PAGE ERROR CAUGHT ---');
-            console.log(error.message);
-            console.log(error.stack);
-            console.log('-------------------------');
-        });
-
-        page.on('console', msg => {
-            if (msg.type() === 'error') {
-                console.log('CONSOLE ERROR:', msg.text());
-            }
-        });
-
-        console.log("Navigating to local preview...");
-        await page.goto('http://localhost:4173', { waitUntil: 'networkidle0', timeout: 10000 });
+        page.on('console', msg => console.log('BROWSER CONSOLE:', msg.type(), msg.text()));
+        page.on('pageerror', err => console.log('BROWSER ERROR:', err.message));
         
-        console.log("Waiting a bit for any delayed errors...");
-        await new Promise(r => setTimeout(r, 6000)); // Wait 6 seconds for the Auth timeout to trigger the render crash
+        console.log("Navigating to http://localhost:5173 ...");
+        await page.goto('http://localhost:5173', { waitUntil: 'networkidle2', timeout: 15000 });
+        
+        console.log("Waiting 2 seconds...");
+        await new Promise(r => setTimeout(r, 2000));
         
         await browser.close();
         console.log("Done.");
-    } catch (e) {
-        console.error("Script error:", e);
+    } catch (err) {
+        console.error("Script failed:", err.message);
+        process.exit(1);
     }
 })();
