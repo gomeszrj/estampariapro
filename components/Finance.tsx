@@ -37,7 +37,7 @@ interface FinanceProps {
 }
 
 const FinanceStat = ({ title, value, icon: Icon, color, trend, subtext }: any) => (
-  <div className="bg-[#0f172a] p-6 rounded-xl border border-[#1e293b] flex flex-col justify-between relative overflow-hidden group hover:border-slate-600 transition-colors shadow-sm">
+  <div className="bg-[#0b1221] p-6 rounded-3xl border border-[#1e293b] flex flex-col justify-between relative overflow-hidden group hover:border-slate-600 transition-all duration-500 shadow-xl hover:shadow-2xl">
     <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full opacity-5 ${color.replace('bg-', 'text-')} group-hover:scale-110 transition-transform`} />
     <div className="flex justify-between items-start mb-4 relative">
       <div className={`p-3 rounded-xl ${color} shadow-lg shadow-black/20`}>
@@ -187,8 +187,8 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
 
       {/* NEW TRANSACTION MODAL */}
       {isAdding && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="bg-[#0b1221] border border-[#1e293b] rounded-3xl p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-500">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-black text-white uppercase flex items-center gap-2">
                 <Plus className="w-5 h-5 text-white" />
@@ -276,17 +276,17 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
         </div>
       )}
 
-      <header className="flex justify-between items-end">
+      <header className="flex justify-between items-end mb-8">
         <div>
-          <h2 className="text-3xl font-black text-slate-100 tracking-tight flex items-center gap-3">
-            <TrendingUp className="w-8 h-8 text-emerald-500" />
+          <h2 className="text-3xl md:text-4xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 flex items-center gap-3">
+            <TrendingUp className="w-8 h-8 text-emerald-400" />
             Dashboard Financeiro
           </h2>
           <p className="text-slate-500 mt-1">Visão completa do fluxo de caixa e resultados.</p>
         </div>
         <button
           onClick={() => setIsAdding(true)}
-          className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-6 py-3 rounded-xl font-black uppercase text-xs tracking-widest shadow-xl shadow-white/5 transition-all flex items-center gap-2"
+          className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-emerald-900/20 transition-all flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
           Novo Lançamento
@@ -367,7 +367,7 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
               </div>
             ) : (
               transactions.map((t) => (
-                <div key={t.id} className="bg-[#0f172a] p-4 rounded-2xl border border-[#1e293b] flex justify-between items-center group hover:border-slate-700 transition-colors">
+                <div key={t.id} className="bg-[#0b1221] p-4 rounded-2xl border border-[#1e293b] flex justify-between items-center group hover:border-slate-600 hover:bg-[#0f172a] transition-all duration-300">
                   <div className="flex items-center gap-3">
                     <div className={`p-2 rounded-xl ${t.type === 'income' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
                       {t.type === 'income' ? <ArrowUpCircle className="w-5 h-5" /> : <ArrowDownCircle className="w-5 h-5" />}

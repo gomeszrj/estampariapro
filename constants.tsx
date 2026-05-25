@@ -3,12 +3,12 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '21.8.3';
+export const SYSTEM_VERSION = '21.8.4';
 export const APP_NAME = 'Gomesz Speed Print';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.8.3 (Estabilidade e Botões):
-- Ativação de botões: Implementada lógica de exportação em CSV, links de rastreio, paginação de pedidos.
-- Adição rápida ao carrinho diretamente da visualização do catálogo na Store.
-- Otimização de botões vazios recebendo notificações informativas (WIP) ao invés de ações nulas.`;
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.8.4 (SaaS Premium Finalizado):
+- Finalização do Redesign Premium nos módulos: Produtos, Financeiro e Configurações.
+- Padronização visual com novos botões Esmeralda e gradientes.
+- Efeitos visuais suaves com animações de slide-in para melhor usabilidade.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [

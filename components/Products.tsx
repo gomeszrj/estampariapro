@@ -219,15 +219,15 @@ const Products: React.FC = () => {
     );
 
     return (
-        <div className="p-6 md:p-10 min-h-screen bg-[#0b1221] text-slate-200">
+        <div className="p-6 md:p-10 min-h-screen bg-[#05080E] text-slate-200">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 animate-in slide-in-from-right-8 duration-700">
                 <div>
-                    <h1 className="text-3xl font-black text-white tracking-tight uppercase flex items-center gap-3">
-                        <Package className="w-8 h-8 text-white" />
+                    <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 flex items-center gap-3">
+                        <Package className="w-8 h-8 text-emerald-400" />
                         Catálogo de Produtos
                     </h1>
-                    <p className="text-slate-500 font-medium mt-1">Gerencie produtos, estoque e vitrine pública.</p>
+                    <p className="text-slate-500 font-bold uppercase tracking-widest text-xs mt-2">Gerencie produtos, estoque e vitrine pública.</p>
                 </div>
 
                 <div className="flex gap-4">
@@ -248,7 +248,7 @@ const Products: React.FC = () => {
                             });
                             setIsEditing(true);
                         }}
-                        className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-6 py-3 rounded-xl font-bold uppercase text-xs tracking-widest shadow-lg shadow-white/5 transition-all flex items-center gap-2"
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-emerald-900/20 transition-all flex items-center gap-2"
                     >
                         <Plus className="w-4 h-4" /> Novo Produto
                     </button>
@@ -256,12 +256,12 @@ const Products: React.FC = () => {
             </div>
 
             {/* Grid View (Back to Basics) */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 animate-in slide-in-from-bottom-8 duration-700">
                 {filtered.map(product => (
                     <div
                         key={product.id}
                         onClick={() => { setEditingProduct(product); setIsEditing(true); }}
-                        className="group bg-[#0f172a] rounded-xl border border-[#1e293b] overflow-hidden cursor-pointer hover:border-slate-600 hover:shadow-xl hover:shadow-white/5 transition-all duration-300 flex flex-col"
+                        className="group bg-[#0b1221] rounded-3xl border border-[#1e293b] overflow-hidden cursor-pointer hover:border-slate-600 hover:shadow-2xl transition-all duration-500 flex flex-col"
                     >
                         {/* Image */}
                         <div className="aspect-[4/5] bg-[#0f172a] relative overflow-hidden">
@@ -289,10 +289,10 @@ const Products: React.FC = () => {
                         {/* Content */}
                         <div className="p-4 flex flex-col flex-1">
                             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">{product.category}</span>
-                            <h3 className="text-sm font-bold text-white leading-tight mb-3 line-clamp-2 uppercase">{product.name}</h3>
-                            <div className="mt-auto flex items-center justify-between pt-3 border-t border-[#1e293b]">
+                            <h3 className="text-sm font-black text-white leading-snug line-clamp-2 uppercase">{product.name}</h3>
+                            <div className="mt-auto pt-3 border-t border-[#1e293b] flex items-center justify-between">
                                 <span className="text-white font-black text-lg">R$ {product.basePrice.toFixed(2)}</span>
-                                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center group-hover:bg-white group-hover:text-slate-950 transition-colors">
+                                <div className="w-8 h-8 rounded-full bg-[#1C1C26] flex items-center justify-center group-hover:bg-white group-hover:text-slate-950 transition-colors">
                                     <Edit2 className="w-4 h-4 text-slate-400 group-hover:text-white" />
                                 </div>
                             </div>
@@ -303,16 +303,16 @@ const Products: React.FC = () => {
 
             {/* Unified Modal */}
             {isEditing && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 animate-in fade-in">
-                    <div className="bg-[#0f172a] w-full max-w-4xl h-[90vh] rounded-3xl border border-slate-700 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 animate-in fade-in backdrop-blur-sm">
+                    <div className="bg-[#0f172a] w-full max-w-4xl h-[90vh] rounded-3xl border border-[#1e293b] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-500">
 
                         {/* Modal Header */}
-                        <div className="p-6 border-b border-[#1e293b] flex items-center justify-between bg-[#1e293b]/50">
+                        <div className="p-8 border-b border-[#1e293b] flex items-center justify-between bg-[#0b1221]">
                             <div>
-                                <h2 className="text-xl font-black text-white uppercase tracking-tight">
+                                <h2 className="text-2xl font-black text-white tracking-tight uppercase">
                                     {editingProduct?.id ? 'Editar Produto' : 'Novo Produto'}
                                 </h2>
-                                <p className="text-slate-400 text-xs font-medium">Configure detalhes, imagem e grade de tamanhos.</p>
+                                <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Configure detalhes, imagem e grade de tamanhos.</p>
                             </div>
                             <div className="flex gap-2">
                                 {editingProduct?.id && (
@@ -471,11 +471,11 @@ const Products: React.FC = () => {
                         </div>
 
                         {/* Footer */}
-                        <div className="p-6 border-t border-[#1e293b] bg-[#1e293b]/80 flex justify-end gap-4">
-                            <button onClick={() => setIsEditing(false)} className="px-6 py-3 rounded-xl font-bold uppercase text-xs tracking-widest text-slate-400 hover:text-white hover:bg-slate-700/50 transition-colors">
+                        <div className="p-6 border-t border-[#1e293b] bg-[#0b1221] flex justify-end gap-4">
+                            <button onClick={() => setIsEditing(false)} className="px-6 py-3 rounded-2xl font-black uppercase text-xs tracking-widest text-slate-500 hover:text-white hover:bg-[#1e293b] transition-colors">
                                 Cancelar
                             </button>
-                            <button onClick={handleSave} className="px-8 py-3 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-xl font-bold uppercase text-xs tracking-widest shadow-lg shadow-white/5 transition-all flex items-center gap-2">
+                            <button onClick={handleSave} className="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-emerald-900/20 transition-all flex items-center gap-2">
                                 <Save className="w-4 h-4" /> Salvar Alterações
                             </button>
                         </div>

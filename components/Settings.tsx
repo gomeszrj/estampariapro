@@ -177,12 +177,12 @@ const Settings: React.FC = () => {
     <div className="max-w-5xl mx-auto space-y-8 animate-in slide-in-from-bottom-6 duration-700 pb-20">
 
       {/* Header Tabs */}
-      <div className="flex flex-col md:flex-row justify-between items-center border-b border-[#1e293b] pb-6 gap-6">
+      <div className="flex flex-col md:flex-row justify-between items-center border-b border-[#1e293b] pb-6 gap-6 animate-in slide-in-from-right-8 duration-700">
         <div>
-          <h2 className="text-4xl font-black text-white tracking-tighter uppercase mb-2">
+          <h2 className="text-4xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 mb-2 uppercase">
             {activeTab === 'company' ? 'Identidade Corporativa' : activeTab === 'team' ? 'Gestão de Equipe' : 'Configurações de IA'}
           </h2>
-          <p className="text-slate-400 font-medium">
+          <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">
             <span>
               {activeTab === 'company'
                 ? 'Configure os dados oficiais que darão autoridade aos seus documentos.'
@@ -198,7 +198,7 @@ const Settings: React.FC = () => {
             onClick={() => setActiveTab('company')}
             className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${
               activeTab === 'company' 
-                ? 'bg-[#8B5CF6] text-white shadow-[0_4px_20px_rgba(255,255,255,0.12)]' 
+                ? 'bg-emerald-600 text-white shadow-[0_4px_20px_rgba(16,185,129,0.2)]' 
                 : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
           >
@@ -208,7 +208,7 @@ const Settings: React.FC = () => {
             onClick={() => setActiveTab('team')}
             className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${
               activeTab === 'team' 
-                ? 'bg-[#8B5CF6] text-white shadow-[0_4px_20px_rgba(255,255,255,0.12)]' 
+                ? 'bg-emerald-600 text-white shadow-[0_4px_20px_rgba(16,185,129,0.2)]' 
                 : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
           >
@@ -218,7 +218,7 @@ const Settings: React.FC = () => {
             onClick={() => setActiveTab('bot')}
             className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${
               activeTab === 'bot' 
-                ? 'bg-[#8B5CF6] text-white shadow-[0_4px_20px_rgba(255,255,255,0.12)]' 
+                ? 'bg-emerald-600 text-white shadow-[0_4px_20px_rgba(16,185,129,0.2)]' 
                 : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
           >
@@ -321,7 +321,7 @@ const Settings: React.FC = () => {
               className={`px-10 py-4 rounded-2xl font-black uppercase text-xs tracking-[0.2em] transition-all flex items-center gap-3 shadow-2xl ${
                 saved 
                   ? 'bg-emerald-950/40 text-emerald-400 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.15)]' 
-                  : 'bg-[#8B5CF6] text-white hover:bg-slate-200 shadow-[0_4px_20px_rgba(255,255,255,0.15)]'
+                  : 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-[0_4px_20px_rgba(16,185,129,0.15)]'
               }`}
             >
               {saved ? <CheckCircle2 className="w-5 h-5" /> : <Save className="w-5 h-5" />}
@@ -439,7 +439,7 @@ const Settings: React.FC = () => {
                   <a
                     href="/estamparia-pro.apk"
                     download
-                    className="mt-4 w-full flex items-center justify-center gap-4 px-5 py-4 rounded-2xl transition-all duration-300 bg-[#8B5CF6] text-white hover:bg-slate-200 font-black uppercase tracking-widest text-[11px] shadow-lg shadow-white/5"
+                    className="mt-4 w-full flex items-center justify-center gap-4 px-5 py-4 rounded-2xl transition-all duration-300 bg-emerald-600 text-white hover:bg-emerald-500 font-black uppercase tracking-widest text-[11px] shadow-lg shadow-emerald-900/20"
                   >
                     <Download className="w-5 h-5" /> Instalar APK
                   </a>
@@ -595,7 +595,7 @@ const Settings: React.FC = () => {
               <button
                 onClick={handleSaveMember}
                 disabled={!newMemberName || !newMemberRole}
-                className="w-full py-4 bg-[#8B5CF6] text-white hover:bg-slate-200 rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-[0_4px_20px_rgba(255,255,255,0.15)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-4 bg-emerald-600 text-white hover:bg-emerald-500 rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-lg shadow-emerald-900/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <UserPlus className="w-4 h-4" /> <span>Cadastrar Membro</span>
               </button>
