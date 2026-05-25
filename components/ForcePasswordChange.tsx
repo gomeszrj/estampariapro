@@ -43,12 +43,12 @@ export const ForcePasswordChange: React.FC<ForcePasswordChangeProps> = ({ onComp
   };
 
   return (
-    <div className="fixed inset-0 bg-[#020617] z-[10000] flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-[#0f172a] rounded-[3rem] border border-slate-800 p-10 shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-indigo-500"></div>
+    <div className="fixed inset-0 bg-[#0b1221] z-[10000] flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-[#0f172a] rounded-[3rem] border border-[#1e293b] p-10 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-1 bg-white"></div>
         
         <div className="text-center space-y-4 mb-8">
-            <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center border border-indigo-500/20 text-indigo-400 mx-auto mb-4">
+            <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center border border-[#1e293b] text-white mx-auto mb-4">
                 <KeyRound className="w-8 h-8" />
             </div>
             <h2 className="text-2xl font-black text-white uppercase tracking-tight">Segurança Exigida</h2>
@@ -64,7 +64,7 @@ export const ForcePasswordChange: React.FC<ForcePasswordChangeProps> = ({ onComp
                         value={newPassword}
                         onChange={e => setNewPassword(e.target.value)}
                         placeholder="Mínimo 6 caracteres"
-                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
+                        className="w-full bg-[#1C1C26] border border-[#1e293b] rounded-2xl p-4 text-white font-bold focus:ring-1 focus:ring-slate-700/50 outline-none"
                     />
                     <button onClick={() => setShowPass(!showPass)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">
                         {showPass ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -79,7 +79,7 @@ export const ForcePasswordChange: React.FC<ForcePasswordChangeProps> = ({ onComp
                     value={confirmPassword}
                     onChange={e => setConfirmPassword(e.target.value)}
                     placeholder="Repita a nova senha"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-white font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full bg-[#1C1C26] border border-[#1e293b] rounded-2xl p-4 text-white font-bold focus:ring-1 focus:ring-slate-700/50 outline-none"
                 />
             </div>
 
@@ -104,7 +104,7 @@ export const ForcePasswordChange: React.FC<ForcePasswordChangeProps> = ({ onComp
             <button 
                 onClick={handleUpdate}
                 disabled={loading}
-                className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 text-white rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3"
+                className="w-full py-5 bg-white hover:bg-white/90 disabled:bg-slate-800 text-slate-950 rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all shadow-xl shadow-white/5 flex items-center justify-center gap-3"
             >
                 {loading ? 'Atualizando...' : 'Definir Senha e Entrar'}
             </button>

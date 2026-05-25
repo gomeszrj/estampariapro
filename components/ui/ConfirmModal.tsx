@@ -34,9 +34,9 @@ const variantConfig: Record<ModalVariant, {
   },
   info: {
     icon: <Info className="w-6 h-6" />,
-    confirmClass: 'bg-indigo-600 hover:bg-indigo-500 border-indigo-500',
-    iconClass: 'text-indigo-400',
-    ringClass: 'ring-indigo-500/20 bg-indigo-500/10',
+    confirmClass: 'bg-[#8B5CF6] hover:bg-[#7C3AED] text-white border-white/20',
+    iconClass: 'text-white',
+    ringClass: 'ring-white/20 bg-white/10',
   },
   success: {
     icon: <CheckCircle className="w-6 h-6" />,
@@ -98,12 +98,12 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/70"
         onClick={onCancel}
       />
 
       {/* Modal panel */}
-      <div className="relative bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl shadow-black/50 w-full max-w-md p-6 animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative bg-[#0f172a] border border-slate-700/80 rounded-2xl shadow-2xl shadow-black/50 w-full max-w-md p-6 animate-in fade-in zoom-in-95 duration-200">
         {/* Close button */}
         <button
           onClick={onCancel}

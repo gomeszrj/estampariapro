@@ -9,8 +9,18 @@ serve(async (req) => {
             return new Response("Method not allowed", { status: 405 });
         }
 
+        // SEC: Validate webhook secret to prevent forged payloads
+        const webhookSecret = Deno.env.get("EVOLUTION_WEBHOOK_SECRET");
+        if (webhookSecret) {
+            const signature = req.headers.get("x-webhook-secret") || req.headers.get("apikey");
+            if (signature !== webhookSecret) {
+                console.warn("Webhook rejected: invalid secret");
+                return new Response("Unauthorized", { status: 401 });
+            }
+        }
+
         const payload = await req.json();
-        console.log("Webhook received:", JSON.stringify(payload));
+        console.log("Webhook received:", JSON.stringify(payload).substring(0, 500));
 
         const supabase = createClient(
             Deno.env.get("SUPABASE_URL") ?? "",
@@ -58,10 +68,13 @@ serve(async (req) => {
                 let clientId = null;
                 let clientName = "Cliente Desconhecido";
 
+                // SEC: Escape special characters to prevent ilike pattern injection
+                const safeSearchPhone = cleanPhone.substring(2).replace(/[%_\\]/g, '\\$&');
+
                 const { data: client } = await supabase
                     .from("clients")
                     .select("id, name")
-                    .ilike("phone", `%${cleanPhone.substring(2)}%`) // Try to match ignoring country code?
+                    .ilike("phone", `%${safeSearchPhone}%`) // Try to match ignoring country code?
                     .limit(1)
                     .single();
 

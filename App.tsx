@@ -6,7 +6,7 @@ import { SubscriptionLock } from './components/SubscriptionLock';
 import { ForcePasswordChange } from './components/ForcePasswordChange';
 import { ChatWidget } from './components/CRM/ChatWidget';
 import { PageSkeleton } from './components/ui/SkeletonLoader';
-import { Bell, User as UserIcon, Share2, Menu, ExternalLink, Link as LinkIcon, Copy, AlertTriangle } from 'lucide-react';
+import { Bell, User as UserIcon, Share2, Menu, ExternalLink, Link as LinkIcon, Copy, AlertTriangle, Search } from 'lucide-react';
 import { Order, Product, Client, OrderStatus, OrderType } from './types';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { clientService } from './services/clientService';
@@ -249,68 +249,69 @@ const AuthenticatedApp: React.FC = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#020617] relative">
+    <div className="flex min-h-screen bg-[#0b1221] text-slate-200 relative">
       <Sidebar activeView={activeView} setActiveView={setActiveView} isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} isMasterAdmin={isMasterAdmin} />
       <main className="flex-1 flex flex-col min-w-0">
-        <header className="h-20 bg-[#0f172a]/40 backdrop-blur-xl border-b border-slate-800/50 flex items-center justify-between px-4 md:px-10 sticky top-0 z-30">
+        <header className="h-20 bg-[#05080E] border-b border-[#1e293b] flex items-center justify-between px-4 md:px-10 sticky top-0 z-30">
           <div className="flex items-center gap-3">
             <button
-              className="md:hidden text-slate-400 hover:text-white mr-2"
+              className="md:hidden text-white/60 hover:text-white mr-2"
               onClick={() => setIsSidebarOpen(true)}
             >
               <Menu className="w-6 h-6" />
             </button>
-            <span className="hidden md:inline text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Tenant:</span>
-            <div className="hidden md:flex items-center gap-3 bg-slate-800 px-4 py-1.5 rounded-full border border-slate-700 shadow-sm">
-              {companyLogo && <img src={companyLogo} alt="Logo" className="w-5 h-5 object-contain" />}
-              <span className="text-xs font-black text-slate-100 uppercase tracking-wider">
-                {companyName}
-              </span>
-            </div>
+            {/* The page title / "Olá Admin" is now handled inside Dashboard, but here we keep it empty or simple if not on dashboard */}
           </div>
 
-          <div className="flex items-center gap-4 md:gap-8">
-            {lowStockCount > 0 && (
-              <button
-                onClick={() => setActiveView('inventory')}
-                className="flex items-center gap-2 px-3 py-2 bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/20 text-rose-400 rounded-xl text-xs font-black uppercase tracking-wider transition-all animate-pulse"
-                title={`${lowStockCount} itens com estoque baixo!`}
-              >
-                <AlertTriangle className="w-4 h-4 text-rose-500" />
-                <span className="hidden sm:inline">Estoque Baixo:</span>
-                <span className="bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">{lowStockCount}</span>
-              </button>
-            )}
+          <div className="flex items-center gap-4 md:gap-6">
+            {/* Fake Search Bar */}
+            <div className="hidden md:flex items-center gap-2 bg-[#0b1221] border border-[#1e293b] rounded-xl px-4 py-2 w-64 hover:border-slate-600 transition-colors cursor-text">
+              <Search className="w-4 h-4 text-slate-500" />
+              <span className="text-slate-500 text-sm flex-1">Buscar...</span>
+              <div className="flex items-center gap-1 text-slate-600">
+                <span className="text-[10px] font-black uppercase">⌘K</span>
+              </div>
+            </div>
+
+            {/* Notification Bell */}
             <button
               onClick={() => notify.info(`Sistema Estamparia.AI v${SYSTEM_VERSION} - Novidades:\n\n${LATEST_RELEASE_NOTES}`)}
-              className="relative px-3 py-2 text-slate-400 hover:text-indigo-400 transition-all bg-slate-800/30 rounded-xl border border-slate-700/50 group flex items-center gap-3"
+              className="relative p-2 text-slate-400 hover:text-white transition-all bg-[#0b1221] rounded-xl border border-[#1e293b] hover:border-[#6366f1]/50 group"
               title={`Ver Novidades da Versão ${SYSTEM_VERSION}`}
             >
-              <div className="relative">
-                <Bell className="w-5 h-5" />
-                <div className="absolute top-0 right-0 w-2 h-2 bg-indigo-500 rounded-full border-2 border-[#0f172a]"></div>
-              </div>
-              <span className="text-[10px] font-black text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded-lg border border-indigo-500/20">v{SYSTEM_VERSION}</span>
+              <Bell className="w-5 h-5" />
+              <div className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#4f46e5] rounded-full border-2 border-[#0b1221]"></div>
             </button>
-            <div className="flex items-center gap-4 pl-8 border-l border-slate-800">
+
+            {/* Version Badge */}
+            <div className="hidden sm:flex items-center justify-center bg-[#4f46e5]/10 border border-[#4f46e5]/30 text-[#818cf8] px-3 py-1.5 rounded-xl font-mono text-[10px] font-black tracking-widest shadow-[0_0_10px_rgba(79,70,229,0.1)]">
+              v{SYSTEM_VERSION}
+            </div>
+
+            {/* User Profile Area */}
+            <div className="flex items-center gap-4 pl-6 border-l border-[#1e293b]">
               <div className="text-right hidden md:block">
-                <p className="text-sm font-black text-slate-100 tracking-tight">{user?.email}</p>
-                <p className="text-[9px] text-indigo-500 font-black uppercase tracking-[0.2em]">{isMasterAdmin ? 'Admin Master' : 'Administrador'}</p>
-                <button onClick={signOut} className="text-[10px] text-red-500 hover:text-red-400 font-bold uppercase tracking-widest mt-1">Sair</button>
+                <p className="text-sm font-bold text-white tracking-tight">{user?.email || 'admin@estamparia.com'}</p>
+                <p className="text-[9px] text-[#6366f1] font-black uppercase tracking-widest mt-0.5">{isMasterAdmin ? 'ADMIN MASTER' : 'ADMINISTRADOR'}</p>
               </div>
-                {/* API / Integrations button — MASTER ADMIN ONLY */}
-                {isMasterAdmin && (
-                  <button
-                    onClick={() => setIsApiSettingsOpen(true)}
-                    className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-black border border-indigo-500 shadow-lg shadow-indigo-600/20 hover:scale-105 transition-transform cursor-pointer relative group"
-                    title="Configurar Integrações de IA"
-                  >
-                    <UserIcon className="w-6 h-6" />
-                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-slate-900 rounded-full flex items-center justify-center border border-slate-800">
-                      <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                    </div>
-                  </button>
-                )}
+              
+              <div className="relative group cursor-pointer" onClick={signOut}>
+                <div className="absolute inset-0 bg-[#6366f1]/20 rounded-full blur-md group-hover:bg-[#6366f1]/40 transition-all"></div>
+                <div className="w-10 h-10 rounded-full bg-slate-800 border-2 border-[#1e293b] group-hover:border-[#6366f1] relative z-10 overflow-hidden flex items-center justify-center text-white font-bold transition-colors">
+                  <img src="https://i.pravatar.cc/150?u=admin" alt="Avatar" className="w-full h-full object-cover" />
+                </div>
+              </div>
+
+              {/* API / Integrations button — MASTER ADMIN ONLY */}
+              {isMasterAdmin && (
+                <button
+                  onClick={() => setIsApiSettingsOpen(true)}
+                  className="w-10 h-10 rounded-full bg-[#1e293b] text-slate-300 flex items-center justify-center hover:bg-slate-700 hover:text-white transition-colors border border-transparent hover:border-slate-500"
+                  title="Configurar Integrações de IA"
+                >
+                  <UserIcon className="w-5 h-5" />
+                </button>
+              )}
             </div>
           </div>
         </header>
@@ -349,9 +350,10 @@ const App: React.FC = () => {
           richColors
           toastOptions={{
             style: {
-              background: '#1e293b',
-              border: '1px solid #334155',
-              color: '#f1f5f9',
+              background: 'rgba(8, 10, 15, 0.95)',
+              border: '1px solid rgba(255, 255, 255, 0.05)',
+              color: '#ffffff',
+              backdropFilter: 'blur(12px)',
             },
           }}
         />

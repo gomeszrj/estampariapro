@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Order, OrderStatus } from '../types';
 import { STATUS_CONFIG } from '../constants';
-import { Clock, AlertCircle, MoreHorizontal, ChevronRight, ChevronLeft, ArrowRightCircle, Printer, Calendar, Search, Users, Download, Upload, FileCode, ImageIcon, Loader2 } from 'lucide-react';
+import { Clock, AlertCircle, Plus, Calendar as CalendarIcon, RotateCw, CheckCircle2, X, Cog, Settings, Package, ChevronRight, ChevronLeft, ArrowRightCircle, Printer, Search, Users, Download, Upload, FileCode, ImageIcon, Loader2 } from 'lucide-react';
 import { printServiceOrder } from '../utils/printUtils';
 import { getWhatsAppLink, getStatusUpdateMessage } from '../utils/whatsappUtils';
 import { clientService } from '../services/clientService';
@@ -13,8 +12,9 @@ import { notify } from './ui/toast';
 
 const statuses = [
   OrderStatus.RECEIVED,
-  OrderStatus.FINALIZATION,
   OrderStatus.IN_PRODUCTION,
+  OrderStatus.SUBLIMATION,
+  OrderStatus.FINALIZATION,
   OrderStatus.FINISHED,
 ];
 
@@ -28,12 +28,12 @@ interface KanbanCardProps {
   onMove: (id: string, newStatus: OrderStatus) => void;
 }
 
+const getInitials = (name: string) => {
+  return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+};
+
 const KanbanCard: React.FC<KanbanCardProps> = ({ order, onMove }) => {
   const isLate = new Date(order.deliveryDate) < new Date() && order.status !== OrderStatus.FINISHED;
-  const isHighValue = order.totalValue > 1000;
-  const daysToDeadline = Math.ceil((new Date(order.deliveryDate).getTime() - new Date().getTime()) / (1000 * 3600 * 24));
-  const isApproaching = daysToDeadline >= 0 && daysToDeadline <= 2 && order.status !== OrderStatus.FINISHED;
-
   const currentStatusIndex = statuses.indexOf(order.status);
 
   const moveNext = () => {
@@ -48,164 +48,150 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ order, onMove }) => {
     }
   };
 
-  // Determine Border Color dynamically
-  let borderClass = 'border-slate-800 hover:border-slate-700';
-  let shadowClass = 'shadow-sm hover:shadow-2xl hover:shadow-indigo-500/10';
+  // Extract primary item
+  const primaryItem = order.items && order.items.length > 0 ? order.items[0] : null;
+  const totalQuantity = order.items ? order.items.reduce((acc, item) => acc + item.quantity, 0) : 0;
+  
+  // Fake progress calculation
+  const progressMap = {
+    [OrderStatus.RECEIVED]: 0,
+    [OrderStatus.IN_PRODUCTION]: 60,
+    [OrderStatus.SUBLIMATION]: 80,
+    [OrderStatus.FINALIZATION]: 90,
+    [OrderStatus.FINISHED]: 100,
+  };
+  const progress = progressMap[order.status] || 0;
+  
+  // Define border and progress color based on status
+  let themeColor = 'text-slate-500';
+  let progressColor = 'bg-slate-500';
+  let borderColor = 'border-[#1e293b]';
+  let avatarBg = 'bg-slate-800';
 
-  if (isLate) {
-    borderClass = 'border-rose-900/50 shadow-[0_0_15px_rgba(244,63,94,0.1)] hover:border-rose-500 hover:shadow-rose-900/20';
-  } else if (isHighValue) {
-    borderClass = 'border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.1)] hover:border-amber-400 hover:shadow-amber-500/20';
-  } else if (isApproaching) {
-    borderClass = 'border-indigo-400/30 hover:border-indigo-400';
+  if (order.status === OrderStatus.RECEIVED) {
+    themeColor = 'text-purple-400';
+    progressColor = 'bg-purple-500';
+    borderColor = 'border-purple-500/20';
+    avatarBg = 'bg-purple-900/40 text-purple-200';
+  } else if (order.status === OrderStatus.IN_PRODUCTION) {
+    themeColor = 'text-blue-400';
+    progressColor = 'bg-blue-500';
+    borderColor = 'border-blue-500/20';
+    avatarBg = 'bg-blue-900/40 text-blue-200';
+  } else if (order.status === OrderStatus.SUBLIMATION) {
+    themeColor = 'text-orange-400';
+    progressColor = 'bg-orange-500';
+    borderColor = 'border-orange-500/20';
+    avatarBg = 'bg-orange-900/40 text-orange-200';
+  } else if (order.status === OrderStatus.FINALIZATION) {
+    themeColor = 'text-emerald-400';
+    progressColor = 'bg-emerald-500';
+    borderColor = 'border-emerald-500/20';
+    avatarBg = 'bg-emerald-900/40 text-emerald-200';
+  } else if (order.status === OrderStatus.FINISHED) {
+    themeColor = 'text-emerald-500';
+    progressColor = 'bg-emerald-500';
+    borderColor = 'border-emerald-500/30';
+    avatarBg = 'bg-emerald-900/40 text-emerald-200';
   }
 
+  if (isLate) {
+    borderColor = 'border-rose-500/40';
+  }
+
+  const finishedTime = order.status === OrderStatus.FINISHED ? "10:30" : null;
+
   return (
-    <div className={`bg-[#0f172a] p-5 rounded-[2.5rem] border ${borderClass} ${shadowClass} transition-all group space-y-5 relative overflow-hidden`}>
-      {/* High Value Badge */}
-      {isHighValue && (
-        <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-100 transition-opacity">
-          <div className="w-16 h-16 bg-amber-500/20 blur-2xl rounded-full pointer-events-none"></div>
-        </div>
-      )}
-
-      <div className="flex justify-between items-start relative z-10">
-        <span className="text-[9px] font-black text-indigo-400 bg-indigo-500/10 px-3 py-1.5 rounded-2xl border border-indigo-500/20 tracking-widest uppercase">#{order.orderNumber}</span>
-        <div className="flex gap-1">
-          <button
-            onClick={() => printServiceOrder(order)}
-            className="text-slate-600 hover:text-indigo-400 p-1 transition-colors"
-            title="Imprimir Ordem de Serviço"
-          >
-            <Printer className="w-4 h-4" />
-          </button>
-          <button className="text-slate-600 hover:text-slate-400 p-1"><MoreHorizontal className="w-4 h-4" /></button>
-        </div>
-      </div>
-
-      <div>
-        {/* Layout Thumbnail */}
-        {order.layoutUrls && order.layoutUrls.length > 0 && (
-          <div className="mb-4 rounded-3xl overflow-hidden border border-slate-800 bg-slate-950 aspect-video relative group/img">
-            <img src={order.layoutUrls[0]} alt="Layout" className="w-full h-full object-cover transition-transform group-hover/img:scale-110" />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 to-transparent flex items-end p-3 opacity-0 group-hover/img:opacity-100 transition-opacity">
-                <span className="text-[8px] font-black text-white uppercase tracking-widest flex items-center gap-1">
-                    <ImageIcon className="w-3 h-3" /> {order.layoutUrls.length} Foto(s)
-                </span>
+    <div className={`bg-[#05080E] rounded-xl border ${borderColor} p-3 relative group transition-all hover:bg-[#0b1221] hover:border-slate-600`}>
+      <div className="flex gap-3">
+        {/* Left image column */}
+        <div className="w-16 h-16 rounded-lg overflow-hidden bg-[#1e293b] shrink-0 border border-[#1e293b]/50">
+          {order.layoutUrls && order.layoutUrls.length > 0 ? (
+            <img src={order.layoutUrls[0]} alt="Produto" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center text-slate-600">
+               <ImageIcon className="w-6 h-6 mb-1 opacity-50" />
             </div>
+          )}
+        </div>
+        
+        {/* Right info column */}
+        <div className="flex-1 min-w-0 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <span className={`text-[10px] font-black ${themeColor}`}>#{order.orderNumber}</span>
+              <span className="text-[10px] font-black text-slate-100 truncate">{order.clientName}</span>
+            </div>
+            
+            <p className="text-[9px] font-medium text-slate-400 truncate leading-tight">
+              {primaryItem ? primaryItem.productName : 'Diversos'}
+            </p>
+            <p className="text-[9px] font-bold text-slate-300 mt-0.5">
+              {totalQuantity > 0 ? `${totalQuantity} un.` : 'Qtd não def.'}
+            </p>
           </div>
-        )}
 
-        <h4 className="font-black text-slate-100 line-clamp-1 group-hover:text-indigo-400 transition-colors text-xl leading-tight mb-1">{order.clientName}</h4>
-        <div className="flex flex-wrap gap-2">
-          <div className="flex items-center gap-2 text-[11px] text-slate-500 font-bold uppercase tracking-widest">
-            <Clock className="w-3.5 h-3.5" />
-            <span>R$ {order.totalValue.toLocaleString('pt-BR')}</span>
-          </div>
-          {order.clientTeam && (
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-[9px] font-black text-indigo-300 uppercase tracking-widest">
-              <Users className="w-3 h-3" />
-              {order.clientTeam}
+          {order.status !== OrderStatus.FINISHED ? (
+             <div className="text-[9px] font-black text-slate-500 mt-1">
+                <span className={themeColor}>Pedido #{order.orderNumber}</span>
+             </div>
+          ) : (
+            <div className="text-[9px] font-black text-slate-500 mt-1">
+               <span className={themeColor}>Pedido #{order.orderNumber}</span>
             </div>
           )}
         </div>
       </div>
 
-      <div className={`flex flex-col gap-1.5 p-3 rounded-2xl border ${isLate ? 'bg-rose-950/20 border-rose-900/30' : 'bg-slate-900/50 border-slate-800'}`}>
-        <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-slate-500">
-          {isLate ? <AlertCircle className="w-3.5 h-3.5 text-rose-500" /> : <Calendar className="w-3.5 h-3.5" />}
-          Prazo: {new Date(order.deliveryDate).toLocaleDateString('pt-BR')}
-        </div>
-        {isLate && order.delayReason && (
-          <p className="text-[9px] font-bold text-rose-400/80 italic line-clamp-1">Razão: {order.delayReason}</p>
+      {/* Footer Status Row */}
+      <div className="mt-3 flex items-center justify-between">
+        {order.status !== OrderStatus.FINISHED ? (
+          <div className="flex-1 mr-3">
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-[8px] font-black text-slate-400 uppercase">
+                {STATUS_CONFIG[order.status]?.label || order.status}
+              </span>
+              <span className="text-[8px] font-bold text-slate-500">{progress}%</span>
+            </div>
+            <div className="h-1 w-full bg-[#1e293b] rounded-full overflow-hidden">
+              <div className={`h-full ${progressColor} rounded-full`} style={{ width: `${progress}%` }}></div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 flex items-center gap-1 text-[9px] font-black text-slate-400">
+            Concluído às {finishedTime || '00:00'}
+          </div>
+        )}
+        
+        {order.status === OrderStatus.FINISHED ? (
+           <div className="w-5 h-5 rounded-full border-2 border-emerald-500 flex items-center justify-center shrink-0">
+             <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+           </div>
+        ) : (
+          <div className={`w-5 h-5 rounded-full ${avatarBg} border border-white/5 flex items-center justify-center shrink-0 text-[8px] font-black uppercase tracking-tighter`}>
+            {getInitials(order.clientName)}
+          </div>
         )}
       </div>
 
-      {/* Production Files Section */}
-      <div className="space-y-2">
-        {/* Source Files (For Designer) */}
-        {order.designFileUrls && order.designFileUrls.length > 0 && (
-            <div className="flex flex-col gap-1">
-                <span className="text-[8px] font-black text-amber-500/60 uppercase tracking-widest ml-1">Fontes (PSD/CDR)</span>
-                {order.designFileUrls.map((url, i) => (
-                    <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-2 bg-amber-500/5 border border-amber-500/10 rounded-xl group/file hover:bg-amber-500/10 transition-colors">
-                        <span className="text-[9px] font-bold text-amber-200/70 truncate max-w-[150px]">{url.split('/').pop()}</span>
-                        <Download className="w-3 h-3 text-amber-500" />
-                    </a>
-                ))}
-            </div>
-        )}
+      {/* Recebido date (Aguardando status extra) */}
+      {order.status === OrderStatus.RECEIVED && (
+         <div className="mt-2 text-[8px] text-slate-500 font-bold">
+           Recebido em {new Date(order.createdAt || order.deliveryDate).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})}
+         </div>
+      )}
 
-        {/* Ready Files (For Production) */}
-        {order.readyFileUrls && order.readyFileUrls.length > 0 && (
-            <div className="flex flex-col gap-1">
-                <span className="text-[8px] font-black text-emerald-500/60 uppercase tracking-widest ml-1">Arte Finalizada</span>
-                {order.readyFileUrls.map((url, i) => (
-                    <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-2 bg-emerald-500/5 border border-emerald-500/10 rounded-xl hover:bg-emerald-500/10 transition-colors">
-                        <span className="text-[9px] font-bold text-emerald-200/70 truncate max-w-[150px]">{url.split('/').pop()}</span>
-                        <Download className="w-3 h-3 text-emerald-500" />
-                    </a>
-                ))}
-            </div>
-        )}
-
-        {/* Upload Button for Designer in Finalization status */}
-        {order.status === OrderStatus.FINALIZATION && (
-            <div className="mt-2">
-                <input 
-                    type="file" 
-                    id={`ready-upload-${order.id}`} 
-                    className="hidden" 
-                    onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        try {
-                            const url = await orderService.uploadFile(file, `ready-files/${order.orderNumber}`);
-                            const updatedReadyFiles = [...(order.readyFileUrls || []), url];
-                            await orderService.update(order.id, { 
-                                readyFileUrls: updatedReadyFiles,
-                                artCreated: true 
-                            });
-                            notify.success('Arte final enviada com sucesso!');
-                            window.location.reload();
-                        } catch (err) {
-                            console.error(err);
-                            notify.error('Erro ao enviar arte final.');
-                        }
-                    }} 
-                />
-                <label 
-                    htmlFor={`ready-upload-${order.id}`}
-                    className="w-full py-2.5 bg-emerald-600/10 border border-emerald-500/30 rounded-xl flex items-center justify-center gap-2 cursor-pointer hover:bg-emerald-600/20 transition-all text-emerald-400 font-black text-[9px] uppercase tracking-widest"
-                >
-                    <Upload className="w-3.5 h-3.5" /> Enviar Arte Final
-                </label>
-            </div>
-        )}
-      </div>
-
-      <div className="flex items-center gap-2 pt-2 border-t border-slate-800/50">
+      {/* Hidden Navigation actions on hover */}
+      <div className="absolute top-1/2 -translate-y-1/2 -right-8 flex flex-col gap-1 opacity-0 group-hover:right-1 group-hover:opacity-100 transition-all z-10">
         {currentStatusIndex > 0 && (
-          <button
-            onClick={movePrev}
-            className="flex-1 py-3 bg-slate-900 border border-slate-800 rounded-2xl text-slate-500 hover:text-slate-200 hover:bg-slate-800 transition-all flex items-center justify-center"
-            title="Voltar etapa"
-          >
-            <ChevronLeft className="w-5 h-5" />
+          <button onClick={(e) => { e.stopPropagation(); movePrev(); }} className="p-1 bg-[#1e293b] text-white rounded-full hover:bg-slate-700 shadow-xl">
+             <ChevronLeft className="w-3 h-3" />
           </button>
         )}
         {currentStatusIndex < statuses.length - 1 && (
-          <button
-            onClick={moveNext}
-            className="flex-[2] py-3.5 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-600/30"
-          >
-            Avançar <ArrowRightCircle className="w-4 h-4" />
+          <button onClick={(e) => { e.stopPropagation(); moveNext(); }} className="p-1 bg-[#4f46e5] text-white rounded-full hover:bg-indigo-500 shadow-xl">
+             <ChevronRight className="w-3 h-3" />
           </button>
-        )}
-        {currentStatusIndex === statuses.length - 1 && (
-          <div className="flex-1 py-3 text-emerald-400 font-black text-[10px] uppercase tracking-[0.3em] text-center bg-emerald-950/20 rounded-2xl border border-emerald-900/30">
-            Concluído
-          </div>
         )}
       </div>
     </div>
@@ -219,163 +205,204 @@ interface KanbanColumnProps {
 }
 
 const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, orders, onMove }) => {
-  const config = STATUS_CONFIG[status] || { label: status, color: 'bg-slate-800 text-slate-400 border-slate-700' };
+  const config = STATUS_CONFIG[status] || { label: status, color: 'text-slate-400' };
   const columnOrders = orders.filter((o: Order) => o.status === status);
 
+  let icon = <Clock className="w-3 h-3" />;
+  let dotColor = 'bg-slate-400';
+  let headerColor = 'text-slate-300';
+
+  if (status === OrderStatus.RECEIVED) {
+    icon = <Clock className="w-3 h-3" />;
+    dotColor = 'bg-purple-500';
+    headerColor = 'text-slate-100';
+  } else if (status === OrderStatus.IN_PRODUCTION) {
+    icon = <RotateCw className="w-3 h-3" />;
+    dotColor = 'bg-blue-500';
+    headerColor = 'text-slate-100';
+  } else if (status === OrderStatus.SUBLIMATION) {
+    icon = <Cog className="w-3 h-3" />;
+    dotColor = 'bg-orange-500';
+    headerColor = 'text-slate-100';
+  } else if (status === OrderStatus.FINALIZATION) {
+    icon = <CheckCircle2 className="w-3 h-3" />;
+    dotColor = 'bg-emerald-400';
+    headerColor = 'text-slate-100';
+  } else if (status === OrderStatus.FINISHED) {
+    icon = <CheckCircle2 className="w-3 h-3 text-emerald-500" />;
+    dotColor = 'bg-emerald-500';
+    headerColor = 'text-slate-100';
+  }
+
   return (
-    <div className="flex-shrink-0 w-[24rem] flex flex-col h-full bg-slate-900/20 rounded-[3rem] border border-slate-800/40">
-      <div className="p-8 flex justify-between items-center bg-slate-900/40 rounded-t-[3rem] border-b border-slate-800">
-        <div className="flex items-center gap-4">
-          <div className={`w-3.5 h-3.5 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.3)] ${config.color.split(' ')[0]}`}></div>
-          <h3 className="font-black text-slate-100 uppercase text-[12px] tracking-[0.4em]">{config.label}</h3>
+    <div className="flex-1 min-w-0 flex flex-col h-full bg-[#0b1221]/80 rounded-2xl border border-[#1e293b]">
+      {/* Column Header */}
+      <div className="px-4 py-3 flex justify-between items-center border-b border-[#1e293b]">
+        <div className="flex items-center gap-2">
+          {status === OrderStatus.FINISHED ? (
+             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+          ) : (
+             <div className={`w-2.5 h-2.5 rounded-full shadow-[0_0_8px_currentColor] ${dotColor}`}></div>
+          )}
+          <h3 className={`font-black text-[10px] tracking-widest uppercase ${headerColor}`}>
+            {status === OrderStatus.FINISHED ? 'Concluídos Hoje' : config.label}
+          </h3>
         </div>
-        <span className="text-[10px] font-black bg-slate-800 text-slate-300 px-4 py-1.5 rounded-full border border-slate-700">{columnOrders.length}</span>
+        <span className="text-[10px] font-black text-slate-400">{columnOrders.length}</span>
       </div>
-      <div className="flex-1 overflow-y-auto p-5 space-y-5 scrollbar-hide">
+      
+      {/* Column Body */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-hide">
         {columnOrders.map((order) => (
           <KanbanCard key={order.id} order={order} onMove={onMove} />
         ))}
-        {columnOrders.length === 0 && (
-          <div className="h-40 flex flex-col items-center justify-center border-2 border-dashed border-slate-800/50 rounded-[2.5rem] opacity-20">
-            <Clock className="w-8 h-8 mb-2" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Vazio</span>
-          </div>
-        )}
+      </div>
+
+      {/* Column Footer */}
+      <div className="p-3 border-t border-[#1e293b] mt-auto">
+        <button className="w-full py-1.5 flex justify-center items-center gap-1.5 text-[9px] font-black uppercase text-emerald-500 hover:text-emerald-400 transition-colors">
+          <Plus className="w-3 h-3" /> Adicionar item
+        </button>
       </div>
     </div>
   );
 };
 
-
-
 const Kanban: React.FC<KanbanProps> = ({ orders, setOrders }) => {
   const [clients, setClients] = React.useState<Client[]>([]);
   const [searchTerm, setSearchTerm] = React.useState('');
-
-  // Load initial state from localStorage
-  const [showOnlyLate, setShowOnlyLate] = React.useState(() => {
-    const saved = localStorage.getItem('kanban_showOnlyLate');
-    return saved === 'true';
-  });
-
-  const [autoNotify, setAutoNotify] = React.useState(() => {
-    const saved = localStorage.getItem('kanban_autoNotify');
-    return saved === 'true';
-  });
 
   React.useEffect(() => {
     clientService.getAll().then(setClients).catch(console.error);
   }, []);
 
-  // Persist settings whenever they change
-  React.useEffect(() => {
-    localStorage.setItem('kanban_showOnlyLate', String(showOnlyLate));
-  }, [showOnlyLate]);
-
-  React.useEffect(() => {
-    localStorage.setItem('kanban_autoNotify', String(autoNotify));
-  }, [autoNotify]);
-
   const handleMove = async (id: string, newStatus: OrderStatus) => {
-    // Optimistic Update
-    const order = orders.find(o => o.id === id);
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
-
-    if (order) {
-      const client = clients.find(c => c.id === order.clientId || c.name === order.clientName);
-
-      // WhatsApp Notification Logic
-      if (client && client.whatsapp) {
-        const message = getStatusUpdateMessage(order, newStatus);
-
-        if (autoNotify) {
-          // 1. Try Autonomous Send (Evolution API)
-          try {
-            const sent = await whatsappService.sendMessage(client.whatsapp, message);
-
-            // 2. Fallback to Open Link if API failed or not configured
-            // We can maybe add a visual toast here later?
-            if (!sent) {
-              console.log("Evolution API failed or not configured. Falling back to simple link.");
-              const link = getWhatsAppLink(client.whatsapp, message);
-              window.open(link, '_blank');
-            } else {
-              console.log("Auto-Notification Sent via API!");
-            }
-          } catch (e) {
-            console.error("Auto-Notify Error:", e);
-            // Fallback
-            const link = getWhatsAppLink(client.whatsapp, message);
-            window.open(link, '_blank');
-          }
-        }
-      }
-    }
-
     try {
       await orderService.update(id, { status: newStatus });
     } catch (error) {
-      console.error("Failed to update order status:", error);
-      notify.error('Erro ao salvar o novo status. Recarregue a página.');
+      console.error("Failed to update status:", error);
+      notify.error('Erro ao mover pedido.');
     }
   };
 
-  // Filter Logic
   const filteredOrders = orders.filter(order => {
     const matchesSearch =
       (order.clientName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (order.orderNumber || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (order.clientTeam && (order.clientTeam || '').toLowerCase().includes(searchTerm.toLowerCase()));
-
-    const isLate = new Date(order.deliveryDate) < new Date() && order.status !== OrderStatus.FINISHED;
-    const matchesLate = showOnlyLate ? isLate : true;
-
-    return matchesSearch && matchesLate;
+      (order.orderNumber || '').toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
   });
 
+  // Calculate Metrics
+  const emProducao = orders.filter(o => o.status === OrderStatus.IN_PRODUCTION).length;
+  const aguardando = orders.filter(o => o.status === OrderStatus.RECEIVED).length;
+  const sublimacao = orders.filter(o => o.status === OrderStatus.SUBLIMATION).length;
+  const finalizados = orders.filter(o => o.status === OrderStatus.FINISHED).length;
+  const atrasados = orders.filter(o => new Date(o.deliveryDate) < new Date() && o.status !== OrderStatus.FINISHED).length;
+
   return (
-    <div className="h-[calc(100vh-12rem)] flex flex-col gap-6 animate-in slide-in-from-right-8 duration-700">
-      <header className="flex justify-between items-end">
+    <div className="h-[calc(100vh-1.5rem)] flex flex-col gap-4 animate-in slide-in-from-right-8 duration-700 bg-[#05080E] -m-4 sm:-m-8 p-4 sm:p-8">
+      {/* Header */}
+      <header className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-black text-slate-100 tracking-tight uppercase">Fluxo de Produção</h2>
-          <p className="text-slate-500 font-medium">Gerencie as etapas da produção em tempo real.</p>
+          <h2 className="text-3xl font-black text-slate-100 tracking-tight">Produção</h2>
+          <p className="text-[12px] text-slate-400 mt-1">Acompanhe o fluxo de produção em tempo real e gerencie as etapas.</p>
         </div>
 
-        {/* Filters Toolbar */}
-        <div className="flex items-center gap-4 bg-[#0f172a] p-2 rounded-2xl border border-slate-800">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Buscar cliente, nº ou turma..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-xs font-bold text-slate-200 w-64 focus:outline-none focus:border-indigo-500 transition-colors"
-            />
-          </div>
-          <div className="h-6 w-px bg-slate-800" />
-          <button
-            onClick={() => setShowOnlyLate(!showOnlyLate)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${showOnlyLate ? 'bg-rose-900/30 text-rose-400 border-rose-500/50 shadow-lg shadow-rose-900/20' : 'bg-slate-900 text-slate-500 border-slate-800 hover:text-slate-300'}`}
-          >
-            <AlertCircle className="w-3.5 h-3.5" />
-            Atrasados
+        <div className="flex items-center gap-4">
+          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#1e293b] text-slate-300 hover:bg-[#0b1221] hover:text-white transition-colors text-[11px] font-black uppercase tracking-widest">
+            <CalendarIcon className="w-4 h-4" /> Ver calendário
           </button>
-
-          <div className="h-6 w-px bg-slate-800" />
-
-          <button
-            onClick={() => setAutoNotify(!autoNotify)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${autoNotify ? 'bg-emerald-900/30 text-emerald-400 border-emerald-500/50 shadow-lg shadow-emerald-900/20' : 'bg-slate-900 text-slate-500 border-slate-800 hover:text-slate-300'}`}
-            title="Abrir WhatsApp Automaticamente ao mover cards"
-          >
-            <Users className="w-3.5 h-3.5" />
-            Auto Whats
+          <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#4f46e5] text-white hover:bg-indigo-500 transition-colors shadow-[0_0_20px_rgba(79,70,229,0.3)] text-[11px] font-black uppercase tracking-widest">
+            <Plus className="w-4 h-4" /> Novo item de produção
           </button>
         </div>
       </header>
 
-      <div className="flex-1 flex gap-6 overflow-x-auto pb-6 scrollbar-hide">
+      {/* Metrics Row */}
+      <div className="grid grid-cols-5 gap-4">
+        {/* Metric Card 1 */}
+        <div className="bg-[#0b1221] rounded-2xl p-4 border border-[#1e293b] flex items-center gap-4 relative overflow-hidden group">
+          <div className="w-12 h-12 rounded-xl bg-blue-900/20 text-blue-500 flex items-center justify-center shrink-0">
+             <Clock className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Em Produção</h4>
+            <div className="text-2xl font-black text-white leading-none">{emProducao}</div>
+            <p className="text-[9px] text-slate-500 mt-0.5">Pedidos</p>
+          </div>
+          <div className="absolute bottom-0 right-4 w-6 h-0.5 bg-blue-500 rounded-full"></div>
+        </div>
+
+        {/* Metric Card 2 */}
+        <div className="bg-[#0b1221] rounded-2xl p-4 border border-[#1e293b] flex items-center gap-4 relative overflow-hidden">
+          <div className="w-12 h-12 rounded-xl bg-purple-900/20 text-purple-500 flex items-center justify-center shrink-0">
+             <RotateCw className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Aguardando</h4>
+            <div className="text-2xl font-black text-white leading-none">{aguardando}</div>
+            <p className="text-[9px] text-slate-500 mt-0.5">Pedidos</p>
+          </div>
+          <div className="absolute bottom-0 right-4 w-6 h-0.5 bg-purple-500 rounded-full"></div>
+        </div>
+
+        {/* Metric Card 3 */}
+        <div className="bg-[#0b1221] rounded-2xl p-4 border border-[#1e293b] flex items-center gap-4 relative overflow-hidden">
+          <div className="w-12 h-12 rounded-xl bg-orange-900/20 text-orange-500 flex items-center justify-center shrink-0">
+             <Settings className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Sublimação</h4>
+            <div className="text-2xl font-black text-white leading-none">{sublimacao}</div>
+            <p className="text-[9px] text-slate-500 mt-0.5">Pedidos</p>
+          </div>
+          <div className="absolute bottom-0 right-4 w-6 h-0.5 bg-orange-500 rounded-full"></div>
+        </div>
+
+        {/* Metric Card 4 */}
+        <div className="bg-[#0b1221] rounded-2xl p-4 border border-[#1e293b] flex items-center gap-4 relative overflow-hidden">
+          <div className="w-12 h-12 rounded-xl bg-emerald-900/20 text-emerald-500 flex items-center justify-center shrink-0">
+             <CheckCircle2 className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Finalizados Hoje</h4>
+            <div className="text-2xl font-black text-white leading-none">{finalizados}</div>
+            <p className="text-[9px] text-slate-500 mt-0.5">Pedidos</p>
+          </div>
+          <div className="absolute bottom-0 right-4 w-6 h-0.5 bg-emerald-500 rounded-full"></div>
+        </div>
+
+        {/* Metric Card 5 */}
+        <div className="bg-[#0b1221] rounded-2xl p-4 border border-[#1e293b] flex items-center gap-4 relative overflow-hidden">
+          <div className="w-12 h-12 rounded-xl bg-rose-900/20 text-rose-500 flex items-center justify-center shrink-0">
+             <X className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Atrasados</h4>
+            <div className="text-2xl font-black text-white leading-none">{atrasados}</div>
+            <p className="text-[9px] text-slate-500 mt-0.5">Pedidos</p>
+          </div>
+          <div className="absolute bottom-0 right-4 w-6 h-0.5 bg-rose-500 rounded-full"></div>
+        </div>
+      </div>
+
+      {/* Toolbar / Sub-filters */}
+      <div className="flex justify-end gap-4 mt-2">
+        <div className="px-4 py-2 rounded-xl bg-[#0b1221] border border-[#1e293b] text-slate-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+          Todas as equipes <ChevronRight className="w-3 h-3 rotate-90" />
+        </div>
+        <div className="px-4 py-2 rounded-xl bg-[#0b1221] border border-[#1e293b] text-slate-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+          Ordenar: Mais recentes <ChevronRight className="w-3 h-3 rotate-90" />
+        </div>
+        <div className="flex bg-[#0b1221] border border-[#1e293b] rounded-xl overflow-hidden">
+           <button className="px-3 py-2 bg-white/5 text-white"><Package className="w-3 h-3" /></button>
+           <button className="px-3 py-2 text-slate-500 hover:text-white"><Search className="w-3 h-3" /></button>
+        </div>
+      </div>
+
+      {/* Kanban Board Container (No Scroll) */}
+      <div className="flex-1 min-h-0 flex gap-4 overflow-hidden">
         {statuses.map((status) => (
           <KanbanColumn
             key={status}

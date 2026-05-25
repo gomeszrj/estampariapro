@@ -12,6 +12,18 @@ export const inventoryService = {
         return data?.map(mapFromDB) as InventoryItem[];
     },
 
+    async getById(id: string) {
+        const { data, error } = await supabase
+            .from('inventory_items')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (error) throw error;
+        return mapFromDB(data);
+    },
+
+
     async create(item: Omit<InventoryItem, 'id'>) {
         const dbItem = mapToDB(item);
         const { data, error } = await supabase

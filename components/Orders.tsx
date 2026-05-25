@@ -28,7 +28,16 @@ import {
   Link as LinkIcon,
   FileCode,
   FileCode2,
-  Upload
+  Upload,
+  MousePointerClick,
+  Hourglass,
+  Settings,
+  CheckCircle2,
+  XCircle,
+  Package,
+  MoreVertical,
+  ChevronDown,
+  Settings2
 } from 'lucide-react';
 import { getWhatsAppLink, getStatusUpdateMessage } from '../utils/whatsappUtils';
 import { ParsedOrderItem } from '../services/aiService';
@@ -40,6 +49,8 @@ import { clientService } from '../services/clientService';
 import { financeService } from '../services/financeService';
 import { notify } from './ui/toast';
 import { ConfirmModal } from './ui/ConfirmModal';
+import { ColumnDef } from '@tanstack/react-table';
+import { DataTable } from './ui/DataTable';
 
 import { ProductionBoard } from './ProductionBoard';
 import OrderAiBriefing from './Orders/OrderAiBriefing';
@@ -506,48 +517,92 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
     }
   };
 
+  const [statusTab, setStatusTab] = useState<OrderStatus | 'ALL'>('ALL');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+
+  const tabCounts = {
+    todos: contextOrders.length,
+    aguardando: contextOrders.filter(o => o.status === OrderStatus.RECEIVED).length,
+    producao: contextOrders.filter(o => o.status === OrderStatus.IN_PRODUCTION).length,
+    finalizados: contextOrders.filter(o => o.status === OrderStatus.FINISHED).length,
+    cancelados: contextOrders.filter(o => o.status === OrderStatus.CANCELLED).length
+  };
+
+  const displayOrders = contextOrders.filter(o => {
+    if (statusTab !== 'ALL' && o.status !== statusTab) return false;
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      return (o.clientName?.toLowerCase().includes(q)) ||
+             (o.orderNumber?.toLowerCase().includes(q));
+    }
+    return true;
+  }).sort((a, b) => {
+    const da = new Date(a.createdAt).getTime();
+    const db = new Date(b.createdAt).getTime();
+    return sortOrder === 'desc' ? db - da : da - db;
+  });
+
+  const getStatusColor = (status: OrderStatus) => {
+    if (status === OrderStatus.RECEIVED) return 'text-purple-400 bg-purple-500/10 border-purple-500/20';
+    if (status === OrderStatus.IN_PRODUCTION) return 'text-blue-400 bg-blue-500/10 border-blue-500/20';
+    if (status === OrderStatus.FINISHED) return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+    if (status === OrderStatus.CANCELLED) return 'text-rose-400 bg-rose-500/10 border-rose-500/20';
+    if (status === OrderStatus.STORE_REQUEST) return 'text-amber-400 bg-amber-500/10 border-amber-500/20';
+    if (status === OrderStatus.STORE_CONFERENCE) return 'text-pink-400 bg-pink-500/10 border-pink-500/20';
+    return 'text-slate-400 bg-slate-500/10 border-slate-500/20';
+  };
+
+  const getStatusLabel = (status: OrderStatus) => {
+    if (status === OrderStatus.RECEIVED) return 'Aguardando';
+    if (status === OrderStatus.IN_PRODUCTION) return 'Em produção';
+    if (status === OrderStatus.FINISHED) return 'Finalizado';
+    if (status === OrderStatus.CANCELLED) return 'Cancelado';
+    if (status === OrderStatus.STORE_REQUEST) return 'Solicitado';
+    if (status === OrderStatus.STORE_CONFERENCE) return 'Conferência';
+    return status;
+  };
+
   return (
-    <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500 pb-10">
+      <header className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-2">
         <div>
-          <h2 className="text-3xl font-black text-slate-100 tracking-tight uppercase">Gestão de Pedidos</h2>
-          <p className="text-slate-500 font-medium whitespace-nowrap">Controle total sobre vendas e <span>{activeContext === 'store' ? 'solicitações da loja.' : 'produção.'}</span></p>
+          <h2 className="text-3xl font-black text-white tracking-tight mb-1">Pedidos</h2>
+          <p className="text-slate-500 text-xs font-medium">Gerencie todos os pedidos da sua estamparia</p>
         </div>
 
-        <div className="flex items-center gap-4 bg-slate-900/50 p-1.5 rounded-2xl border border-slate-800">
+        <div className="flex items-center gap-3">
           <button
-            onClick={() => setActiveContext('production')}
-            className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeContext === 'production' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-white hover:bg-slate-800'}`}
+            onClick={() => setActiveContext(activeContext === 'store' ? 'production' : 'store')}
+            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest border transition-all ${activeContext === 'store' ? 'bg-[#0f172a] border-[#1e293b] text-white hover:border-slate-600' : 'bg-transparent border-transparent text-slate-500 hover:text-white'}`}
           >
-            Produção
+            {activeContext === 'store' ? '← Ir para Produção' : 'Acessar Loja'}
+          </button>
+          
+          <button
+            onClick={handleAddNew}
+            className="bg-[#3b2796] hover:bg-[#4f38b0] text-white px-6 py-2.5 rounded-xl flex items-center gap-2 font-black transition-all shadow-[0_0_15px_rgba(79,70,229,0.2)] hover:shadow-[0_0_20px_rgba(79,70,229,0.4)] text-[10px] tracking-widest uppercase border border-[#6366f1]/30"
+          >
+            <Plus className="w-4 h-4" />
+            Novo pedido
           </button>
           <button
-            onClick={() => setActiveContext('store')}
-            className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${activeContext === 'store' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-white hover:bg-slate-800'}`}
+            onClick={() => {}}
+            className="bg-transparent border border-slate-700 hover:border-slate-500 text-slate-300 px-6 py-2.5 rounded-xl flex items-center gap-2 font-black transition-all text-[10px] tracking-widest uppercase"
           >
-            Solicitações Loja
-            {orders.filter(o => o.origin === 'store' && o.status === OrderStatus.STORE_REQUEST).length > 0 && (
-              <span className="bg-rose-500 text-white w-5 h-5 flex items-center justify-center rounded-full text-[9px]">{orders.filter(o => o.origin === 'store' && o.status === OrderStatus.STORE_REQUEST).length}</span>
-            )}
+            <Settings2 className="w-4 h-4" />
+            Filtros
           </button>
         </div>
-
-        <button
-          onClick={handleAddNew}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-2xl flex items-center gap-3 font-black transition-all shadow-2xl shadow-indigo-600/30 active:scale-95 uppercase text-[11px] tracking-widest whitespace-nowrap"
-        >
-          <Plus className="w-5 h-5" />
-          Gerar Novo Pedido
-        </button>
       </header>
 
       {isAdding && (
-        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0f172a] rounded-[2rem] w-full max-w-7xl max-h-[95vh] overflow-hidden flex flex-col shadow-2xl border border-slate-800 animate-in zoom-in-95">
-            <div className="px-6 py-3 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0f172a] rounded-2xl w-full max-w-7xl max-h-[95vh] overflow-hidden flex flex-col shadow-2xl shadow-black/60 border border-[#1e293b] animate-in zoom-in-95">
+            <div className="px-6 py-3 border-b border-[#1e293b] flex justify-between items-center bg-[#0b1221]/40">
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+                  <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center text-slate-950 shadow-lg">
                     <Edit3 className="w-4 h-4" />
                   </div>
                   <div>
@@ -558,11 +613,11 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                     <div className="flex gap-2 mt-1">
                       <button
                         onClick={() => setActiveTab('details')}
-                        className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg transition-colors ${activeTab === 'details' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'text-slate-500 hover:text-slate-300'}`}
+                        className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg transition-colors ${activeTab === 'details' ? 'bg-white/10 text-white border border-white/20' : 'text-slate-500 hover:text-slate-300'}`}
                       >Detalhes</button>
                       <button
                         onClick={() => !isPartialEditMode && setActiveTab('items')}
-                        className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg transition-colors ${activeTab === 'items' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'text-slate-500 hover:text-slate-300'} ${isPartialEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg transition-colors ${activeTab === 'items' ? 'bg-white/10 text-white border border-white/20' : 'text-slate-500 hover:text-slate-300'} ${isPartialEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
                         title={isPartialEditMode ? "Itens não podem ser editados em produção" : ""}
                       >Itens</button>
                       {isMasterAdmin && (
@@ -583,7 +638,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 bg-slate-900/20">
+            <div className="flex-1 overflow-y-auto p-6 bg-[#0b1221]">
 
               {/* TAB: DETAILS (Original Left Column) */}
               {activeTab === 'details' && (
@@ -601,7 +656,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                     )}
 
                     {/* Order Type & Payment Status Logic moved here for cleaner UI */}
-                    <div className={`bg-slate-950 p-6 rounded-3xl border border-slate-800 space-y-6 ${isPartialEditMode ? 'opacity-60 pointer-events-none' : ''}`}>
+                    <div className={`bg-[#0b1221] p-6 rounded-3xl border border-[#1e293b] space-y-6 ${isPartialEditMode ? 'opacity-60 pointer-events-none' : ''}`}>
                       <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Configuração do Pedido</h4>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -610,11 +665,11 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                           <div className="flex gap-2">
                             <button
                               onClick={() => setOrderType(OrderType.SALE)}
-                              className={`flex-1 py-3 px-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${orderType === OrderType.SALE ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-500'}`}
+                              className={`flex-1 py-3 px-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${orderType === OrderType.SALE ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-[#0f172a] border-slate-700 text-slate-500'}`}
                             >VENDA</button>
                             <button
                               onClick={() => setOrderType(OrderType.BUDGET)}
-                              className={`flex-1 py-3 px-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${orderType === OrderType.BUDGET ? 'bg-amber-600 border-amber-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-500'}`}
+                              className={`flex-1 py-3 px-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${orderType === OrderType.BUDGET ? 'bg-amber-600 border-amber-500 text-white' : 'bg-[#0f172a] border-slate-700 text-slate-500'}`}
                             >ORÇAMENTO</button>
                           </div>
                         </div>
@@ -623,7 +678,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                           <select
                             value={paymentStatus}
                             onChange={(e) => setPaymentStatus(e.target.value as PaymentStatus)}
-                            className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-[10px] font-black text-slate-200 uppercase outline-none focus:border-indigo-500"
+                            className="w-full bg-[#0b1221] border border-slate-700 rounded-xl px-3 py-3 text-[10px] font-black text-slate-200 uppercase outline-none focus:border-slate-600"
                           >
                             {Object.values(PaymentStatus).map(s => <option key={s} value={s}>{s}</option>)}
                           </select>
@@ -633,7 +688,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                               placeholder="R$ Pago"
                               value={customAmountPaid}
                               onChange={e => setCustomAmountPaid(e.target.value)}
-                              className="w-full mt-2 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-[10px] text-emerald-400 font-mono focus:ring-1 focus:ring-emerald-500 outline-none"
+                              className="w-full mt-2 bg-[#0f172a] border border-[#1e293b] rounded-xl px-3 py-2 text-[10px] text-emerald-400 font-mono focus:ring-1 focus:ring-emerald-500 outline-none"
                             />
                           )}
                         </div>
@@ -644,19 +699,19 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                             placeholder="Desc. (R$)"
                             value={discountValue}
                             onChange={(e) => setDiscountValue(e.target.value)}
-                            className="w-full bg-slate-900 border border-emerald-900/50 rounded-xl px-3 py-3 text-[10px] font-black text-emerald-400 focus:ring-1 focus:ring-emerald-500 outline-none transition-all"
+                            className="w-full bg-[#0f172a] border border-emerald-900/50 rounded-xl px-3 py-3 text-[10px] font-black text-emerald-400 focus:ring-1 focus:ring-emerald-500 outline-none transition-all"
                           />
                         </div>
                       </div>
                     </div>
 
                     {/* Layout Images — Multiple */}
-                    <div className="bg-slate-950 p-6 rounded-3xl border border-slate-800">
+                    <div className="bg-[#0b1221] p-6 rounded-3xl border border-[#1e293b]">
                       <div className="flex items-center justify-between mb-4">
                         <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">
                           Layouts Aprovados
                           {layoutUrls.length > 0 && (
-                            <span className="ml-2 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-lg text-[9px]">
+                            <span className="ml-2 bg-white/10 text-white border border-[#1e293b] px-2 py-0.5 rounded-lg text-[9px]">
                               {layoutUrls.length} imagem{layoutUrls.length !== 1 ? 'ns' : ''}
                             </span>
                           )}
@@ -674,7 +729,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                         />
                         <label
                           htmlFor="layout-upload"
-                          className="flex items-center justify-center gap-2 w-full py-4 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-indigo-500 rounded-2xl cursor-pointer transition-all text-xs font-bold text-slate-400 uppercase tracking-widest"
+                          className="flex items-center justify-center gap-2 w-full py-4 bg-[#0b1221] hover:bg-slate-800 border border-slate-700 hover:border-white/30 rounded-2xl cursor-pointer transition-all text-xs font-bold text-slate-400 uppercase tracking-widest"
                         >
                           <Plus className="w-4 h-4" /> Adicionar Imagens
                         </label>
@@ -685,11 +740,11 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                           {layoutUrls.map((url, idx) => (
                             <div
                               key={idx}
-                              className="relative group aspect-square rounded-2xl overflow-hidden border-2 border-slate-700 bg-slate-900"
+                              className="relative group aspect-square rounded-2xl overflow-hidden border-2 border-slate-700 bg-[#0f172a]"
                             >
                               <img src={url} alt={`Layout ${idx + 1}`} className="w-full h-full object-cover" />
                               {/* Overlay label */}
-                              <div className="absolute bottom-0 left-0 right-0 bg-slate-900/70 text-[8px] font-black text-slate-300 text-center py-0.5 uppercase tracking-widest">
+                              <div className="absolute bottom-0 left-0 right-0 bg-[#0f172a]/70 text-[8px] font-black text-slate-300 text-center py-0.5 uppercase tracking-widest">
                                 Layout {idx + 1}
                               </div>
                               {/* Remove button */}
@@ -707,7 +762,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                     </div>
 
                     {/* Design Source Files — Heavy Files (.psd, .cdr, .rar) */}
-                     <div className="bg-slate-950 p-6 rounded-3xl border border-slate-800">
+                     <div className="bg-[#0b1221] p-6 rounded-3xl border border-[#1e293b]">
                       <div className="flex items-center justify-between mb-4">
                         <h4 className="text-xs font-black text-amber-400 uppercase tracking-widest flex items-center gap-2">
                           <FileCode className="w-4 h-4" /> Arquivos de Design (Fontes)
@@ -732,7 +787,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                         />
                         <label
                           htmlFor="design-upload"
-                          className={`flex items-center justify-center gap-2 w-full py-4 border-2 border-dashed rounded-2xl cursor-pointer transition-all text-xs font-bold uppercase tracking-widest ${isUploading ? 'bg-slate-900 border-slate-800 text-slate-600' : 'bg-amber-500/5 border-amber-500/20 text-amber-500/60 hover:bg-amber-500/10 hover:border-amber-500'}`}
+                          className={`flex items-center justify-center gap-2 w-full py-4 border-2 border-dashed rounded-2xl cursor-pointer transition-all text-xs font-bold uppercase tracking-widest ${isUploading ? 'bg-[#0f172a] border-[#1e293b] text-slate-600' : 'bg-amber-500/5 border-amber-500/20 text-amber-500/60 hover:bg-amber-500/10 hover:border-amber-500'}`}
                         >
                           {isUploading ? (
                               <>
@@ -751,14 +806,14 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                           {designFileUrls.map((url, idx) => {
                               const fileName = url.split('/').pop() || 'Arquivo';
                               return (
-                                <div key={idx} className="flex items-center justify-between p-3 bg-slate-900 rounded-xl border border-slate-800 group">
+                                <div key={idx} className="flex items-center justify-between p-3 bg-[#0f172a] rounded-xl border border-[#1e293b] group">
                                     <div className="flex items-center gap-3 min-w-0">
                                         <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
                                             <FileCode2 className="w-4 h-4" />
                                         </div>
                                         <div className="min-w-0">
                                             <p className="text-[10px] font-bold text-slate-200 truncate">{fileName}</p>
-                                            <a href={url} target="_blank" rel="noopener noreferrer" className="text-[8px] text-indigo-400 font-black uppercase hover:underline">Download</a>
+                                            <a href={url} target="_blank" rel="noopener noreferrer" className="text-[8px] text-white font-black uppercase hover:underline">Download</a>
                                         </div>
                                     </div>
                                     <button onClick={() => removeDesignFile(idx)} className="p-2 text-slate-500 hover:text-rose-500 transition-colors">
@@ -782,7 +837,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                                 </span>
                             )}
                         </div>
-                        <User className="absolute left-4 top-[2.2rem] text-slate-600 w-4 h-4 group-focus-within:text-indigo-400 transition-colors" />
+                        <User className="absolute left-4 top-[2.2rem] text-slate-600 w-4 h-4 group-focus-within:text-white transition-colors" />
                         <input
                           type="text"
                           list="client-options"
@@ -790,7 +845,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                           value={clientName}
                           disabled={isPartialEditMode}
                           onChange={(e) => setClientName(e.target.value)}
-                          className={`w-full pl-12 pr-4 py-4 bg-slate-950 border rounded-2xl text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold transition-all ${!clientName ? 'border-rose-900/50 shadow-[0_0_15px_rgba(244,63,94,0.1)]' : 'border-slate-800'} ${isPartialEditMode ? 'opacity-60 cursor-not-allowed' : ''}`}
+                          className={`w-full pl-12 pr-4 py-4 bg-[#0b1221] border rounded-2xl text-slate-100 text-sm focus:outline-none focus:border-slate-600 focus:ring-1 focus:ring-slate-700/50 font-bold transition-all ${!clientName ? 'border-rose-900/50 shadow-[0_0_15px_rgba(244,63,94,0.1)]' : 'border-[#1e293b]'} ${isPartialEditMode ? 'opacity-60 cursor-not-allowed' : ''}`}
                         />
                         <datalist id="client-options">
                           {(clients || []).map(client => (
@@ -800,26 +855,26 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                       </div>
                       <div className="relative group">
                         <label className={`block text-[9px] font-black uppercase tracking-widest ml-1 mb-1 ${!deliveryDate ? 'text-rose-500' : 'text-slate-500'}`}>Entrega {!deliveryDate && <span>*</span>}</label>
-                        <Calendar className="absolute left-4 top-[2.2rem] text-slate-600 w-4 h-4 group-focus-within:text-indigo-400 transition-colors" />
+                        <Calendar className="absolute left-4 top-[2.2rem] text-slate-600 w-4 h-4 group-focus-within:text-white transition-colors" />
                         <input
                           type="date"
                           value={deliveryDate}
                           onChange={(e) => setDeliveryDate(e.target.value)}
-                          className={`w-full pl-12 pr-4 py-4 bg-slate-950 border rounded-2xl text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 color-scheme-dark font-bold transition-all ${!deliveryDate ? 'border-rose-900/50 shadow-[0_0_15px_rgba(244,63,94,0.1)]' : 'border-slate-800'}`}
+                          className={`w-full pl-12 pr-4 py-4 bg-[#0b1221] border rounded-2xl text-slate-100 text-sm focus:outline-none focus:border-slate-600 focus:ring-1 focus:ring-slate-700/50 color-scheme-dark font-bold transition-all ${!deliveryDate ? 'border-rose-900/50 shadow-[0_0_15px_rgba(244,63,94,0.1)]' : 'border-[#1e293b]'}`}
                         />
                       </div>
                     </div>
 
                     {/* Internal Notes */}
                     <div className="space-y-2">
-                      <label className="block text-[9px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2 ml-1">
+                      <label className="block text-[9px] font-black text-white uppercase tracking-widest flex items-center gap-2 ml-1">
                         <MessageSquare className="w-3 h-3" /> Informações Internas / Lista
                       </label>
                       <textarea
 value={internalNotes}
                         onChange={(e) => setInternalNotes(e.target.value)}
                         placeholder="Cole a lista ou deixe observações..."
-                        className="w-full h-40 p-4 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none font-medium resize-none shadow-inner leading-relaxed"
+                        className="w-full h-40 p-4 bg-[#0b1221] border border-[#1e293b] rounded-2xl text-xs text-slate-300 focus:border-slate-600 focus:ring-1 focus:ring-slate-700/50 outline-none font-medium resize-none shadow-inner leading-relaxed"
                       />
                     </div>
                   </div>
@@ -859,7 +914,7 @@ value={internalNotes}
               {/* TAB: BRIEFING IA (New) */}
               {activeTab === 'briefing' && (
                 <div className="animate-in slide-in-from-right-4 duration-300 space-y-6">
-                  <div className="bg-purple-900/10 border border-purple-500/20 rounded-[2rem] p-8">
+                  <div className="bg-purple-900/10 border border-purple-500/20 rounded-2xl p-8">
                     <div className="flex items-center gap-4 mb-6">
                       <div className="w-12 h-12 bg-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-600/20">
                         <Bot className="w-6 h-6 text-white" />
@@ -872,7 +927,7 @@ value={internalNotes}
 
                     {/* We will assume `order.briefing` exists or use a placeholder for now until we connect fully */}
                     <div className="prose prose-invert prose-sm max-w-none">
-                      <div className="bg-slate-950/50 p-6 rounded-2xl border border-slate-800 text-slate-300 leading-relaxed whitespace-pre-line font-medium text-xs">
+                      <div className="bg-[#1C1C26]/50 p-6 rounded-2xl border border-[#1e293b] text-slate-300 leading-relaxed whitespace-pre-line font-medium text-xs">
                         {editingOrderId
                           ? (orders.find(o => o.id === editingOrderId)?.briefing || "Nenhum briefing registrado para este pedido.")
                           : (newOrderBriefing || "O briefing será gerado após criar o pedido pelo CloudBot.")
@@ -889,280 +944,215 @@ value={internalNotes}
       )}
 
       <div className="flex justify-end mb-6 gap-2">
-        <div className="flex bg-slate-900 rounded-xl p-1 border border-slate-800">
+        <div className="flex bg-[#0b1221] rounded-xl p-1 border border-[#1e293b]">
           <button
             onClick={() => setViewMode('list')}
-            className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${viewMode === 'list' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+            className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${viewMode === 'list' ? 'bg-[#8B5CF6] text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
           >
             Lista
           </button>
           <button
             onClick={() => setViewMode('board')}
-            className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${viewMode === 'board' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+            className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${viewMode === 'board' ? 'bg-[#8B5CF6] text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
           >
             Kanban
           </button>
         </div>
       </div>
 
-      {viewMode === 'board' ? (
-        <ProductionBoard
-          orders={orders}
-          onOrderUpdate={() => window.location.reload()}
-        />
-      ) : (
-        <div className="bg-[#0f172a] rounded-[3rem] border border-slate-800 shadow-2xl overflow-hidden">
-          <div className="p-8 border-b border-slate-800 flex items-center gap-6 bg-slate-900/10">
-            <div className="relative flex-1">
-              <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-600 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Pesquisar por cliente, número ou tipo..."
-                className="w-full pl-14 pr-8 py-4.5 bg-slate-950 border border-slate-800 rounded-2xl text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold"
-              />
+      {/* STATUS CARDS */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        {[
+          { label: 'TODOS', count: tabCounts.todos, icon: MousePointerClick, color: 'blue', value: 'ALL' },
+          { label: 'AGUARDANDO', count: tabCounts.aguardando, icon: Hourglass, color: 'purple', value: OrderStatus.RECEIVED },
+          { label: 'EM PRODUÇÃO', count: tabCounts.producao, icon: Settings, color: 'amber', value: OrderStatus.IN_PRODUCTION },
+          { label: 'FINALIZADOS', count: tabCounts.finalizados, icon: CheckCircle2, color: 'emerald', value: OrderStatus.FINISHED },
+          { label: 'CANCELADOS', count: tabCounts.cancelados, icon: XCircle, color: 'rose', value: OrderStatus.CANCELLED }
+        ].map((card, i) => (
+          <div 
+            key={i} 
+            onClick={() => setStatusTab(card.value as any)}
+            className={`bg-[#0b1221] p-5 rounded-2xl border ${statusTab === card.value ? `border-${card.color}-500/50 bg-[#0f172a]` : 'border-[#1e293b]'} flex flex-col justify-between h-[110px] cursor-pointer hover:border-slate-600 transition-all relative overflow-hidden group`}
+          >
+            <div className="flex items-center gap-4">
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-${card.color}-500/10 text-${card.color}-500`}>
+                <card.icon className="w-4 h-4" />
+              </div>
+              <span className="text-slate-400 text-[9px] font-black uppercase tracking-widest">{card.label}</span>
             </div>
+            <div className="mt-2">
+              <span className="text-2xl font-black text-white">{card.count}</span>
+              <span className="text-slate-500 text-[10px] font-bold ml-2">Pedidos</span>
+            </div>
+            {/* Bottom colored line */}
+            <div className={`absolute bottom-0 left-[20%] right-[20%] h-0.5 bg-${card.color}-500 opacity-50 group-hover:opacity-100 transition-opacity`}></div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {contextOrders.map((order) => {
-              const editable = canEditOrder(order.status);
-              const estimatedCost = (order.items || []).reduce((acc, item) => {
-                const prod = products.find(p => p.id === item.productId);
-                return acc + (item.quantity * (prod?.costPrice || 0));
-              }, 0);
-              const realProfit = order.totalValue - estimatedCost;
+        ))}
+      </div>
 
-              return (
-                <div key={order.id} className="bg-slate-900/50 rounded-3xl border border-slate-800 p-5 flex flex-col hover:border-indigo-500/30 transition-all group overflow-hidden">
-                  {/* Card Header */}
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="font-black text-slate-400 text-xs shrink-0">#{order.orderNumber}</span>
-                        <span className={`px-2 py-0.5 rounded-md text-[7px] font-black uppercase tracking-widest border shrink-0 ${order.orderType === OrderType.SALE ? 'bg-emerald-900/20 border-emerald-900/40 text-emerald-400' : 'bg-amber-900/20 border-amber-900/40 text-amber-400'}`}>
-                          {order.orderType === OrderType.SALE ? 'Venda' : 'Orçamento'}
-                        </span>
-                      </div>
-                      <h4 className="font-black text-slate-100 text-base truncate" title={order.clientName}>{order.clientName}</h4>
-                      <div className="text-[8px] text-slate-500 font-bold uppercase tracking-widest mt-1 flex items-center gap-1">
-                        <Calendar className="w-3 h-3 shrink-0" />
-                        <span className="truncate">{new Date(order.createdAt).toLocaleDateString('pt-BR')}</span>
-                      </div>
-                    </div>
-                    {/* Status badge — fixed on the right, never overlaps name */}
-                    <div className="shrink-0 max-w-[110px]">
-                      <span className={`block px-2 py-1.5 rounded-xl text-[7px] font-black uppercase border tracking-wide text-center leading-tight ${STATUS_CONFIG[order.status]?.color}`}>
-                        {STATUS_CONFIG[order.status]?.label}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Financial Info */}
-                  <div className="grid grid-cols-2 gap-3 mb-5 bg-slate-950/50 p-3 rounded-2xl border border-slate-800/50 flex-1">
-                    <div className="min-w-0">
-                      <p className="text-[7px] text-slate-500 font-bold uppercase tracking-widest mb-1">Valor Bruto</p>
-                      <p className="font-black text-indigo-400 text-sm truncate">R$ {order.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[7px] text-slate-500 font-bold uppercase tracking-widest mb-1">Pgto</p>
-                      <div>
-                        <span className={`inline-block px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-wide border truncate max-w-full ${!order.paymentStatus || order.paymentStatus === PaymentStatus.PENDING ? 'bg-slate-800 border-slate-700 text-slate-400' :
-                          order.paymentStatus === 'Sinal (50%)' || order.paymentStatus === 'Sinal / Parcial' ? 'bg-indigo-900/20 border-indigo-900/40 text-indigo-400' :
-                            'bg-emerald-900/20 border-emerald-900/40 text-emerald-400'
-                          }`}>
-                          {order.paymentStatus || 'PENDENTE'}
-                        </span>
-                        {order.amountPaid && order.amountPaid > 0 && order.paymentStatus !== PaymentStatus.FULL && (
-                          <p className="mt-1 text-[7px] text-slate-500 font-mono truncate">
-                            PG: R$ {order.amountPaid.toLocaleString('pt-BR')}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[7px] text-slate-500 font-bold uppercase tracking-widest mb-1">Custo Est.</p>
-                      <p className="font-bold text-slate-400 text-xs truncate">R$ {estimatedCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[7px] text-slate-500 font-bold uppercase tracking-widest mb-1">Lucro Real</p>
-                      <p className="font-bold text-emerald-500 text-xs truncate">R$ {realProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                    </div>
-                  </div>
-
-
-                  {/* Actions Grid */}
-                  <div className="flex flex-wrap gap-2 pt-4 border-t border-slate-800/50">
-                    {activeContext === 'store' ? (
-                      <>
-                        {order.status === OrderStatus.STORE_REQUEST && (
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              try {
-                                const newStatus = OrderStatus.STORE_CONFERENCE;
-                                await orderService.update(order.id, { status: newStatus });
-                                setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: newStatus } : o));
-                                notify.info('Conferência iniciada.');
-                                const client = clientsByName.get((order.clientName || '').toLowerCase());
-                                if (client?.whatsapp) {
-                                  const msg = getStatusUpdateMessage(order, newStatus);
-                                  window.open(getWhatsAppLink(client.whatsapp, msg), '_blank');
-                                }
-                              } catch (err) { console.error(err); notify.error('Erro ao atualizar status.'); }
-                            }}
-                            className="flex-1 text-slate-400 hover:text-violet-400 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all flex justify-center items-center"
-                            title="Iniciar Conferência"
-                          >
-                            <ClipboardList className="w-4 h-4" />
-                          </button>
-                        )}
-                        {order.status === OrderStatus.STORE_CONFERENCE && (
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              try {
-                                const newStatus = OrderStatus.STORE_CHECKED;
-                                await orderService.update(order.id, { status: newStatus });
-                                setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: newStatus } : o));
-                                notify.success('Conferência finalizada! Aguardando aprovação.');
-                                const client = clientsByName.get((order.clientName || '').toLowerCase());
-                                if (client?.whatsapp) {
-                                  const msg = getStatusUpdateMessage(order, newStatus);
-                                  window.open(getWhatsAppLink(client.whatsapp, msg), '_blank');
-                                }
-                              } catch (err) { console.error(err); notify.error('Erro ao atualizar status.'); }
-                            }}
-                            className="flex-1 text-slate-400 hover:text-teal-400 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all flex justify-center items-center"
-                            title="Finalizar Conferência"
-                          >
-                            <ThumbsUp className="w-4 h-4" />
-                          </button>
-                        )}
-                        {order.status === OrderStatus.STORE_CHECKED && (
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              try {
-                                const newStatus = OrderStatus.RECEIVED;
-                                await orderService.update(order.id, { status: newStatus });
-                                setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: newStatus } : o));
-                                notify.success('Pedido confirmado e movido para Produção!');
-                                const client = clientsByName.get((order.clientName || '').toLowerCase());
-                                if (client?.whatsapp) {
-                                  const msg = getStatusUpdateMessage(order, newStatus);
-                                  window.open(getWhatsAppLink(client.whatsapp, msg), '_blank');
-                                }
-                              } catch (err) { console.error(err); notify.error('Erro ao atualizar status.'); }
-                            }}
-                            className="flex-1 text-slate-400 hover:text-emerald-400 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all flex justify-center items-center"
-                            title="Confirmar e Mover para Produção"
-                          >
-                            <ArrowRight className="w-4 h-4" />
-                          </button>
-                        )}
-                        <button
-                          onClick={() => openChat(order)}
-                          className="flex-1 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all text-slate-400 hover:text-indigo-400 flex justify-center items-center"
-                          title="Chat com Cliente"
-                        >
-                          <MessageSquare className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleEditClick(order)}
-                          className="flex-1 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all text-slate-400 hover:text-indigo-400 flex justify-center items-center"
-                          title="Ver Detalhes"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(order.id)}
-                          className="flex-1 text-slate-400 hover:text-rose-500 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all flex justify-center items-center"
-                          title="Excluir Pedido"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => openChat(order)}
-                          className="flex-1 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all text-slate-400 hover:text-indigo-400 flex justify-center items-center"
-                          title="Chat com Cliente"
-                        >
-                          <MessageSquare className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleEditClick(order)}
-                          className={`flex-1 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all flex justify-center items-center ${editable ? 'text-slate-400 hover:text-indigo-400' : 'text-slate-600 cursor-not-allowed opacity-50'}`}
-                          title={editable ? "Editar Pedido" : "Pedido em produção - Edição bloqueada"}
-                        >
-                          {editable ? <Edit3 className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-                        </button>
-                        <button
-                          onClick={async () => await printServiceOrder(order)}
-                          className="flex-1 text-slate-400 hover:text-white p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all flex justify-center items-center"
-                          title="OS Produção"
-                        >
-                          <Printer className="w-4 h-4" />
-                        </button>
-
-                        {/* Receive Payment Button */}
-                        {order.paymentStatus !== PaymentStatus.FULL && (
-                          <button
-                            onClick={() => handleReceivePayment(order)}
-                            className="flex-1 text-slate-400 hover:text-emerald-400 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all flex justify-center items-center"
-                            title="Registrar Pagamento Total"
-                          >
-                            <DollarSign className="w-4 h-4" />
-                          </button>
-                        )}
-                        <button
-                          onClick={async () => await printInvoice(order)}
-                          className="flex-1 text-slate-400 hover:text-emerald-400 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all flex justify-center items-center"
-                          title="Visualizar DANFE"
-                        >
-                          <FileText className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={async () => {
-                            const client = clientsByName.get((order.clientName || '').toLowerCase());
-                            const phone = client?.whatsapp || '';
-                            const message = getStatusUpdateMessage(order, order.status);
-                            const link = getWhatsAppLink(phone, message);
-                            window.open(link, '_blank');
-                          }}
-                          className="flex-1 text-slate-400 hover:text-indigo-400 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all flex justify-center items-center"
-                          title="Enviar Status via WhatsApp"
-                        >
-                          <Send className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            const portalLink = `${window.location.origin}/?view=client_portal`;
-                            const msg = `Olá! Acompanhe o status do seu pedido #${order.orderNumber} em nosso Portal do Cliente:\n\n🔗 ${portalLink}\n\nUse seu WhatsApp e o Número do Pedido (${order.orderNumber}) para acessar.`;
-                            navigator.clipboard.writeText(msg);
-                            notify.success('Link do Portal copiado! Cole no WhatsApp do cliente.');
-                          }}
-                          className="flex-1 text-slate-400 hover:text-cyan-400 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all flex justify-center items-center"
-                          title="Copiar Link do Portal do Cliente"
-                        >
-                          <LinkIcon className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(order.id)}
-                          className="flex-1 text-slate-400 hover:text-rose-500 p-2.5 rounded-xl bg-slate-950 border border-slate-800 transition-all flex justify-center items-center"
-                          title="Excluir Pedido"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+      {/* TABS & SEARCH */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mt-6">
+        <div className="flex items-center gap-6 overflow-x-auto border-b border-[#1e293b] w-full md:w-auto">
+          {[
+            { label: 'Todos', count: tabCounts.todos, value: 'ALL' },
+            { label: 'Aguardando', count: tabCounts.aguardando, value: OrderStatus.RECEIVED },
+            { label: 'Em produção', count: tabCounts.producao, value: OrderStatus.IN_PRODUCTION },
+            { label: 'Finalizados', count: tabCounts.finalizados, value: OrderStatus.FINISHED },
+            { label: 'Cancelados', count: tabCounts.cancelados, value: OrderStatus.CANCELLED }
+          ].map((tab, i) => (
+            <button
+              key={i}
+              onClick={() => setStatusTab(tab.value as any)}
+              className={`pb-3 text-xs font-bold whitespace-nowrap transition-colors flex items-center gap-2 border-b-2 ${statusTab === tab.value ? 'text-purple-400 border-purple-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}
+            >
+              {tab.label}
+              <span className="text-[10px] text-slate-500 font-black">{tab.count}</span>
+            </button>
+          ))}
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <div className="bg-[#0f172a] px-4 py-2 rounded-xl flex items-center gap-2 border border-[#1e293b] cursor-pointer hover:border-slate-600 transition-colors">
+            <span className="text-xs font-bold text-slate-400">Mais recentes</span>
+            <ChevronDown className="w-3 h-3 text-slate-500" />
+          </div>
+          <div className="w-9 h-9 flex items-center justify-center bg-[#0f172a] border border-[#1e293b] rounded-xl cursor-pointer hover:border-slate-600 transition-colors">
+            <Calendar className="w-4 h-4 text-slate-400" />
           </div>
         </div>
+      </div>
+
+      <div className="relative mt-2">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+        <input 
+          type="text" 
+          placeholder="Pesquisar por cliente, número ou tipo..." 
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full bg-[#0b1221] border border-[#1e293b] rounded-xl pl-11 pr-4 py-3 text-xs font-bold text-slate-200 focus:outline-none focus:border-slate-600 focus:ring-1 focus:ring-slate-700/50"
+        />
+      </div>
+
+      {/* ORDERS GRID */}
+      {displayOrders.length === 0 ? (
+        <div className="p-20 text-center flex flex-col items-center justify-center bg-[#0b1221] rounded-2xl border border-[#1e293b]">
+          <Package className="w-10 h-10 text-slate-700 mb-4" />
+          <h3 className="text-lg font-black text-slate-400">Nenhum pedido encontrado.</h3>
+          <p className="text-xs text-slate-600 mt-2">Tente ajustar os filtros de pesquisa.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">
+          {displayOrders.map(order => {
+            const totalQuantity = (order.items || []).reduce((acc, item) => acc + item.quantity, 0);
+            const mainProductName = order.items && order.items.length > 0 
+                ? productsByName.get(order.items[0].productName.toLowerCase())?.name || order.items[0].productName 
+                : 'Diversos';
+            
+            const costTotal = (order.items || []).reduce((acc, item) => {
+                const prod = productsByName.get(item.productName.toLowerCase());
+                return acc + (prod?.costPrice || 0) * item.quantity;
+            }, 0);
+            const profit = order.totalValue - costTotal;
+            const isPaid = order.paymentStatus === PaymentStatus.FULL;
+
+            return (
+              <div key={order.id} className="bg-[#0b1221] rounded-2xl border border-[#1e293b] p-5 shadow-xl hover:border-slate-600 hover:shadow-2xl transition-all group relative">
+                {/* Header Row */}
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-black text-white">#{order.orderNumber}</span>
+                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest border ${getStatusColor(order.status)}`}>
+                      {getStatusLabel(order.status)}
+                    </span>
+                  </div>
+                  <button className="text-slate-500 hover:text-white p-1">
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Client Info */}
+                <div className="flex justify-between items-start mb-1">
+                  <h3 className="text-sm font-bold text-slate-200 truncate max-w-[70%]">{order.clientName}</h3>
+                  <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-widest">
+                    <Calendar className="w-3 h-3" />
+                    {order.deliveryDate ? order.deliveryDate.split('-').reverse().join('/') : '--/--'}
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-500 mb-6 truncate">{mainProductName}</p>
+
+                {/* Metrics Grid */}
+                <div className="grid grid-cols-4 gap-2 mb-6">
+                  <div>
+                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Quantidade</p>
+                    <p className="text-xs font-bold text-slate-300">{totalQuantity} un.</p>
+                  </div>
+                  <div>
+                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Valor</p>
+                    <p className="text-xs font-bold text-slate-300">R$ {order.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  </div>
+                  <div>
+                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Pago</p>
+                    <p className={`text-xs font-bold ${isPaid ? 'text-emerald-500' : 'text-rose-500'}`}>
+                      R$ {(order.amountPaid || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </p>
+                    <p className={`text-[8px] font-black mt-0.5 uppercase tracking-widest ${isPaid ? 'text-emerald-500/70' : 'text-rose-500/70'}`}>
+                      Lucro
+                    </p>
+                    <p className={`text-[10px] font-bold ${isPaid ? 'text-emerald-500' : 'text-rose-500'}`}>
+                      R$ {profit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex items-center gap-2 justify-between mt-auto pt-4 border-t border-[#1e293b]">
+                  <button onClick={() => openChat(order)} className="w-8 h-8 rounded-lg bg-[#0f172a] border border-[#1e293b] flex items-center justify-center text-slate-400 hover:text-white hover:border-slate-500 transition-colors" title="Mensagens">
+                    <MessageSquare className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => handleEditClick(order)} className="w-8 h-8 rounded-lg bg-[#0f172a] border border-[#1e293b] flex items-center justify-center text-slate-400 hover:text-white hover:border-slate-500 transition-colors" title="Editar">
+                    <Lock className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => printServiceOrder(order)} className="w-8 h-8 rounded-lg bg-[#0f172a] border border-[#1e293b] flex items-center justify-center text-slate-400 hover:text-white hover:border-slate-500 transition-colors" title="Imprimir OS">
+                    <Printer className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => handleReceivePayment(order)} className="w-8 h-8 rounded-lg bg-[#0f172a] border border-[#1e293b] flex items-center justify-center text-slate-400 hover:text-emerald-400 hover:border-emerald-500/50 transition-colors" title="Registrar Pagamento">
+                    <DollarSign className="w-3.5 h-3.5" />
+                  </button>
+                  <button className="w-8 h-8 rounded-lg bg-[#0f172a] border border-[#1e293b] flex items-center justify-center text-slate-400 hover:text-white hover:border-slate-500 transition-colors" title="Documento">
+                    <FileText className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => {
+                      const link = getWhatsAppLink(order.clientName, '5511999999999', getStatusUpdateMessage(order));
+                      window.open(link, '_blank');
+                    }} className="w-8 h-8 rounded-lg bg-[#0f172a] border border-[#1e293b] flex items-center justify-center text-slate-400 hover:text-[#25D366] hover:border-[#25D366]/50 transition-colors" title="WhatsApp">
+                    <Send className="w-3.5 h-3.5" />
+                  </button>
+                  <button className="w-8 h-8 rounded-lg bg-[#0f172a] border border-[#1e293b] flex items-center justify-center text-slate-400 hover:text-blue-400 hover:border-blue-500/50 transition-colors" title="Copiar Link">
+                    <LinkIcon className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => handleDelete(order.id)} className="w-8 h-8 rounded-lg bg-[#0f172a] border border-[#1e293b] flex items-center justify-center text-slate-400 hover:text-rose-500 hover:border-rose-500/50 transition-colors" title="Excluir">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
+
+      {/* Pagination Footer */}
+      <div className="flex items-center justify-between mt-8 text-xs font-bold text-slate-500 border-t border-[#1e293b] pt-6">
+        <span>Mostrando 1 de {displayOrders.length} pedidos</span>
+        <div className="flex items-center gap-1">
+          <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#1e293b] text-slate-400">{'<'}</button>
+          <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-purple-500 text-purple-400 bg-purple-500/10">1</button>
+          <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#1e293b] text-slate-400">2</button>
+          <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#1e293b] text-slate-400">3</button>
+          <span className="px-1 text-slate-600">...</span>
+          <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#1e293b] text-slate-400">6</button>
+          <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#1e293b] text-slate-400">{'>'}</button>
+        </div>
+      </div>
 
       {/* CHAT MODAL */}
       {chatOrder && (

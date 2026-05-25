@@ -18,19 +18,13 @@ export const getConfig = (key: string): string => {
         return process.env[key];
     }
 
-    // 4. Default Fallback Credentials (Production database and APIs)
-    const DEFAULTS: Record<string, string> = {
-        'VITE_SUPABASE_URL': 'https://mdpsrbmfzaosuvhamvbs.supabase.co',
-        'VITE_SUPABASE_ANON_KEY': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kcHNyYm1memFvc3V2aGFtdmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzNTkxNjgsImV4cCI6MjA4NDkzNTE2OH0.FieQkWGUZ-iRx6XHqk8vNaa9NnNuPtkSFn6f7W5vO_U'
-    };
-
-    return DEFAULTS[key] || '';
+    // 4. No fallback — credentials MUST come from env or localStorage
+    // Never hardcode production keys in source code
+    return '';
 };
 
 // Keys mapping
 export const CONFIG_KEYS = {
     SUPABASE_URL: 'VITE_SUPABASE_URL',
-    SUPABASE_ANON_KEY: 'VITE_SUPABASE_ANON_KEY',
-    GEMINI_API_KEY: 'VITE_GEMINI_API_KEY',
-    OPENAI_API_KEY: 'VITE_OPENAI_API_KEY' // Added as requested
+    SUPABASE_ANON_KEY: 'VITE_SUPABASE_ANON_KEY'
 };

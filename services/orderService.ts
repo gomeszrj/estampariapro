@@ -72,7 +72,8 @@ export const orderService = {
         clients(name)
       `)
             .neq('origin', 'support')
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
+            .limit(300);
 
         if (error) throw error;
         return data?.map(mapOrderFromDB) as Order[];
@@ -206,8 +207,8 @@ export const orderService = {
                     for (const recipeItem of recipe) {
                         const amountToDeduct = item.quantity * recipeItem.quantityRequired;
 
-                        // Fetch current stock (safe fetch)
-                        const inventoryItem = (await inventoryService.getAll()).find(i => i.id === recipeItem.inventoryItemId);
+                        // Fetch current stock directly via ID
+                        const inventoryItem = await inventoryService.getById(recipeItem.inventoryItemId).catch(() => null);
 
                         if (inventoryItem) {
                             const newQty = Math.max(0, inventoryItem.quantity - amountToDeduct);
@@ -236,7 +237,7 @@ export const orderService = {
             try {
                 const order = await this.getById(id);
                 if (order.clientId) {
-                    const client = await clientService.getAll().then(list => list.find(c => c.id === order.clientId));
+                    const client = await clientService.getById(order.clientId).catch(() => null);
                     if (client && client.whatsapp) {
                         const statusLabels: Record<string, string> = {
                             [OrderStatus.RECEIVED]: 'Recebido / Separando',

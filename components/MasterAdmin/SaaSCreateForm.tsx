@@ -113,10 +113,10 @@ export const SaaSCreateForm: React.FC<SaaSCreateFormProps> = ({
   };
 
   return (
-    <div className="animate-in fade-in duration-300 max-w-2xl mx-auto space-y-5 bg-[#0f172a] p-8 md:p-10 rounded-[3rem] border border-slate-800 shadow-2xl">
+    <div className="animate-in fade-in duration-300 max-w-2xl mx-auto space-y-5 bg-[#0f172a] p-8 md:p-10 rounded-[3rem] border border-[#1e293b] shadow-2xl">
       <div>
         <h3 className="text-2xl font-black text-slate-100 uppercase tracking-tighter flex items-center gap-3">
-          <Plus className="w-6 h-6 text-indigo-500" /> Adicionar Estamparia
+          <Plus className="w-6 h-6 text-white" /> Adicionar Estamparia
         </h3>
         <p className="text-slate-500 text-sm mt-1">Ambiente isolado criado na hora.</p>
       </div>
@@ -128,7 +128,7 @@ export const SaaSCreateForm: React.FC<SaaSCreateFormProps> = ({
             value={newName}
             onChange={e => setNewName(e.target.value)}
             placeholder="Ex: Alfa Estamparia LTDA"
-            className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+            className="w-full bg-[#1C1C26] border border-[#1e293b] rounded-2xl p-4 text-slate-100 font-bold focus:ring-1 focus:ring-slate-700/50 outline-none transition-all"
           />
         </div>
         <div>
@@ -137,7 +137,7 @@ export const SaaSCreateForm: React.FC<SaaSCreateFormProps> = ({
             value={newDomain}
             onChange={e => setNewDomain(e.target.value)}
             placeholder="Ex: alfa-estamparia"
-            className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+            className="w-full bg-[#1C1C26] border border-[#1e293b] rounded-2xl p-4 text-slate-100 font-bold focus:ring-1 focus:ring-slate-700/50 outline-none transition-all"
           />
         </div>
         <div className="grid grid-cols-2 gap-4">
@@ -146,7 +146,7 @@ export const SaaSCreateForm: React.FC<SaaSCreateFormProps> = ({
             <select
               value={newPlan}
               onChange={handlePlanChangeNew}
-              className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+              className="w-full bg-[#1C1C26] border border-[#1e293b] rounded-2xl p-4 text-slate-100 font-bold focus:ring-1 focus:ring-slate-700/50 outline-none transition-all"
             >
               {saasPlans.map(plan => (
                 <option key={plan.id} value={plan.name}>{plan.name}</option>
@@ -159,7 +159,7 @@ export const SaaSCreateForm: React.FC<SaaSCreateFormProps> = ({
             <select
               value={newCycle}
               onChange={e => setNewCycle(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+              className="w-full bg-[#1C1C26] border border-[#1e293b] rounded-2xl p-4 text-slate-100 font-bold focus:ring-1 focus:ring-slate-700/50 outline-none transition-all"
             >
               <option value="Mensal">Mensal</option>
               <option value="Semestral">Semestral</option>
@@ -173,11 +173,11 @@ export const SaaSCreateForm: React.FC<SaaSCreateFormProps> = ({
             type="number"
             value={newPrice}
             onChange={e => setNewPrice(Number(e.target.value))}
-            className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+            className="w-full bg-[#1C1C26] border border-[#1e293b] rounded-2xl p-4 text-slate-100 font-bold focus:ring-1 focus:ring-slate-700/50 outline-none transition-all"
           />
         </div>
 
-        <div className="border-t border-slate-800/50 pt-4 space-y-3">
+        <div className="border-t border-[#1e293b] pt-4 space-y-3">
           <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-2">
             <Zap className="w-3 h-3" /> Contato do Admin
           </p>
@@ -188,7 +188,7 @@ export const SaaSCreateForm: React.FC<SaaSCreateFormProps> = ({
                 value={newAdminEmail}
                 onChange={e => setNewAdminEmail(e.target.value)}
                 placeholder="admin@empresa.com.br"
-                className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                className="w-full bg-[#1C1C26] border border-[#1e293b] rounded-2xl p-4 text-slate-100 font-bold focus:ring-1 focus:ring-slate-700/50 outline-none transition-all"
               />
             </div>
             <div>
@@ -197,7 +197,7 @@ export const SaaSCreateForm: React.FC<SaaSCreateFormProps> = ({
                 value={newAdminWhatsapp}
                 onChange={e => setNewAdminWhatsapp(e.target.value)}
                 placeholder="11999999999"
-                className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                className="w-full bg-[#1C1C26] border border-[#1e293b] rounded-2xl p-4 text-slate-100 font-bold focus:ring-1 focus:ring-slate-700/50 outline-none transition-all"
               />
             </div>
           </div>
@@ -208,21 +208,21 @@ export const SaaSCreateForm: React.FC<SaaSCreateFormProps> = ({
               value={newAdminPassword}
               onChange={e => setNewAdminPassword(e.target.value)}
               placeholder="Mínimo 6 caracteres"
-              className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+              className="w-full bg-[#1C1C26] border border-[#1e293b] rounded-2xl p-4 text-slate-100 font-bold focus:ring-1 focus:ring-slate-700/50 outline-none transition-all"
             />
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 p-4 bg-indigo-500/5 border border-indigo-500/20 rounded-2xl">
+        <div className="flex flex-col gap-3 p-4 bg-white/5 border border-[#1e293b] rounded-2xl">
           <div className="flex items-center gap-3">
             <input
               type="checkbox"
               id="trial"
               checked={newIsTrial}
               onChange={e => setNewIsTrial(e.target.checked)}
-              className="w-5 h-5 accent-indigo-600 cursor-pointer"
+              className="w-5 h-5 accent-white cursor-pointer"
             />
-            <label htmlFor="trial" className="text-xs font-black text-indigo-400 uppercase tracking-widest cursor-pointer">
+            <label htmlFor="trial" className="text-xs font-black text-white uppercase tracking-widest cursor-pointer">
               Ativar Teste Grátis (Trial)
             </label>
           </div>
@@ -235,17 +235,17 @@ export const SaaSCreateForm: React.FC<SaaSCreateFormProps> = ({
                 max="365"
                 value={newTrialDays}
                 onChange={e => setNewTrialDays(Number(e.target.value))}
-                className="w-20 bg-slate-900 border border-indigo-500/30 text-indigo-400 font-bold text-center rounded-lg py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all"
+                className="w-20 bg-[#0f172a] border border-[#1e293b] text-white font-bold text-center rounded-lg py-1.5 focus:outline-none focus:ring-1 focus:ring-slate-700/50 transition-all"
               />
             </div>
           )}
         </div>
 
-        <div className="border border-slate-800 rounded-2xl overflow-hidden">
+        <div className="border border-[#1e293b] rounded-2xl overflow-hidden">
           <button
             type="button"
             onClick={() => setShowNewPermissions(!showNewPermissions)}
-            className="w-full flex items-center justify-between p-4 bg-slate-900/50 hover:bg-slate-900 transition-colors"
+            className="w-full flex items-center justify-between p-4 bg-[#0f172a] hover:bg-[#0f172a] transition-colors"
           >
             <div className="flex items-center gap-3">
               <LayoutList className="w-4 h-4 text-rose-400" />
@@ -257,7 +257,7 @@ export const SaaSCreateForm: React.FC<SaaSCreateFormProps> = ({
             {showNewPermissions ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
           </button>
           {showNewPermissions && (
-            <div className="p-4 border-t border-slate-800">
+            <div className="p-4 border-t border-[#1e293b]">
               <PermissionsPanel
                 permissions={newPermissions}
                 onChange={toggleNew}
@@ -270,11 +270,11 @@ export const SaaSCreateForm: React.FC<SaaSCreateFormProps> = ({
         </div>
       </div>
 
-      <div className="pt-4 border-t border-slate-800/50">
+      <div className="pt-4 border-t border-[#1e293b]">
         <button
           onClick={handleCreateTenant}
           disabled={isSaving}
-          className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3 disabled:opacity-50"
+          className="w-full py-5 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] transition-all shadow-xl shadow-white/5 flex items-center justify-center gap-3 disabled:opacity-50"
         >
           {isSaving ? (
             <span>Criando ambiente...</span>

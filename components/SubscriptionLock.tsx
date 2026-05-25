@@ -11,8 +11,8 @@ interface SubscriptionLockProps {
 
 export const SubscriptionLock: React.FC<SubscriptionLockProps> = ({ tenantName, paymentLink, daysOverdue, onSignOut }) => {
   return (
-    <div className="fixed inset-0 bg-[#020617] z-[9999] flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-[#0f172a] rounded-[3rem] border border-slate-800 p-10 shadow-2xl relative overflow-hidden text-center space-y-8 animate-in zoom-in-95">
+    <div className="fixed inset-0 bg-[#0b1221] z-[9999] flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-[#0f172a] rounded-[3rem] border border-[#1e293b] p-10 shadow-2xl relative overflow-hidden text-center space-y-8 animate-in zoom-in-95">
         {/* Background Decor */}
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-rose-500 via-amber-500 to-rose-500"></div>
         
@@ -29,9 +29,9 @@ export const SubscriptionLock: React.FC<SubscriptionLockProps> = ({ tenantName, 
             </p>
         </div>
 
-        <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800 text-left space-y-4">
+        <div className="bg-[#0f172a] p-6 rounded-2xl border border-[#1e293b] text-left space-y-4">
             <div className="flex items-start gap-4">
-                <CreditCard className="w-5 h-5 text-indigo-400 shrink-0" />
+                <CreditCard className="w-5 h-5 text-white shrink-0" />
                 <p className="text-xs text-slate-400 leading-relaxed font-medium">
                     As funções administrativas foram suspensas temporariamente. Para reativar seu sistema agora mesmo, realize o pagamento através do link oficial abaixo.
                 </p>
@@ -44,7 +44,7 @@ export const SubscriptionLock: React.FC<SubscriptionLockProps> = ({ tenantName, 
                     href={paymentLink} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3"
+                    className="w-full py-4 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all shadow-xl shadow-white/5 flex items-center justify-center gap-3"
                 >
                     <ExternalLink className="w-5 h-5" /> Pagar e Ativar Agora
                 </a>

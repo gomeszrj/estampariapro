@@ -228,7 +228,7 @@ const ArtQueue: React.FC = () => {
   const renderCard = (entry: ArtEntry) => {
     const isOpen = expandedId === entry.id;
     return (
-      <div key={entry.id} className={`bg-slate-900 border rounded-2xl overflow-hidden transition-all ${isOpen ? 'border-indigo-500/40' : 'border-slate-800 hover:border-slate-700'}`}>
+      <div key={entry.id} className={`bg-[#0b1221] border rounded-2xl overflow-hidden transition-all ${isOpen ? 'border-white/20' : 'border-[#1e293b] hover:border-slate-700'}`}>
         <button
           className="w-full p-4 text-left flex items-start justify-between gap-3"
           onClick={() => setExpandedId(isOpen ? null : entry.id)}
@@ -236,7 +236,7 @@ const ArtQueue: React.FC = () => {
           <div className="min-w-0 flex-1">
             <h4 className="font-black text-slate-200 text-sm truncate">{entry.client_name}</h4>
             {entry.order_reference && (
-              <p className="text-[9px] text-indigo-400 font-bold mt-0.5">Ref: {entry.order_reference}</p>
+              <p className="text-[9px] text-white font-bold mt-0.5">Ref: {entry.order_reference}</p>
             )}
             <p className="text-[8px] text-slate-600 mt-0.5">{new Date(entry.created_at).toLocaleDateString('pt-BR')}</p>
           </div>
@@ -252,10 +252,10 @@ const ArtQueue: React.FC = () => {
         </button>
 
         {isOpen && (
-          <div className="border-t border-slate-800 p-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
+          <div className="border-t border-[#1e293b] p-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
             {entry.layout_url && (
-              <div className="rounded-xl overflow-hidden border border-slate-700 bg-slate-950">
-                <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest px-3 py-1.5 border-b border-slate-800 flex items-center gap-1.5">
+              <div className="rounded-xl overflow-hidden border border-slate-700 bg-[#1C1C26]">
+                <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest px-3 py-1.5 border-b border-[#1e293b] flex items-center gap-1.5">
                   <ImageIcon className="w-3 h-3" /> Layout Original
                 </p>
                 <img src={entry.layout_url} alt="Layout" className="w-full max-h-40 object-contain p-2" />
@@ -263,7 +263,7 @@ const ArtQueue: React.FC = () => {
             )}
 
             {entry.notes && (
-              <div className="bg-slate-950/50 rounded-xl p-3 border border-slate-800 text-xs text-slate-400">
+              <div className="bg-[#1C1C26]/50 rounded-xl p-3 border border-[#1e293b] text-xs text-slate-400">
                 <p className="text-[9px] font-black uppercase text-slate-500 mb-2">Observações / Briefing:</p>
                 <div className="whitespace-pre-line leading-relaxed">{entry.notes}</div>
               </div>
@@ -271,18 +271,18 @@ const ArtQueue: React.FC = () => {
 
             {/* Integração com Pedido (Lista de Itens) */}
             {entry.orders && entry.orders.order_items && entry.orders.order_items.length > 0 && (
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-3">
-                 <p className="text-[9px] font-black uppercase tracking-widest text-indigo-400 mb-2 flex items-center gap-1">
+              <div className="bg-[#0f172a] border border-[#1e293b] rounded-xl p-3">
+                 <p className="text-[9px] font-black uppercase tracking-widest text-white mb-2 flex items-center gap-1">
                     <ListOrdered className="w-3 h-3" /> Itens Oficiais do Pedido
                  </p>
                  <div className="max-h-32 overflow-y-auto space-y-1 pr-1">
                    {entry.orders.order_items.map((item: any, idx: number) => (
-                      <div key={idx} className="flex justify-between items-center text-[10px] bg-slate-950 px-2 py-1.5 rounded border border-slate-800">
+                      <div key={idx} className="flex justify-between items-center text-[10px] bg-[#1C1C26] px-2 py-1.5 rounded border border-[#1e293b]">
                         <span className="text-slate-300 font-bold truncate pr-2" title={item.product_name}>{item.product_name}</span>
                         <div className="flex items-center gap-2 shrink-0">
                           <span className="text-slate-500 uppercase">{item.grade_label}</span>
                           <span className="bg-slate-800 text-slate-300 px-1.5 rounded font-mono">{item.size}</span>
-                          <span className="text-indigo-400 font-black">x{item.quantity}</span>
+                          <span className="text-white font-black">x{item.quantity}</span>
                         </div>
                       </div>
                    ))}
@@ -299,7 +299,7 @@ const ArtQueue: React.FC = () => {
                  {entry.art_started ? (
                    <div className="space-y-1">
                      {entry.orders.design_file_urls.map((url: string, idx: number) => (
-                        <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between bg-slate-950 border border-slate-800 hover:border-amber-500/50 hover:bg-amber-500/5 p-2 rounded-lg transition-colors group">
+                        <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between bg-[#1C1C26] border border-[#1e293b] hover:border-amber-500/50 hover:bg-amber-500/5 p-2 rounded-lg transition-colors group">
                            <span className="text-[10px] text-slate-300 font-medium truncate pr-2">Acessar Arquivo (Download)</span>
                            <Download className="w-3.5 h-3.5 text-amber-500/70 group-hover:text-amber-400" />
                         </a>
@@ -336,7 +336,7 @@ const ArtQueue: React.FC = () => {
                </div>
 
                {entry.art_created ? (
-                 <label className={`w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed transition-all cursor-pointer text-[10px] font-black uppercase tracking-widest ${uploadingOrder === entry.id ? 'bg-slate-900 border-slate-700 text-slate-500' : 'bg-emerald-500/10 border-emerald-500/30 hover:border-emerald-500/60 text-emerald-500 hover:bg-emerald-500/20'}`}>
+                 <label className={`w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed transition-all cursor-pointer text-[10px] font-black uppercase tracking-widest ${uploadingOrder === entry.id ? 'bg-[#0f172a] border-slate-700 text-slate-500' : 'bg-emerald-500/10 border-emerald-500/30 hover:border-emerald-500/60 text-emerald-500 hover:bg-emerald-500/20'}`}>
                     {uploadingOrder === entry.id ? (
                         <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Enviando...</>
                     ) : (
@@ -361,16 +361,16 @@ const ArtQueue: React.FC = () => {
                 placeholder="Ex: LAYOUT 01, REV 02..."
                 defaultValue={entry.layout_revision || ''}
                 onBlur={e => handleRevision(entry, e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-200 uppercase focus:outline-none focus:border-indigo-500 transition-all placeholder:normal-case placeholder:font-normal placeholder:text-slate-600"
+                className="w-full bg-[#0b1221] border border-slate-700 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-200 uppercase focus:outline-none focus:border-slate-600 transition-all placeholder:normal-case placeholder:font-normal placeholder:text-slate-600"
               />
             </div>
 
             {/* Checkboxes */}
             <div className="space-y-2 mb-3">
               {[
-                { field: 'art_started' as const, label: 'Iniciar Arte (Liberar Arquivos)', sub: 'Destrava os arquivos do cliente para download e move pedido para Em Arte', color: 'indigo', requires: null },
-                { field: 'art_created' as const, label: 'Arte Finalizada', sub: 'Designer concluiu e enviou a arte final', color: 'emerald', requires: 'art_started' },
-              ].map(({ field, label, sub, color, requires }) => {
+                { field: 'art_started' as const, label: 'Iniciar Arte (Liberar Arquivos)', sub: 'Destrava os arquivos do cliente para download e move pedido para Em Arte', activeBg: 'bg-white/5 border-white/20', activeCheck: 'bg-white border-white', activeText: 'text-white', requires: null },
+                { field: 'art_created' as const, label: 'Arte Finalizada', sub: 'Designer concluiu e enviou a arte final', activeBg: 'bg-emerald-600/10 border-emerald-500/40', activeCheck: 'bg-emerald-600 border-emerald-500', activeText: 'text-emerald-300', requires: 'art_started' },
+              ].map(({ field, label, sub, activeBg, activeCheck, activeText, requires }) => {
                 const disabled = requires ? !entry[requires as keyof ArtEntry] : false;
                 const active = entry[field];
                 return (
@@ -378,14 +378,14 @@ const ArtQueue: React.FC = () => {
                     key={field}
                     disabled={!!disabled}
                     onClick={() => !disabled && handleToggle(entry, field)}
-                    className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${disabled ? 'opacity-40 cursor-not-allowed bg-slate-950 border-slate-800' :
-                      active ? `bg-${color}-600/10 border-${color}-500/40` : 'bg-slate-950 border-slate-700 hover:border-slate-600'}`}
+                    className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${disabled ? 'opacity-40 cursor-not-allowed bg-[#1C1C26] border-[#1e293b]' :
+                      active ? activeBg : 'bg-[#1C1C26] border-slate-700 hover:border-slate-600'}`}
                   >
-                    <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${active ? `bg-${color}-600 border-${color}-500` : 'border-slate-600'}`}>
+                    <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${active ? activeCheck : 'border-slate-600'}`}>
                       {active && <Check className="w-3 h-3 text-white" />}
                     </div>
                     <div>
-                      <p className={`text-[10px] font-black uppercase tracking-widest ${active ? `text-${color}-300` : 'text-slate-400'}`}>{label}</p>
+                      <p className={`text-[10px] font-black uppercase tracking-widest ${active ? activeText : 'text-slate-400'}`}>{label}</p>
                       <p className="text-[9px] text-slate-600 mt-0.5">{sub}</p>
                     </div>
                   </button>
@@ -413,8 +413,8 @@ const ArtQueue: React.FC = () => {
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-5">
         <div>
           <h2 className="text-3xl font-black text-slate-100 tracking-tight uppercase flex items-center gap-4">
-            <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-indigo-600/20">
-              <Palette className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-white/5">
+              <Palette className="w-5 h-5 text-slate-950" />
             </div>
             Fila de Arte
           </h2>
@@ -427,7 +427,7 @@ const ArtQueue: React.FC = () => {
             { label: 'Recebidas', val: pending.length, color: 'text-amber-400' },
             { label: 'Finalizadas', val: approved.length, color: 'text-emerald-400' },
           ].map(s => (
-            <div key={s.label} className="bg-slate-900 border border-slate-800 rounded-2xl px-3 py-2 text-center">
+            <div key={s.label} className="bg-[#0b1221] border border-[#1e293b] rounded-2xl px-3 py-2 text-center">
               <p className="text-[7px] text-slate-500 uppercase tracking-widest font-bold mb-0.5">{s.label}</p>
               <p className={`text-lg font-black ${s.color}`}>{s.val}</p>
             </div>
@@ -435,7 +435,7 @@ const ArtQueue: React.FC = () => {
 
           <button
             onClick={() => { setShowForm(true); setForm(emptyForm); setImagePreview(''); }}
-            className="flex items-center gap-2 px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-indigo-600/20 transition-all"
+            className="flex items-center gap-2 px-5 py-3 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-white/5 transition-all"
           >
             <Plus className="w-4 h-4" /> Nova Arte
           </button>
@@ -450,7 +450,7 @@ const ArtQueue: React.FC = () => {
           placeholder="Pesquisar por cliente ou referência..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-full pl-12 pr-5 py-3.5 bg-slate-900 border border-slate-800 rounded-2xl text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-sm placeholder:font-normal placeholder:text-slate-600"
+          className="w-full pl-12 pr-5 py-3.5 bg-[#0b1221] border border-[#1e293b] rounded-2xl text-slate-100 focus:outline-none focus:border-slate-600 focus:ring-1 focus:ring-slate-700/50 transition-all font-bold text-sm placeholder:font-normal placeholder:text-slate-600"
         />
       </div>
 
@@ -460,10 +460,10 @@ const ArtQueue: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {columns.map(col => (
             <div key={col.id} className={`rounded-3xl border ${col.border} ${col.bg} overflow-hidden`}>
-              <div className="p-4 border-b border-slate-800/50 flex items-center gap-2">
+              <div className="p-4 border-b border-[#1e293b] flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${col.dot}`} />
                 <h3 className={`text-[10px] font-black uppercase tracking-widest flex-1 ${col.color}`}>{col.label}</h3>
-                <span className={`text-xs font-black ${col.color} bg-slate-900/50 px-2 py-0.5 rounded-lg`}>{col.items.length}</span>
+                <span className={`text-xs font-black ${col.color} bg-[#0f172a] px-2 py-0.5 rounded-lg`}>{col.items.length}</span>
               </div>
               <div className="p-3 space-y-2 min-h-[180px]">
                 {col.items.length === 0 ? (
@@ -480,12 +480,12 @@ const ArtQueue: React.FC = () => {
 
       {/* New Art Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0f172a] rounded-[2.5rem] w-full max-w-lg border border-slate-800 shadow-2xl animate-in zoom-in-95 overflow-hidden">
-            <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0f172a] rounded-2xl w-full max-w-lg border border-[#1e293b] shadow-2xl shadow-black/60 animate-in zoom-in-95 overflow-hidden">
+            <div className="p-6 border-b border-[#1e293b] flex justify-between items-center bg-[#0b1221]/40">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-600/20">
-                  <Palette className="w-5 h-5 text-white" />
+                <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center shadow-lg shadow-white/5">
+                  <Palette className="w-5 h-5 text-slate-950" />
                 </div>
                 <div>
                   <h3 className="text-base font-black text-slate-100 uppercase tracking-tighter">Nova Arte</h3>
@@ -506,7 +506,7 @@ const ArtQueue: React.FC = () => {
                   placeholder="Nome completo do cliente"
                   value={form.client_name}
                   onChange={e => setForm(f => ({ ...f, client_name: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-200 uppercase focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:normal-case placeholder:font-normal placeholder:text-slate-600"
+                  className="w-full bg-[#0b1221] border border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-200 uppercase focus:outline-none focus:border-slate-600 focus:ring-1 focus:ring-slate-700/50 transition-all placeholder:normal-case placeholder:font-normal placeholder:text-slate-600"
                   autoFocus
                 />
               </div>
@@ -519,7 +519,7 @@ const ArtQueue: React.FC = () => {
                   placeholder="Ex: #1234, Nome do projeto..."
                   value={form.order_reference}
                   onChange={e => setForm(f => ({ ...f, order_reference: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:font-normal placeholder:text-slate-600"
+                  className="w-full bg-[#0b1221] border border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-200 focus:outline-none focus:border-slate-600 focus:ring-1 focus:ring-slate-700/50 transition-all placeholder:font-normal placeholder:text-slate-600"
                 />
               </div>
 
@@ -531,7 +531,7 @@ const ArtQueue: React.FC = () => {
                   placeholder="Ex: LAYOUT 01, REV 03..."
                   value={form.layout_revision}
                   onChange={e => setForm(f => ({ ...f, layout_revision: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-200 uppercase focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:normal-case placeholder:font-normal placeholder:text-slate-600"
+                  className="w-full bg-[#0b1221] border border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-200 uppercase focus:outline-none focus:border-slate-600 focus:ring-1 focus:ring-slate-700/50 transition-all placeholder:normal-case placeholder:font-normal placeholder:text-slate-600"
                 />
               </div>
 
@@ -543,7 +543,7 @@ const ArtQueue: React.FC = () => {
                   value={form.notes}
                   onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
                   rows={3}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all resize-none placeholder:text-slate-600"
+                  className="w-full bg-[#0b1221] border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-slate-600 focus:ring-1 focus:ring-slate-700/50 transition-all resize-none placeholder:text-slate-600"
                 />
               </div>
 
@@ -552,7 +552,7 @@ const ArtQueue: React.FC = () => {
                 <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><ImageIcon className="w-3 h-3" /> Imagem do Layout (opcional)</label>
                 {imagePreview ? (
                   <div className="relative rounded-xl overflow-hidden border border-slate-700">
-                    <img src={imagePreview} className="w-full max-h-48 object-contain bg-slate-950" />
+                    <img src={imagePreview} className="w-full max-h-48 object-contain bg-[#1C1C26]" />
                     <button
                       onClick={() => { setImagePreview(''); setForm(f => ({ ...f, layout_url: '' })); }}
                       className="absolute top-2 right-2 w-7 h-7 bg-rose-600 rounded-full flex items-center justify-center text-white hover:bg-rose-500 transition-colors"
@@ -561,8 +561,8 @@ const ArtQueue: React.FC = () => {
                     </button>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center justify-center gap-2 p-6 rounded-xl border-2 border-dashed border-slate-700 hover:border-indigo-500 cursor-pointer transition-all bg-slate-950 group">
-                    <ImageIcon className="w-8 h-8 text-slate-600 group-hover:text-indigo-400 transition-colors" />
+                  <label className="flex flex-col items-center justify-center gap-2 p-6 rounded-xl border-2 border-dashed border-slate-700 hover:border-white/40 cursor-pointer transition-all bg-[#0b1221] group">
+                    <ImageIcon className="w-8 h-8 text-slate-600 group-hover:text-white transition-colors" />
                     <p className="text-xs font-bold text-slate-500 group-hover:text-slate-300 transition-colors">Clique para adicionar imagem</p>
                     <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                   </label>
@@ -570,7 +570,7 @@ const ArtQueue: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-6 border-t border-slate-800 flex gap-3">
+            <div className="p-6 border-t border-[#1e293b] flex gap-3">
               <button
                 onClick={() => setShowForm(false)}
                 className="flex-1 py-3.5 bg-slate-800 text-slate-300 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-700 transition-all"
@@ -580,7 +580,7 @@ const ArtQueue: React.FC = () => {
               <button
                 onClick={handleSave}
                 disabled={saving || !form.client_name.trim()}
-                className="flex-2 flex-[2] py-3.5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                className="flex-2 flex-[2] py-3.5 bg-[#8B5CF6] text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-white/90 shadow-lg shadow-white/5 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
               >
                 <Save className="w-4 h-4" /> {saving ? 'Salvando...' : 'Cadastrar Arte'}
               </button>

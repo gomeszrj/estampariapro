@@ -75,11 +75,11 @@ export const SaaSOverview: React.FC<SaaSOverviewProps> = ({
         {[
           { label: 'Empresas',       value: tenants.length,    cls: 'text-slate-100' },
           { label: 'Ativas',         value: tenants.filter(t => t.active && calcDaysRemaining(t.subscription_end_date) > 0).length, cls: 'text-emerald-400' },
-          { label: 'MP Autorizado',  value: mpActive,          cls: 'text-indigo-400' },
+          { label: 'MP Autorizado',  value: mpActive,          cls: 'text-white' },
           { label: 'Inadimplência',  value: `R$ ${overdueMRR.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, cls: 'text-rose-300' },
-          { label: 'MRR',            value: `R$ ${mrr.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, cls: 'text-indigo-300' },
+          { label: 'MRR',            value: `R$ ${mrr.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, cls: 'text-white/80' },
         ].map((k, i) => (
-          <div key={i} className="bg-[#0f172a] p-5 rounded-3xl border border-slate-800 shadow-xl">
+          <div key={i} className="bg-[#0f172a] p-5 rounded-3xl border border-[#1e293b] shadow-xl">
             <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1">{k.label}</p>
             <p className={`text-2xl font-black ${k.cls}`}>{k.value}</p>
           </div>
@@ -87,13 +87,13 @@ export const SaaSOverview: React.FC<SaaSOverviewProps> = ({
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-2 bg-slate-900/50 p-1.5 rounded-2xl border border-slate-800 w-fit">
+      <div className="flex items-center gap-2 bg-[#0f172a] p-1.5 rounded-2xl border border-[#1e293b] w-fit">
         {(['todos', 'ativos', 'vencidos', 'bloqueados'] as const).map(f => (
           <button
             key={f}
             onClick={() => setStatusFilter(f)}
             className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
-              statusFilter === f ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
+              statusFilter === f ? 'bg-[#8B5CF6] text-white' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
             }`}
           >
             {f}
@@ -111,7 +111,7 @@ export const SaaSOverview: React.FC<SaaSOverviewProps> = ({
           const days = calcDaysRemaining(t.subscription_end_date);
           const mpStatus = t.mp_subscription_status || 'none';
           return (
-            <div key={t.id} className="bg-[#0f172a] rounded-3xl p-6 border border-slate-800 shadow-lg flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6 hover:border-slate-700 transition-colors">
+            <div key={t.id} className="bg-[#0f172a] rounded-3xl p-6 border border-[#1e293b] shadow-lg flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6 hover:border-slate-700 transition-colors">
               <div className="space-y-2 flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="text-xl font-black text-slate-100 uppercase tracking-tight">{t.name}</h3>
@@ -121,12 +121,12 @@ export const SaaSOverview: React.FC<SaaSOverviewProps> = ({
                   <MPStatusBadge status={mpStatus} />
                 </div>
                 <div className="flex flex-wrap items-center gap-2 mt-1">
-                  <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl">
+                  <div className="flex items-center gap-2 bg-[#0f172a] border border-[#1e293b] px-3 py-1.5 rounded-xl">
                     <CreditCard className="w-4 h-4 text-slate-500" />
                     <span className="text-[10px] font-black uppercase text-slate-300">
                       {t.plan} · R$ {Number(t.plan_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </span>
-                    <span className="text-[9px] text-slate-500 bg-slate-950 px-1 rounded">{t.billing_cycle || 'Mensal'}</span>
+                    <span className="text-[9px] text-slate-500 bg-[#1C1C26] px-1 rounded">{t.billing_cycle || 'Mensal'}</span>
                   </div>
                   <div className={`flex items-center gap-2 border px-3 py-1.5 rounded-xl ${daysColor(days)}`}>
                     <Calendar className="w-4 h-4" />
@@ -148,13 +148,13 @@ export const SaaSOverview: React.FC<SaaSOverviewProps> = ({
               </div>
 
               <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto">
-                <div className="bg-slate-950 rounded-2xl p-3 border border-slate-800 w-full xl:w-48 hidden md:block">
+                <div className="bg-[#1C1C26] rounded-2xl p-3 border border-[#1e293b] w-full xl:w-48 hidden md:block">
                   <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
                     <Users className="w-3 h-3 inline mr-1" />Acessos ({tenantProfiles.length})
                   </p>
                   <div className="flex flex-wrap gap-1">
                     {tenantProfiles.slice(0, 3).map(p => (
-                      <span key={p.id} className="text-slate-400 bg-slate-900 px-2 py-1 rounded-md font-black text-[9px] uppercase border border-slate-800 truncate max-w-[80px]">
+                      <span key={p.id} className="text-slate-400 bg-[#0f172a] px-2 py-1 rounded-md font-black text-[9px] uppercase border border-[#1e293b] truncate max-w-[80px]">
                         {p.full_name?.split(' ')[0] || 'User'}
                       </span>
                     ))}
@@ -167,7 +167,7 @@ export const SaaSOverview: React.FC<SaaSOverviewProps> = ({
                 <div className="flex flex-col gap-2 w-full xl:w-44 shrink-0">
                   <button
                     onClick={() => onEditTenant(t)}
-                    className="w-full px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black uppercase tracking-widest text-[10px] transition-all"
+                    className="w-full px-4 py-2.5 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-xl font-black uppercase tracking-widest text-[10px] transition-all"
                   >
                     Editar / Módulos
                   </button>

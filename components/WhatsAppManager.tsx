@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Smartphone, QrCode, Hash, Loader2, CheckCircle2, AlertCircle, RefreshCw, Power } from 'lucide-react';
+import { Smartphone, QrCode, Hash, Loader2, CheckCircle2, AlertCircle, RefreshCw, Power, Sparkles } from 'lucide-react';
 import { whatsappService } from '../services/whatsappService';
 import { CRMFullScreen } from './CRM/CRMFullScreen';
 import { notify } from './ui/toast';
@@ -10,6 +10,9 @@ export const WhatsAppManager: React.FC = () => {
     const [pairingCode, setPairingCode] = useState<string | null>(null);
     const [phoneNumber, setPhoneNumber] = useState('');
     const [loadingAction, setLoadingAction] = useState(false);
+    const [bypassConnection, setBypassConnection] = useState(() => {
+        return localStorage.getItem('crm_bypass_connection') === 'true';
+    });
     
     // polling for status
     useEffect(() => {
@@ -69,8 +72,20 @@ export const WhatsAppManager: React.FC = () => {
         setLoadingAction(false);
     };
 
-    if (connectionState === 'connected') {
-        return <CRMFullScreen onLogout={handleLogout} />;
+    if (connectionState === 'connected' || bypassConnection) {
+        return (
+            <CRMFullScreen 
+                onLogout={async () => {
+                    if (bypassConnection) {
+                        setBypassConnection(false);
+                        localStorage.removeItem('crm_bypass_connection');
+                        notify.success('Modo de simulação encerrado.');
+                    } else {
+                        await handleLogout();
+                    }
+                }} 
+            />
+        );
     }
 
     return (
@@ -86,10 +101,10 @@ export const WhatsAppManager: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
                 {/* STATUS PANEL */}
-                <div className="bg-[#0f172a] p-8 rounded-[2rem] border border-slate-800 shadow-xl flex flex-col items-center justify-center text-center relative overflow-hidden">
+                <div className="bg-[#0f172a] p-8 rounded-2xl border border-[#1e293b] shadow-xl flex flex-col items-center justify-center text-center relative overflow-hidden">
                     {connectionState === 'loading' && (
                         <>
-                            <Loader2 className="w-16 h-16 text-indigo-500 animate-spin mb-4" />
+                            <Loader2 className="w-16 h-16 text-white animate-spin mb-4" />
                             <h3 className="text-xl font-bold text-slate-200">Verificando...</h3>
                         </>
                     )}
@@ -115,13 +130,28 @@ export const WhatsAppManager: React.FC = () => {
                         <>
                             <AlertCircle className="w-16 h-16 text-rose-500 mb-4 opacity-50" />
                             <h3 className="text-xl font-bold text-slate-200 mb-2">Aparelho Desconectado</h3>
-                            <p className="text-slate-500 text-sm mb-6">Conecte seu WhatsApp para utilizar o CRM.</p>
-                            <button
-                                onClick={checkStatus}
-                                className="flex items-center gap-2 text-indigo-400 hover:text-indigo-300 font-bold text-sm"
-                            >
-                                <RefreshCw className="w-4 h-4" /> Atualizar Status
-                            </button>
+                            <p className="text-slate-500 text-sm mb-4">Conecte seu WhatsApp para utilizar o CRM.</p>
+                            
+                            <div className="flex flex-col items-center gap-3 w-full max-w-xs">
+                                <button
+                                    onClick={checkStatus}
+                                    className="flex items-center justify-center gap-2 text-white hover:text-white/80 font-bold text-sm py-2 px-4 rounded-xl hover:bg-slate-800/40 transition-all duration-300 w-full border border-transparent hover:border-[#1e293b]"
+                                >
+                                    <RefreshCw className="w-4 h-4" /> Atualizar Status
+                                </button>
+                                
+                                <button
+                                    onClick={() => {
+                                        setBypassConnection(true);
+                                        localStorage.setItem('crm_bypass_connection', 'true');
+                                        notify.success('Entrando no CRM em Modo de Teste Local.');
+                                    }}
+                                    className="flex items-center justify-center gap-2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-black text-xs uppercase tracking-wider py-3 px-5 rounded-xl transition-all duration-300 w-full shadow-lg shadow-white/10 border border-white/20 group"
+                                >
+                                    <Sparkles className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
+                                    Acessar CRM (Modo Teste)
+                                </button>
+                            </div>
                         </>
                     )}
                 </div>
@@ -130,11 +160,11 @@ export const WhatsAppManager: React.FC = () => {
                 <div className={`space-y-6 ${((connectionState as string) === 'connected' || connectionState === 'loading') ? 'opacity-30 pointer-events-none' : ''}`}>
                     
                     {/* QR CODE METHOD */}
-                    <div className="bg-[#0f172a] p-6 rounded-[2rem] border border-slate-800 shadow-xl relative overflow-hidden group">
+                    <div className="bg-[#0f172a] p-6 rounded-2xl border border-[#1e293b] shadow-xl relative overflow-hidden group">
                         <div className="flex items-center justify-between mb-4">
                             <div>
                                 <h3 className="font-black text-slate-100 flex items-center gap-2 uppercase tracking-widest text-sm">
-                                    <QrCode className="w-4 h-4 text-indigo-400" />
+                                    <QrCode className="w-4 h-4 text-white" />
                                     Via QR Code
                                 </h3>
                                 <p className="text-xs text-slate-500 mt-1">Abra o WhatsApp e escaneie a tela.</p>
@@ -142,13 +172,13 @@ export const WhatsAppManager: React.FC = () => {
                             <button 
                                 onClick={handleGenerateQr}
                                 disabled={loadingAction}
-                                className="bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase px-4 py-2 rounded-lg transition-colors shadow-lg shadow-indigo-600/20 disabled:opacity-50"
+                                className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-[10px] font-black uppercase px-4 py-2 rounded-lg transition-colors shadow-lg shadow-white/5 disabled:opacity-50"
                             >
                                 Gerar QR
                             </button>
                         </div>
                         {qrCode && !pairingCode && (
-                            <div className="flex justify-center mt-6 bg-white p-4 rounded-2xl w-max mx-auto border-4 border-indigo-500/20 animate-in zoom-in-95">
+                            <div className="flex justify-center mt-6 bg-white p-4 rounded-2xl w-max mx-auto border-4 border-white/20 animate-in zoom-in-95">
                                 <img src={qrCode} alt="WhatsApp QR Code" className="w-48 h-48" />
                             </div>
                         )}
@@ -161,7 +191,7 @@ export const WhatsAppManager: React.FC = () => {
                     </div>
 
                     {/* PAIRING CODE METHOD */}
-                    <div className="bg-[#0f172a] p-6 rounded-[2rem] border border-slate-800 shadow-xl">
+                    <div className="bg-[#0f172a] p-6 rounded-2xl border border-[#1e293b] shadow-xl">
                         <div className="mb-4">
                             <h3 className="font-black text-slate-100 flex items-center gap-2 uppercase tracking-widest text-sm">
                                 <Hash className="w-4 h-4 text-emerald-400" />
@@ -184,7 +214,7 @@ export const WhatsAppManager: React.FC = () => {
                                     placeholder="Ex: 5511999999999"
                                     value={phoneNumber}
                                     onChange={e => setPhoneNumber(e.target.value)}
-                                    className="flex-1 bg-[#020617] border border-slate-700 rounded-xl px-4 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
+                                    className="flex-1 bg-[#0b1221] border border-slate-700 rounded-xl px-4 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
                                 />
                                 <button 
                                     type="submit"

@@ -77,7 +77,7 @@ const RecipeAdder = ({ inventory, onAdd }: { inventory: InventoryItem[], onAdd: 
         <select
           value={selectedId}
           onChange={e => setSelectedId(e.target.value)}
-          className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-300 text-sm focus:outline-none focus:border-indigo-500"
+          className="w-full bg-[#1C1C26] border border-[#1e293b] rounded-xl px-4 py-3 text-slate-300 text-sm focus:outline-none focus:border-white/20"
         >
           <option value="">Selecione...</option>
           {inventory.map(item => (
@@ -93,13 +93,13 @@ const RecipeAdder = ({ inventory, onAdd }: { inventory: InventoryItem[], onAdd: 
           placeholder="0.00"
           value={qty}
           onChange={e => setQty(e.target.value)}
-          className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-300 text-sm focus:outline-none focus:border-indigo-500"
+          className="w-full bg-[#1C1C26] border border-[#1e293b] rounded-xl px-4 py-3 text-slate-300 text-sm focus:outline-none focus:border-white/20"
         />
       </div>
       <button
         onClick={handleAdd}
         disabled={!selectedId || !qty}
-        className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white p-3 rounded-xl transition-colors"
+        className="bg-white hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 p-3 rounded-xl transition-colors"
       >
         <Plus className="w-5 h-5" />
       </button>
@@ -401,7 +401,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
 
 
   return (
-    <div className={`min-h-screen bg-[#0f172a] text-slate-100 font-sans selection:bg-indigo-500/30 ${!readOnly ? 'flex overflow-hidden h-screen' : 'p-4 md:p-8'}`}>
+    <div className={`min-h-screen bg-[#0f172a] text-slate-100 font-sans selection:bg-white/30 ${!readOnly ? 'flex overflow-hidden h-screen' : 'p-4 md:p-8'}`}>
 
       {/* MAIN CONTENT (If POS, this is Left Side. If Public, Full Width) */}
       <div className={`${!readOnly ? 'flex-1 flex flex-col h-full overflow-hidden' : 'w-full max-w-7xl mx-auto'}`}>
@@ -424,7 +424,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
                 allowedGrades: GRADES.reduce((acc, g) => ({ ...acc, [g.label]: g.sizes }), {}),
                 measurements: {}, description: ''
               })}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg transition-all flex items-center gap-2"
+              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-6 py-3 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg transition-all flex items-center gap-2"
             >
               <Plus className="w-4 h-4" /> Novo Produto
             </button>
@@ -443,7 +443,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
         {/* FILTERS */}
         <div className={`${!readOnly ? 'px-8 pb-4' : 'mb-8'}`}>
           <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 bg-slate-900/50 p-2 rounded-2xl border border-slate-800/50 flex items-center">
+            <div className="flex-1 bg-[#0f172a] p-2 rounded-2xl border border-[#1e293b] flex items-center">
               <Search className="w-5 h-5 text-slate-500 ml-3" />
               <input
                 className="w-full bg-transparent border-none text-slate-100 placeholder:text-slate-600 focus:ring-0 text-sm font-bold uppercase tracking-wider px-4 py-2"
@@ -454,7 +454,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
             </div>
             <div className="flex gap-2 overflow-x-auto scrollbar-hide">
               {['all', ...(FABRICS || []).map(f => f.name)].map(f => (
-                <button key={f} onClick={() => setFabricFilter(f)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all whitespace-nowrap ${fabricFilter === f ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-900 border-slate-800 text-slate-500'}`}>
+                <button key={f} onClick={() => setFabricFilter(f)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all whitespace-nowrap ${fabricFilter === f ? 'bg-white border-white/20 text-slate-950' : 'bg-[#0f172a] border-[#1e293b] text-slate-500'}`}>
                   {f === 'all' ? 'Todos' : f}
                 </button>
               ))}
@@ -467,21 +467,21 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {(filteredProducts || []).map(product => (
               <div key={product.id}
-                className="group bg-slate-900/40 rounded-3xl border border-slate-800/50 overflow-hidden hover:border-indigo-500/30 transition-all cursor-pointer relative flex flex-col"
+                className="group bg-[#0f172a]/40 rounded-3xl border border-[#1e293b] overflow-hidden hover:border-[#1e293b] transition-all cursor-pointer relative flex flex-col"
                 onClick={() => handleAddToCart(product)}
               >
-                <div className="aspect-[4/5] relative overflow-hidden bg-slate-950">
+                <div className="aspect-[4/5] relative overflow-hidden bg-[#1C1C26]">
                   {product.imageUrl ? (
                     <img src={product.imageUrl} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={product.name} />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-slate-900"><Tag className="w-8 h-8 opacity-20" /></div>
+                    <div className="w-full h-full flex items-center justify-center bg-[#0f172a]"><Tag className="w-8 h-8 opacity-20" /></div>
                   )}
                   <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
-                    <div className="bg-black/60 backdrop-blur px-2 py-1 rounded-lg border border-white/10">
+                    <div className="bg-black/60 px-2 py-1 rounded-lg border border-[#1e293b]">
                       <span className="text-white text-[10px] font-black tracking-widest">R$ {product.basePrice.toFixed(2)}</span>
                     </div>
                     {!readOnly && product.costPrice > 0 && (
-                      <div className="bg-emerald-900/80 backdrop-blur px-1.5 py-0.5 rounded-lg border border-emerald-500/30 shadow-lg">
+                      <div className="bg-emerald-900/80 px-1.5 py-0.5 rounded-lg border border-emerald-500/30 shadow-lg">
                         <span className="text-emerald-400 text-[8px] font-bold tracking-widest">
                           LUCRO: R$ {(product.basePrice - product.costPrice).toFixed(2)}
                         </span>
@@ -494,7 +494,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
                   <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-3">{product.category}</p>
 
                   {!readOnly && (
-                    <div className="mt-auto pt-3 border-t border-slate-800 flex justify-between items-center">
+                    <div className="mt-auto pt-3 border-t border-[#1e293b] flex justify-between items-center">
                       <div className="flex bg-slate-800 rounded-full p-0.5">
                         <button
                           onClick={(e) => {
@@ -519,7 +519,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
                     </div>
                   )}
                   {readOnly && (
-                    <button className="mt-auto w-full py-2 bg-indigo-600/10 text-indigo-400 font-black uppercase text-[10px] tracking-widest rounded-xl hover:bg-indigo-600 hover:text-white transition-colors group-hover:block hidden">
+                    <button className="mt-auto w-full py-2 bg-white/10 text-white font-black uppercase text-[10px] tracking-widest rounded-xl hover:bg-white hover:text-slate-950 transition-colors group-hover:block hidden">
                       Adicionar
                     </button>
                   )}
@@ -533,10 +533,10 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
 
       {/* POS SIDEBAR (INTERNAL ONLY) */}
       {!readOnly && (
-        <div className="w-[450px] bg-[#020617] border-l border-slate-800 flex flex-col h-full shadow-2xl z-20">
-          <div className="p-6 border-b border-slate-800">
+        <div className="w-[450px] bg-[#0b1221] border-l border-[#1e293b] flex flex-col h-full shadow-2xl z-20">
+          <div className="p-6 border-b border-[#1e293b]">
             <h2 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-              <ShoppingBag className="w-5 h-5 text-indigo-500" />
+              <ShoppingBag className="w-5 h-5 text-white" />
               Carrinho ({cart.length})
             </h2>
           </div>
@@ -550,7 +550,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
               </div>
             ) : (
               cart.map((item, idx) => (
-                <div key={idx} className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800 flex gap-3 relative group">
+                <div key={idx} className="bg-[#0f172a] p-4 rounded-2xl border border-[#1e293b] flex gap-3 relative group">
                   <button onClick={() => removeFromCart(idx)} className="absolute top-2 right-2 text-slate-600 hover:text-rose-500 p-1"><X className="w-3 h-3" /></button>
                   <div className="w-16 h-16 bg-white rounded-xl overflow-hidden shrink-0">
                     <img src={item.imageUrl} className="w-full h-full object-cover" />
@@ -562,7 +562,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
                         <button
                           key={s}
                           onClick={() => updateCartItem(idx, 'size', s)}
-                          className={`px-2 py-0.5 rounded text-[9px] font-bold border ${item.size === s ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-950 border-slate-800 text-slate-500'}`}
+                          className={`px-2 py-0.5 rounded text-[9px] font-bold border ${item.size === s ? 'bg-white border-white/20 text-slate-950' : 'bg-[#1C1C26] border-[#1e293b] text-slate-500'}`}
                         >
                           {s}
                         </button>
@@ -570,12 +570,12 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
                       {(!item.allowedGrades || Object.keys(item.allowedGrades).length === 0) && <span className="text-[9px] text-rose-500">Sem tamanhos</span>}
                     </div>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center bg-slate-950 rounded-lg border border-slate-800">
+                      <div className="flex items-center bg-[#1C1C26] rounded-lg border border-[#1e293b]">
                         <button onClick={() => updateCartItem(idx, 'quantity', Math.max(1, item.quantity - 1))} className="px-2 text-slate-400 hover:text-white">-</button>
                         <span className="text-xs font-black px-1">{item.quantity}</span>
                         <button onClick={() => updateCartItem(idx, 'quantity', item.quantity + 1)} className="px-2 text-slate-400 hover:text-white">+</button>
                       </div>
-                      <span className="text-xs font-black text-indigo-400">R$ {(item.price * item.quantity).toFixed(2)}</span>
+                      <span className="text-xs font-black text-white">R$ {(item.price * item.quantity).toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
@@ -584,14 +584,14 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
           </div>
 
           {/* POS Footer */}
-          <div className="p-6 bg-[#0f172a] border-t border-slate-800 space-y-4">
+          <div className="p-6 bg-[#0f172a] border-t border-[#1e293b] space-y-4">
             {/* Client Selector */}
             <div>
               <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-2">Cliente</label>
               <select
                 value={selectedClientId}
                 onChange={e => setSelectedClientId(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm font-bold text-white focus:border-indigo-500 outline-none"
+                className="w-full bg-[#1C1C26] border border-[#1e293b] rounded-xl px-4 py-3 text-sm font-bold text-white focus:border-white/20 outline-none"
               >
                 <option value="">Selecione um cliente...</option>
                 {(clients || []).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -610,7 +610,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
                   <button
                     key={m.label}
                     onClick={() => setPosPaymentTypeLabel(m.label)}
-                    className={`py-3 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${posPaymentTypeLabel === m.label ? 'bg-emerald-600/20 border-emerald-500 text-emerald-400' : 'bg-slate-950 border-slate-800 text-slate-500 hover:bg-slate-900'}`}
+                    className={`py-3 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${posPaymentTypeLabel === m.label ? 'bg-emerald-600/20 border-emerald-500 text-emerald-400' : 'bg-[#1C1C26] border-[#1e293b] text-slate-500 hover:bg-[#0f172a]'}`}
                   >
                     <m.icon className="w-4 h-4" />
                     <span className="text-[8px] font-black uppercase tracking-widest">{m.label}</span>
@@ -637,7 +637,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
                   return acc + (revenue - cost);
                 }, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
               </div>
-              <div className="flex justify-between items-end pt-2 border-t border-slate-800">
+              <div className="flex justify-between items-end pt-2 border-t border-[#1e293b]">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Total Geral</span>
                 <span className="text-3xl font-black text-white">R$ {cartTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
               </div>
@@ -646,7 +646,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
             <button
               onClick={handlePOSCheckout}
               disabled={isSubmittingOrder}
-              className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-indigo-900/20 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-4 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-black/20 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
             >
               <span>{isSubmittingOrder ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}</span>
               Finalizar Venda
@@ -657,22 +657,22 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
 
       {/* PUBLIC CART MODAL (Only for ReadOnly) */}
       {readOnly && isCartOpen && (
-        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0f172a] rounded-[2rem] w-full max-w-lg border border-slate-800 p-8 shadow-2xl relative">
+        <div className="fixed inset-0 bg-[#1C1C26]/90 z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0f172a] rounded-2xl w-full max-w-lg border border-[#1e293b] p-8 shadow-2xl relative">
             <button onClick={() => setIsCartOpen(false)} className="absolute top-4 right-4 p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white"><X className="w-4 h-4" /></button>
             <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-6">Seu Pedido</h3>
             <div className="space-y-4 max-h-[50vh] overflow-y-auto mb-6">
               {cart.map((item, idx) => (
-                <div key={idx} className="flex gap-4 items-center bg-slate-900/50 p-3 rounded-xl border border-slate-800">
+                <div key={idx} className="flex gap-4 items-center bg-[#0f172a] p-3 rounded-xl border border-[#1e293b]">
                   <img src={item.imageUrl} className="w-12 h-12 rounded-lg object-cover" />
                   <div className="flex-1">
                     <p className="font-bold text-slate-200 text-xs uppercase">{item.productName}</p>
                     <div className="flex gap-2 mt-1">
-                      <select value={item.size} onChange={e => updateCartItem(idx, 'size', e.target.value)} className="bg-slate-950 border border-slate-800 rounded text-[10px] px-2 py-1 text-white">
+                      <select value={item.size} onChange={e => updateCartItem(idx, 'size', e.target.value)} className="bg-[#1C1C26] border border-[#1e293b] rounded text-[10px] px-2 py-1 text-white">
                         <option value="">Tam</option>
                         {(Object.values(item.allowedGrades || {}).flat() as string[]).map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
-                      <input type="number" value={item.quantity} onChange={e => updateCartItem(idx, 'quantity', parseInt(e.target.value))} className="w-12 bg-slate-950 border border-slate-800 rounded text-[10px] px-2 py-1 text-white text-center" />
+                      <input type="number" value={item.quantity} onChange={e => updateCartItem(idx, 'quantity', parseInt(e.target.value))} className="w-12 bg-[#1C1C26] border border-[#1e293b] rounded text-[10px] px-2 py-1 text-white text-center" />
                     </div>
                   </div>
                   <button onClick={() => removeFromCart(idx)}><Trash2 className="w-4 h-4 text-rose-500" /></button>
@@ -680,8 +680,8 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
               ))}
             </div>
             <div className="space-y-3">
-              <input placeholder="Seu Nome" value={clientForm.name} onChange={e => setClientForm({ ...clientForm, name: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white font-bold" />
-              <input placeholder="WhatsApp" value={clientForm.phone} onChange={e => setClientForm({ ...clientForm, phone: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white font-bold" />
+              <input placeholder="Seu Nome" value={clientForm.name} onChange={e => setClientForm({ ...clientForm, name: e.target.value })} className="w-full bg-[#1C1C26] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-white font-bold" />
+              <input placeholder="WhatsApp" value={clientForm.phone} onChange={e => setClientForm({ ...clientForm, phone: e.target.value })} className="w-full bg-[#1C1C26] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-white font-bold" />
               <button onClick={handlePublicCheckout} disabled={isSubmittingOrder} className="w-full py-4 bg-emerald-600 text-white rounded-xl font-black uppercase text-xs tracking-widest hover:bg-emerald-500 transition-all">Enviar Solicitação</button>
             </div>
           </div>
@@ -690,8 +690,8 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
 
       {/* ADMIN EDIT MODAL */}
       {editingProduct && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0f172a] rounded-[2.5rem] w-full max-w-2xl border border-slate-800 p-8 md:p-10 shadow-2xl animate-in zoom-in-95 overflow-y-auto max-h-[95vh] custom-scrollbar">
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0f172a] rounded-2xl w-full max-w-2xl border border-[#1e293b] p-8 md:p-10 shadow-2xl animate-in zoom-in-95 overflow-y-auto max-h-[95vh] custom-scrollbar">
             {/* Header */}
             <div className="flex justify-between items-start mb-6">
               <div>
@@ -707,9 +707,9 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
 
             {/* Tabs */}
             {editingProduct.id && (
-              <div className="flex gap-2 mb-8 bg-slate-900/50 p-1.5 rounded-xl border border-slate-800 inline-flex">
-                <button onClick={() => setActiveRecipeTab('details')} className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${activeRecipeTab === 'details' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>Detalhes</button>
-                <button onClick={() => setActiveRecipeTab('composition')} className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${activeRecipeTab === 'composition' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'} flex items-center gap-2`}><FlaskConical className="w-3.5 h-3.5" /> Composição</button>
+              <div className="flex gap-2 mb-8 bg-[#0f172a] p-1.5 rounded-xl border border-[#1e293b] inline-flex">
+                <button onClick={() => setActiveRecipeTab('details')} className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${activeRecipeTab === 'details' ? 'bg-[#8B5CF6] text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>Detalhes</button>
+                <button onClick={() => setActiveRecipeTab('composition')} className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${activeRecipeTab === 'composition' ? 'bg-[#8B5CF6] text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'} flex items-center gap-2`}><FlaskConical className="w-3.5 h-3.5" /> Composição</button>
               </div>
             )}
 
@@ -719,7 +719,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
                 <div className="space-y-8 animate-in fade-in slide-in-from-left-4 duration-500">
                   {/* Image Upload */}
                   <div className="flex flex-col items-center">
-                    <div onClick={() => fileInputRef.current?.click()} className="w-64 h-64 rounded-[2.5rem] bg-slate-900 border-2 border-dashed border-slate-800 flex flex-col items-center justify-center cursor-pointer overflow-hidden group relative hover:border-indigo-500/50">
+                    <div onClick={() => fileInputRef.current?.click()} className="w-64 h-64 rounded-2xl bg-[#0f172a] border-2 border-dashed border-[#1e293b] flex flex-col items-center justify-center cursor-pointer overflow-hidden group relative hover:border-white/20">
                       {editingProduct.imageUrl ? <img src={editingProduct.imageUrl} className="w-full h-full object-contain bg-white" /> : <Upload className="w-10 h-10 text-slate-700" />}
                     </div>
                     <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" />
@@ -728,23 +728,23 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="col-span-full space-y-2">
                       <label className="text-[10px] font-black text-slate-500 uppercase">Nome</label>
-                      <input className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-slate-100 font-bold" value={editingProduct.name} onChange={e => setEditingProduct({ ...editingProduct, name: e.target.value })} />
+                      <input className="w-full bg-[#1C1C26] border border-[#1e293b] rounded-2xl px-5 py-4 text-slate-100 font-bold" value={editingProduct.name} onChange={e => setEditingProduct({ ...editingProduct, name: e.target.value })} />
                     </div>
                     <div className="col-span-full space-y-2">
-                      <div className="flex justify-between"><label className="text-[10px] font-black text-slate-500 uppercase">Descrição</label><button onClick={handleGenerateDescription} className="text-[9px] text-indigo-400 font-bold">✨ Gerar AI</button></div>
-                      <textarea className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-slate-100 font-medium h-24" value={editingProduct.description || ''} onChange={e => setEditingProduct({ ...editingProduct, description: e.target.value })} />
+                      <div className="flex justify-between"><label className="text-[10px] font-black text-slate-500 uppercase">Descrição</label><button onClick={handleGenerateDescription} className="text-[9px] text-white font-bold">✨ Gerar AI</button></div>
+                      <textarea className="w-full bg-[#1C1C26] border border-[#1e293b] rounded-2xl px-5 py-4 text-slate-100 font-medium h-24" value={editingProduct.description || ''} onChange={e => setEditingProduct({ ...editingProduct, description: e.target.value })} />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-slate-500 uppercase">Preço Venda (R$)</label>
-                        <input type="number" step="0.01" className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-slate-100 font-black text-lg focus:border-indigo-500 outline-none" value={editingProduct.basePrice} onChange={e => setEditingProduct({ ...editingProduct, basePrice: parseFloat(e.target.value) })} />
+                        <input type="number" step="0.01" className="w-full bg-[#1C1C26] border border-[#1e293b] rounded-2xl px-5 py-4 text-slate-100 font-black text-lg focus:border-white/20 outline-none" value={editingProduct.basePrice} onChange={e => setEditingProduct({ ...editingProduct, basePrice: parseFloat(e.target.value) })} />
                       </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-slate-500 uppercase">Custo de Produção (R$)</label>
                         <input
                           type="number"
                           step="0.01"
-                          className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-slate-300 font-black text-lg focus:border-indigo-500 outline-none"
+                          className="w-full bg-[#1C1C26] border border-[#1e293b] rounded-2xl px-5 py-4 text-slate-300 font-black text-lg focus:border-white/20 outline-none"
                           value={editingProduct.costPrice || ''}
                           onChange={e => {
                             const val = parseFloat(e.target.value);
@@ -760,7 +760,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
                     )}
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-slate-500 uppercase">Categoria</label>
-                      <select className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-slate-100 font-bold" value={editingProduct.category} onChange={e => setEditingProduct({ ...editingProduct, category: e.target.value })}>
+                      <select className="w-full bg-[#1C1C26] border border-[#1e293b] rounded-2xl px-5 py-4 text-slate-100 font-bold" value={editingProduct.category} onChange={e => setEditingProduct({ ...editingProduct, category: e.target.value })}>
                         {(FABRICS || []).map(f => <option key={f.id} value={f.name}>{f.name}</option>)}
                       </select>
                     </div>
@@ -774,7 +774,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
                       {(GRADES || []).map(g => {
                         const isActive = editingProduct.allowedGrades?.[g.label];
                         return (
-                          <div key={g.label} className={`border rounded-2xl transition-all ${isActive ? 'bg-slate-900/50 border-indigo-500/50' : 'bg-slate-950 border-slate-800'}`}>
+                          <div key={g.label} className={`border rounded-2xl transition-all ${isActive ? 'bg-[#0f172a] border-white/20' : 'bg-[#1C1C26] border-[#1e293b]'}`}>
                             {/* Header / Toggle */}
                             <div
                               className="p-4 flex items-center justify-between cursor-pointer"
@@ -786,23 +786,23 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
                               }}
                             >
                               <div className="flex items-center gap-3">
-                                <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${isActive ? 'bg-indigo-600 border-indigo-500 text-white' : 'border-slate-700 bg-slate-900'}`}>
+                                <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${isActive ? 'bg-white border-white/20 text-slate-950' : 'border-slate-700 bg-[#0f172a]'}`}>
                                   {isActive && <Check className="w-3.5 h-3.5" />}
                                 </div>
                                 <span className={`text-xs font-black uppercase tracking-widest ${isActive ? 'text-white' : 'text-slate-500'}`}>{g.label}</span>
                               </div>
-                              {isActive && <span className="text-[10px] text-indigo-400 font-bold">Configurar Medidas</span>}
+                              {isActive && <span className="text-[10px] text-white font-bold">Configurar Medidas</span>}
                             </div>
 
                             {/* Measurements Grid (Expanded) */}
                             {isActive && (
-                              <div className="px-4 pb-4 border-t border-slate-800/50 pt-4">
+                              <div className="px-4 pb-4 border-t border-[#1e293b] pt-4">
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                   {g.sizes.map(size => {
                                     const key = `${g.label}-${size}`;
                                     const current = editingProduct.measurements?.[key] || { width: '', height: '' };
                                     return (
-                                      <div key={size} className="bg-slate-950 border border-slate-800 rounded-xl p-2 flex flex-col gap-2">
+                                      <div key={size} className="bg-[#1C1C26] border border-[#1e293b] rounded-xl p-2 flex flex-col gap-2">
                                         <div className="flex items-center justify-between">
                                           <span className="text-[10px] font-black bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded uppercase">{size}</span>
                                         </div>
@@ -812,7 +812,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
                                             <input
                                               type="text"
                                               placeholder="cm"
-                                              className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1 px-1 text-center text-xs text-white font-bold focus:border-indigo-500 outline-none"
+                                              className="w-full bg-[#0f172a] border border-[#1e293b] rounded-lg py-1 px-1 text-center text-xs text-white font-bold focus:border-white/20 outline-none"
                                               value={current.height}
                                               onChange={e => {
                                                 const val = e.target.value;
@@ -831,7 +831,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
                                             <input
                                               type="text"
                                               placeholder="cm"
-                                              className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1 px-1 text-center text-xs text-white font-bold focus:border-indigo-500 outline-none"
+                                              className="w-full bg-[#0f172a] border border-[#1e293b] rounded-lg py-1 px-1 text-center text-xs text-white font-bold focus:border-white/20 outline-none"
                                               value={current.width}
                                               onChange={e => {
                                                 const val = e.target.value;
@@ -863,21 +863,21 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
                 <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
                   <div className="space-y-3">
                     {recipeItems.map(item => (
-                      <div key={item.id} className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex justify-between items-center">
-                        <div><p className="font-bold text-slate-200">{item.inventoryItemName}</p><p className="text-xs text-indigo-400">{item.quantityRequired} {item.unit} / un</p></div>
+                      <div key={item.id} className="bg-[#0f172a] border border-[#1e293b] p-4 rounded-xl flex justify-between items-center">
+                        <div><p className="font-bold text-slate-200">{item.inventoryItemName}</p><p className="text-xs text-white">{item.quantityRequired} {item.unit} / un</p></div>
                         <button onClick={() => handleRemoveRecipeItem(item.id)} className="text-rose-500 hover:text-white"><Trash2 className="w-4 h-4" /></button>
                       </div>
                     ))}
                   </div>
-                  <div className="pt-6 border-t border-slate-800">
+                  <div className="pt-6 border-t border-[#1e293b]">
                     <RecipeAdder inventory={inventory} onAdd={handleAddRecipeItem} />
                   </div>
                 </div>
               )}
 
-              <div className="mt-8 pt-8 border-t border-slate-800 flex justify-end gap-4">
+              <div className="mt-8 pt-8 border-t border-[#1e293b] flex justify-end gap-4">
                 <button onClick={() => setEditingProduct(null)} className="px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest text-slate-500 hover:bg-slate-800">Cancelar</button>
-                <button onClick={handleSaveProduct} className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg flex items-center gap-2">
+                <button onClick={handleSaveProduct} className="px-8 py-3 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg flex items-center gap-2">
                   <Save className="w-4 h-4" /> Salvar
                 </button>
               </div>

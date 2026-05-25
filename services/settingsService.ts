@@ -14,6 +14,10 @@ export interface CompanySettings {
     evolution_api_key?: string;
     evolution_instance_name?: string;
     cloudbot_enabled?: boolean;
+    splash_enabled?: boolean;
+    splash_duration?: string | number;
+    splash_logo_url?: string;
+    splash_message?: string;
 }
 
 export const settingsService = {

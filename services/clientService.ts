@@ -12,6 +12,18 @@ export const clientService = {
         return data as Client[];
     },
 
+    async getById(id: string) {
+        const { data, error } = await supabase
+            .from('clients')
+            .select('*')
+            .eq('id', id)
+            .single();
+            
+        if (error) throw error;
+        return data as Client;
+    },
+
+
     async create(client: Omit<Client, 'id'>) {
         const { data, error } = await supabase
             .from('clients')

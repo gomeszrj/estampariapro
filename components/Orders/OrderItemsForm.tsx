@@ -35,12 +35,12 @@ const OrderItemsForm: React.FC<OrderItemsFormProps> = ({
     <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
       <div className="flex justify-between items-center mb-4">
         <h4 className="font-black text-slate-100 flex items-center gap-3 text-lg tracking-tighter uppercase">
-          <ShoppingCart className="w-5 h-5 text-indigo-400" />
+          <ShoppingCart className="w-5 h-5 text-white" />
           Itens do Pedido ({parsedItems.length})
         </h4>
         <button
           onClick={addNewManualItem}
-          className="text-[9px] font-black uppercase text-indigo-400 bg-indigo-500/10 px-5 py-2.5 rounded-xl hover:bg-indigo-500/20 transition-all border border-indigo-500/20 tracking-widest flex items-center gap-2"
+          className="text-[9px] font-black uppercase text-white bg-white/10 px-5 py-2.5 rounded-xl hover:bg-white/20 transition-all border border-[#1e293b] tracking-widest flex items-center gap-2"
         >
           <Plus className="w-3 h-3" /> Adicionar
         </button>
@@ -48,7 +48,7 @@ const OrderItemsForm: React.FC<OrderItemsFormProps> = ({
 
       <div className="grid grid-cols-1 gap-6">
         {parsedItems.length === 0 ? (
-          <div className="py-20 flex flex-col items-center justify-center text-slate-800 border-2 border-dashed border-slate-800 rounded-[2rem]">
+          <div className="py-20 flex flex-col items-center justify-center text-slate-800 border-2 border-dashed border-[#1e293b] rounded-2xl">
             <ShoppingCart className="w-16 h-16 mb-4 opacity-10" />
             <p className="font-black uppercase tracking-[0.3em] text-[10px] opacity-40">Nenhum item adicionado</p>
           </div>
@@ -86,7 +86,7 @@ const OrderItemsForm: React.FC<OrderItemsFormProps> = ({
             const availableSizes = specificAllowedSizes || currentGradeConfig.sizes;
 
             return (
-              <div key={idx} className="bg-[#0f172a] p-5 rounded-[1.5rem] border border-slate-800 shadow-sm relative group hover:border-indigo-500/30 transition-colors">
+              <div key={idx} className="bg-[#0f172a] p-5 rounded-[1.5rem] border border-[#1e293b] shadow-sm relative group hover:border-slate-700 transition-colors">
                 <div className="absolute top-4 right-4 z-10">
                   <button onClick={() => removeItem(idx)} className="text-slate-600 hover:text-rose-500 transition-colors">
                     <Trash2 className="w-4 h-4" />
@@ -97,7 +97,7 @@ const OrderItemsForm: React.FC<OrderItemsFormProps> = ({
                     <label className="text-[8px] font-black text-slate-600 uppercase tracking-wider ml-1">Produto</label>
                     <input
                       list={`prod-list-${idx}`}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-3 text-xs font-bold text-white uppercase focus:border-indigo-500 outline-none"
+                      className="w-full bg-[#0b1221] border border-[#1e293b] rounded-xl px-3 py-3 text-xs font-bold text-white uppercase focus:border-slate-600 outline-none"
                       value={item.product}
                       onChange={(e) => updateItem(idx, 'product', e.target.value)}
                       placeholder="Busque..."
@@ -110,7 +110,7 @@ const OrderItemsForm: React.FC<OrderItemsFormProps> = ({
                     <div className="flex-1 space-y-1">
                       <label className="text-[8px] font-black text-slate-600 uppercase tracking-wider ml-1">Grade</label>
                       <select
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-3 text-xs font-bold text-slate-300 outline-none uppercase"
+                        className="w-full bg-[#1C1C26] border border-[#1e293b] rounded-xl px-3 py-3 text-xs font-bold text-slate-300 outline-none uppercase"
                         value={currentGradeLabel}
                         onChange={e => updateItem(idx, 'grade', e.target.value)}
                       >
@@ -120,7 +120,7 @@ const OrderItemsForm: React.FC<OrderItemsFormProps> = ({
                     <div className="flex-1 space-y-1">
                       <label className="text-[8px] font-black text-slate-600 uppercase tracking-wider ml-1">Tamanho</label>
                       <select
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-3 text-xs font-bold text-slate-300 outline-none"
+                        className="w-full bg-[#1C1C26] border border-[#1e293b] rounded-xl px-3 py-3 text-xs font-bold text-slate-300 outline-none"
                         value={availableSizes.includes(item.size || '') ? item.size : availableSizes[0]}
                         onChange={e => updateItem(idx, 'size', e.target.value)}
                       >
@@ -131,7 +131,7 @@ const OrderItemsForm: React.FC<OrderItemsFormProps> = ({
                       <label className="text-[8px] font-black text-slate-600 uppercase tracking-wider ml-1 text-center block">Qtd</label>
                       <input
                         type="number"
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-2 py-3 text-xs font-black text-indigo-400 text-center outline-none"
+                        className="w-full bg-[#0b1221] border border-[#1e293b] rounded-xl px-2 py-3 text-xs font-black text-white text-center outline-none"
                         value={item.quantity === 0 ? '' : item.quantity}
                         onChange={e => {
                           const val = parseInt(e.target.value);
@@ -148,7 +148,7 @@ const OrderItemsForm: React.FC<OrderItemsFormProps> = ({
       </div>
 
       {/* Footer Actions */}
-      <div className="mt-8 pt-8 border-t border-slate-800 flex items-center justify-between sticky bottom-0 bg-[#0f172a] pb-2">
+      <div className="mt-8 pt-8 border-t border-[#1e293b] flex items-center justify-between sticky bottom-0 bg-[#0f172a] pb-2">
         <div className="flex gap-8">
           <div>
             <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Custo Estimado</p>
@@ -190,7 +190,7 @@ const OrderItemsForm: React.FC<OrderItemsFormProps> = ({
           <button
             onClick={handleFinalize}
             disabled={isSaving}
-            className="px-10 py-4 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-indigo-700 disabled:opacity-50"
+            className="px-10 py-4 bg-[#8B5CF6] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-white/90 disabled:opacity-50"
           >
             {isSaving ? 'Salvando...' : 'Finalizar Pedido'}
           </button>

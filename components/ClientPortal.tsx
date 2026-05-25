@@ -37,19 +37,24 @@ const ClientPortal: React.FC = () => {
 
         const fetchOrders = async () => {
             try {
+                const token = localStorage.getItem('client_token');
+                if (!token) {
+                    handleLogout();
+                    return;
+                }
+
                 const [ordersRes, settingsRes] = await Promise.all([
-                    supabase
-                        .from('orders')
-                        .select(`*, items:order_items(*)`)
-                        .eq('client_id', clientSession.id)
-                        .order('created_at', { ascending: false }),
+                    fetch('/api/client-orders', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    }).then(res => {
+                        if (!res.ok) throw new Error('Failed to fetch orders');
+                        return res.json();
+                    }),
                     settingsService.getPublicSettings()
                 ]);
 
-                if (ordersRes.error) throw ordersRes.error;
-
                 // Basic mapping simulation
-                const formatted = (ordersRes.data || []).map((o: any) => ({
+                const formatted = (ordersRes.orders || []).map((o: any) => ({
                     ...o,
                     orderNumber: o.order_number,
                     createdAt: o.created_at,
@@ -71,6 +76,8 @@ const ClientPortal: React.FC = () => {
                 }
             } catch (error) {
                 console.error("Failed to fetch client orders:", error);
+                // If token is invalid, logout
+                handleLogout();
             } finally {
                 setLoading(false);
             }
@@ -138,8 +145,8 @@ const ClientPortal: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#020617] flex items-center justify-center">
-                <div className="text-indigo-400 font-bold tracking-widest uppercase text-sm animate-pulse flex items-center gap-3">
+            <div className="min-h-screen bg-[#0b1221] flex items-center justify-center">
+                <div className="text-white font-bold tracking-widest uppercase text-sm animate-pulse flex items-center gap-3">
                     <Package className="w-5 h-5 animate-spin" /> Carregando Portal...
                 </div>
             </div>
@@ -151,12 +158,12 @@ const ClientPortal: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-[#020617] text-slate-200">
+        <div className="min-h-screen bg-[#0b1221] text-slate-200">
             {/* Header */}
-            <header className="h-20 bg-[#0f172a]/60 backdrop-blur-xl border-b border-slate-800/50 flex items-center justify-between px-6 md:px-10 sticky top-0 z-30">
+            <header className="h-20 bg-[#0f172a]/60 border-b border-[#1e293b] flex items-center justify-between px-6 md:px-10 sticky top-0 z-30">
                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-indigo-500/10 rounded-xl border border-indigo-500/20 flex items-center justify-center">
-                        <Truck className="w-5 h-5 text-indigo-400" />
+                    <div className="w-10 h-10 bg-white/10 rounded-xl border border-[#1e293b] flex items-center justify-center">
+                        <Truck className="w-5 h-5 text-white" />
                     </div>
                     <div>
                         <h1 className="text-lg md:text-xl font-black text-white tracking-tight">Meus Pedidos</h1>
@@ -167,7 +174,7 @@ const ClientPortal: React.FC = () => {
                     <a
                         href="/?view=public_catalog"
                         target="_blank"
-                        className="hidden md:flex items-center gap-2 text-xs font-bold text-indigo-400 hover:text-indigo-300 uppercase tracking-widest px-4 py-2 bg-indigo-500/10 rounded-lg transition-colors border border-indigo-500/20"
+                        className="hidden md:flex items-center gap-2 text-xs font-bold text-white hover:text-white/80 uppercase tracking-widest px-4 py-2 bg-white/10 rounded-lg transition-colors border border-[#1e293b]"
                     >
                         Catálogo Público
                     </a>
@@ -196,7 +203,7 @@ const ClientPortal: React.FC = () => {
                 )}
 
                 {orders.length === 0 ? (
-                    <div className="text-center py-20 bg-[#0f172a] rounded-3xl border border-slate-800">
+                    <div className="text-center py-20 bg-[#0f172a] rounded-3xl border border-[#1e293b]">
                         <div className="w-20 h-20 bg-slate-800/50 rounded-full flex items-center justify-center mx-auto mb-6">
                             <Package className="w-8 h-8 text-slate-500" />
                         </div>
@@ -210,7 +217,7 @@ const ClientPortal: React.FC = () => {
                             const StatusIcon = Clock;
 
                             return (
-                                <div key={order.id} className="bg-[#0f172a] rounded-3xl border border-slate-800 overflow-hidden hover:border-slate-700 transition-colors">
+                                <div key={order.id} className="bg-[#0f172a] rounded-3xl border border-[#1e293b] overflow-hidden hover:border-slate-700 transition-colors">
                                     <div className="p-5 md:p-8 flex flex-col items-start md:flex-row md:items-center justify-between gap-5 md:gap-6">
                                         <div className="flex items-center gap-4 md:gap-6 w-full md:w-auto">
                                             <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center border shrink-0 ${statusConfig?.color || 'bg-slate-800 text-slate-300 border-slate-700'}`}>
@@ -252,7 +259,7 @@ const ClientPortal: React.FC = () => {
                                             </a>
                                             <button
                                                 onClick={() => openChat(order)}
-                                                className="w-full md:w-auto flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg shadow-indigo-600/20"
+                                                className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg shadow-white/5"
                                             >
                                                 <MessageCircle className="w-5 h-5" /> Falar com Vendedor
                                             </button>
@@ -267,13 +274,13 @@ const ClientPortal: React.FC = () => {
 
             {/* Chat Modal */}
             {selectedOrder && (
-                <div className="fixed inset-0 bg-[#020617]/80 backdrop-blur-sm z-50 flex justify-end">
-                    <div className="w-full max-w-md bg-[#0f172a] h-full border-l border-slate-800 flex flex-col shadow-2xl animate-in slide-in-from-right-8">
+                <div className="fixed inset-0 bg-[#0b1221]/80 z-50 flex justify-end">
+                    <div className="w-full max-w-md bg-[#0f172a] h-full border-l border-[#1e293b] flex flex-col shadow-2xl animate-in slide-in-from-right-8">
                         {/* Header */}
-                        <div className="h-20 bg-[#1e293b]/50 flex items-center justify-between px-6 border-b border-slate-800">
+                        <div className="h-20 bg-[#1e293b]/50 flex items-center justify-between px-6 border-b border-[#1e293b]">
                             <div>
                                 <h2 className="text-lg font-black text-white">Atendimento</h2>
-                                <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest">Pedido #{selectedOrder.orderNumber}</p>
+                                <p className="text-xs font-bold text-white uppercase tracking-widest">Pedido #{selectedOrder.orderNumber}</p>
                             </div>
                             <button
                                 onClick={() => setSelectedOrder(null)}
@@ -285,7 +292,7 @@ const ClientPortal: React.FC = () => {
 
                         {/* Messages Area */}
                         <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                            <div className="text-center pb-6 border-b border-slate-800/50 mb-6">
+                            <div className="text-center pb-6 border-b border-[#1e293b] mb-6">
                                 <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Início do Atendimento</p>
                                 <p className="text-[10px] text-slate-600">Este chat é focado exclusivamente no pedido #{selectedOrder.orderNumber}</p>
                             </div>
@@ -294,9 +301,9 @@ const ClientPortal: React.FC = () => {
                                 const isClient = msg.sender === 'client';
                                 return (
                                     <div key={msg.id} className={`flex ${isClient ? 'justify-end' : 'justify-start'}`}>
-                                        <div className={`max-w-[85%] rounded-2xl p-4 ${isClient ? 'bg-indigo-600 text-white rounded-tr-sm' : 'bg-[#1e293b] text-slate-200 border border-slate-800 rounded-tl-sm'}`}>
+                                        <div className={`max-w-[85%] rounded-2xl p-4 ${isClient ? 'bg-[#8B5CF6] text-white rounded-tr-sm' : 'bg-[#1e293b] text-slate-200 border border-[#1e293b] rounded-tl-sm'}`}>
                                             <p className="text-sm font-medium leading-relaxed">{msg.message}</p>
-                                            <p className={`text-[10px] font-bold mt-2 ${isClient ? 'text-indigo-200' : 'text-slate-500'} text-right`}>
+                                            <p className={`text-[10px] font-bold mt-2 ${isClient ? 'text-white/70' : 'text-slate-500'} text-right`}>
                                                 {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </p>
                                         </div>
@@ -313,19 +320,19 @@ const ClientPortal: React.FC = () => {
                         </div>
 
                         {/* Input Area */}
-                        <div className="p-4 bg-[#1e293b]/50 border-t border-slate-800">
+                        <div className="p-4 bg-[#1e293b]/50 border-t border-[#1e293b]">
                             <form onSubmit={sendMessage} className="relative">
                                 <input
                                     type="text"
                                     value={newMessage}
                                     onChange={(e) => setNewMessage(e.target.value)}
                                     placeholder="Digite sua mensagem..."
-                                    className="w-full bg-[#0f172a] border border-slate-700/50 rounded-xl py-4 pl-4 pr-14 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-sm font-medium"
+                                    className="w-full bg-[#0f172a] border border-slate-700/50 rounded-xl py-4 pl-4 pr-14 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-slate-700/50 transition-all text-sm font-medium"
                                 />
                                 <button
                                     type="submit"
                                     disabled={sending || !newMessage.trim()}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-indigo-600 hover:bg-indigo-500 rounded-lg flex items-center justify-center text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-600/20"
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white hover:bg-white/90 rounded-lg flex items-center justify-center text-slate-950 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-white/5"
                                 >
                                     <Send className="w-4 h-4 ml-0.5" />
                                 </button>

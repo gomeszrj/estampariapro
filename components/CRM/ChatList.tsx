@@ -51,14 +51,14 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
     );
 
     return (
-        <div className="flex flex-col h-full border-r border-slate-800 bg-slate-950/50 w-80">
-            <div className="p-4 border-b border-slate-800">
+        <div className="flex flex-col h-full border-r border-[#1e293b] bg-[#1C1C26]/50 w-80">
+            <div className="p-4 border-b border-[#1e293b]">
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
                     <input
                         type="text"
                         placeholder="Buscar conversa..."
-                        className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder:text-slate-600 font-medium"
+                        className="w-full bg-[#0f172a] border border-[#1e293b] rounded-xl pl-9 pr-4 py-2.5 text-xs text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder:text-slate-600 font-medium"
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
                     />
@@ -70,7 +70,7 @@ export const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChatId
                     <div
                         key={chat.id}
                         onClick={() => onSelectChat(chat)}
-                        className={`p-4 border-b border-slate-800/50 cursor-pointer transition-all hover:bg-slate-900/50 ${selectedChatId === chat.id ? 'bg-indigo-500/10 border-l-2 border-l-indigo-500' : 'border-l-2 border-l-transparent'}`}
+                        className={`p-4 border-b border-[#1e293b] cursor-pointer transition-all hover:bg-[#0f172a] ${selectedChatId === chat.id ? 'bg-indigo-500/10 border-l-2 border-l-indigo-500' : 'border-l-2 border-l-transparent'}`}
                     >
                         <div className="flex justify-between mb-1">
                             <span className="font-bold text-slate-200 text-sm truncate max-w-[140px]">

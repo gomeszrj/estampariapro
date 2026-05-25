@@ -118,8 +118,8 @@ export const SaaSEditModal: React.FC<SaaSEditModalProps> = ({
   const tenantProfiles = profiles.filter(p => p.tenant_id === tenant.id);
 
   return (
-    <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-start justify-center p-4 overflow-y-auto">
-      <div className="bg-[#0f172a] rounded-[3rem] w-full max-w-2xl p-8 border border-slate-800 shadow-2xl animate-in zoom-in-95 my-6">
+    <div className="fixed inset-0 bg-[#1C1C26]/90 z-50 flex items-start justify-center p-4 overflow-y-auto">
+      <div className="bg-[#0f172a] rounded-[3rem] w-full max-w-2xl p-8 border border-[#1e293b] shadow-2xl animate-in zoom-in-95 my-6">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-black text-slate-100 uppercase tracking-tight">Editar: {tenant.name}</h3>
           <button onClick={onClose} className="text-slate-500 hover:text-white"><XCircle /></button>
@@ -132,7 +132,7 @@ export const SaaSEditModal: React.FC<SaaSEditModalProps> = ({
             <input
               value={editName}
               onChange={e => setEditName(e.target.value)}
-              className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none focus:ring-1 focus:ring-indigo-500"
+              className="w-full mt-1 bg-[#1C1C26] border border-[#1e293b] rounded-xl p-3 text-slate-100 font-bold outline-none focus:ring-1 focus:ring-slate-700/50"
             />
           </div>
 
@@ -142,7 +142,7 @@ export const SaaSEditModal: React.FC<SaaSEditModalProps> = ({
               <select
                 value={editPlan}
                 onChange={e => setEditPlan(e.target.value)}
-                className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none"
+                className="w-full mt-1 bg-[#1C1C26] border border-[#1e293b] rounded-xl p-3 text-slate-100 font-bold outline-none"
               >
                 {saasPlans.map(plan => (
                   <option key={plan.id} value={plan.name}>{plan.name}</option>
@@ -155,7 +155,7 @@ export const SaaSEditModal: React.FC<SaaSEditModalProps> = ({
               <select
                 value={editCycle}
                 onChange={e => setEditCycle(e.target.value)}
-                className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none"
+                className="w-full mt-1 bg-[#1C1C26] border border-[#1e293b] rounded-xl p-3 text-slate-100 font-bold outline-none"
               >
                 <option value="Mensal">Mensal</option>
                 <option value="Semestral">Semestral</option>
@@ -171,7 +171,7 @@ export const SaaSEditModal: React.FC<SaaSEditModalProps> = ({
                 type="number"
                 value={editPrice}
                 onChange={e => setEditPrice(Number(e.target.value))}
-                className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none"
+                className="w-full mt-1 bg-[#1C1C26] border border-[#1e293b] rounded-xl p-3 text-slate-100 font-bold outline-none"
               />
             </div>
             <div>
@@ -180,7 +180,7 @@ export const SaaSEditModal: React.FC<SaaSEditModalProps> = ({
                 type="date"
                 value={editEndDate}
                 onChange={e => setEditEndDate(e.target.value)}
-                className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none"
+                className="w-full mt-1 bg-[#1C1C26] border border-[#1e293b] rounded-xl p-3 text-slate-100 font-bold outline-none"
               />
             </div>
           </div>
@@ -190,11 +190,11 @@ export const SaaSEditModal: React.FC<SaaSEditModalProps> = ({
             <input
               value={editPaymentLink}
               onChange={e => setEditPaymentLink(e.target.value)}
-              className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none"
+              className="w-full mt-1 bg-[#1C1C26] border border-[#1e293b] rounded-xl p-3 text-slate-100 font-bold outline-none"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-800/50">
+          <div className="grid grid-cols-2 gap-4 pt-2 border-t border-[#1e293b]">
             <div>
               <label className="text-[9px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-1">
                 <PhoneCall className="w-3 h-3" /> WhatsApp Admin
@@ -203,7 +203,7 @@ export const SaaSEditModal: React.FC<SaaSEditModalProps> = ({
                 value={editAdminWhatsapp}
                 onChange={e => setEditAdminWhatsapp(e.target.value)}
                 placeholder="11999999999"
-                className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none focus:ring-1 focus:ring-emerald-500"
+                className="w-full mt-1 bg-[#1C1C26] border border-[#1e293b] rounded-xl p-3 text-slate-100 font-bold outline-none focus:ring-1 focus:ring-emerald-500"
               />
             </div>
             <div>
@@ -214,17 +214,17 @@ export const SaaSEditModal: React.FC<SaaSEditModalProps> = ({
                 value={editAdminEmail}
                 onChange={e => setEditAdminEmail(e.target.value)}
                 placeholder="admin@empresa.com"
-                className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none focus:ring-1 focus:ring-emerald-500"
+                className="w-full mt-1 bg-[#1C1C26] border border-[#1e293b] rounded-xl p-3 text-slate-100 font-bold outline-none focus:ring-1 focus:ring-emerald-500"
               />
             </div>
           </div>
 
           {/* Permissions Panel */}
-          <div className="border border-slate-800 rounded-2xl overflow-hidden">
+          <div className="border border-[#1e293b] rounded-2xl overflow-hidden">
             <button
               type="button"
               onClick={() => setShowEditPermissions(!showEditPermissions)}
-              className="w-full flex items-center justify-between p-4 bg-slate-900/50 hover:bg-slate-900 transition-colors"
+              className="w-full flex items-center justify-between p-4 bg-[#0f172a] hover:bg-[#0f172a] transition-colors"
             >
               <div className="flex items-center gap-3">
                 <LayoutList className="w-4 h-4 text-rose-400" />
@@ -240,7 +240,7 @@ export const SaaSEditModal: React.FC<SaaSEditModalProps> = ({
               {showEditPermissions ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
             </button>
             {showEditPermissions && !loadingEditPerms && (
-              <div className="p-4 border-t border-slate-800">
+              <div className="p-4 border-t border-[#1e293b]">
                 <PermissionsPanel
                   permissions={editPermissions}
                   onChange={toggleEdit}
@@ -253,7 +253,7 @@ export const SaaSEditModal: React.FC<SaaSEditModalProps> = ({
           </div>
 
           {/* Password Reset */}
-          <div className="pt-2 border-t border-slate-800/50">
+          <div className="pt-2 border-t border-[#1e293b]">
             <button
               onClick={() => setShowResetPassword(!showResetPassword)}
               className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-amber-500 hover:text-amber-400 transition-colors"
@@ -269,7 +269,7 @@ export const SaaSEditModal: React.FC<SaaSEditModalProps> = ({
                   <p className="text-sm text-slate-500">Nenhum usuário encontrado.</p>
                 ) : (
                   tenantProfiles.map(p => (
-                    <div key={p.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-950 p-3 rounded-xl border border-slate-800">
+                    <div key={p.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-[#1C1C26] p-3 rounded-xl border border-[#1e293b]">
                       <div>
                         <p className="text-sm font-black text-slate-200">{p.full_name || 'Sem Nome'}</p>
                         <p className="text-[10px] text-slate-500 font-mono">{p.role} · {p.id.substring(0, 8)}...</p>
@@ -281,7 +281,7 @@ export const SaaSEditModal: React.FC<SaaSEditModalProps> = ({
                             value={resetNewPassword}
                             onChange={e => setResetNewPassword(e.target.value)}
                             placeholder="Nova senha (min 6)"
-                            className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 font-bold outline-none focus:ring-1 focus:ring-amber-500 w-full sm:w-40"
+                            className="bg-[#0f172a] border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 font-bold outline-none focus:ring-1 focus:ring-amber-500 w-full sm:w-40"
                           />
                           <button
                             onClick={() => handleResetPasswordClick(p.id, p.full_name)}
@@ -300,7 +300,7 @@ export const SaaSEditModal: React.FC<SaaSEditModalProps> = ({
                       ) : (
                         <button
                           onClick={() => { setResetUserId(p.id); setResetNewPassword(''); }}
-                          className="px-3 py-2 bg-slate-900 border border-amber-500/30 text-amber-500 hover:bg-amber-500/10 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 transition-all"
+                          className="px-3 py-2 bg-[#0f172a] border border-amber-500/30 text-amber-500 hover:bg-amber-500/10 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 transition-all"
                         >
                           <KeyRound className="w-3 h-3" /> Redefinir Senha
                         </button>
@@ -314,13 +314,13 @@ export const SaaSEditModal: React.FC<SaaSEditModalProps> = ({
         </div>
 
         <div className="mt-8 flex gap-3">
-          <button onClick={onClose} className="flex-1 py-3 bg-slate-900 text-slate-400 rounded-xl font-black uppercase text-[10px]">
+          <button onClick={onClose} className="flex-1 py-3 bg-[#0f172a] text-slate-400 rounded-xl font-black uppercase text-[10px]">
             Cancelar
           </button>
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-black uppercase text-[10px] shadow-lg shadow-indigo-600/20 disabled:opacity-50"
+            className="flex-1 py-3 bg-[#8B5CF6] text-white rounded-xl font-black uppercase text-[10px] shadow-lg shadow-white/5 disabled:opacity-50"
           >
             {isSaving ? 'Salvando...' : 'Salvar Alterações'}
           </button>

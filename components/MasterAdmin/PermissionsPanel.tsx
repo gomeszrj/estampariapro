@@ -48,15 +48,15 @@ export const PermissionsPanel: React.FC<PermissionsPanelProps> = ({
 
       {/* Header with preset button */}
       {!isPlanEditor && onApplyPreset && selectedPlan && saasPlans && saasPlans.length > 0 && (
-        <div className="flex items-center justify-between bg-indigo-500/5 border border-indigo-500/20 p-3 rounded-2xl">
-          <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">
+        <div className="flex items-center justify-between bg-white/5 border border-[#1e293b] p-3 rounded-2xl">
+          <p className="text-[10px] font-black text-white uppercase tracking-widest">
             Preset: {selectedPlan}
           </p>
           <div className="flex gap-2">
             <button
               type="button"
               onClick={onApplyPreset}
-              className="text-[9px] font-black uppercase tracking-widest text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-lg transition-all"
+              className="text-[9px] font-black uppercase tracking-widest text-white hover:text-white/80 bg-white/10 border border-[#1e293b] px-3 py-1.5 rounded-lg transition-all"
             >
               Aplicar Padrão do Plano
             </button>
@@ -76,11 +76,11 @@ export const PermissionsPanel: React.FC<PermissionsPanelProps> = ({
               className={`flex items-center gap-3 w-full p-3 rounded-xl border text-left transition-all ${
                 isChecked
                   ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                  : 'bg-slate-900/50 border-slate-800 text-slate-600 hover:border-slate-700 hover:text-slate-400'
+                  : 'bg-[#0f172a] border-[#1e293b] text-slate-600 hover:border-slate-700 hover:text-slate-400'
               }`}
             >
               <div className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 transition-all ${
-                isChecked ? 'bg-emerald-500 border-emerald-500' : 'border-slate-700 bg-slate-950'
+                isChecked ? 'bg-emerald-500 border-emerald-500' : 'border-slate-700 bg-[#1C1C26]'
               }`}>
                 {isChecked && (
                   <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>

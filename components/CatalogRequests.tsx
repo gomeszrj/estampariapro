@@ -94,7 +94,7 @@ const CatalogRequests: React.FC = () => {
                 {loading ? (
                     <p className="text-slate-500">Carregando...</p>
                 ) : requests.length === 0 ? (
-                    <div className="p-10 bg-[#0f172a] rounded-3xl border border-slate-800 text-center">
+                    <div className="p-10 bg-[#0f172a] rounded-3xl border border-[#1e293b] text-center">
                         <ShoppingBag className="w-12 h-12 mx-auto text-slate-700 mb-4" />
                         <p className="text-slate-500 font-bold">Nenhuma solicitação encontrada.</p>
                     </div>
@@ -103,7 +103,7 @@ const CatalogRequests: React.FC = () => {
                         <div
                             key={request.id}
                             onClick={() => setViewingRequest(request)}
-                            className="bg-[#0f172a] p-6 rounded-3xl border border-slate-800 flex flex-col md:flex-row gap-6 relative overflow-hidden group cursor-pointer hover:border-indigo-500/50 transition-all"
+                            className="bg-[#0f172a] p-6 rounded-xl border border-[#1e293b] flex flex-col md:flex-row gap-6 relative overflow-hidden group cursor-pointer hover:border-slate-700 transition-all"
                         >
                             {/* Status Stripe */}
                             <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${request.status === 'approved' ? 'bg-emerald-500' :
@@ -113,8 +113,8 @@ const CatalogRequests: React.FC = () => {
                             <div className="flex-1 space-y-4">
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <h3 className="font-black text-lg text-slate-200 uppercase group-hover:text-indigo-400 transition-colors">{request.clientName}</h3>
-                                        <p className="text-xs text-indigo-400 font-bold flex items-center gap-2">
+                                        <h3 className="font-black text-lg text-slate-200 uppercase group-hover:text-white transition-colors">{request.clientName}</h3>
+                                        <p className="text-xs text-white font-bold flex items-center gap-2">
                                             {request.clientPhone}
                                             <span className="w-1 h-1 bg-slate-600 rounded-full" />
                                             {new Date(request.createdAt).toLocaleDateString('pt-BR')}
@@ -128,7 +128,7 @@ const CatalogRequests: React.FC = () => {
                                     </span>
                                 </div>
 
-                                <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800 space-y-2">
+                                <div className="bg-[#0f172a] p-4 rounded-2xl border border-[#1e293b] space-y-2">
                                     <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-2">Resumo do Pedido ({request.items.length} itens)</p>
                                     {request.items.slice(0, 2).map((item, idx) => (
                                         <div key={idx} className="flex items-center gap-4 text-sm text-slate-300">
@@ -143,7 +143,7 @@ const CatalogRequests: React.FC = () => {
                             </div>
 
                             <div className="flex items-center justify-center px-4">
-                                <Clock className="w-6 h-6 text-slate-700 group-hover:text-indigo-500 transition-colors" />
+                                <Clock className="w-6 h-6 text-slate-700 group-hover:text-white transition-colors" />
                             </div>
                         </div>
                     ))
@@ -152,16 +152,16 @@ const CatalogRequests: React.FC = () => {
 
             {/* Request Detail Modal */}
             {viewingRequest && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-[#0f172a] w-full max-w-3xl rounded-[2.5rem] border border-slate-800 shadow-2xl flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-10 duration-300">
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[#1C1C26]/80 animate-in fade-in duration-200">
+                    <div className="bg-[#0f172a] w-full max-w-3xl rounded-2xl border border-[#1e293b] shadow-2xl flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-10 duration-300">
                         {/* Header */}
-                        <div className="p-8 border-b border-slate-800 flex justify-between items-start">
+                        <div className="p-8 border-b border-[#1e293b] flex justify-between items-start">
                             <div>
                                 <h2 className="text-3xl font-black text-white uppercase tracking-tight mb-2">
                                     Detalhes da Solicitação
                                 </h2>
                                 <div className="flex items-center gap-4">
-                                    <span className="text-indigo-400 font-bold text-sm uppercase tracking-wide bg-indigo-500/10 px-3 py-1 rounded-lg border border-indigo-500/20">
+                                    <span className="text-white font-bold text-sm uppercase tracking-wide bg-white/10 px-3 py-1 rounded-lg border border-[#1e293b]">
                                         {viewingRequest.clientName}
                                     </span>
                                     <span className="text-slate-500 font-bold text-sm">
@@ -183,9 +183,9 @@ const CatalogRequests: React.FC = () => {
                         {/* Content */}
                         <div className="flex-1 overflow-y-auto p-8 space-y-6">
 
-                            <div className="bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden">
+                            <div className="bg-[#0f172a] rounded-2xl border border-[#1e293b] overflow-hidden">
                                 <table className="w-full text-left">
-                                    <thead className="bg-slate-900 border-b border-slate-800 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                                    <thead className="bg-[#0f172a] border-b border-[#1e293b] text-[10px] font-black text-slate-500 uppercase tracking-widest">
                                         <tr>
                                             <th className="p-4">Qtd</th>
                                             <th className="p-4">Produto</th>
@@ -216,7 +216,7 @@ const CatalogRequests: React.FC = () => {
                         </div>
 
                         {/* Footer Actions */}
-                        <div className="p-6 border-t border-slate-800 bg-slate-900/30 flex justify-end gap-4 rounded-b-[2.5rem]">
+                        <div className="p-6 border-t border-[#1e293b] bg-[#0f172a]/30 flex justify-end gap-4 rounded-b-[2.5rem]">
                             <button
                                 onClick={() => setViewingRequest(null)}
                                 className="px-6 py-4 rounded-xl font-bold uppercase text-xs text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"

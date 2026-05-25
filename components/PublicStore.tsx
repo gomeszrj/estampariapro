@@ -166,14 +166,14 @@ const PublicStore: React.FC = () => {
     // --- Components ---
 
     const HeroSection = () => (
-        <div className="relative w-full h-[60vh] md:h-[70vh] bg-[#020617] overflow-hidden flex items-center justify-center">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-900/20 via-[#020617] to-[#020617]"></div>
+        <div className="relative w-full h-[60vh] md:h-[70vh] bg-[#0b1221] overflow-hidden flex items-center justify-center">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 via-[#020617] to-[#020617]"></div>
 
             {/* Animated Grid Background */}
             <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(#1e293b 1px, transparent 1px), linear-gradient(to right, #1e293b 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
 
             <div className="relative z-10 text-center px-6 max-w-4xl space-y-6 animate-in slide-in-from-bottom-10 fade-in duration-1000">
-                <span className="text-indigo-400 font-medium tracking-[0.2em] text-sm md:text-base uppercase bg-indigo-500/10 px-4 py-2 rounded-full border border-indigo-500/20">
+                <span className="text-white font-medium tracking-[0.2em] text-sm md:text-base uppercase bg-white/10 px-4 py-2 rounded-full border border-[#1e293b]">
                     Nova Coleção 2026
                 </span>
                 <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white tracking-tighter leading-tight drop-shadow-2xl">
@@ -218,11 +218,11 @@ const PublicStore: React.FC = () => {
             : null;
 
         return (
-            <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+            <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-6 bg-black/80 animate-in fade-in duration-300">
                 {/* Backdrop Close */}
                 <div className="absolute inset-0" onClick={() => setViewingProduct(null)} />
 
-                <div className="bg-[#0f172a] w-full max-w-5xl h-[90vh] md:h-auto md:max-h-[90vh] rounded-t-[2.5rem] md:rounded-3xl border border-slate-800 flex flex-col md:flex-row shadow-2xl overflow-hidden relative z-10">
+                <div className="bg-[#0f172a] w-full max-w-5xl h-[90vh] md:h-auto md:max-h-[90vh] rounded-t-[2.5rem] md:rounded-3xl border border-[#1e293b] flex flex-col md:flex-row shadow-2xl overflow-hidden relative z-10">
 
                     {/* Close Button */}
                     <button
@@ -233,7 +233,7 @@ const PublicStore: React.FC = () => {
                     </button>
 
                     {/* Left: Image */}
-                    <div className="w-full md:w-1/2 bg-[#020617] relative flex items-center justify-center p-8 shrink-0 h-1/3 md:h-full border-b md:border-b-0 md:border-r border-slate-800">
+                    <div className="w-full md:w-1/2 bg-[#0b1221] relative flex items-center justify-center p-8 shrink-0 h-1/3 md:h-full border-b md:border-b-0 md:border-r border-[#1e293b]">
                         <img
                             src={product.imageUrl}
                             alt={product.name}
@@ -246,19 +246,19 @@ const PublicStore: React.FC = () => {
                         <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 custom-scrollbar">
 
                             <div>
-                                <span className="text-indigo-400 font-bold text-xs uppercase tracking-widest mb-2 block">{product.category}</span>
+                                <span className="text-white font-bold text-xs uppercase tracking-widest mb-2 block">{product.category}</span>
                                 <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight leading-tight mb-4">{product.name}</h2>
 
-                                <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800 mb-2">
+                                <div className="bg-[#0f172a] p-4 rounded-2xl border border-[#1e293b] mb-2">
                                     <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-2">
-                                        <Info className="w-4 h-4 text-indigo-400" />
+                                        <Info className="w-4 h-4 text-white" />
                                         <span>Especificações Técnicas</span>
                                     </h4>
                                     <p className="text-slate-300 text-sm leading-relaxed">{product.description || "Design exclusivo e acabamento de alta performance. Desenvolvido para máxima durabilidade e conforto."}</p>
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-4 pb-4 border-b border-slate-800/50">
+                            <div className="flex items-center gap-4 pb-4 border-b border-[#1e293b]">
                                 <span className="text-3xl font-bold text-white">R$ {(product.basePrice || 0).toFixed(2)}</span>
                                 <span className="text-xs text-slate-500 font-medium uppercase tracking-wider">Valor Unitário</span>
                             </div>
@@ -271,18 +271,18 @@ const PublicStore: React.FC = () => {
                                             <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Modelo</label>
                                             <button
                                                 onClick={() => setIsMeasurementTableOpen(true)}
-                                                className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 underline uppercase tracking-wider"
+                                                className="text-[10px] font-bold text-white hover:text-white/80 underline uppercase tracking-wider"
                                             >
                                                 Ver Tabela de Medidas
                                             </button>
                                         </div>
-                                        <div className="flex items-center gap-4 border-b border-slate-800">
+                                        <div className="flex items-center gap-4 border-b border-[#1e293b]">
                                             {availableGroups.map(group => (
                                                 <button
                                                     key={group}
                                                     onClick={() => { setSelectedGroup(group); setSelectedSize(''); }}
                                                     className={`pb-2 text-sm font-bold uppercase tracking-wider transition-all border-b-2 ${selectedGroup === group
-                                                        ? 'text-indigo-400 border-indigo-400'
+                                                        ? 'text-white border-white/15'
                                                         : 'text-slate-500 border-transparent hover:text-slate-300'
                                                         }`}
                                                 >
@@ -311,8 +311,8 @@ const PublicStore: React.FC = () => {
                                                 key={size}
                                                 onClick={() => setSelectedSize(size)}
                                                 className={`h-10 rounded-lg border flex items-center justify-center font-bold text-sm transition-all ${selectedSize === size
-                                                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.3)]'
-                                                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600 hover:text-white'
+                                                    ? 'bg-white border-white/20 text-slate-950 shadow-[0_0_15px_rgba(255,255,255,0.15)]'
+                                                    : 'bg-[#0f172a] border-[#1e293b] text-slate-400 hover:border-slate-600 hover:text-white'
                                                     }`}
                                             >
                                                 {size}
@@ -328,16 +328,16 @@ const PublicStore: React.FC = () => {
                                         value={notes}
                                         onChange={e => setNotes(e.target.value)}
                                         placeholder="Nome atrás, número, detalhes..."
-                                        className="w-full bg-[#1e293b] border border-slate-700/50 rounded-xl p-4 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all resize-none h-20"
+                                        className="w-full bg-[#1e293b] border border-slate-700/50 rounded-xl p-4 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-slate-700/50 transition-all resize-none h-20"
                                     />
                                 </div>
                             </div>
                         </div>
 
                         {/* Footer Totals */}
-                        <div className="p-6 md:p-8 bg-[#1e293b]/50 border-t border-slate-800 backdrop-blur-sm shrink-0">
+                        <div className="p-6 md:p-8 bg-[#1e293b]/50 border-t border-[#1e293b] shrink-0">
                             <div className="flex items-center gap-4">
-                                <div className="flex items-center bg-slate-900 rounded-xl border border-slate-800">
+                                <div className="flex items-center bg-[#0f172a] rounded-xl border border-[#1e293b]">
                                     <button onClick={() => setQty(Math.max(1, qty - 1))} className="w-12 h-12 flex items-center justify-center text-slate-400 hover:text-white transition-colors"><Minus className="w-4 h-4" /></button>
                                     <span className="w-8 text-center font-bold text-white">{qty}</span>
                                     <button onClick={() => setQty(qty + 1)} className="w-12 h-12 flex items-center justify-center text-slate-400 hover:text-white transition-colors"><Plus className="w-4 h-4" /></button>
@@ -358,8 +358,8 @@ const PublicStore: React.FC = () => {
                 {/* Measurement Table Modal Layer */}
                 {
                     isMeasurementTableOpen && (
-                        <div className="absolute inset-0 z-[160] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in">
-                            <div className="bg-[#0f172a] w-full max-w-2xl rounded-3xl border border-slate-800 p-8 shadow-2xl relative animate-in zoom-in-95">
+                        <div className="absolute inset-0 z-[160] bg-black/60 flex items-center justify-center p-4 animate-in fade-in">
+                            <div className="bg-[#0f172a] w-full max-w-2xl rounded-3xl border border-[#1e293b] p-8 shadow-2xl relative animate-in zoom-in-95">
                                 <button
                                     onClick={() => setIsMeasurementTableOpen(false)}
                                     className="absolute top-4 right-4 p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white"
@@ -368,7 +368,7 @@ const PublicStore: React.FC = () => {
                                 </button>
 
                                 <h3 className="text-xl font-black text-white uppercase tracking-widest mb-6 flex items-center gap-3">
-                                    <Ruler className="w-5 h-5 text-indigo-500" />
+                                    <Ruler className="w-5 h-5 text-white" />
                                     <span>Tabela de Medidas (cm)</span>
                                 </h3>
 
@@ -378,14 +378,14 @@ const PublicStore: React.FC = () => {
                                         const groupSizes = Array.isArray(rawGroupSizes) ? rawGroupSizes : typeof rawGroupSizes === 'string' ? String(rawGroupSizes).split(',').map(s => s.trim()) : [];
                                         return (
                                             <div key={group} className="space-y-3">
-                                                <h4 className="text-sm font-bold text-indigo-400 uppercase tracking-widest border-b border-indigo-500/20 pb-2 mb-3">
+                                                <h4 className="text-sm font-bold text-white uppercase tracking-widest border-b border-[#1e293b] pb-2 mb-3">
                                                     {group}
                                                 </h4>
                                                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                                                     {groupSizes.map(size => {
                                                         const m = product.measurements?.[`${group}-${size}`];
                                                         return (
-                                                            <div key={size} className="bg-slate-900 border border-slate-800 rounded-xl p-3 flex flex-col items-center gap-1">
+                                                            <div key={size} className="bg-[#0f172a] border border-[#1e293b] rounded-xl p-3 flex flex-col items-center gap-1">
                                                                 <span className="text-sm font-black text-white">{size}</span>
                                                                 {m ? (
                                                                     <span className="text-[10px] text-slate-400 font-bold">
@@ -411,23 +411,23 @@ const PublicStore: React.FC = () => {
     };
 
     if (loading) return (
-        <div className="min-h-screen bg-[#020617] flex items-center justify-center">
+        <div className="min-h-screen bg-[#0b1221] flex items-center justify-center">
             <div className="flex flex-col items-center gap-4">
-                <div className="w-12 h-12 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                <div className="w-12 h-12 border-2 border-white/20 border-t-transparent rounded-full animate-spin" />
             </div>
         </div>
     );
 
     return (
-        <div className="min-h-screen bg-[#020617] font-sans text-slate-200">
+        <div className="min-h-screen bg-[#0b1221] font-sans text-slate-200">
             {/* Navbar */}
-            <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-[#020617]/90 backdrop-blur-md border-b border-slate-800' : 'bg-transparent'}`}>
+            <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-[#0b1221]/90 border-b border-[#1e293b]' : 'bg-transparent'}`}>
                 <div className="max-w-[1800px] mx-auto px-6 md:px-12 h-20 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         {company?.logo_url ? (
                             <img src={company.logo_url} className="h-10 w-auto rounded-lg" />
                         ) : (
-                            <div className="h-10 w-10 bg-indigo-600 rounded-lg flex items-center justify-center font-black text-white">E</div>
+                            <div className="h-10 w-10 bg-white rounded-lg flex items-center justify-center font-black text-slate-950">E</div>
                         )}
                         <span className={`font-bold text-xl tracking-tight ${scrolled ? 'text-white' : 'text-white'}`}>
                             {company?.name || 'ESTAMPARIA'}
@@ -449,7 +449,7 @@ const PublicStore: React.FC = () => {
                         <button onClick={() => setIsCartOpen(true)} className="relative group p-2">
                             <ShoppingBag className="w-6 h-6 text-slate-300 group-hover:text-white transition-colors" />
                             {cartCount > 0 && (
-                                <span className="absolute top-0 right-0 bg-indigo-600 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">
+                                <span className="absolute top-0 right-0 bg-[#8B5CF6] text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">
                                     {cartCount}
                                 </span>
                             )}
@@ -461,14 +461,14 @@ const PublicStore: React.FC = () => {
                         <button onClick={() => setMobileSearchOpen(!mobileSearchOpen)}><Search className="w-6 h-6 text-white" /></button>
                         <button onClick={() => setIsCartOpen(true)} className="relative">
                             <ShoppingBag className="w-6 h-6 text-white" />
-                            {cartCount > 0 && <span className="absolute -top-1 -right-1 bg-indigo-600 w-2 h-2 rounded-full" />}
+                            {cartCount > 0 && <span className="absolute -top-1 -right-1 bg-white w-2 h-2 rounded-full" />}
                         </button>
                     </div>
                 </div>
 
                 {/* Mobile Search Bar */}
                 {mobileSearchOpen && (
-                    <div className="bg-[#0f172a] p-4 border-b border-slate-800">
+                    <div className="bg-[#0f172a] p-4 border-b border-[#1e293b]">
                         <input
                             autoFocus
                             value={searchTerm}
@@ -487,7 +487,7 @@ const PublicStore: React.FC = () => {
             <main id="products" className="px-6 md:px-12 py-20 max-w-[1800px] mx-auto min-h-[60vh]">
 
                 {/* Filters */}
-                <div className="flex flex-col md:flex-row items-baseline justify-between mb-12 border-b border-slate-800 pb-6 gap-6">
+                <div className="flex flex-col md:flex-row items-baseline justify-between mb-12 border-b border-[#1e293b] pb-6 gap-6">
                     <h2 className="text-2xl font-bold text-white tracking-tight">Catálogo</h2>
 
                     <div className="flex flex-wrap gap-2">
@@ -519,7 +519,7 @@ const PublicStore: React.FC = () => {
                                 onClick={() => setViewingProduct(product)}
                                 className="group cursor-pointer flex flex-col gap-4"
                             >
-                                <div className="aspect-[4/5] bg-[#0f172a] rounded-xl overflow-hidden relative border border-slate-800 group-hover:border-slate-600 transition-all">
+                                <div className="aspect-[4/5] bg-[#0f172a] rounded-xl overflow-hidden relative border border-[#1e293b] group-hover:border-slate-600 transition-all">
                                     <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" />
 
                                     {/* Quick visual cues */}
@@ -533,8 +533,8 @@ const PublicStore: React.FC = () => {
                                 </div>
 
                                 <div>
-                                    <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">{product.category}</span>
-                                    <h3 className="text-base font-medium text-white leading-tight group-hover:text-indigo-400 transition-colors mt-1 mb-2 line-clamp-2"><span>{product.name}</span></h3>
+                                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">{product.category}</span>
+                                    <h3 className="text-base font-medium text-white leading-tight group-hover:text-white transition-colors mt-1 mb-2 line-clamp-2"><span>{product.name}</span></h3>
                                     <span className="text-lg font-bold text-white">R$ {(product.basePrice || 0).toFixed(2)}</span>
                                 </div>
                             </div>
@@ -544,7 +544,7 @@ const PublicStore: React.FC = () => {
             </main>
 
             {/* Footer */}
-            <footer className="border-t border-slate-800 bg-[#0f172a] pt-20 pb-12">
+            <footer className="border-t border-[#1e293b] bg-[#0f172a] pt-20 pb-12">
                 <div className="max-w-7xl mx-auto px-6 text-center">
                     <h4 className="font-bold text-2xl text-white mb-6">{company?.name || 'Estamparia.AI'}</h4>
                     <p className="text-slate-500 mb-8 max-w-md mx-auto">Excelência em personalização têxtil. Transformando sua marca em vestuário de alto padrão.</p>
@@ -564,9 +564,9 @@ const PublicStore: React.FC = () => {
             {/* Cart Drawer */}
             {isCartOpen && (
                 <div className="fixed inset-0 z-[200] flex justify-end">
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in" onClick={() => setIsCartOpen(false)} />
-                    <div className="relative w-full max-w-md bg-[#0f172a] shadow-2xl h-full flex flex-col animate-in slide-in-from-right duration-300 border-l border-slate-800">
-                        <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+                    <div className="absolute inset-0 bg-black/60 animate-in fade-in" onClick={() => setIsCartOpen(false)} />
+                    <div className="relative w-full max-w-md bg-[#0f172a] shadow-2xl h-full flex flex-col animate-in slide-in-from-right duration-300 border-l border-[#1e293b]">
+                        <div className="p-6 border-b border-[#1e293b] flex items-center justify-between">
                             <h2 className="text-lg font-bold text-white uppercase tracking-widest">Sua Sacola</h2>
                             <button onClick={() => setIsCartOpen(false)}><X className="w-6 h-6 text-slate-400 hover:text-white" /></button>
                         </div>
@@ -588,7 +588,7 @@ const PublicStore: React.FC = () => {
                                                 <h3 className="font-medium text-white text-sm line-clamp-1">{item.productName}</h3>
                                                 <button onClick={() => removeFromCart(item.id)} className="text-slate-500 hover:text-rose-500"><X className="w-4 h-4" /></button>
                                             </div>
-                                            <p className="text-xs text-indigo-400 font-bold uppercase mb-2">Tamanho: {item.size}</p>
+                                            <p className="text-xs text-white font-bold uppercase mb-2">Tamanho: {item.size}</p>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-sm font-bold text-white">R$ {item.price.toFixed(2)}</span>
                                                 <div className="flex items-center bg-[#1e293b] rounded-lg">
@@ -603,7 +603,7 @@ const PublicStore: React.FC = () => {
                             )}
                         </div>
 
-                        <div className="p-6 border-t border-slate-800 bg-[#1e293b]/30">
+                        <div className="p-6 border-t border-[#1e293b] bg-[#1e293b]/30">
                             <div className="flex justify-between items-end mb-6">
                                 <span className="text-sm font-medium text-slate-400">Total Estimado</span>
                                 <span className="text-2xl font-bold text-white">R$ {cartTotal.toFixed(2)}</span>
@@ -622,8 +622,8 @@ const PublicStore: React.FC = () => {
 
             {/* Checkout Modal */}
             {isCheckoutOpen && (
-                <div className="fixed inset-0 z-[300] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-                    <div className="bg-[#0f172a] w-full max-w-lg rounded-3xl border border-slate-800 p-8 shadow-2xl relative">
+                <div className="fixed inset-0 z-[300] bg-black/80 flex items-center justify-center p-4 animate-in fade-in">
+                    <div className="bg-[#0f172a] w-full max-w-lg rounded-3xl border border-[#1e293b] p-8 shadow-2xl relative">
                         <button onClick={() => setIsCheckoutOpen(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white"><X className="w-6 h-6" /></button>
 
                         <h2 className="text-2xl font-bold text-white mb-1">Confirmar Pedido</h2>
@@ -632,23 +632,23 @@ const PublicStore: React.FC = () => {
                         <div className="space-y-4">
                             <div className="space-y-1">
                                 <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Seu Nome</label>
-                                <input value={clientName} onChange={e => setClientName(e.target.value)} className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-indigo-500 outline-none" placeholder="Nome Completo" />
+                                <input value={clientName} onChange={e => setClientName(e.target.value)} className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-white/20 outline-none" placeholder="Nome Completo" />
                             </div>
                             <div className="space-y-1">
                                 <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">WhatsApp</label>
-                                <input value={clientPhone} onChange={e => setClientPhone(e.target.value)} className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-indigo-500 outline-none" placeholder="(00) 00000-0000" />
+                                <input value={clientPhone} onChange={e => setClientPhone(e.target.value)} className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-white/20 outline-none" placeholder="(00) 00000-0000" />
                             </div>
                             <div className="space-y-1">
                                 <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Turma / Equipe (Opcional)</label>
-                                <input value={clientTeam} onChange={e => setClientTeam(e.target.value)} className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-indigo-500 outline-none" placeholder="Ex: Terceirão 2026" />
+                                <input value={clientTeam} onChange={e => setClientTeam(e.target.value)} className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-white/20 outline-none" placeholder="Ex: Terceirão 2026" />
                             </div>
                             <div className="space-y-1">
                                 <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Observações Gerais</label>
-                                <textarea value={clientNotes} onChange={e => setClientNotes(e.target.value)} className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-4 py-3 text-white resize-none h-20 text-sm focus:border-indigo-500 outline-none" placeholder="Detalhes da entrega, prazo, etc." />
+                                <textarea value={clientNotes} onChange={e => setClientNotes(e.target.value)} className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-4 py-3 text-white resize-none h-20 text-sm focus:border-white/20 outline-none" placeholder="Detalhes da entrega, prazo, etc." />
                             </div>
 
-                            <div className="space-y-1 border-t border-slate-800 pt-4 mt-2">
-                                <label className="text-xs font-bold text-indigo-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                            <div className="space-y-1 border-t border-[#1e293b] pt-4 mt-2">
+                                <label className="text-xs font-bold text-white uppercase tracking-widest ml-1 flex items-center gap-2">
                                     <List className="w-3 h-3" />
                                     Lista de Nomes / Personalização
                                 </label>
@@ -656,7 +656,7 @@ const PublicStore: React.FC = () => {
                                 <textarea
                                     value={namesList}
                                     onChange={e => setNamesList(e.target.value)}
-                                    className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-4 py-3 text-white resize-none h-32 text-sm focus:border-indigo-500 outline-none font-mono"
+                                    className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-4 py-3 text-white resize-none h-32 text-sm focus:border-white/20 outline-none font-mono"
                                     placeholder="1. Nome - Tam&#10;2. Nome - Tam..."
                                 />
                             </div>
@@ -664,7 +664,7 @@ const PublicStore: React.FC = () => {
 
                         <button
                             onClick={handleCheckout}
-                            className="w-full mt-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold uppercase tracking-widest rounded-xl shadow-lg transition-all"
+                            className="w-full mt-8 py-4 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold uppercase tracking-widest rounded-xl shadow-lg transition-all"
                         >
                             Enviar no WhatsApp
                         </button>
@@ -674,8 +674,8 @@ const PublicStore: React.FC = () => {
 
             {/* Success */}
             {checkoutSuccess && (
-                <div className="fixed inset-0 z-[400] bg-black/90 backdrop-blur-md flex items-center justify-center p-6 animate-in zoom-in-95">
-                    <div className="bg-[#1e293b] rounded-3xl p-10 max-w-sm w-full text-center border border-slate-800">
+                <div className="fixed inset-0 z-[400] bg-black/90 flex items-center justify-center p-6 animate-in zoom-in-95">
+                    <div className="bg-[#1e293b] rounded-3xl p-10 max-w-sm w-full text-center border border-[#1e293b]">
                         <div className="w-20 h-20 bg-emerald-500/20 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6">
                             <CheckCircle2 className="w-10 h-10" />
                         </div>

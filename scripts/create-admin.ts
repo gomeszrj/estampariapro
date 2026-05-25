@@ -30,8 +30,19 @@ if (!supabaseUrl || !supabaseAnonKey) {
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 async function createAdmin() {
-    const email = 'admin@estamparia.com';
-    const password = 'admin123';
+    const email = process.env.ADMIN_EMAIL || 'admin@estamparia.com';
+    const password = process.env.ADMIN_PASSWORD;
+
+    if (!password) {
+        console.error('❌ ADMIN_PASSWORD env variable is required. Usage:');
+        console.error('   ADMIN_PASSWORD=YourSecureP@ss123 npx ts-node scripts/create-admin.ts');
+        process.exit(1);
+    }
+
+    if (password.length < 8) {
+        console.error('❌ Password must be at least 8 characters.');
+        process.exit(1);
+    }
 
     console.log(`Creating user: ${email}...`);
 
@@ -45,7 +56,6 @@ async function createAdmin() {
     } else {
         console.log('✅ User created successfully!');
         console.log('Email:', email);
-        console.log('Password:', password);
         console.log('User ID:', data.user?.id);
 
         if (!data.session) {
@@ -55,3 +65,4 @@ async function createAdmin() {
 }
 
 createAdmin();
+

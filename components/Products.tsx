@@ -157,8 +157,8 @@ const Products: React.FC = () => {
             <div className="space-y-6">
                 {GRADES.map(group => (
                     <div key={group.label} className="space-y-3">
-                        <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
-                            <span className="text-xs font-black text-indigo-400 uppercase tracking-widest">{group.label}</span>
+                        <div className="flex items-center gap-2 border-b border-[#1e293b] pb-2">
+                            <span className="text-xs font-black text-white uppercase tracking-widest">{group.label}</span>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                             {group.sizes.map(size => {
@@ -169,11 +169,11 @@ const Products: React.FC = () => {
                                 return (
                                     <div key={size} className={`
                                         relative rounded-xl border p-3 transition-all flex flex-col gap-2
-                                        ${isActive ? 'bg-indigo-600/10 border-indigo-500/50' : 'bg-[#1e293b] border-slate-700/50 opacity-60 hover:opacity-100'}
+                                        ${isActive ? 'bg-white/5 border-white/20' : 'bg-[#1e293b] border-slate-700/50 opacity-60 hover:opacity-100'}
                                     `}>
                                         <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleSize(group.label, size)}>
                                             <span className={`text-sm font-bold ${isActive ? 'text-white' : 'text-slate-400'}`}>{size}</span>
-                                            <div className={`w-4 h-4 rounded border flex items-center justify-center ${isActive ? 'bg-indigo-500 border-indigo-500' : 'border-slate-600'}`}>
+                                            <div className={`w-4 h-4 rounded border flex items-center justify-center ${isActive ? 'bg-white border-white' : 'border-slate-600'}`}>
                                                 {isActive && <Check className="w-3 h-3 text-white" />}
                                             </div>
                                         </div>
@@ -187,7 +187,7 @@ const Products: React.FC = () => {
                                                         placeholder="0"
                                                         value={m.width}
                                                         onChange={(e) => updateMeasurement(e, group.label, size, 'w')}
-                                                        className="w-full bg-slate-900 border border-slate-700 rounded px-1 py-1 text-xs text-center text-white focus:border-indigo-500 outline-none"
+                                                        className="w-full bg-[#0f172a] border border-slate-700 rounded px-1 py-1 text-xs text-center text-white focus:border-slate-600 outline-none"
                                                     />
                                                 </div>
                                                 <div>
@@ -197,7 +197,7 @@ const Products: React.FC = () => {
                                                         placeholder="0"
                                                         value={m.height}
                                                         onChange={(e) => updateMeasurement(e, group.label, size, 'h')}
-                                                        className="w-full bg-slate-900 border border-slate-700 rounded px-1 py-1 text-xs text-center text-white focus:border-indigo-500 outline-none"
+                                                        className="w-full bg-[#0f172a] border border-slate-700 rounded px-1 py-1 text-xs text-center text-white focus:border-slate-600 outline-none"
                                                     />
                                                 </div>
                                             </div>
@@ -214,17 +214,17 @@ const Products: React.FC = () => {
 
     if (loading) return (
         <div className="flex items-center justify-center min-h-[500px]">
-            <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
         </div>
     );
 
     return (
-        <div className="p-6 md:p-10 min-h-screen bg-[#020617] text-slate-200">
+        <div className="p-6 md:p-10 min-h-screen bg-[#0b1221] text-slate-200">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                 <div>
                     <h1 className="text-3xl font-black text-white tracking-tight uppercase flex items-center gap-3">
-                        <Package className="w-8 h-8 text-indigo-500" />
+                        <Package className="w-8 h-8 text-white" />
                         Catálogo de Produtos
                     </h1>
                     <p className="text-slate-500 font-medium mt-1">Gerencie produtos, estoque e vitrine pública.</p>
@@ -237,7 +237,7 @@ const Products: React.FC = () => {
                             placeholder="Buscar..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            className="bg-[#0f172a] border border-slate-800 rounded-xl pl-10 pr-4 py-3 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all w-64 outline-none"
+                            className="bg-[#0f172a] border border-[#1e293b] rounded-xl pl-10 pr-4 py-3 text-sm focus:border-slate-600 focus:ring-1 focus:ring-slate-700/50 transition-all w-64 outline-none"
                         />
                     </div>
                     <button
@@ -248,7 +248,7 @@ const Products: React.FC = () => {
                             });
                             setIsEditing(true);
                         }}
-                        className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-bold uppercase text-xs tracking-widest shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2"
+                        className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-6 py-3 rounded-xl font-bold uppercase text-xs tracking-widest shadow-lg shadow-white/5 transition-all flex items-center gap-2"
                     >
                         <Plus className="w-4 h-4" /> Novo Produto
                     </button>
@@ -261,10 +261,10 @@ const Products: React.FC = () => {
                     <div
                         key={product.id}
                         onClick={() => { setEditingProduct(product); setIsEditing(true); }}
-                        className="group bg-[#0f172a] rounded-2xl border border-slate-800 overflow-hidden cursor-pointer hover:border-indigo-500/50 hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-300 flex flex-col"
+                        className="group bg-[#0f172a] rounded-xl border border-[#1e293b] overflow-hidden cursor-pointer hover:border-slate-600 hover:shadow-xl hover:shadow-white/5 transition-all duration-300 flex flex-col"
                     >
                         {/* Image */}
-                        <div className="aspect-[4/5] bg-slate-900 relative overflow-hidden">
+                        <div className="aspect-[4/5] bg-[#0f172a] relative overflow-hidden">
                             {product.imageUrl ? (
                                 <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                             ) : (
@@ -276,10 +276,10 @@ const Products: React.FC = () => {
                             {/* Badges */}
                             <div className="absolute top-3 right-3 flex flex-col gap-2">
                                 {!product.published && (
-                                    <span className="bg-rose-500/90 backdrop-blur text-white text-[9px] font-black uppercase px-2 py-1 rounded">Oculto</span>
+                                    <span className="bg-rose-500/90 text-white text-[9px] font-black uppercase px-2 py-1 rounded">Oculto</span>
                                 )}
                                 {Object.keys(product.allowedGrades || {}).length === 0 && (
-                                    <span className="bg-amber-500/90 backdrop-blur text-black text-[9px] font-black uppercase px-2 py-1 rounded flex items-center gap-1">
+                                    <span className="bg-amber-500/90 text-black text-[9px] font-black uppercase px-2 py-1 rounded flex items-center gap-1">
                                         <AlertCircle className="w-3 h-3" /> Sem Grade
                                     </span>
                                 )}
@@ -290,9 +290,9 @@ const Products: React.FC = () => {
                         <div className="p-4 flex flex-col flex-1">
                             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">{product.category}</span>
                             <h3 className="text-sm font-bold text-white leading-tight mb-3 line-clamp-2 uppercase">{product.name}</h3>
-                            <div className="mt-auto flex items-center justify-between pt-3 border-t border-slate-800/50">
-                                <span className="text-indigo-400 font-black text-lg">R$ {product.basePrice.toFixed(2)}</span>
-                                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center group-hover:bg-indigo-600 transition-colors">
+                            <div className="mt-auto flex items-center justify-between pt-3 border-t border-[#1e293b]">
+                                <span className="text-white font-black text-lg">R$ {product.basePrice.toFixed(2)}</span>
+                                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center group-hover:bg-white group-hover:text-slate-950 transition-colors">
                                     <Edit2 className="w-4 h-4 text-slate-400 group-hover:text-white" />
                                 </div>
                             </div>
@@ -303,11 +303,11 @@ const Products: React.FC = () => {
 
             {/* Unified Modal */}
             {isEditing && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 animate-in fade-in">
                     <div className="bg-[#0f172a] w-full max-w-4xl h-[90vh] rounded-3xl border border-slate-700 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
 
                         {/* Modal Header */}
-                        <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-[#1e293b]/50">
+                        <div className="p-6 border-b border-[#1e293b] flex items-center justify-between bg-[#1e293b]/50">
                             <div>
                                 <h2 className="text-xl font-black text-white uppercase tracking-tight">
                                     {editingProduct?.id ? 'Editar Produto' : 'Novo Produto'}
@@ -338,9 +338,9 @@ const Products: React.FC = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
                                     {/* Image Upload Column */}
                                     <div className="md:col-span-4 space-y-4">
-                                        <div className="aspect-[4/5] bg-[#020617] rounded-2xl border-2 border-dashed border-slate-700 hover:border-indigo-500/50 transition-all relative group overflow-hidden flex items-center justify-center">
+                                        <div className="aspect-[4/5] bg-[#0b1221] rounded-2xl border-2 border-dashed border-slate-700 hover:border-white/30 transition-all relative group overflow-hidden flex items-center justify-center">
                                             {isProcessingImage ? (
-                                                <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                                                <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                             ) : editingProduct?.imageUrl ? (
                                                 <>
                                                     <img src={editingProduct.imageUrl} className="w-full h-full object-contain p-2" />
@@ -352,14 +352,14 @@ const Products: React.FC = () => {
                                                     </div>
                                                 </>
                                             ) : (
-                                                <label className="cursor-pointer flex flex-col items-center gap-2 text-slate-500 hover:text-indigo-400 transition-colors">
+                                                <label className="cursor-pointer flex flex-col items-center gap-2 text-slate-500 hover:text-white transition-colors">
                                                     <ImageIcon className="w-10 h-10" />
                                                     <span className="text-xs font-bold uppercase">Upload Imagem</span>
                                                     <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
                                                 </label>
                                             )}
                                         </div>
-                                        <div className="bg-[#1e293b] p-4 rounded-xl border border-slate-800">
+                                        <div className="bg-[#1e293b] p-4 rounded-xl border border-[#1e293b]">
                                             <div className="flex items-center justify-between mb-2">
                                                 <span className="text-xs font-bold text-slate-400 uppercase">Visibilidade</span>
                                                 <div
@@ -385,7 +385,7 @@ const Products: React.FC = () => {
                                                     required
                                                     value={editingProduct?.name}
                                                     onChange={e => setEditingProduct({ ...editingProduct!, name: e.target.value })}
-                                                    className="w-full bg-[#1e293b] border border-slate-700/50 rounded-xl px-4 py-3 text-white focus:border-indigo-500 outline-none transition-all placeholder:text-slate-600"
+                                                    className="w-full bg-[#1e293b] border border-slate-700/50 rounded-xl px-4 py-3 text-white focus:border-slate-600 outline-none transition-all placeholder:text-slate-600"
                                                     placeholder="Ex: Camiseta Dry-Fit Pro"
                                                 />
                                             </div>
@@ -394,7 +394,7 @@ const Products: React.FC = () => {
                                                 <select
                                                     value={editingProduct?.category}
                                                     onChange={e => setEditingProduct({ ...editingProduct!, category: e.target.value })}
-                                                    className="w-full bg-[#1e293b] border border-slate-700/50 rounded-xl px-4 py-3 text-white focus:border-indigo-500 outline-none"
+                                                    className="w-full bg-[#1e293b] border border-slate-700/50 rounded-xl px-4 py-3 text-white focus:border-slate-600 outline-none"
                                                 >
                                                     {FABRICS.map(f => <option key={f.id} value={f.name}>{f.name}</option>)}
                                                     <option value="Outro">Outro</option>
@@ -405,7 +405,7 @@ const Products: React.FC = () => {
                                                 <input
                                                     value={editingProduct?.sku}
                                                     onChange={e => setEditingProduct({ ...editingProduct!, sku: e.target.value.toUpperCase() })}
-                                                    className="w-full bg-[#1e293b] border border-slate-700/50 rounded-xl px-4 py-3 text-white focus:border-indigo-500 outline-none font-mono uppercase"
+                                                    className="w-full bg-[#1e293b] border border-slate-700/50 rounded-xl px-4 py-3 text-white focus:border-slate-600 outline-none font-mono uppercase"
                                                     placeholder="PROD-001"
                                                 />
                                             </div>
@@ -428,7 +428,7 @@ const Products: React.FC = () => {
                                                         const val = parseFloat(e.target.value);
                                                         setEditingProduct({ ...editingProduct!, costPrice: isNaN(val) ? 0 : val });
                                                     }}
-                                                    className="w-full bg-[#1e293b] border border-slate-700/50 rounded-xl px-4 py-3 text-2xl font-black text-slate-300 focus:border-indigo-500 outline-none"
+                                                    className="w-full bg-[#1e293b] border border-slate-700/50 rounded-xl px-4 py-3 text-2xl font-black text-slate-300 focus:border-slate-600 outline-none"
                                                     placeholder="0.00"
                                                 />
                                             </div>
@@ -444,7 +444,7 @@ const Products: React.FC = () => {
                                                 <textarea
                                                     value={editingProduct?.description || ''}
                                                     onChange={e => setEditingProduct({ ...editingProduct!, description: e.target.value })}
-                                                    className="w-full bg-[#1e293b] border border-slate-700/50 rounded-xl px-4 py-3 text-sm text-white focus:border-indigo-500 outline-none resize-none h-24"
+                                                    className="w-full bg-[#1e293b] border border-slate-700/50 rounded-xl px-4 py-3 text-sm text-white focus:border-slate-600 outline-none resize-none h-24"
                                                     placeholder="Descrição que aparece para o cliente na loja..."
                                                 />
                                             </div>
@@ -453,10 +453,10 @@ const Products: React.FC = () => {
                                 </div>
 
                                 {/* 2. Grade Matrix & Measurements */}
-                                <div className="border-t border-slate-800 pt-8">
+                                <div className="border-t border-[#1e293b] pt-8">
                                     <div className="flex items-center gap-3 mb-6">
-                                        <div className="p-2 bg-indigo-500/10 rounded-lg">
-                                            <Ruler className="w-5 h-5 text-indigo-400" />
+                                        <div className="p-2 bg-white/10 rounded-lg">
+                                            <Ruler className="w-5 h-5 text-white" />
                                         </div>
                                         <div>
                                             <h3 className="text-lg font-bold text-white uppercase tracking-tight">Grade & Medidas</h3>
@@ -471,11 +471,11 @@ const Products: React.FC = () => {
                         </div>
 
                         {/* Footer */}
-                        <div className="p-6 border-t border-slate-800 bg-[#1e293b]/80 backdrop-blur-md flex justify-end gap-4">
+                        <div className="p-6 border-t border-[#1e293b] bg-[#1e293b]/80 flex justify-end gap-4">
                             <button onClick={() => setIsEditing(false)} className="px-6 py-3 rounded-xl font-bold uppercase text-xs tracking-widest text-slate-400 hover:text-white hover:bg-slate-700/50 transition-colors">
                                 Cancelar
                             </button>
-                            <button onClick={handleSave} className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold uppercase text-xs tracking-widest shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2">
+                            <button onClick={handleSave} className="px-8 py-3 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-xl font-bold uppercase text-xs tracking-widest shadow-lg shadow-white/5 transition-all flex items-center gap-2">
                                 <Save className="w-4 h-4" /> Salvar Alterações
                             </button>
                         </div>

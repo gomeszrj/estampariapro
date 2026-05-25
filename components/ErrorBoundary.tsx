@@ -31,7 +31,7 @@ export class ErrorBoundary extends Component<Props, State> {
     public render() {
         if (this.state.hasError) {
             return (
-                <div className="flex flex-col items-center justify-center p-12 bg-slate-950 border border-rose-900/50 rounded-3xl animate-in fade-in duration-500 max-w-2xl mx-auto mt-10 shadow-[0_0_30px_rgba(225,29,72,0.15)]">
+                <div className="flex flex-col items-center justify-center p-12 bg-[#1C1C26] border border-rose-900/50 rounded-3xl animate-in fade-in duration-500 max-w-2xl mx-auto mt-10 shadow-[0_0_30px_rgba(225,29,72,0.15)]">
                     <div className="w-16 h-16 bg-rose-500/20 text-rose-500 flex items-center justify-center rounded-2xl mb-6 border border-rose-500/30">
                         <AlertTriangle className="w-8 h-8" />
                     </div>
@@ -42,7 +42,7 @@ export class ErrorBoundary extends Component<Props, State> {
                         Identificamos dados inconsistentes ou uma falha de layout nesta tela. Para não travar o sistema inteiro, isolamos este erro.
                     </p>
 
-                    <div className="w-full bg-slate-900/80 p-4 rounded-xl border border-slate-800 overflow-auto max-h-48 mb-6 mx-auto scrollbar-thin">
+                    <div className="w-full bg-[#0f172a] p-4 rounded-xl border border-[#1e293b] overflow-auto max-h-48 mb-6 mx-auto scrollbar-thin">
                         <p className="font-mono text-[10px] text-rose-400 whitespace-pre-wrap break-all">
                             {this.state.error && this.state.error.toString()}
                             {this.state.errorInfo && this.state.errorInfo.componentStack}

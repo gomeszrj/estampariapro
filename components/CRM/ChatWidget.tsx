@@ -238,12 +238,12 @@ export const ChatWidget: React.FC = () => {
 
             {/* OPEN CRM WIDGET */}
             {isOpen && (
-                <div className="flex-1 bg-[#020617] border border-slate-700/60 rounded-2xl shadow-2xl flex overflow-hidden ring-1 ring-white/10 relative">
+                <div className="flex-1 bg-[#0b1221] border border-slate-700/60 rounded-2xl shadow-2xl flex overflow-hidden ring-1 ring-white/10 relative">
                     
                     {/* WIDGET SIDEBAR (Chat List) */}
-                    <div className={`${activeSessionId && !isMaximized ? 'hidden md:flex' : 'flex'} w-full md:w-80 flex-col bg-[#0f172a] border-r border-slate-800/60`}>
+                    <div className={`${activeSessionId && !isMaximized ? 'hidden md:flex' : 'flex'} w-full md:w-80 flex-col bg-[#0f172a] border-r border-[#1e293b]`}>
                         {/* Header & Controls */}
-                        <div className="p-4 border-b border-slate-800/60 flex justify-between items-center bg-slate-900/50">
+                        <div className="p-4 border-b border-[#1e293b] flex justify-between items-center bg-[#0f172a]">
                             <h3 className="font-black text-slate-100 flex items-center gap-2">
                                 <MessageSquare className="w-4 h-4 text-indigo-400" />
                                 CRM <span className="text-xs text-slate-500 font-medium ml-1">WhatsApp</span>
@@ -259,8 +259,8 @@ export const ChatWidget: React.FC = () => {
                         </div>
 
                         {/* CRM Funnel Tabs */}
-                        <div className="p-3 bg-slate-900/30 border-b border-slate-800/60">
-                            <div className="flex bg-slate-950/50 rounded-lg p-1 gap-1 border border-slate-800/30">
+                        <div className="p-3 bg-[#0f172a]/30 border-b border-[#1e293b]">
+                            <div className="flex bg-[#1C1C26]/50 rounded-lg p-1 gap-1 border border-[#1e293b]/30">
                                 <button
                                     onClick={() => setActiveTab('waiting')}
                                     className={`flex-1 flex items-center justify-center gap-1.5 text-[9px] font-black py-2 rounded-md transition-all uppercase tracking-widest ${activeTab === 'waiting' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
@@ -326,11 +326,11 @@ export const ChatWidget: React.FC = () => {
                     </div>
 
                     {/* WIDGET MAIN CHAT AREA */}
-                    <div className={`${!activeSessionId && !isMaximized ? 'hidden md:flex' : 'flex'} flex-1 flex-col bg-[#020617]`}>
+                    <div className={`${!activeSessionId && !isMaximized ? 'hidden md:flex' : 'flex'} flex-1 flex-col bg-[#0b1221]`}>
                         {activeSessionId && activeSession ? (
                             <>
                                 {/* Chat Header */}
-                                <div className="h-16 border-b border-slate-800/60 flex items-center gap-3 px-4 bg-slate-900/30 shrink-0">
+                                <div className="h-16 border-b border-[#1e293b] flex items-center gap-3 px-4 bg-[#0f172a]/30 shrink-0">
                                     <button 
                                         onClick={() => setActiveSessionId(null)} 
                                         className="md:hidden p-1.5 text-slate-400 hover:text-white rounded-lg bg-slate-800/50"
@@ -372,7 +372,7 @@ export const ChatWidget: React.FC = () => {
                                                     <React.Fragment key={msg.id}>
                                                         {showDate && (
                                                             <div className="flex justify-center my-4">
-                                                                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest bg-slate-900/80 px-3 py-1 rounded-full border border-slate-800">
+                                                                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest bg-[#0f172a] px-3 py-1 rounded-full border border-[#1e293b]">
                                                                     {format(new Date(msg.created_at), "dd 'de' MMM", { locale: ptBR })}
                                                                 </span>
                                                             </div>
@@ -385,7 +385,7 @@ export const ChatWidget: React.FC = () => {
                                                                 }`}
                                                             >
                                                                 {isMedia ? (
-                                                                    <div className="rounded-xl overflow-hidden mb-1 border border-white/10">
+                                                                    <div className="rounded-xl overflow-hidden mb-1 border border-[#1e293b]">
                                                                         <img src={mediaUrl} alt="Anexo" className="max-w-full max-h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity" onClick={() => window.open(mediaUrl, '_blank')} />
                                                                     </div>
                                                                 ) : (
@@ -405,7 +405,7 @@ export const ChatWidget: React.FC = () => {
                                 </div>
 
                                 {/* Input */}
-                                <div className="p-3 bg-slate-900/50 border-t border-slate-800/60 shrink-0">
+                                <div className="p-3 bg-[#0f172a] border-t border-[#1e293b] shrink-0">
                                     <form onSubmit={handleSendMessage} className="relative flex items-center gap-2">
                                         <input
                                             type="file"
@@ -429,7 +429,7 @@ export const ChatWidget: React.FC = () => {
                                             placeholder="Digite uma mensagem..."
                                             value={newMessage}
                                             onChange={e => setNewMessage(e.target.value)}
-                                            className="flex-1 bg-[#020617] border border-slate-700 rounded-xl py-3 pl-4 pr-4 text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm shadow-inner"
+                                            className="flex-1 bg-[#0b1221] border border-slate-700 rounded-xl py-3 pl-4 pr-4 text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm shadow-inner"
                                         />
                                         <button
                                             type="submit"

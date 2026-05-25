@@ -18,9 +18,9 @@ interface ProductionBoardProps {
 }
 
 const COLUMNS = [
-    { id: OrderStatus.RECEIVED, label: 'Pendente', icon: Clock, color: 'text-slate-400', bg: 'bg-slate-900/50', border: 'border-slate-800' },
-    { id: OrderStatus.IN_PRODUCTION, label: 'Em Produção', icon: RotateCw, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
-    { id: OrderStatus.FINISHED, label: 'Finalizado', icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' }
+    { id: OrderStatus.RECEIVED, label: 'Pendente', icon: Clock, color: 'text-slate-400', bg: 'bg-[#0b1221]', border: 'border-[#1e293b]' },
+    { id: OrderStatus.IN_PRODUCTION, label: 'Em Produção', icon: RotateCw, color: 'text-blue-400', bg: 'bg-[#0b1221]', border: 'border-[#1e293b]' },
+    { id: OrderStatus.FINISHED, label: 'Finalizado', icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-[#0b1221]', border: 'border-[#1e293b]' }
 ];
 
 export const ProductionBoard: React.FC<ProductionBoardProps> = ({ orders, onOrderUpdate }) => {
@@ -77,73 +77,35 @@ export const ProductionBoard: React.FC<ProductionBoardProps> = ({ orders, onOrde
                 return (
                     <div
                         key={col.id}
-                        className={`flex flex-col rounded-2xl border-2 ${col.border} ${col.bg} backdrop-blur-sm transition-colors ${draggedOrderId ? 'border-dashed' : ''} overflow-hidden h-full`}
+                        className={`flex flex-col rounded-xl border ${col.border} ${col.bg} transition-colors ${draggedOrderId ? 'border-dashed' : ''} overflow-hidden h-full`}
                         onDragOver={handleDragOver}
                         onDrop={(e) => handleDrop(e, col.id as OrderStatus)}
                     >
                         {/* Header */}
-                        <div className="p-3 border-b border-white/5 flex justify-between items-center shrink-0">
-                            <div className="flex items-center gap-2">
-                                <col.icon className={`w-4 h-4 ${col.color}`} />
-                                <h3 className={`font-black uppercase tracking-widest text-[10px] ${col.color}`}>{col.label}</h3>
-                            </div>
-                            <span className="bg-slate-900 text-slate-400 text-[10px] font-bold px-2 py-1 rounded-lg">
-                                {colOrders.length}
+                        <div className="p-4 border-b border-[#1e293b] flex flex-col items-start shrink-0">
+                            <h3 className={`font-semibold text-sm text-slate-100`}>{col.label}</h3>
+                            <span className="text-slate-500 text-xs mt-1">
+                                {colOrders.length} {colOrders.length === 1 ? 'pedido' : 'pedidos'}
                             </span>
                         </div>
 
                         {/* Drop Zone / List */}
-                        <div className="flex-1 p-2 overflow-y-auto custom-scrollbar space-y-2">
+                        <div className="flex-1 p-3 overflow-y-auto custom-scrollbar space-y-3">
                             {colOrders.map(order => (
                                 <div
                                     key={order.id}
                                     draggable
                                     onDragStart={(e) => handleDragStart(e, order.id)}
-                                    className="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-lg hover:border-slate-600 cursor-move active:cursor-grabbing group transition-all overflow-hidden"
+                                    className="bg-[#0f172a] border border-[#1e293b] p-4 rounded-xl hover:bg-[#1e293b]/30 cursor-move active:cursor-grabbing transition-colors"
                                 >
-                                    {/* Header row: number + name (left), layout thumb + date (right) */}
-                                    <div className="flex items-start justify-between gap-2 mb-3">
-                                        <div className="min-w-0 flex-1">
-                                            <span className="text-[10px] font-black text-indigo-400 uppercase tracking-wider block mb-0.5">
-                                                #{order.orderNumber}
-                                            </span>
-                                            <h4 className="font-bold text-slate-200 text-sm truncate" title={order.clientName}>{order.clientName}</h4>
-                                        </div>
-                                        <div className="flex items-center gap-1.5 shrink-0">
-                                            {order.layoutUrl && (
-                                                <a href={order.layoutUrl} target="_blank" rel="noreferrer" className="flex items-center justify-center p-1 bg-indigo-500/10 text-indigo-400 rounded-md hover:bg-indigo-500/20 transition-colors" title="Ver Layout" onClick={(e) => e.stopPropagation()}>
-                                                    <img src={order.layoutUrl} alt="Layout" className="w-4 h-4 object-contain" />
-                                                </a>
-                                            )}
-                                            {order.deliveryDate && (
-                                                <div className={`flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded-lg shrink-0 ${new Date(order.deliveryDate) < new Date() ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-800 text-slate-400'
-                                                    }`}>
-                                                    <Calendar className="w-3 h-3 shrink-0" />
-                                                    {new Date(order.deliveryDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        {order.items.slice(0, 2).map((item, idx) => (
-                                            <div key={idx} className="text-xs text-slate-400 flex justify-between items-center bg-slate-950/50 p-1.5 rounded-lg border border-slate-800/50 gap-2">
-                                                <span className="truncate min-w-0">{item.productName}</span>
-                                                <span className="font-mono font-bold text-slate-500 shrink-0">x{item.quantity}</span>
-                                            </div>
-                                        ))}
-                                        {order.items.length > 2 && (
-                                            <p className="text-[10px] text-center text-slate-600 font-bold uppercase tracking-widest">+ {order.items.length - 2} itens</p>
-                                        )}
-                                    </div>
-
-                                    <div className="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center opacity-75 group-hover:opacity-100 transition-opacity">
-                                        <span className="text-[10px] font-bold text-slate-500 truncate">
-                                            {new Date(order.createdAt).toLocaleDateString('pt-BR')}
-                                        </span>
-                                        <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 shrink-0">
-                                            <MoreHorizontal className="w-3 h-3" />
-                                        </div>
+                                    <div className="flex flex-col gap-1">
+                                      <span className="text-xs font-bold text-slate-400">
+                                          #{order.orderNumber}
+                                      </span>
+                                      <h4 className="font-semibold text-slate-200 text-[13px] truncate" title={order.clientName}>{order.clientName}</h4>
+                                      <span className="text-xs text-slate-500 truncate mt-2">
+                                          {order.items && order.items.length > 0 ? order.items[0].productName : 'Diversos'}
+                                      </span>
                                     </div>
                                 </div>
                             ))}

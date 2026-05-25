@@ -101,7 +101,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chatId, clientName, what
     return (
         <div className="flex flex-col h-full bg-[#0b1221] relative overflow-hidden">
             {/* Header */}
-            <div className="h-16 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-900/50 backdrop-blur-md">
+            <div className="h-16 border-b border-[#1e293b] flex items-center justify-between px-6 bg-[#0f172a]">
                 <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold text-sm">
                         {clientName.substring(0, 2).toUpperCase()}
@@ -138,12 +138,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chatId, clientName, what
             </div>
 
             {/* Input Area */}
-            <div className="p-4 border-t border-slate-800 bg-slate-900/50">
+            <div className="p-4 border-t border-[#1e293b] bg-[#0f172a]">
                 <div className="flex gap-2 items-end">
                     <button className="p-3 rounded-xl text-slate-500 hover:bg-slate-800 hover:text-slate-300 transition-all">
                         <Paperclip className="w-5 h-5" />
                     </button>
-                    <div className="flex-1 bg-slate-950 border border-slate-800 rounded-2xl flex items-center px-4 py-2 focus-within:ring-2 focus-within:ring-indigo-500/50 transition-all">
+                    <div className="flex-1 bg-[#1C1C26] border border-[#1e293b] rounded-2xl flex items-center px-4 py-2 focus-within:ring-2 focus-within:ring-indigo-500/50 transition-all">
                         <textarea
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}

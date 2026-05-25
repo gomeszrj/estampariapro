@@ -3,6 +3,7 @@ export enum OrderStatus {
   RECEIVED = 'RECEIVED',
   FINALIZATION = 'FINALIZATION',
   IN_PRODUCTION = 'IN_PRODUCTION',
+  SUBLIMATION = 'SUBLIMATION',
   FINISHED = 'FINISHED',
   // Loja Virtual Flow
   STORE_REQUEST = 'STORE_REQUEST',       // Solicitação recebida

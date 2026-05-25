@@ -19,11 +19,11 @@ export const ChatLayout: React.FC = () => {
     const [showSettings, setShowSettings] = useState(false);
 
     return (
-        <div className="flex h-[calc(100vh-2rem)] bg-[#0b1221] rounded-[2rem] overflow-hidden border border-slate-800 shadow-2xl animate-in fade-in duration-500">
+        <div className="flex h-[calc(100vh-2rem)] bg-[#0b1221] rounded-2xl overflow-hidden border border-[#1e293b] shadow-2xl animate-in fade-in duration-500">
             {/* Left Sidebar (List) */}
-            <div className="w-80 flex flex-col border-r border-slate-800 bg-[#0f172a]">
+            <div className="w-80 flex flex-col border-r border-[#1e293b] bg-[#0f172a]">
                 {/* Header */}
-                <div className="h-16 flex items-center justify-between px-6 border-b border-slate-800">
+                <div className="h-16 flex items-center justify-between px-6 border-b border-[#1e293b]">
                     <h2 className="text-slate-100 font-black uppercase tracking-widest text-xs flex items-center gap-2">
                         <MessageSquare className="w-4 h-4 text-indigo-500" />
                         Atendimentos

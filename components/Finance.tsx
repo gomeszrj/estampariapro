@@ -37,7 +37,7 @@ interface FinanceProps {
 }
 
 const FinanceStat = ({ title, value, icon: Icon, color, trend, subtext }: any) => (
-  <div className="bg-[#0f172a] p-6 rounded-3xl border border-slate-800 flex flex-col justify-between relative overflow-hidden group hover:border-slate-700 transition-colors shadow-lg shadow-black/20">
+  <div className="bg-[#0f172a] p-6 rounded-xl border border-[#1e293b] flex flex-col justify-between relative overflow-hidden group hover:border-slate-600 transition-colors shadow-sm">
     <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full opacity-5 ${color.replace('bg-', 'text-')} group-hover:scale-110 transition-transform`} />
     <div className="flex justify-between items-start mb-4 relative">
       <div className={`p-3 rounded-xl ${color} shadow-lg shadow-black/20`}>
@@ -180,18 +180,18 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
     };
   });
 
-  if (loading) return <div className="flex h-96 items-center justify-center"><Loader2 className="w-8 h-8 text-indigo-500 animate-spin" /></div>;
+  if (loading) return <div className="flex h-96 items-center justify-center"><Loader2 className="w-8 h-8 text-white animate-spin" /></div>;
 
   return (
     <div className="space-y-8 animate-in slide-in-from-right-4 duration-500 relative">
 
       {/* NEW TRANSACTION MODAL */}
       {isAdding && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-300">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-black text-white uppercase flex items-center gap-2">
-                <Plus className="w-5 h-5 text-indigo-500" />
+                <Plus className="w-5 h-5 text-white" />
                 Nova Movimentação
               </h3>
               <button onClick={() => setIsAdding(false)} className="bg-slate-800 p-2 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white transition-colors">
@@ -203,13 +203,13 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
               <div className="flex gap-2">
                 <button
                   onClick={() => setNewTransaction({ ...newTransaction, type: 'income' })}
-                  className={`flex-1 py-3 rounded-xl font-black uppercase text-xs border border-slate-800 transition-all ${newTransaction.type === 'income' ? 'bg-emerald-600 text-white border-emerald-500 shadow-lg' : 'bg-slate-950 text-slate-500 hover:bg-slate-800'}`}
+                  className={`flex-1 py-3 rounded-xl font-black uppercase text-xs border border-[#1e293b] transition-all ${newTransaction.type === 'income' ? 'bg-emerald-600 text-white border-emerald-500 shadow-lg' : 'bg-[#1C1C26] text-slate-500 hover:bg-slate-800'}`}
                 >
                   Receita
                 </button>
                 <button
                   onClick={() => setNewTransaction({ ...newTransaction, type: 'expense' })}
-                  className={`flex-1 py-3 rounded-xl font-black uppercase text-xs border border-slate-800 transition-all ${newTransaction.type === 'expense' ? 'bg-rose-600 text-white border-rose-500 shadow-lg' : 'bg-slate-950 text-slate-500 hover:bg-slate-800'}`}
+                  className={`flex-1 py-3 rounded-xl font-black uppercase text-xs border border-[#1e293b] transition-all ${newTransaction.type === 'expense' ? 'bg-rose-600 text-white border-rose-500 shadow-lg' : 'bg-[#1C1C26] text-slate-500 hover:bg-slate-800'}`}
                 >
                   Despesa
                 </button>
@@ -220,7 +220,7 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
                 <input
                   type="number"
                   autoFocus
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-xl"
+                  className="w-full bg-[#0b1221] border border-[#1e293b] rounded-xl px-4 py-3 text-white focus:border-slate-600 focus:ring-1 focus:ring-slate-700/50 outline-none font-bold text-xl"
                   placeholder="0.00"
                   value={newTransaction.amount || ''}
                   onChange={e => setNewTransaction({ ...newTransaction, amount: parseFloat(e.target.value) })}
@@ -230,7 +230,7 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
               <div>
                 <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest ml-1">Descrição</label>
                 <input
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none font-bold"
+                  className="w-full bg-[#0b1221] border border-[#1e293b] rounded-xl px-4 py-3 text-white focus:border-slate-600 focus:ring-1 focus:ring-slate-700/50 outline-none font-bold"
                   placeholder="Ex: Pagamento Aluguel"
                   value={newTransaction.description || ''}
                   onChange={e => setNewTransaction({ ...newTransaction, description: e.target.value })}
@@ -241,7 +241,7 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
                 <div>
                   <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest ml-1">Categoria</label>
                   <select
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-sm"
+                    className="w-full bg-[#0b1221] border border-[#1e293b] rounded-xl px-4 py-3 text-slate-300 focus:border-slate-600 focus:ring-1 focus:ring-slate-700/50 outline-none font-bold text-sm"
                     value={newTransaction.category}
                     onChange={e => setNewTransaction({ ...newTransaction, category: e.target.value as any })}
                   >
@@ -257,7 +257,7 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
                   <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest ml-1">Data</label>
                   <input
                     type="date"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-sm"
+                    className="w-full bg-[#0b1221] border border-[#1e293b] rounded-xl px-4 py-3 text-slate-300 focus:border-slate-600 focus:ring-1 focus:ring-slate-700/50 outline-none font-bold text-sm"
                     value={newTransaction.date}
                     onChange={e => setNewTransaction({ ...newTransaction, date: e.target.value })}
                   />
@@ -267,7 +267,7 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
               <button
                 onClick={handleSaveTransaction}
                 disabled={saving}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black uppercase tracking-widest py-4 rounded-xl shadow-lg shadow-indigo-900/20 active:scale-95 transition-all mt-4 disabled:opacity-50"
+                className="w-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-black uppercase tracking-widest py-4 rounded-xl shadow-lg shadow-white/5 active:scale-95 transition-all mt-4 disabled:opacity-50"
               >
                 {saving ? 'Salvando...' : 'Confirmar'}
               </button>
@@ -286,7 +286,7 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
         </div>
         <button
           onClick={() => setIsAdding(true)}
-          className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-black uppercase text-xs tracking-widest shadow-xl shadow-indigo-900/20 transition-all flex items-center gap-2"
+          className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-6 py-3 rounded-xl font-black uppercase text-xs tracking-widest shadow-xl shadow-white/5 transition-all flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
           Novo Lançamento
@@ -299,7 +299,7 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
           title="Receita Total"
           value={`R$ ${totalRevenue.toLocaleString('pt-BR')}`}
           icon={DollarSign}
-          color="bg-indigo-600"
+          color="bg-white"
           subtext="Baseado em Pedidos"
         />
         <FinanceStat
@@ -329,19 +329,19 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {/* CHART */}
-        <div className="lg:col-span-2 bg-[#0f172a] p-8 rounded-3xl border border-slate-800 shadow-sm min-h-[400px]">
+        <div className="lg:col-span-2 bg-[#0b1221] p-8 rounded-2xl border border-[#1e293b] shadow-sm min-h-[400px]">
           <h3 className="text-lg font-bold mb-8 text-slate-100 flex items-center gap-2">
-            <PieChart className="w-5 h-5 text-indigo-400" />
+            <PieChart className="w-5 h-5 text-white" />
             Fluxo de Caixa (Receita x Despesa + Custo)
           </h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b60" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11, fontWeight: 700 }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11, fontWeight: 700 }} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#0f172a', borderRadius: '16px', border: '1px solid #1e293b' }}
+                  contentStyle={{ backgroundColor: '#0f172a', borderRadius: '16px', border: '1px solid rgba(30,41,59,0.8)' }}
                   cursor={{ fill: 'rgba(255,255,255,0.03)' }}
                 />
                 <Legend />
@@ -354,9 +354,9 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
         </div>
 
         {/* RECENT TRANSACTIONS LIST */}
-        <div className="bg-[#0f172a] p-8 rounded-3xl border border-slate-800 shadow-sm flex flex-col h-[500px]">
+        <div className="bg-[#0b1221] p-8 rounded-2xl border border-[#1e293b] shadow-sm flex flex-col h-[500px]">
           <h3 className="text-lg font-bold mb-6 text-slate-100 flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-indigo-400" />
+            <Calendar className="w-5 h-5 text-white" />
             Últimos Lançamentos
           </h3>
 
@@ -367,7 +367,7 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
               </div>
             ) : (
               transactions.map((t) => (
-                <div key={t.id} className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800/50 flex justify-between items-center group hover:border-slate-700 transition-colors">
+                <div key={t.id} className="bg-[#0f172a] p-4 rounded-2xl border border-[#1e293b] flex justify-between items-center group hover:border-slate-700 transition-colors">
                   <div className="flex items-center gap-3">
                     <div className={`p-2 rounded-xl ${t.type === 'income' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
                       {t.type === 'income' ? <ArrowUpCircle className="w-5 h-5" /> : <ArrowDownCircle className="w-5 h-5" />}

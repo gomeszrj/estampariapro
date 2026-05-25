@@ -166,18 +166,18 @@ const OrderAiBriefing: React.FC<OrderAiBriefingProps> = ({ products, onItemsPars
 
   return (
     <div className="space-y-4">
-      <div className="bg-indigo-900/10 p-6 rounded-[2rem] border border-indigo-500/20 h-full flex flex-col">
+      <div className="bg-white/5 p-6 rounded-2xl border border-[#1e293b] h-full flex flex-col">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
-            <Wand2 className="w-4 h-4 text-indigo-400" />
+          <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+            <Wand2 className="w-4 h-4 text-white" />
           </div>
-          <h4 className="font-black text-indigo-300 uppercase tracking-wider text-xs">Extrator de Pedidos</h4>
+          <h4 className="font-black text-white uppercase tracking-wider text-xs">Extrator de Pedidos</h4>
         </div>
-        <p className="text-[10px] text-indigo-300/60 font-medium mb-4 leading-relaxed">
+        <p className="text-[10px] text-white/40 font-medium mb-4 leading-relaxed">
           Cole o texto do WhatsApp aqui para a IA identificar itens, tamanhos e quantidades automaticamente.
         </p>
         <textarea
-          className="w-full h-48 p-4 bg-slate-950/50 border border-indigo-500/10 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-indigo-900/30 text-xs text-indigo-200 font-medium mb-4 resize-none"
+          className="w-full h-48 p-4 bg-[#0b1221] border border-[#1e293b] rounded-2xl focus:ring-1 focus:ring-slate-700/50 outline-none transition-all placeholder:text-slate-700 text-xs text-white font-medium mb-4 resize-none"
           placeholder="Ex: 'Quero 10 camisetas P e 5 M...'"
           value={aiText}
           onChange={(e) => setAiText(e.target.value)}
@@ -185,7 +185,7 @@ const OrderAiBriefing: React.FC<OrderAiBriefingProps> = ({ products, onItemsPars
         <button
           onClick={handleAiParse}
           disabled={isAiProcessing || !aiText.trim()}
-          className="w-full py-4 bg-indigo-600 text-white rounded-xl font-black flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-indigo-700 transition-all uppercase text-[10px] tracking-[0.2em] shadow-lg shadow-indigo-600/20"
+          className="w-full py-4 bg-[#8B5CF6] text-white rounded-xl font-black flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-white/90 transition-all uppercase text-[10px] tracking-[0.2em] shadow-lg shadow-white/5"
         >
           <span>{isAiProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}</span>
           Processar Texto

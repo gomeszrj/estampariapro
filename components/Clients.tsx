@@ -5,6 +5,8 @@ import { clientService } from '../services/clientService.ts';
 import { catalogOrderService } from '../services/catalogOrderService.ts';
 import { notify } from './ui/toast';
 import { ConfirmModal } from './ui/ConfirmModal';
+import { ColumnDef } from '@tanstack/react-table';
+import { DataTable } from './ui/DataTable';
 
 interface ClientsProps {
   clients: Client[];
@@ -72,7 +74,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
   const getStatusColor = (status: OrderStatus) => {
     switch (status) {
       case OrderStatus.RECEIVED: return 'bg-slate-800 text-slate-300 border-slate-700';
-      case OrderStatus.FINALIZATION: return 'bg-indigo-900/30 text-indigo-400 border-indigo-900/50';
+      case OrderStatus.FINALIZATION: return 'bg-white/5 text-white border-[#1e293b]';
       case OrderStatus.IN_PRODUCTION: return 'bg-amber-900/30 text-amber-400 border-amber-900/50';
       case OrderStatus.FINISHED: return 'bg-emerald-900/30 text-emerald-400 border-emerald-900/50';
       default: return 'bg-slate-800 text-slate-500';
@@ -146,92 +148,101 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
         </div>
         <button
           onClick={() => setEditingClient({ name: '', whatsapp: '', email: '' })}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 font-bold transition-all shadow-lg shadow-indigo-500/20"
+          className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 font-black transition-all shadow-lg shadow-white/5"
         >
           <UserPlus className="w-5 h-5" />
           Novo Cliente
         </button>
       </header>
-
-      <div className="bg-[#0f172a] p-4 rounded-2xl border border-slate-800 shadow-sm">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
-          <input
-            type="text"
-            placeholder="Buscar por nome ou email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredClients.map((client) => {
-          const orderCount = getClientOrderCount(client.id);
-          return (
-            <div onClick={() => handleViewProfile(client)} key={client.id} className="bg-[#0f172a] p-6 rounded-3xl border border-slate-800 hover:border-slate-700 transition-all group relative overflow-hidden cursor-pointer hover:shadow-xl hover:shadow-indigo-900/10">
-              {/* Background badge for visual flair */}
-              <div className="absolute -right-4 -top-4 opacity-[0.03] text-indigo-500 pointer-events-none">
-                <ShoppingBag className="w-32 h-32" />
-              </div>
-
-              <div className="flex justify-between items-start mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
-                  <User className="w-6 h-6" />
-                </div>
-                {/* Changed: Always visible, removed opacity classes */}
-                <div className="flex gap-2 transition-opacity relative z-10">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleEdit(client); }}
-                    className="p-2 bg-slate-800 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-slate-700 transition-colors"
-                    title="Editar"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleDelete(client.id, client.name); }}
-                    className="p-2 bg-slate-800 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-700 transition-colors"
-                    title="Excluir"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              <h3 className="text-lg font-bold text-slate-100 mb-1">{client.name}</h3>
-
-              <div className="flex items-center gap-2 mb-4">
-                <span className="bg-indigo-600/20 text-indigo-400 text-[10px] font-black px-2.5 py-1 rounded-full border border-indigo-500/30 uppercase tracking-widest flex items-center gap-1.5">
-                  <ShoppingBag className="w-3 h-3" />
-                  {orderCount} {orderCount === 1 ? 'Pedido' : 'Pedidos'}
-                </span>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 text-slate-400">
-                  <Phone className="w-4 h-4" />
-                  <span className="text-sm font-medium">{client.whatsapp}</span>
-                </div>
-                <div className="flex items-center gap-3 text-slate-400">
-                  <Mail className="w-4 h-4" />
-                  <span className="text-sm font-medium line-clamp-1">{client.email}</span>
-                </div>
-              </div>
-
-              <div className="mt-6 pt-6 border-t border-slate-800 flex justify-between items-center">
-                <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Ações Rápidas</span>
-                <button onClick={() => handleViewProfile(client)} className="text-[10px] font-black uppercase text-indigo-400 hover:underline">Ver Histórico</button>
-              </div>
-            </div>
-          );
-        })}
+      <div className="bg-[#0b1221] rounded-2xl border border-[#1e293b] shadow-2xl overflow-hidden p-6">
+        <DataTable
+          columns={React.useMemo<ColumnDef<Client>[]>(() => [
+            {
+              accessorKey: 'name',
+              header: 'Cliente',
+              cell: ({ row }) => {
+                const client = row.original;
+                return (
+                  <div className="flex items-center gap-3 cursor-pointer" onClick={() => handleViewProfile(client)}>
+                    <div className="w-8 h-8 rounded-full bg-[#1e293b] flex items-center justify-center text-slate-300 flex-shrink-0">
+                      <User className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-slate-200">{client.name}</div>
+                      {client.document && <div className="text-[10px] text-slate-500 uppercase tracking-widest">{client.document}</div>}
+                    </div>
+                  </div>
+                );
+              }
+            },
+            {
+              id: 'contact',
+              header: 'Contato',
+              cell: ({ row }) => {
+                const client = row.original;
+                return (
+                  <div className="flex flex-col gap-1 text-xs">
+                    {client.whatsapp ? <span className="text-slate-300 flex items-center gap-1"><Phone className="w-3 h-3 text-slate-500"/> {client.whatsapp}</span> : null}
+                    {client.email ? <span className="text-slate-400 flex items-center gap-1"><Mail className="w-3 h-3 text-slate-500"/> {client.email}</span> : null}
+                  </div>
+                );
+              }
+            },
+            {
+              id: 'ordersCount',
+              header: 'Pedidos',
+              cell: ({ row }) => {
+                const client = row.original;
+                const count = getClientOrderCount(client.id);
+                return (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-[#1e293b] text-slate-300 text-xs font-medium">
+                    {count} {count === 1 ? 'pedido' : 'pedidos'}
+                  </span>
+                );
+              }
+            },
+            {
+              id: 'actions',
+              header: 'Ações',
+              cell: ({ row }) => {
+                const client = row.original;
+                return (
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleViewProfile(client); }}
+                      className="p-1.5 text-slate-500 hover:text-white transition-colors"
+                      title="Ver Perfil"
+                    >
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleEdit(client); }}
+                      className="p-1.5 text-slate-500 hover:text-white transition-colors"
+                      title="Editar"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDelete(client.id, client.name); }}
+                      className="p-1.5 text-slate-500 hover:text-rose-500 transition-colors"
+                      title="Excluir"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                );
+              }
+            }
+          ], [getClientOrderCount])}
+          data={clients}
+          searchPlaceholder="Buscar por nome ou email..."
+        />
       </div>
 
       {/* EDIT MODAL */}
       {editingClient && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0f172a] rounded-3xl w-full max-w-lg shadow-2xl border border-slate-800 p-8 animate-in zoom-in-95">
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0f172a] rounded-2xl w-full max-w-lg shadow-2xl border border-[#1e293b] p-8 animate-in zoom-in-95">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold text-slate-100">{editingClient.id ? 'Editar Cliente' : 'Novo Cliente'}</h3>
               <button onClick={() => setEditingClient(null)} className="text-slate-500 hover:text-white"><X className="w-6 h-6" /></button>
@@ -240,7 +251,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
               <div className="space-y-1">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Nome Completo</label>
                 <input
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-200 focus:ring-2 focus:ring-indigo-500"
+                  className="w-full bg-[#0b1221] border border-[#1e293b] rounded-xl px-4 py-2.5 text-slate-200 focus:border-slate-600 focus:ring-1 focus:ring-slate-700/50"
                   value={editingClient.name}
                   onChange={(e) => setEditingClient({ ...editingClient, name: e.target.value })}
                 />
@@ -248,7 +259,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
               <div className="space-y-1">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">WhatsApp</label>
                 <input
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-200 focus:ring-2 focus:ring-indigo-500"
+                  className="w-full bg-[#0b1221] border border-[#1e293b] rounded-xl px-4 py-2.5 text-slate-200 focus:border-slate-600 focus:ring-1 focus:ring-slate-700/50"
                   value={editingClient.whatsapp}
                   onChange={(e) => setEditingClient({ ...editingClient, whatsapp: e.target.value })}
                 />
@@ -256,7 +267,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
               <div className="space-y-1">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Email</label>
                 <input
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-200 focus:ring-2 focus:ring-indigo-500"
+                  className="w-full bg-[#0b1221] border border-[#1e293b] rounded-xl px-4 py-2.5 text-slate-200 focus:border-slate-600 focus:ring-1 focus:ring-slate-700/50"
                   value={editingClient.email}
                   onChange={(e) => setEditingClient({ ...editingClient, email: e.target.value })}
                 />
@@ -264,7 +275,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
               <div className="space-y-1">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Documento (CPF/CNPJ)</label>
                 <input
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-200 focus:ring-2 focus:ring-indigo-500"
+                  className="w-full bg-[#0f172a] border border-[#1e293b] rounded-xl px-4 py-2.5 text-slate-200 focus:ring-1 focus:ring-slate-700/50"
                   value={editingClient.document || ''}
                   onChange={(e) => setEditingClient({ ...editingClient, document: e.target.value })}
                 />
@@ -275,14 +286,14 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
                   Senha de Acesso (Portal do Cliente)
                 </label>
                 <input
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-200 focus:ring-2 focus:ring-indigo-500"
+                  className="w-full bg-[#0b1221] border border-[#1e293b] rounded-xl px-4 py-2.5 text-slate-200 focus:border-slate-600 focus:ring-1 focus:ring-slate-700/50"
                   type="text"
                   placeholder="Deixe em branco para não alterar/criar"
                   value={editingClient.password || ''}
                   onChange={(e) => setEditingClient({ ...editingClient, password: e.target.value })}
                 />
               </div>
-              <button onClick={handleSave} className="w-full mt-6 py-3 bg-indigo-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700">
+              <button onClick={handleSave} className="w-full mt-6 py-3 bg-[#8B5CF6] text-white rounded-xl font-black flex items-center justify-center gap-2 hover:bg-white/90 shadow-lg shadow-white/5">
                 <Save className="w-5 h-5" /> Salvar Cadastro
               </button>
             </div>
@@ -292,12 +303,12 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
 
       {/* PROFILE MODAL - NEW */}
       {viewingClient && (
-        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0f172a] rounded-[2.5rem] w-full max-w-4xl shadow-2xl border border-slate-800 flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0f172a] rounded-2xl w-full max-w-4xl shadow-2xl border border-[#1e293b] flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300">
             {/* Modal Header */}
             <div className="p-8 pb-0 flex justify-between items-start">
               <div className="flex gap-6 items-center">
-                <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-indigo-600 to-indigo-900 flex items-center justify-center text-white shadow-2xl shadow-indigo-900/50">
+                <div className="w-24 h-24 rounded-3xl bg-white flex items-center justify-center text-slate-950 shadow-2xl shadow-black/40">
                   <User className="w-10 h-10" />
                 </div>
                 <div>
@@ -308,70 +319,70 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
                   </div>
                 </div>
               </div>
-              <button onClick={() => setViewingClient(null)} className="p-3 bg-slate-900 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition-all">
+              <button onClick={() => setViewingClient(null)} className="p-3 bg-[#0f172a] rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition-all">
                 <X className="w-6 h-6" />
               </button>
             </div>
 
             {/* Stats Row with Store breakdown */}
             <div className="px-8 mt-8 grid grid-cols-4 gap-4">
-              <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 flex flex-col gap-1 relative overflow-hidden group">
+              <div className="bg-[#0b1221] p-5 rounded-2xl border border-[#1e293b] flex flex-col gap-1 relative overflow-hidden group">
                 <div className="absolute right-0 top-0 opacity-10 -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform">
-                  <Wallet className="w-24 h-24 text-indigo-500" />
+                  <Wallet className="w-24 h-24 text-white" />
                 </div>
                 <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Total Geral</span>
-                <span className="text-2xl font-black text-indigo-400">
+                <span className="text-2xl font-black text-white">
                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(getClientFinancials(viewingClient.id).totalSpent)}
                 </span>
               </div>
-              <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 flex flex-col gap-1">
+              <div className="bg-[#0b1221] p-5 rounded-2xl border border-[#1e293b] flex flex-col gap-1">
                 <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-1"><ShoppingBag className="w-3 h-3 text-emerald-400" /> Loja / Varejo</span>
                 <span className="text-xl font-black text-emerald-400">
                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(getClientFinancials(viewingClient.id).storeSpent)}
                 </span>
               </div>
-              <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 flex flex-col gap-1">
+              <div className="bg-[#0b1221] p-5 rounded-2xl border border-[#1e293b] flex flex-col gap-1">
                 <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-1"><Package className="w-3 h-3 text-sky-400" /> Encomendas</span>
                 <span className="text-xl font-black text-sky-400">
                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(getClientFinancials(viewingClient.id).factorySpent)}
                 </span>
               </div>
-              <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 flex flex-col gap-1">
+              <div className="bg-[#0b1221] p-5 rounded-2xl border border-[#1e293b] flex flex-col gap-1">
                 <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Último Pedido</span>
                 <span className="text-2xl font-black text-white">{getClientFinancials(viewingClient.id).lastOrderDate}</span>
               </div>
             </div>
 
             {/* Tabs */}
-            <div className="px-8 mt-8 flex border-b border-slate-800 gap-8">
+            <div className="px-8 mt-8 flex border-b border-[#1e293b] gap-8">
               <button
                 onClick={() => setProfileTab('active')}
-                className={`pb-4 text-xs font-black uppercase tracking-widest transition-all border-b-2 ${profileTab === 'active' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
+                className={`pb-4 text-xs font-black uppercase tracking-widest transition-all border-b-2 ${profileTab === 'active' ? 'border-white text-white' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
               >
                 Pedidos Ativos ({activeOrders.length})
               </button>
               <button
                 onClick={() => setProfileTab('history')}
-                className={`pb-4 text-xs font-black uppercase tracking-widest transition-all border-b-2 ${profileTab === 'history' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
+                className={`pb-4 text-xs font-black uppercase tracking-widest transition-all border-b-2 ${profileTab === 'history' ? 'border-white text-white' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
               >
                 Histórico ({historyOrders.length})
               </button>
               <button
                 onClick={() => setProfileTab('catalog')}
-                className={`pb-4 text-xs font-black uppercase tracking-widest transition-all border-b-2 ${profileTab === 'catalog' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
+                className={`pb-4 text-xs font-black uppercase tracking-widest transition-all border-b-2 ${profileTab === 'catalog' ? 'border-white text-white' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
               >
                 Solicitações Web ({clientCatalogOrders.length})
               </button>
               <button
                 onClick={() => setProfileTab('info')}
-                className={`pb-4 text-xs font-black uppercase tracking-widest transition-all border-b-2 ${profileTab === 'info' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
+                className={`pb-4 text-xs font-black uppercase tracking-widest transition-all border-b-2 ${profileTab === 'info' ? 'border-white text-white' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
               >
                 Dados Cadastrais
               </button>
             </div>
 
             {/* Content Area */}
-            <div className="flex-1 overflow-y-auto p-8 bg-slate-950/30">
+            <div className="flex-1 overflow-y-auto p-8 bg-[#1C1C26]/30">
               {profileTab === 'active' && (
                 <div className="space-y-3">
                   {activeOrders.length === 0 ? (
@@ -380,7 +391,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
                       <p className="text-slate-500 font-bold">Nenhum pedido ativo no momento.</p>
                     </div>
                   ) : activeOrders.map(order => (
-                    <div key={order.id} className="bg-[#0f172a] p-4 rounded-xl border border-slate-800 flex justify-between items-center hover:border-indigo-500/50 transition-all">
+                    <div key={order.id} className="bg-[#0f172a] p-4 rounded-xl border border-[#1e293b] flex justify-between items-center hover:border-slate-600 transition-all">
                       <div>
                         <div className="flex items-center gap-3 mb-1">
                           <span className="font-black text-slate-200">#{order.orderNumber}</span>
@@ -396,7 +407,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
                         <p className="text-xs text-slate-500 font-medium">Criado em {new Date(order.createdAt).toLocaleDateString()}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-black text-indigo-400">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.totalValue)}</p>
+                        <p className="font-black text-white">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.totalValue)}</p>
                         <p className="text-[10px] text-slate-500 font-bold uppercase">{order.items.length} Itens</p>
                       </div>
                     </div>
@@ -412,7 +423,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
                       <p className="text-slate-500 font-bold">Histórico vazio.</p>
                     </div>
                   ) : historyOrders.map(order => (
-                    <div key={order.id} className="bg-[#0f172a] p-4 rounded-xl border border-slate-800 flex justify-between items-center opacity-70 hover:opacity-100 transition-all">
+                    <div key={order.id} className="bg-[#0f172a] p-4 rounded-xl border border-[#1e293b] flex justify-between items-center opacity-70 hover:opacity-100 transition-all">
                       <div>
                         <div className="flex items-center gap-3 mb-1">
                           <span className="font-black text-slate-200">#{order.orderNumber}</span>
@@ -443,7 +454,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
                       <p className="text-slate-500 font-bold">Nenhuma solicitação web encontrada.</p>
                     </div>
                   ) : clientCatalogOrders.map((req: CatalogOrder) => (
-                    <div key={req.id} className="bg-[#0f172a] p-4 rounded-xl border border-slate-800 flex justify-between items-center hover:border-sky-500/50 transition-all group">
+                    <div key={req.id} className="bg-[#0f172a] p-4 rounded-xl border border-[#1e293b] flex justify-between items-center hover:border-slate-600 transition-all group">
                       <div>
                         <div className="flex items-center gap-3 mb-1">
                           <span className="font-black text-slate-200">WEB #{req.id.substring(0, 6).toUpperCase()}</span>
@@ -491,7 +502,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-6 border-t border-slate-800 bg-[#0f172a] flex justify-between items-center">
+            <div className="p-6 border-t border-[#1e293b] bg-[#0b1221]/40 flex justify-between items-center">
               <button
                 onClick={() => handleDelete(viewingClient.id, viewingClient.name)}
                 className="px-6 py-3 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 border border-rose-500/20"

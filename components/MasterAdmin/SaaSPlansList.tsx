@@ -28,7 +28,7 @@ export const SaaSPlansList: React.FC<SaaSPlansListProps> = ({
         
         <button
           onClick={onCreatePlan}
-          className="px-6 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all shadow-xl shadow-indigo-600/20 flex items-center gap-2 shrink-0 self-stretch sm:self-auto justify-center"
+          className="px-6 py-4 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all shadow-xl shadow-white/5 flex items-center gap-2 shrink-0 self-stretch sm:self-auto justify-center"
         >
           <Plus className="w-4 h-4" /> Novo Plano
         </button>
@@ -36,9 +36,9 @@ export const SaaSPlansList: React.FC<SaaSPlansListProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {saasPlans.map(p => (
-          <div key={p.id} className={`bg-[#0f172a] p-8 rounded-[3rem] border ${p.is_popular ? 'border-indigo-500' : 'border-slate-800'} shadow-xl relative`}>
+          <div key={p.id} className={`bg-[#0f172a] p-8 rounded-[3rem] border ${p.is_popular ? 'border-white/20' : 'border-[#1e293b]'} shadow-xl relative`}>
             {p.is_popular && (
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#8B5CF6] text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
                 Mais Vendido
               </div>
             )}
@@ -46,7 +46,7 @@ export const SaaSPlansList: React.FC<SaaSPlansListProps> = ({
               <h3 className="text-2xl font-black text-slate-100 uppercase">{p.name}</h3>
               <button
                 onClick={() => onEditPlan(p)}
-                className="p-2 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all"
+                className="p-2 bg-[#0f172a] border border-[#1e293b] text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all"
                 title="Editar Preset"
               >
                 <Edit3 className="w-4 h-4" />
@@ -59,10 +59,10 @@ export const SaaSPlansList: React.FC<SaaSPlansListProps> = ({
               </span>
             </p>
             <p className="text-sm font-medium text-slate-400">{p.description}</p>
-            <div className="mt-4 p-4 bg-slate-900/50 border border-slate-800 rounded-xl space-y-2">
-              <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest flex items-center justify-between">
+            <div className="mt-4 p-4 bg-[#0f172a] border border-[#1e293b] rounded-xl space-y-2">
+              <p className="text-[9px] font-black text-white uppercase tracking-widest flex items-center justify-between">
                 Módulos Ativos{' '}
-                <span className="bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full">
+                <span className="bg-white/20 text-white/80 px-2 py-0.5 rounded-full">
                   {Object.values(p.permissions || {}).filter(Boolean).length}
                 </span>
               </p>
@@ -73,7 +73,7 @@ export const SaaSPlansList: React.FC<SaaSPlansListProps> = ({
                     const mod = MODULE_LIST.find(m => m.key === k);
                     if (!mod) return null;
                     return (
-                      <span key={k} className="text-[8px] uppercase tracking-widest text-slate-500 bg-slate-950 border border-slate-800 px-2 py-1 rounded-md">
+                      <span key={k} className="text-[8px] uppercase tracking-widest text-slate-500 bg-[#1C1C26] border border-[#1e293b] px-2 py-1 rounded-md">
                         {mod.label.replace('└ ', '')}
                       </span>
                     );

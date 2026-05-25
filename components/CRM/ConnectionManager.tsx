@@ -48,7 +48,7 @@ export const ConnectionManager: React.FC = () => {
     };
 
     return (
-        <div className="bg-slate-900/50 p-6 rounded-3xl border border-slate-800">
+        <div className="bg-[#0f172a] p-6 rounded-3xl border border-[#1e293b]">
             <h3 className="text-sm font-black text-slate-100 uppercase tracking-widest mb-4 flex items-center gap-2">
                 <QrIcon className="w-4 h-4 text-emerald-400" />
                 Conexão WhatsApp

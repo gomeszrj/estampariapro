@@ -35,18 +35,50 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
     });
   };
 
-  // Load RBAC permissions from DB
+  // Load RBAC permissions from DB with a safety timeout
   const loadPermissions = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setPermsLoaded(true); return; }
+    let resolved = false;
 
+    // Safety timeout: if Supabase query hangs for more than 1.5 seconds, force proceed with default full access
+    const timeoutId = setTimeout(() => {
+      if (!resolved) {
+        console.warn("Sidebar permissions load timed out - defaulting to full access");
+        setPermissions(null); // null = default full access
+        setPermsLoaded(true);
+        resolved = true;
+      }
+    }, 1500);
+
+    try {
+      console.log("Sidebar: Loading user session...");
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log("Sidebar: User session loaded:", user?.email);
+      if (!user) {
+        if (!resolved) {
+          setPermsLoaded(true);
+          resolved = true;
+          clearTimeout(timeoutId);
+        }
+        return;
+      }
+
+      console.log("Sidebar: Fetching permissions from DB...");
       const perms = await tenantService.getMyPermissions();
-      setPermissions(perms || null);
-    } catch {
-      setPermissions(null);
-    } finally {
-      setPermsLoaded(true);
+      console.log("Sidebar: Permissions fetched:", perms);
+      if (!resolved) {
+        setPermissions(perms || null);
+        setPermsLoaded(true);
+        resolved = true;
+        clearTimeout(timeoutId);
+      }
+    } catch (err) {
+      console.error("Sidebar: Error loading permissions:", err);
+      if (!resolved) {
+        setPermissions(null);
+        setPermsLoaded(true);
+        resolved = true;
+        clearTimeout(timeoutId);
+      }
     }
   };
 
@@ -63,7 +95,21 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
   const can = (permKey: string): boolean => {
     if (isMasterAdmin) return true;
     if (!permsLoaded)  return false;
-    if (!permissions)  return true;     // No permissions record = admin default (full access)
+    
+    // If permissions object is null, undefined, or empty, default to full access (true)
+    if (!permissions || Object.keys(permissions).length === 0) return true;
+    
+    // If the specific permission key doesn't exist in the object, default to true for core features
+    if (!(permKey in permissions)) {
+      const coreKeys = [
+        'can_view_dashboard', 'can_view_orders', 
+        'can_view_kanban', 'can_view_art_queue', 'can_view_products', 
+        'can_view_catalog', 'can_view_clients', 'can_view_crm', 
+        'can_view_inventory', 'can_view_finance', 'can_view_settings'
+      ];
+      return coreKeys.includes(permKey);
+    }
+    
     return !!permissions[permKey];
   };
 
@@ -100,16 +146,18 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
         />
       )}
 
-      <aside className={`w-72 bg-[#0f172a] border-r border-slate-800/50 h-screen fixed md:sticky top-0 left-0 z-50 flex flex-col transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+      <aside className={`w-72 bg-[#05080E] border-r border-[#1e293b] h-screen fixed md:sticky top-0 left-0 z-50 flex flex-col transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
         {/* Logo */}
-        <div className="p-8 border-b border-slate-800/50 flex justify-between items-center">
-          <h1 className="text-xl font-black text-indigo-400 flex items-center gap-3 tracking-tighter uppercase truncate">
-            <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-600/20 shrink-0 overflow-hidden">
-              {companyLogo
-                ? <img src={companyLogo} className="w-full h-full object-contain" alt="Logo" />
-                : <Package className="w-6 h-6 text-white" />}
+        <div className="p-6 border-b border-[#1e293b] flex items-center justify-center">
+          <h1 className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-transparent flex items-center justify-center relative">
+              <div className="absolute inset-0 bg-[#6366f1]/20 rounded-xl blur-md"></div>
+              <span className="text-[#6366f1] text-2xl font-black relative z-10 font-mono tracking-tighter" style={{ textShadow: '0 0 10px #6366f1, 0 0 20px #6366f1' }}>EP</span>
             </div>
-            <span className="truncate" title={companyName}>{companyName}</span>
+            <div className="flex flex-col">
+              <span className="text-white text-lg font-black tracking-tight leading-none">ESTAMPARIA</span>
+              <span className="text-[#6366f1] text-[10px] font-black uppercase tracking-[0.3em] leading-none mt-1">PRO</span>
+            </div>
           </h1>
         </div>
 
@@ -131,47 +179,47 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
                 setActiveView(item.id);
                 if (window.innerWidth < 768 && setIsOpen) setIsOpen(false);
               }}
-              className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-300 ${
+              className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-300 ${
                 activeView === item.id
-                  ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-600/20 translate-x-1'
-                  : 'text-slate-500 hover:bg-slate-800/50 hover:text-slate-200'
+                  ? 'bg-[#4f46e5] text-white shadow-[0_0_15px_rgba(79,70,229,0.3)]'
+                  : 'text-slate-400 hover:bg-[#0f172a] hover:text-slate-200'
               }`}
             >
-              <item.icon className={`w-5 h-5 transition-colors ${activeView === item.id ? 'text-white' : 'text-slate-600'}`} />
-              <span className="font-black uppercase text-[11px] tracking-widest">{item.label}</span>
+              <item.icon className={`w-5 h-5 transition-colors ${activeView === item.id ? 'text-white' : 'text-slate-500'}`} />
+              <span className={`text-[12px] uppercase tracking-widest ${activeView === item.id ? 'font-black' : 'font-bold'}`}>{item.label}</span>
             </button>
           ))}
 
           {/* External links — only for users with any actual permissions */}
           {(isMasterAdmin || (permsLoaded && permissions)) && (
-            <div className="pt-4 mt-4 border-t border-slate-800/50 space-y-2">
-              <p className="px-5 text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Links Externos</p>
+            <div className="pt-4 mt-4 border-t border-[#1e293b] space-y-2">
+              <p className="px-5 text-[10px] font-black uppercase tracking-widest text-[#5A6578] mb-2">Links Externos</p>
 
-              <div className="w-full flex items-center justify-between px-5 py-3 rounded-2xl text-indigo-400 hover:bg-slate-800/50 transition-all group">
+              <div className="w-full flex items-center justify-between px-5 py-3 rounded-2xl text-white/70 border border-transparent hover:border-[#1e293b] hover:bg-white/5 hover:text-white transition-all group">
                 <a href="/catalogo" target="_blank" className="flex items-center gap-4 flex-1">
-                  <Share2 className="w-5 h-5" />
+                  <Share2 className="w-5 h-5 text-[#5A6578] group-hover:text-white transition-colors" />
                   <span className="font-black uppercase text-[11px] tracking-widest">Catálogo</span>
                 </a>
                 <button
                   onClick={() => handleCopyLink('/catalogo')}
-                  className="opacity-0 group-hover:opacity-100 p-2 hover:bg-indigo-500/20 rounded-lg transition-all"
+                  className="opacity-0 group-hover:opacity-100 p-2 hover:bg-white/10 rounded-lg transition-all"
                   title="Copiar Link"
                 >
-                  <Copy className="w-4 h-4 text-indigo-300" />
+                  <Copy className="w-4 h-4 text-white/50 hover:text-white" />
                 </button>
               </div>
 
-              <div className="w-full flex items-center justify-between px-5 py-3 rounded-2xl text-emerald-400 hover:bg-slate-800/50 transition-all group">
+              <div className="w-full flex items-center justify-between px-5 py-3 rounded-2xl text-white/70 border border-transparent hover:border-[#1e293b] hover:bg-white/5 hover:text-white transition-all group">
                 <a href="/?view=client_portal" target="_blank" className="flex items-center gap-4 flex-1">
-                  <ExternalLink className="w-5 h-5" />
+                  <ExternalLink className="w-5 h-5 text-[#5A6578] group-hover:text-white transition-colors" />
                   <span className="font-black uppercase text-[11px] tracking-widest">Portal Disp.</span>
                 </a>
                 <button
                   onClick={() => handleCopyLink('/?view=client_portal')}
-                  className="opacity-0 group-hover:opacity-100 p-2 hover:bg-emerald-500/20 rounded-lg transition-all"
+                  className="opacity-0 group-hover:opacity-100 p-2 hover:bg-white/10 rounded-lg transition-all"
                   title="Copiar Link"
                 >
-                  <Copy className="w-4 h-4 text-emerald-300" />
+                  <Copy className="w-4 h-4 text-white/50 hover:text-white" />
                 </button>
               </div>
             </div>
@@ -180,7 +228,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
 
         {/* Settings + Version */}
         {can('can_view_settings') && (
-          <div className="p-6 border-t border-slate-800/50">
+          <div className="p-6 border-t border-[#1e293b]">
             <button
               onClick={() => {
                 setActiveView('settings');
@@ -188,23 +236,56 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
               }}
               className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-300 ${
                 activeView === 'settings'
-                  ? 'bg-slate-800 text-white'
-                  : 'text-slate-500 hover:bg-slate-800/50 hover:text-slate-200'
+                  ? 'bg-[#6366f1] text-white font-black shadow-lg shadow-indigo-500/20'
+                  : 'text-[#5A6578] hover:bg-[#0f172a] hover:text-white'
               }`}
             >
-              <Settings className="w-5 h-5" />
+              <Settings className={`w-5 h-5 transition-colors ${activeView === 'settings' ? 'text-white' : 'text-[#5A6578]'}`} />
               <span className="font-black uppercase text-[11px] tracking-widest">Ajustes</span>
             </button>
             <div className="mt-4 text-center">
-              <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em]">Estamparia Pro v{SYSTEM_VERSION}</span>
+              <span className="text-[9px] font-black text-slate-700 uppercase tracking-[0.3em]">Estamparia Pro v{SYSTEM_VERSION}</span>
             </div>
           </div>
         )}
         {!can('can_view_settings') && (
-          <div className="p-6 border-t border-slate-800/50 text-center">
-            <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em]">Estamparia Pro v{SYSTEM_VERSION}</span>
+          <div className="p-6 border-t border-[#1e293b] text-center">
+            <span className="text-[9px] font-black text-slate-700 uppercase tracking-[0.3em]">Estamparia Pro v{SYSTEM_VERSION}</span>
           </div>
         )}
+
+        {/* Footer User Info */}
+        <div className="p-4 border-t border-[#1e293b] space-y-3 bg-[#05080E]">
+          <div className="flex items-center justify-between p-3 rounded-xl bg-[#0b1221] border border-[#1e293b] cursor-pointer hover:border-slate-600 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-800 border border-[#1e293b]">
+                <img src="https://i.pravatar.cc/150?u=admin" alt="User" className="w-full h-full object-cover" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-white text-xs font-bold">Administrador</span>
+                <span className="text-[#6366f1] text-[9px] font-black tracking-widest uppercase mt-0.5">ADMIN MASTER</span>
+              </div>
+            </div>
+            <span className="text-slate-500">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-[#1e1b4b] to-[#1e1b4b]/50 border border-[#4f46e5]/30 cursor-pointer group hover:border-[#4f46e5]/60 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center bg-[#4f46e5]/20 text-[#818cf8] group-hover:bg-[#4f46e5]/30 transition-colors">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-white text-[11px] font-bold tracking-wide">Plano Profissional</span>
+                <span className="text-slate-400 text-[9px] mt-0.5">Ativo até 15/07/2026</span>
+              </div>
+            </div>
+            <span className="text-[#818cf8] group-hover:translate-x-1 transition-transform">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </span>
+          </div>
+        </div>
       </aside>
     </>
   );

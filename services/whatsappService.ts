@@ -1,13 +1,22 @@
+import { settingsService } from './settingsService';
+
 export const whatsappService = {
-    getSettings: () => {
-        const baseUrl = localStorage.getItem('evolution_api_url') || '';
-        const apiKey = localStorage.getItem('evolution_api_key') || '';
-        const instanceName = localStorage.getItem('evolution_instance_name') || 'GomeszSpeedPrint';
-        return { baseUrl, apiKey, instanceName };
+    getSettings: async () => {
+        try {
+            const settings = await settingsService.getSettings();
+            return {
+                baseUrl: settings.evolution_api_url || '',
+                apiKey: settings.evolution_api_key || '',
+                instanceName: settings.evolution_instance_name || 'GomeszSpeedPrint'
+            };
+        } catch (error) {
+            console.error("Error fetching whatsapp settings:", error);
+            return { baseUrl: '', apiKey: '', instanceName: 'GomeszSpeedPrint' };
+        }
     },
 
     getConnectionState: async (): Promise<{ state: string; statusReason?: number }> => {
-        const { baseUrl, apiKey, instanceName } = whatsappService.getSettings();
+        const { baseUrl, apiKey, instanceName } = await whatsappService.getSettings();
         if (!baseUrl || !apiKey) return { state: 'unconfigured' };
 
         try {
@@ -23,7 +32,7 @@ export const whatsappService = {
     },
 
     getQrCode: async (): Promise<string | null> => {
-        const { baseUrl, apiKey, instanceName } = whatsappService.getSettings();
+        const { baseUrl, apiKey, instanceName } = await whatsappService.getSettings();
         if (!baseUrl || !apiKey) return null;
 
         try {
@@ -39,7 +48,7 @@ export const whatsappService = {
     },
 
     connectPairingCode: async (phoneNumber: string): Promise<string | null> => {
-        const { baseUrl, apiKey, instanceName } = whatsappService.getSettings();
+        const { baseUrl, apiKey, instanceName } = await whatsappService.getSettings();
         if (!baseUrl || !apiKey) return null;
 
         const cleanPhone = phoneNumber.replace(/\D/g, '');
@@ -57,7 +66,7 @@ export const whatsappService = {
     },
 
     logout: async (): Promise<boolean> => {
-        const { baseUrl, apiKey, instanceName } = whatsappService.getSettings();
+        const { baseUrl, apiKey, instanceName } = await whatsappService.getSettings();
         if (!baseUrl || !apiKey) return false;
 
         try {
@@ -72,7 +81,7 @@ export const whatsappService = {
     },
 
     sendMessage: async (phone: string, text: string): Promise<boolean> => {
-        const { baseUrl, apiKey, instanceName } = whatsappService.getSettings();
+        const { baseUrl, apiKey, instanceName } = await whatsappService.getSettings();
         const cleanPhone = phone.replace(/\D/g, '');
         const chatId = `55${cleanPhone}@s.whatsapp.net`;
 
@@ -95,7 +104,7 @@ export const whatsappService = {
     },
 
     sendMedia: async (phone: string, fileBase64: string, mimeType: string, fileName: string, caption?: string): Promise<boolean> => {
-        const { baseUrl, apiKey, instanceName } = whatsappService.getSettings();
+        const { baseUrl, apiKey, instanceName } = await whatsappService.getSettings();
         const cleanPhone = phone.replace(/\D/g, '');
         const chatId = `55${cleanPhone}@s.whatsapp.net`;
 

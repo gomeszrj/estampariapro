@@ -71,17 +71,17 @@ const OrderChatDrawer: React.FC<OrderChatDrawerProps> = ({ chatOrder, onClose })
   };
 
   return (
-    <div className="fixed inset-0 bg-[#020617]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-[#0f172a] rounded-3xl w-full max-w-lg shadow-2xl border border-slate-800 flex flex-col h-[70vh] max-h-[800px] overflow-hidden animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 bg-[#0b1221]/80 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="bg-[#0f172a] rounded-3xl w-full max-w-lg shadow-2xl border border-[#1e293b] flex flex-col h-[70vh] max-h-[800px] overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="p-6 border-b border-slate-800 bg-[#1e293b]/50 flex justify-between items-center shrink-0">
+        <div className="p-6 border-b border-[#1e293b] bg-[#1e293b]/50 flex justify-between items-center shrink-0">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-400">
+            <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-white">
               <MessageSquare className="w-6 h-6" />
             </div>
             <div>
               <h3 className="text-lg font-black text-slate-100">{chatOrder.clientName}</h3>
-              <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Pedido #{chatOrder.orderNumber}</p>
+              <p className="text-[10px] font-bold text-white uppercase tracking-widest">Pedido #{chatOrder.orderNumber}</p>
             </div>
           </div>
           <button
@@ -93,7 +93,7 @@ const OrderChatDrawer: React.FC<OrderChatDrawerProps> = ({ chatOrder, onClose })
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-950/20">
+        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-[#1C1C26]/20">
           {chatMessages.map(msg => {
             const isStore = msg.sender === 'store';
             return (
@@ -101,7 +101,7 @@ const OrderChatDrawer: React.FC<OrderChatDrawerProps> = ({ chatOrder, onClose })
                 <div
                   className={`max-w-[80%] rounded-2xl p-4 ${
                     isStore
-                      ? 'bg-indigo-600 text-white rounded-tr-sm'
+                      ? 'bg-white/10 text-white rounded-tr-sm'
                       : 'bg-slate-800 text-slate-200 rounded-tl-sm border border-slate-700'
                   }`}
                 >
@@ -126,11 +126,11 @@ const OrderChatDrawer: React.FC<OrderChatDrawerProps> = ({ chatOrder, onClose })
         </div>
 
         {/* Input Form */}
-        <div className="p-4 bg-[#1e293b]/50 border-t border-slate-800 shrink-0">
+        <div className="p-4 bg-[#1e293b]/50 border-t border-[#1e293b] shrink-0">
           <form onSubmit={sendChatMessage} className="relative">
             <input
               type="text"
-              className="w-full bg-[#0f172a] border border-slate-700/50 rounded-xl py-3.5 pl-4 pr-12 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm font-medium transition-all"
+              className="w-full bg-[#0f172a] border border-slate-700/50 rounded-xl py-3.5 pl-4 pr-12 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-slate-600 focus:ring-1 focus:ring-slate-700/50 text-sm font-medium transition-all"
               placeholder="Mensagem..."
               value={chatInput}
               onChange={e => setChatInput(e.target.value)}
@@ -138,7 +138,7 @@ const OrderChatDrawer: React.FC<OrderChatDrawerProps> = ({ chatOrder, onClose })
             <button
               type="submit"
               disabled={!chatInput.trim() || isSendingChat}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg flex items-center justify-center transition-colors shadow-lg shadow-indigo-600/20"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 bg-white hover:bg-white/90 disabled:opacity-50 text-slate-950 rounded-lg flex items-center justify-center transition-colors shadow-lg shadow-white/5"
             >
               <Send className="w-4 h-4 ml-0.5" />
             </button>

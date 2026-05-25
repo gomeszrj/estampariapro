@@ -47,17 +47,17 @@ export const SaaSPlanModal: React.FC<SaaSPlanModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[60] flex items-start justify-center p-4 overflow-y-auto">
-      <div className="bg-[#0f172a] rounded-[3rem] w-full max-w-xl p-8 border border-slate-800 shadow-2xl animate-in zoom-in-95 my-6">
+    <div className="fixed inset-0 bg-[#1C1C26]/90 z-[60] flex items-start justify-center p-4 overflow-y-auto">
+      <div className="bg-[#0f172a] rounded-[3rem] w-full max-w-xl p-8 border border-[#1e293b] shadow-2xl animate-in zoom-in-95 my-6">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-black text-slate-100 uppercase tracking-tight flex items-center gap-2">
             {isNew ? (
               <>
-                <Plus className="w-5 h-5 text-indigo-400" /> Criar Plano SaaS
+                <Plus className="w-5 h-5 text-white" /> Criar Plano SaaS
               </>
             ) : (
               <>
-                <Edit3 className="w-5 h-5 text-indigo-400" /> Editar Preset: {plan.name}
+                <Edit3 className="w-5 h-5 text-white" /> Editar Preset: {plan.name}
               </>
             )}
           </h3>
@@ -69,7 +69,7 @@ export const SaaSPlanModal: React.FC<SaaSPlanModalProps> = ({
             <input
               value={dbPlanName}
               onChange={e => setDbPlanName(e.target.value)}
-              className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none focus:ring-1 focus:ring-indigo-500"
+              className="w-full mt-1 bg-[#1C1C26] border border-[#1e293b] rounded-xl p-3 text-slate-100 font-bold outline-none focus:ring-1 focus:ring-slate-700/50"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -79,7 +79,7 @@ export const SaaSPlanModal: React.FC<SaaSPlanModalProps> = ({
                 type="number"
                 value={dbPlanPrice}
                 onChange={e => setDbPlanPrice(Number(e.target.value))}
-                className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full mt-1 bg-[#1C1C26] border border-[#1e293b] rounded-xl p-3 text-slate-100 font-bold outline-none focus:ring-1 focus:ring-slate-700/50"
               />
             </div>
             <div>
@@ -87,7 +87,7 @@ export const SaaSPlanModal: React.FC<SaaSPlanModalProps> = ({
               <select
                 value={dbPlanCycle}
                 onChange={e => setDbPlanCycle(e.target.value)}
-                className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none"
+                className="w-full mt-1 bg-[#1C1C26] border border-[#1e293b] rounded-xl p-3 text-slate-100 font-bold outline-none"
               >
                 <option value="Mensal">Mensal</option>
                 <option value="Semestral">Semestral</option>
@@ -100,11 +100,11 @@ export const SaaSPlanModal: React.FC<SaaSPlanModalProps> = ({
             <input
               value={dbPlanDesc}
               onChange={e => setDbPlanDesc(e.target.value)}
-              className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 font-bold outline-none focus:ring-1 focus:ring-indigo-500"
+              className="w-full mt-1 bg-[#1C1C26] border border-[#1e293b] rounded-xl p-3 text-slate-100 font-bold outline-none focus:ring-1 focus:ring-slate-700/50"
             />
           </div>
 
-          <div className="pt-4 border-t border-slate-800/50 mt-4">
+          <div className="pt-4 border-t border-[#1e293b] mt-4">
             <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-3">Módulos Ativados Neste Plano</p>
             <PermissionsPanel
               permissions={dbPlanPermissions}
@@ -115,7 +115,7 @@ export const SaaSPlanModal: React.FC<SaaSPlanModalProps> = ({
         </div>
 
         <div className="mt-8 flex gap-3">
-          <button onClick={onClose} className="flex-1 py-3 bg-slate-900 text-slate-400 rounded-xl font-black uppercase text-[10px]">
+          <button onClick={onClose} className="flex-1 py-3 bg-[#0f172a] text-slate-400 rounded-xl font-black uppercase text-[10px]">
             Cancelar
           </button>
           {!isNew && (
@@ -129,7 +129,7 @@ export const SaaSPlanModal: React.FC<SaaSPlanModalProps> = ({
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-black uppercase text-[10px] shadow-lg shadow-indigo-600/20 disabled:opacity-50"
+            className="flex-1 py-3 bg-[#8B5CF6] text-white rounded-xl font-black uppercase text-[10px] shadow-lg shadow-white/5 disabled:opacity-50"
           >
             {isSaving ? 'Salvando...' : 'Salvar Plano'}
           </button>

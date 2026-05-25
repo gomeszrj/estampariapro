@@ -36,12 +36,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 .single();
 
             const { data: { user: currentUser } } = await supabase.auth.getUser();
+            // SEC: Require BOTH conditions — never grant master on email alone
             const isMaster = currentUser?.email === 'admin@estamparia.com' && profile?.role === 'admin';
             setIsMasterAdmin(isMaster);
         } catch {
-            // Fallback: check email only
-            const { data: { user: currentUser } } = await supabase.auth.getUser();
-            setIsMasterAdmin(currentUser?.email === 'admin@estamparia.com');
+            // SEC: On error, deny master admin access — never use email-only fallback
+            setIsMasterAdmin(false);
         }
     };
 
@@ -87,6 +87,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const signOut = async () => {
         await supabase.auth.signOut({ scope: 'local' });
+        localStorage.removeItem('client_session');
+        window.location.href = '/';
     };
 
     return (

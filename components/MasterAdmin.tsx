@@ -233,7 +233,7 @@ const MasterAdmin: React.FC = () => {
   return (
     <div className="animate-in slide-in-from-bottom-4 duration-500 p-6 max-w-7xl mx-auto space-y-8 pb-32">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-center border-b border-slate-800 pb-6 gap-6">
+      <div className="flex flex-col md:flex-row justify-between items-center border-b border-[#1e293b] pb-6 gap-6">
         <div>
           <h2 className="text-3xl font-black text-slate-100 uppercase tracking-tighter flex items-center gap-3">
             <ShieldAlert className="w-8 h-8 text-rose-500" /> Gestão SaaS
@@ -249,14 +249,14 @@ const MasterAdmin: React.FC = () => {
             {runningExpire ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
             Verificar Vencimentos
           </button>
-          <div className="flex bg-slate-900 border border-slate-800 rounded-2xl p-1 gap-1">
+          <div className="flex bg-[#0f172a] border border-[#1e293b] rounded-2xl p-1 gap-1">
             {(['ativos', 'novo', 'planos'] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`px-5 py-3 flex items-center gap-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
                   activeTab === tab
-                    ? 'bg-indigo-600 text-white shadow-lg'
+                    ? 'bg-[#8B5CF6] text-white shadow-lg'
                     : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
                 }`}
               >
