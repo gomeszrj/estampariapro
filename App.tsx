@@ -293,6 +293,7 @@ const AuthenticatedApp: React.FC = () => {
               <div className="text-right hidden md:block">
                 <p className="text-sm font-bold text-white tracking-tight">{user?.email || 'admin@estamparia.com'}</p>
                 <p className="text-[9px] text-[#6366f1] font-black uppercase tracking-widest mt-0.5">{isMasterAdmin ? 'ADMIN MASTER' : 'ADMINISTRADOR'}</p>
+                <button onClick={signOut} className="text-[9px] text-rose-500 font-black hover:text-rose-400 uppercase tracking-widest mt-0.5 w-full text-right">SAIR</button>
               </div>
               
               <div className="relative group cursor-pointer" onClick={signOut}>
