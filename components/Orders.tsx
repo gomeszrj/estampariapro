@@ -1120,7 +1120,7 @@ value={internalNotes}
                   <button onClick={() => handleReceivePayment(order)} className="w-8 h-8 rounded-lg bg-[#0f172a] border border-[#1e293b] flex items-center justify-center text-slate-400 hover:text-emerald-400 hover:border-emerald-500/50 transition-colors" title="Registrar Pagamento">
                     <DollarSign className="w-3.5 h-3.5" />
                   </button>
-                  <button onClick={() => notify.info('Visualização de documento (PDF) estará disponível em breve.')} className="w-8 h-8 rounded-lg bg-[#0f172a] border border-[#1e293b] flex items-center justify-center text-slate-400 hover:text-white hover:border-slate-500 transition-colors" title="Documento">
+                  <button onClick={() => printInvoice(order)} className="w-8 h-8 rounded-lg bg-[#0f172a] border border-[#1e293b] flex items-center justify-center text-slate-400 hover:text-white hover:border-slate-500 transition-colors" title="Gerar DANFE">
                     <FileText className="w-3.5 h-3.5" />
                   </button>
                   <button onClick={() => {

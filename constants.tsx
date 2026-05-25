@@ -3,12 +3,14 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '21.8.4';
+export const SYSTEM_VERSION = '21.8.5';
 export const APP_NAME = 'Gomesz Speed Print';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.8.4 (SaaS Premium Finalizado):
-- Finalização do Redesign Premium nos módulos: Produtos, Financeiro e Configurações.
-- Padronização visual com novos botões Esmeralda e gradientes.
-- Efeitos visuais suaves com animações de slide-in para melhor usabilidade.`;
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.8.5 (Fase 2 - SaaS Premium & Correções):
+- Redesign Premium Total (Fase 2):
+  * Módulo de Produtos atualizado para o Dark Mode Premium, com novos efeitos visuais, botões Esmeralda e slide-in animations.
+  * Painel Financeiro modernizado para acompanhar os tons escuros da plataforma.
+  * Configurações (Empresa, Equipe e IA) padronizadas sob a mesma paleta de cores.
+- Correção Operacional: O botão de "Documento" nos Pedidos agora está 100% funcional, abrindo imediatamente o gerador de PDF da DANFE/NF para impressão rápida.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [
