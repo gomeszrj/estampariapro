@@ -519,7 +519,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
                     </div>
                   )}
                   {readOnly && (
-                    <button className="mt-auto w-full py-2 bg-white/10 text-white font-black uppercase text-[10px] tracking-widest rounded-xl hover:bg-white hover:text-slate-950 transition-colors group-hover:block hidden">
+                    <button onClick={(e) => { e.stopPropagation(); handleAddToCart(product); notify.success('Produto selecionado!'); }} className="mt-auto w-full py-2 bg-white/10 text-white font-black uppercase text-[10px] tracking-widest rounded-xl hover:bg-white hover:text-slate-950 transition-colors group-hover:block hidden">
                       Adicionar
                     </button>
                   )}

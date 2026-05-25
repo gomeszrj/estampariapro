@@ -226,7 +226,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) =>
               <h3 className="text-sm font-black text-white tracking-widest uppercase">Fluxo de Produção</h3>
               <p className="text-xs text-slate-500 mt-1">Acompanhe o andamento dos pedidos</p>
             </div>
-            <div className="bg-[#0f172a] border border-[#1e293b] text-xs text-slate-300 px-3 py-1.5 rounded-lg flex items-center gap-2 cursor-pointer">
+            <div className="bg-[#0f172a] border border-[#1e293b] text-xs text-slate-300 px-3 py-1.5 rounded-lg flex items-center gap-2 cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => notify.info('Filtro de período (Hoje) estará disponível na próxima atualização.')}>
               Hoje <ChevronRight className="w-3 h-3 rotate-90" />
             </div>
           </div>
@@ -394,7 +394,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) =>
               <h3 className="text-sm font-black text-white tracking-widest uppercase">Faturamento dos últimos 6 meses</h3>
               <p className="text-xs text-slate-500 mt-1">Análise de faturamento mensal</p>
             </div>
-            <div className="bg-[#0f172a] border border-[#1e293b] text-xs text-slate-300 px-3 py-1.5 rounded-lg flex items-center gap-2 cursor-pointer">
+            <div className="bg-[#0f172a] border border-[#1e293b] text-xs text-slate-300 px-3 py-1.5 rounded-lg flex items-center gap-2 cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => notify.info('Filtro de faturamento por ano estará disponível em breve.')}>
               Este ano <ChevronRight className="w-3 h-3 rotate-90" />
             </div>
           </div>

@@ -96,6 +96,24 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
   }, [safeClients, safeOrders, clientsDataMap]);
 
   // Funções de Ação e Modal
+  const handleExportCSV = () => {
+    if (safeClients.length === 0) {
+      notify.error("Não há clientes para exportar.");
+      return;
+    }
+    const header = "Nome,Email,Telefone,CNPJ/CPF\n";
+    const rows = safeClients.map(c => `"${c.name || ''}","${c.email || ''}","${c.whatsapp || ''}","${c.document || ''}"`).join("\n");
+    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + header + rows;
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `clientes_estampariapro_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    notify.success("Exportação concluída com sucesso!");
+  };
+
   const getClientFinancials = useCallback((clientId: string) => {
     const clientOrders = safeOrders.filter(o => o.clientId === clientId).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     const totalSpent = clientOrders.reduce((sum, order) => sum + (order.totalValue || 0), 0);
@@ -189,10 +207,10 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
           <p className="text-slate-500 mt-1">Cadastre e gerencie seus clientes e acompanhe o histórico de pedidos e compras.</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="hidden md:flex px-4 py-2.5 rounded-xl bg-[#0b1221] border border-[#1e293b] text-slate-400 text-xs font-black uppercase tracking-widest items-center gap-2">
+          <div className="hidden md:flex px-4 py-2.5 rounded-xl bg-[#0b1221] border border-[#1e293b] text-slate-400 text-xs font-black uppercase tracking-widest items-center gap-2 cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => notify.info('Filtro "Mais recentes" estará disponível em breve.')}>
             Mais recentes <ArrowRight className="w-3 h-3 rotate-90" />
           </div>
-          <button className="hidden md:flex px-4 py-2.5 rounded-xl bg-[#0b1221] border border-[#1e293b] text-slate-400 text-xs font-black uppercase tracking-widest items-center gap-2 hover:bg-slate-800 transition-colors">
+          <button className="hidden md:flex px-4 py-2.5 rounded-xl bg-[#0b1221] border border-[#1e293b] text-slate-400 text-xs font-black uppercase tracking-widest items-center gap-2 hover:bg-slate-800 transition-colors" onClick={handleExportCSV}>
             <Download className="w-4 h-4" /> Exportar
           </button>
           <button

@@ -75,6 +75,8 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
   const [activeContext, setActiveContext] = useState<'production' | 'store'>('production'); // New: Switch between ERP and Store
   const [viewMode, setViewMode] = useState<'list' | 'board'>('list');
   const [isAdding, setIsAdding] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 20;
 
   // Filter Orders based on Context
   const contextOrders = orders.filter(o => {
@@ -1042,7 +1044,7 @@ value={internalNotes}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">
-          {displayOrders.map(order => {
+          {displayOrders.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(order => {
             const totalQuantity = (order.items || []).reduce((acc, item) => acc + item.quantity, 0);
             const mainProductName = order.items && order.items.length > 0 
                 ? productsByName.get(order.items[0].productName.toLowerCase())?.name || order.items[0].productName 
@@ -1118,7 +1120,7 @@ value={internalNotes}
                   <button onClick={() => handleReceivePayment(order)} className="w-8 h-8 rounded-lg bg-[#0f172a] border border-[#1e293b] flex items-center justify-center text-slate-400 hover:text-emerald-400 hover:border-emerald-500/50 transition-colors" title="Registrar Pagamento">
                     <DollarSign className="w-3.5 h-3.5" />
                   </button>
-                  <button className="w-8 h-8 rounded-lg bg-[#0f172a] border border-[#1e293b] flex items-center justify-center text-slate-400 hover:text-white hover:border-slate-500 transition-colors" title="Documento">
+                  <button onClick={() => notify.info('Visualização de documento (PDF) estará disponível em breve.')} className="w-8 h-8 rounded-lg bg-[#0f172a] border border-[#1e293b] flex items-center justify-center text-slate-400 hover:text-white hover:border-slate-500 transition-colors" title="Documento">
                     <FileText className="w-3.5 h-3.5" />
                   </button>
                   <button onClick={() => {
@@ -1127,7 +1129,10 @@ value={internalNotes}
                     }} className="w-8 h-8 rounded-lg bg-[#0f172a] border border-[#1e293b] flex items-center justify-center text-slate-400 hover:text-[#25D366] hover:border-[#25D366]/50 transition-colors" title="WhatsApp">
                     <Send className="w-3.5 h-3.5" />
                   </button>
-                  <button className="w-8 h-8 rounded-lg bg-[#0f172a] border border-[#1e293b] flex items-center justify-center text-slate-400 hover:text-blue-400 hover:border-blue-500/50 transition-colors" title="Copiar Link">
+                  <button onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/?view=tracker&order=${order.orderNumber}`);
+                      notify.success('Link de rastreio copiado!');
+                    }} className="w-8 h-8 rounded-lg bg-[#0f172a] border border-[#1e293b] flex items-center justify-center text-slate-400 hover:text-blue-400 hover:border-blue-500/50 transition-colors" title="Copiar Link">
                     <LinkIcon className="w-3.5 h-3.5" />
                   </button>
                   <button onClick={() => handleDelete(order.id)} className="w-8 h-8 rounded-lg bg-[#0f172a] border border-[#1e293b] flex items-center justify-center text-slate-400 hover:text-rose-500 hover:border-rose-500/50 transition-colors" title="Excluir">
@@ -1142,15 +1147,33 @@ value={internalNotes}
 
       {/* Pagination Footer */}
       <div className="flex items-center justify-between mt-8 text-xs font-bold text-slate-500 border-t border-[#1e293b] pt-6">
-        <span>Mostrando 1 de {displayOrders.length} pedidos</span>
+        <span>Mostrando {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, displayOrders.length)} a {Math.min(currentPage * ITEMS_PER_PAGE, displayOrders.length)} de {displayOrders.length} pedidos</span>
         <div className="flex items-center gap-1">
-          <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#1e293b] text-slate-400">{'<'}</button>
-          <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-purple-500 text-purple-400 bg-purple-500/10">1</button>
-          <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#1e293b] text-slate-400">2</button>
-          <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#1e293b] text-slate-400">3</button>
-          <span className="px-1 text-slate-600">...</span>
-          <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#1e293b] text-slate-400">6</button>
-          <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#1e293b] text-slate-400">{'>'}</button>
+          <button 
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#1e293b] text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {'<'}
+          </button>
+          
+          {Array.from({ length: Math.ceil(displayOrders.length / ITEMS_PER_PAGE) }).map((_, i) => (
+            <button 
+              key={i} 
+              onClick={() => setCurrentPage(i + 1)}
+              className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${currentPage === i + 1 ? 'border border-purple-500 text-purple-400 bg-purple-500/10' : 'hover:bg-[#1e293b] text-slate-400'}`}
+            >
+              {i + 1}
+            </button>
+          ))}
+          
+          <button 
+            disabled={currentPage === Math.ceil(displayOrders.length / ITEMS_PER_PAGE) || displayOrders.length === 0}
+            onClick={() => setCurrentPage(prev => Math.min(Math.ceil(displayOrders.length / ITEMS_PER_PAGE), prev + 1))}
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#1e293b] text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {'>'}
+          </button>
         </div>
       </div>
 

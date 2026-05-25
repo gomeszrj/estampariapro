@@ -1,16 +1,14 @@
-
 import { Fabric, SizeGrade, OrderStatus } from './types';
 import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '21.8.2';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.8.2 (Agenda de Entregas & Correções de Performance):
-- Módulo Agenda: Adicionada visão expansiva de "Agenda de Entregas" no painel principal, permitindo o acompanhamento claro de todos os prazos e pedidos da fila em tempo real.
-- Correção de Inicialização: Resolvido travamento em tela azul eliminando regras condicionais de hooks na camada de login.
-- TanStack React Query: Cache inteligente global e invalidação de estado ativa por 5 minutos, poupando consultas redundantes e dando renderizações instantâneas.
-- Alertas de Estoque Baixo em Tempo Real: Badge de alerta premium piscante na barra superior com navegação direta para gerenciamento de materiais.
-- Notificações WhatsApp Automatizadas: Clientes recebem avisos imediatos por WhatsApp sempre que o status do seu pedido é alterado.`;
+export const SYSTEM_VERSION = '21.8.3';
+export const APP_NAME = 'Gomesz Speed Print';
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.8.3 (Estabilidade e Botões):
+- Ativação de botões: Implementada lógica de exportação em CSV, links de rastreio, paginação de pedidos.
+- Adição rápida ao carrinho diretamente da visualização do catálogo na Store.
+- Otimização de botões vazios recebendo notificações informativas (WIP) ao invés de ações nulas.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [

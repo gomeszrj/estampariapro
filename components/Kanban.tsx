@@ -260,7 +260,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, orders, onMove }) =
 
       {/* Column Footer */}
       <div className="p-3 border-t border-[#1e293b] mt-auto">
-        <button className="w-full py-1.5 flex justify-center items-center gap-1.5 text-[9px] font-black uppercase text-emerald-500 hover:text-emerald-400 transition-colors">
+        <button onClick={() => notify.info('A adição rápida de itens pelo Kanban estará disponível na próxima versão.')} className="w-full py-1.5 flex justify-center items-center gap-1.5 text-[9px] font-black uppercase text-emerald-500 hover:text-emerald-400 transition-colors">
           <Plus className="w-3 h-3" /> Adicionar item
         </button>
       </div>
@@ -310,10 +310,10 @@ const Kanban: React.FC<KanbanProps> = ({ orders, setOrders }) => {
         </div>
 
         <div className="flex items-center gap-4">
-          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#1e293b] text-slate-300 hover:bg-[#0b1221] hover:text-white transition-colors text-[11px] font-black uppercase tracking-widest">
+          <button onClick={() => notify.info('A visualização do calendário ficará disponível em breve.')} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#1e293b] text-slate-300 hover:bg-[#0b1221] hover:text-white transition-colors text-[11px] font-black uppercase tracking-widest">
             <CalendarIcon className="w-4 h-4" /> Ver calendário
           </button>
-          <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#4f46e5] text-white hover:bg-indigo-500 transition-colors shadow-[0_0_20px_rgba(79,70,229,0.3)] text-[11px] font-black uppercase tracking-widest">
+          <button onClick={() => notify.info('Acesse o módulo de Pedidos para criar um novo item de produção.')} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#4f46e5] text-white hover:bg-indigo-500 transition-colors shadow-[0_0_20px_rgba(79,70,229,0.3)] text-[11px] font-black uppercase tracking-widest">
             <Plus className="w-4 h-4" /> Novo item de produção
           </button>
         </div>
@@ -389,15 +389,15 @@ const Kanban: React.FC<KanbanProps> = ({ orders, setOrders }) => {
 
       {/* Toolbar / Sub-filters */}
       <div className="flex justify-end gap-4 mt-2">
-        <div className="px-4 py-2 rounded-xl bg-[#0b1221] border border-[#1e293b] text-slate-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+        <div onClick={() => notify.info('Filtro de equipes estará disponível em breve.')} className="cursor-pointer px-4 py-2 rounded-xl bg-[#0b1221] border border-[#1e293b] text-slate-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-slate-800 transition-colors">
           Todas as equipes <ChevronRight className="w-3 h-3 rotate-90" />
         </div>
-        <div className="px-4 py-2 rounded-xl bg-[#0b1221] border border-[#1e293b] text-slate-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+        <div onClick={() => notify.info('Ordenação de cards estará disponível em breve.')} className="cursor-pointer px-4 py-2 rounded-xl bg-[#0b1221] border border-[#1e293b] text-slate-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-slate-800 transition-colors">
           Ordenar: Mais recentes <ChevronRight className="w-3 h-3 rotate-90" />
         </div>
         <div className="flex bg-[#0b1221] border border-[#1e293b] rounded-xl overflow-hidden">
-           <button className="px-3 py-2 bg-white/5 text-white"><Package className="w-3 h-3" /></button>
-           <button className="px-3 py-2 text-slate-500 hover:text-white"><Search className="w-3 h-3" /></button>
+           <button onClick={() => notify.info('A visualização de lista já está ativa em algumas seções.')} className="px-3 py-2 bg-white/5 text-white hover:bg-white/10 transition-colors"><Package className="w-3 h-3" /></button>
+           <button onClick={() => notify.info('O campo de busca global já pode ser utilizado.')} className="px-3 py-2 text-slate-500 hover:text-white transition-colors"><Search className="w-3 h-3" /></button>
         </div>
       </div>
 
