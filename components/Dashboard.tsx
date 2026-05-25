@@ -331,59 +331,57 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) =>
             </div>
           </div>
           
-          <div className="overflow-y-auto flex-1 pr-2 custom-scrollbar relative">
-            <table className="w-full text-left">
-              <thead className="sticky top-0 bg-[#0b1221] z-10">
-                <tr className="border-b border-[#1e293b] text-[#5A6578] text-[10px] font-black uppercase tracking-widest">
-                  <th className="pb-3 px-2 bg-[#0b1221]">Data Limite</th>
-                  <th className="pb-3 px-2 bg-[#0b1221]">Pedido / Cliente</th>
-                  <th className="pb-3 px-2 bg-[#0b1221] text-right">Status</th>
-                </tr>
-              </thead>
-              <tbody className="text-xs">
-                {sortedOrders.map((item, i) => {
+          <div className="overflow-y-auto flex-1 pr-2 custom-scrollbar relative flex flex-col gap-3">
+             {sortedOrders.map((item, i) => {
                   if (item.status === OrderStatus.FINISHED) return null; // Esconder finalizados da agenda
 
-                  const isLate = new Date(item.deliveryDate || 0).getTime() < new Date().getTime();
-                  const isSoon = new Date(item.deliveryDate || 0).getTime() < new Date().getTime() + 3 * 24 * 60 * 60 * 1000;
+                  const deliveryDate = new Date(item.deliveryDate || 0);
+                  const isLate = deliveryDate.getTime() < new Date().getTime();
+                  const isSoon = deliveryDate.getTime() < new Date().getTime() + 3 * 24 * 60 * 60 * 1000;
                   
                   let dateColor = 'text-slate-400';
-                  if (isLate) dateColor = 'text-rose-500 font-bold';
-                  else if (isSoon) dateColor = 'text-amber-500 font-bold';
+                  let bgCard = 'bg-[#0f172a]';
+                  if (isLate) { dateColor = 'text-rose-500'; bgCard = 'bg-rose-500/5 border-rose-500/20'; }
+                  else if (isSoon) { dateColor = 'text-amber-500'; bgCard = 'bg-amber-500/5 border-amber-500/20'; }
                   
-                  let statusColor = 'text-slate-400 border-slate-700';
+                  let statusColor = 'text-slate-400 bg-slate-800';
                   let statusLabel = item.status;
-                  if (item.status === OrderStatus.IN_PRODUCTION) { statusColor = 'text-blue-400 border-blue-900/50 bg-blue-500/5'; statusLabel = 'Produção'; }
-                  if (item.status === OrderStatus.RECEIVED) { statusColor = 'text-amber-400 border-amber-900/50 bg-amber-500/5'; statusLabel = 'Aguardando'; }
-                  if (item.status === OrderStatus.FINALIZATION) { statusColor = 'text-yellow-400 border-yellow-900/50 bg-yellow-500/5'; statusLabel = 'Finalização'; }
-                  if (item.status === OrderStatus.ART_APPROVAL) { statusColor = 'text-purple-400 border-purple-900/50 bg-purple-500/5'; statusLabel = 'Aprovação'; }
+                  if (item.status === OrderStatus.IN_PRODUCTION) { statusColor = 'text-blue-400 bg-blue-500/10'; statusLabel = 'Produção'; }
+                  if (item.status === OrderStatus.RECEIVED) { statusColor = 'text-amber-400 bg-amber-500/10'; statusLabel = 'Aguardando'; }
+                  if (item.status === OrderStatus.FINALIZATION) { statusColor = 'text-yellow-400 bg-yellow-500/10'; statusLabel = 'Finalização'; }
+                  if (item.status === OrderStatus.ART_APPROVAL) { statusColor = 'text-purple-400 bg-purple-500/10'; statusLabel = 'Aprovação'; }
                   
+                  const day = item.deliveryDate ? item.deliveryDate.split('-')[2] : '--';
+                  const month = item.deliveryDate ? item.deliveryDate.split('-')[1] : '--';
+
                   return (
-                    <tr key={item.id} className="border-b border-[#1e293b]/50 hover:bg-[#1e293b]/30 cursor-pointer transition-colors group" onClick={() => handleOrderClick(item)}>
-                      <td className={`py-3 px-2 ${dateColor} whitespace-nowrap`}>
-                        <div className="flex items-center gap-2">
-                          {isLate && <AlertCircle className="w-3 h-3" />}
-                          {item.deliveryDate ? item.deliveryDate.split('-').reverse().join('/') : '--/--'}
-                        </div>
-                      </td>
-                      <td className="py-3 px-2">
-                        <div className="flex flex-col">
-                          <span className="text-slate-300 font-bold group-hover:text-white transition-colors">#{item.orderNumber} - {item.clientName}</span>
-                          <span className="text-slate-500 text-[9px] uppercase truncate max-w-[180px]">
+                    <div key={item.id} onClick={() => handleOrderClick(item)} className={`border border-[#1e293b] rounded-2xl p-3 flex items-center gap-4 cursor-pointer hover:border-slate-600 transition-colors group ${bgCard}`}>
+                      {/* Data Box */}
+                      <div className={`w-14 h-14 rounded-xl flex flex-col items-center justify-center shrink-0 border border-current/10 ${isLate ? 'bg-rose-500/10' : isSoon ? 'bg-amber-500/10' : 'bg-slate-800'} ${dateColor}`}>
+                         <span className="text-2xl font-black leading-none">{day}</span>
+                         <span className="text-[9px] font-bold uppercase tracking-widest mt-0.5">{month}</span>
+                      </div>
+                      
+                      {/* Order Info */}
+                      <div className="flex-1 min-w-0">
+                         <div className="flex items-center gap-2 mb-1">
+                            <span className="text-white font-black truncate group-hover:text-emerald-400 transition-colors">{item.clientName}</span>
+                            <span className="text-slate-500 text-[10px] font-bold">#{item.orderNumber}</span>
+                         </div>
+                         <div className="text-slate-500 text-[10px] uppercase truncate">
                             {item.items && item.items.length > 0 ? products.find(p => p.id === item.items![0].productId)?.name || 'Produto' : 'Diversos'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-2 text-right">
-                        <span className={`px-2.5 py-1 rounded-md border text-[9px] font-bold uppercase tracking-widest ${statusColor}`}>
-                          {statusLabel}
-                        </span>
-                      </td>
-                    </tr>
+                         </div>
+                      </div>
+
+                      {/* Status */}
+                      <div className="shrink-0 hidden sm:block">
+                         <span className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${statusColor}`}>
+                           {statusLabel}
+                         </span>
+                      </div>
+                    </div>
                   );
-                })}
-              </tbody>
-            </table>
+             })}
           </div>
         </div>
 

@@ -3,14 +3,14 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '21.8.5';
+export const SYSTEM_VERSION = '21.8.6';
 export const APP_NAME = 'Gomesz Speed Print';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.8.5 (Fase 2 - SaaS Premium & Correções):
-- Redesign Premium Total (Fase 2):
-  * Módulo de Produtos atualizado para o Dark Mode Premium, com novos efeitos visuais, botões Esmeralda e slide-in animations.
-  * Painel Financeiro modernizado para acompanhar os tons escuros da plataforma.
-  * Configurações (Empresa, Equipe e IA) padronizadas sob a mesma paleta de cores.
-- Correção Operacional: O botão de "Documento" nos Pedidos agora está 100% funcional, abrindo imediatamente o gerador de PDF da DANFE/NF para impressão rápida.`;
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.8.6 (Otimização Visual do Dashboard):
+- Agenda de Entregas Redesenhada: 
+  * Substituímos a tabela tradicional da Agenda por um formato de 'Cards Compactos'.
+  * A Data de Entrega agora ganha destaque máximo com números grandes (destacando o dia) em caixas estilizadas.
+  * Cores dinâmicas na data continuam avisando visualmente sobre prazos (Vermelho = Atrasado, Amarelo = Próximo, Escuro = No Prazo).
+  * O visual limpo e arredondado acompanha a identidade SaaS Premium da plataforma.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [
