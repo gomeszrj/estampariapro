@@ -318,54 +318,64 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) =>
 
       {/* CHARTS ROW 2 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* PEDIDOS RECENTES */}
-        <div className="bg-[#0b1221] rounded-2xl border border-[#1e293b] p-6 shadow-xl overflow-hidden flex flex-col">
-          <div className="flex justify-between items-start mb-6">
+        {/* AGENDA DE ENTREGAS */}
+        <div className="bg-[#0b1221] rounded-2xl border border-[#1e293b] p-6 shadow-xl overflow-hidden flex flex-col h-[400px]">
+          <div className="flex justify-between items-start mb-6 shrink-0">
             <div>
-              <h3 className="text-sm font-black text-white tracking-widest uppercase">Pedidos Recentes</h3>
-              <p className="text-xs text-slate-500 mt-1">Últimos pedidos cadastrados</p>
+              <h3 className="text-sm font-black text-white tracking-widest uppercase">Agenda de Entregas</h3>
+              <p className="text-xs text-slate-500 mt-1">Acompanhamento dos prazos de pedidos</p>
             </div>
-            <div className="text-[10px] font-black text-[#6366f1] bg-[#6366f1]/10 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-[#6366f1]/20 transition-colors">
-              Ver todos
+            <div className="text-[10px] font-black text-[#6366f1] bg-[#6366f1]/10 px-3 py-1.5 rounded-lg flex items-center gap-2">
+              <Calendar className="w-3.5 h-3.5" />
+              CRONOGRAMA
             </div>
           </div>
           
-          <div className="overflow-x-auto flex-1">
+          <div className="overflow-y-auto flex-1 pr-2 custom-scrollbar relative">
             <table className="w-full text-left">
-              <thead>
+              <thead className="sticky top-0 bg-[#0b1221] z-10">
                 <tr className="border-b border-[#1e293b] text-[#5A6578] text-[10px] font-black uppercase tracking-widest">
-                  <th className="pb-3 px-2">Pedido</th>
-                  <th className="pb-3 px-2">Cliente</th>
-                  <th className="pb-3 px-2">Produto</th>
-                  <th className="pb-3 px-2">Data</th>
-                  <th className="pb-3 px-2">Status</th>
+                  <th className="pb-3 px-2 bg-[#0b1221]">Data Limite</th>
+                  <th className="pb-3 px-2 bg-[#0b1221]">Pedido / Cliente</th>
+                  <th className="pb-3 px-2 bg-[#0b1221] text-right">Status</th>
                 </tr>
               </thead>
               <tbody className="text-xs">
-                {sortedOrders.slice(0, 5).map((item, i) => {
-                  const colors = ['blue', 'purple', 'emerald', 'yellow', 'pink'];
-                  const dotColor = colors[i % colors.length];
-                  const dotClass = `bg-${dotColor}-500`;
+                {sortedOrders.map((item, i) => {
+                  if (item.status === OrderStatus.FINISHED) return null; // Esconder finalizados da agenda
+
+                  const isLate = new Date(item.deliveryDate || 0).getTime() < new Date().getTime();
+                  const isSoon = new Date(item.deliveryDate || 0).getTime() < new Date().getTime() + 3 * 24 * 60 * 60 * 1000;
+                  
+                  let dateColor = 'text-slate-400';
+                  if (isLate) dateColor = 'text-rose-500 font-bold';
+                  else if (isSoon) dateColor = 'text-amber-500 font-bold';
                   
                   let statusColor = 'text-slate-400 border-slate-700';
                   let statusLabel = item.status;
-                  if (item.status === OrderStatus.IN_PRODUCTION) { statusColor = 'text-blue-400 border-blue-900/50 bg-blue-500/5'; statusLabel = 'Em produção'; }
+                  if (item.status === OrderStatus.IN_PRODUCTION) { statusColor = 'text-blue-400 border-blue-900/50 bg-blue-500/5'; statusLabel = 'Produção'; }
                   if (item.status === OrderStatus.RECEIVED) { statusColor = 'text-amber-400 border-amber-900/50 bg-amber-500/5'; statusLabel = 'Aguardando'; }
-                  if (item.status === OrderStatus.FINISHED) { statusColor = 'text-emerald-400 border-emerald-900/50 bg-emerald-500/5'; statusLabel = 'Finalizado'; }
+                  if (item.status === OrderStatus.FINALIZATION) { statusColor = 'text-yellow-400 border-yellow-900/50 bg-yellow-500/5'; statusLabel = 'Finalização'; }
+                  if (item.status === OrderStatus.ART_APPROVAL) { statusColor = 'text-purple-400 border-purple-900/50 bg-purple-500/5'; statusLabel = 'Aprovação'; }
                   
                   return (
                     <tr key={item.id} className="border-b border-[#1e293b]/50 hover:bg-[#1e293b]/30 cursor-pointer transition-colors group" onClick={() => handleOrderClick(item)}>
-                      <td className="py-3 px-2 text-slate-300 font-bold flex items-center gap-2">
-                        <div className={`w-1.5 h-1.5 rounded-full ${dotClass}`}></div>
-                        #{item.orderNumber}
+                      <td className={`py-3 px-2 ${dateColor} whitespace-nowrap`}>
+                        <div className="flex items-center gap-2">
+                          {isLate && <AlertCircle className="w-3 h-3" />}
+                          {item.deliveryDate ? item.deliveryDate.split('-').reverse().join('/') : '--/--'}
+                        </div>
                       </td>
-                      <td className="py-3 px-2 text-slate-400 group-hover:text-white transition-colors">{item.clientName}</td>
-                      <td className="py-3 px-2 text-slate-500 text-[10px] uppercase truncate max-w-[100px]">
-                        {item.items && item.items.length > 0 ? products.find(p => p.id === item.items![0].productId)?.name || 'Produto' : 'Diversos'}
-                      </td>
-                      <td className="py-3 px-2 text-slate-400">{item.deliveryDate ? item.deliveryDate.split('-').reverse().join('/') : '--/--'}</td>
                       <td className="py-3 px-2">
-                        <span className={`px-2.5 py-1 rounded-md border text-[10px] font-bold ${statusColor}`}>
+                        <div className="flex flex-col">
+                          <span className="text-slate-300 font-bold group-hover:text-white transition-colors">#{item.orderNumber} - {item.clientName}</span>
+                          <span className="text-slate-500 text-[9px] uppercase truncate max-w-[180px]">
+                            {item.items && item.items.length > 0 ? products.find(p => p.id === item.items![0].productId)?.name || 'Produto' : 'Diversos'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-2 text-right">
+                        <span className={`px-2.5 py-1 rounded-md border text-[9px] font-bold uppercase tracking-widest ${statusColor}`}>
                           {statusLabel}
                         </span>
                       </td>
@@ -378,8 +388,8 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) =>
         </div>
 
         {/* FATURAMENTO DOS ÚLTIMOS 6 MESES */}
-        <div className="bg-[#0b1221] rounded-2xl border border-[#1e293b] p-6 shadow-xl flex flex-col">
-          <div className="flex justify-between items-start mb-6">
+        <div className="bg-[#0b1221] rounded-2xl border border-[#1e293b] p-6 shadow-xl flex flex-col h-[400px]">
+          <div className="flex justify-between items-start mb-6 shrink-0">
             <div>
               <h3 className="text-sm font-black text-white tracking-widest uppercase">Faturamento dos últimos 6 meses</h3>
               <p className="text-xs text-slate-500 mt-1">Análise de faturamento mensal</p>
@@ -389,7 +399,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) =>
             </div>
           </div>
           
-          <div className="flex-1 min-h-[200px] w-full">
+          <div className="flex-1 w-full min-h-0">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={[
                 { name: 'Jan', value: 18200 },
