@@ -3,15 +3,15 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '21.8.7';
+export const SYSTEM_VERSION = '21.8.8';
 export const APP_NAME = 'Gomesz Speed Print';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.8.7 (Novo Módulo Financeiro):
-- Transformação total do Painel Financeiro:
-  * 5 novos Indicadores chave (Faturamento, Receitas, Despesas, Lucro e Margem).
-  * Gráfico de Linhas Dinâmico para acompanhar histórico de forma luxuosa.
-  * Listas de 'Contas a Receber' e 'Contas a Pagar' em tempo real.
-  * Quadro Analítico de Fluxo de Caixa integrado.
-  * Novo esquema de cores exclusivo para o módulo (#151B2B) mantendo coerência com o SaaS Premium.`;
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.8.8 (Novo Módulo de Produtos):
+- Transformação arquitetural para o formato Master-Detail no Catálogo:
+  * 5 novos Cards de KPI no topo (Total, Ativos, Em Produção, Desativados, Estoque).
+  * Painel Lateral Direto (Sidebar) para inspeção rápida de qualquer produto sem precisar abrir modal.
+  * Abas internas na Sidebar (Detalhes, Variações, Estoque e Histórico).
+  * Filtros organizados numa nova barra de ferramentas centralizada.
+  * O design escuro (#151B2B) consolida o tema Premium GMZ Performance.`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [
