@@ -269,9 +269,81 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, orders, onMove }) =
   );
 };
 
-const Kanban: React.FC<KanbanProps> = ({ orders, setOrders }) => {
+const KanbanCalendar: React.FC<{ orders: Order[], onMove: (id: string, status: OrderStatus) => void }> = ({ orders, onMove }) => {
+  const [currentDate, setCurrentDate] = React.useState(new Date());
+
+  const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+  const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+
+  const prevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  const nextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+
+  const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+  const dayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+  const days = [];
+  for (let i = 0; i < firstDayOfMonth; i++) days.push(null);
+  for (let i = 1; i <= daysInMonth; i++) days.push(new Date(currentDate.getFullYear(), currentDate.getMonth(), i));
+
+  return (
+    <div className="flex-1 bg-[#0b1221]/80 rounded-2xl border border-[#1e293b] p-6 flex flex-col min-h-0 overflow-y-auto scrollbar-hide">
+      {/* Calendar Header */}
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-xl font-black text-white uppercase tracking-wider">{monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}</h3>
+        <div className="flex gap-2">
+          <button onClick={prevMonth} className="p-2 bg-[#1e293b] text-white rounded-lg hover:bg-slate-700 transition-colors"><ChevronLeft className="w-4 h-4" /></button>
+          <button onClick={nextMonth} className="p-2 bg-[#1e293b] text-white rounded-lg hover:bg-slate-700 transition-colors"><ChevronRight className="w-4 h-4" /></button>
+        </div>
+      </div>
+      
+      {/* Days of week */}
+      <div className="grid grid-cols-7 gap-2 mb-2">
+        {dayNames.map(day => (
+          <div key={day} className="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">{day}</div>
+        ))}
+      </div>
+
+      {/* Calendar Grid */}
+      <div className="grid grid-cols-7 gap-2 flex-1">
+        {days.map((date, idx) => {
+          if (!date) return <div key={`empty-${idx}`} className="bg-[#1e293b]/20 rounded-xl"></div>;
+          
+          const dateStr = date.toISOString().split('T')[0];
+          const dayOrders = orders.filter(o => (o.deliveryDate || '').startsWith(dateStr));
+          const isToday = new Date().toISOString().split('T')[0] === dateStr;
+
+          return (
+            <div key={dateStr} className={`bg-[#05080E] rounded-xl border ${isToday ? 'border-[#4f46e5]' : 'border-[#1e293b]'} p-2 flex flex-col gap-1 min-h-[100px]`}>
+              <div className={`text-right text-[12px] font-black ${isToday ? 'text-[#4f46e5]' : 'text-slate-500'}`}>{date.getDate()}</div>
+              <div className="flex flex-col gap-1 overflow-y-auto max-h-[80px] scrollbar-hide">
+                {dayOrders.map(order => {
+                  let color = 'bg-slate-500';
+                  if (order.status === OrderStatus.RECEIVED) color = 'bg-purple-500';
+                  else if (order.status === OrderStatus.IN_PRODUCTION) color = 'bg-blue-500';
+                  else if (order.status === OrderStatus.SUBLIMATION) color = 'bg-orange-500';
+                  else if (order.status === OrderStatus.FINALIZATION) color = 'bg-emerald-400';
+                  else if (order.status === OrderStatus.FINISHED) color = 'bg-emerald-500';
+                  
+                  return (
+                    <div key={order.id} className="bg-[#1e293b] rounded-md px-1.5 py-1 flex items-center gap-1.5 overflow-hidden">
+                      <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${color}`}></div>
+                      <span className="text-[9px] font-bold text-slate-300 truncate whitespace-nowrap">#{order.orderNumber} {order.clientName}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+const Kanban: React.FC<KanbanProps> = ({ orders, setOrders, setActiveView }) => {
   const [clients, setClients] = React.useState<Client[]>([]);
   const [searchTerm, setSearchTerm] = React.useState('');
+  const [kanbanView, setKanbanView] = React.useState<'board' | 'calendar'>('board');
 
   React.useEffect(() => {
     clientService.getAll().then(setClients).catch(console.error);
@@ -311,8 +383,8 @@ const Kanban: React.FC<KanbanProps> = ({ orders, setOrders }) => {
         </div>
 
         <div className="flex items-center gap-4">
-          <button onClick={() => notify.info('A visualização do calendário ficará disponível em breve.')} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#1e293b] text-slate-300 hover:bg-[#0b1221] hover:text-white transition-colors text-[11px] font-black uppercase tracking-widest">
-            <CalendarIcon className="w-4 h-4" /> Ver calendário
+          <button onClick={() => setKanbanView(kanbanView === 'calendar' ? 'board' : 'calendar')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#1e293b] transition-colors text-[11px] font-black uppercase tracking-widest ${kanbanView === 'calendar' ? 'bg-[#1e293b] text-white' : 'text-slate-300 hover:bg-[#0b1221] hover:text-white'}`}>
+            {kanbanView === 'calendar' ? <><Package className="w-4 h-4" /> Ver Quadro Kanban</> : <><CalendarIcon className="w-4 h-4" /> Ver calendário</>}
           </button>
           <button onClick={() => setActiveView?.('orders')} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#4f46e5] text-white hover:bg-indigo-500 transition-colors shadow-[0_0_20px_rgba(79,70,229,0.3)] text-[11px] font-black uppercase tracking-widest">
             <Plus className="w-4 h-4" /> Novo item de produção
@@ -403,16 +475,20 @@ const Kanban: React.FC<KanbanProps> = ({ orders, setOrders }) => {
       </div>
 
       {/* Kanban Board Container (No Scroll) */}
-      <div className="flex-1 min-h-0 flex gap-4 overflow-hidden">
-        {statuses.map((status) => (
-          <KanbanColumn
-            key={status}
-            status={status}
-            orders={filteredOrders}
-            onMove={handleMove}
-          />
-        ))}
-      </div>
+      {kanbanView === 'board' ? (
+        <div className="flex-1 min-h-0 flex gap-4 overflow-hidden">
+          {statuses.map((status) => (
+            <KanbanColumn
+              key={status}
+              status={status}
+              orders={filteredOrders}
+              onMove={handleMove}
+            />
+          ))}
+        </div>
+      ) : (
+        <KanbanCalendar orders={filteredOrders} onMove={handleMove} />
+      )}
     </div>
   );
 };
