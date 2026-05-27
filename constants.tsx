@@ -3,11 +3,16 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 21.9 -> 22.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '25.0.1';
+export const SYSTEM_VERSION = '25.0.2';
 export const APP_NAME = 'Gomesz Speed Print';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 25.0.1 — "Store Manager Update" (27/05/2026):
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 25.0.2 — "Layout 360 e Tabela de Medidas" (27/05/2026):
 
-🚀 UPLOAD DE IMAGENS NA LOJA:
+👕 MÓDULO LOJA (STORE MANAGER & PUBLIC STORE):
+  * Otimizador de Imagens Client-Side: Redimensionamento automático de imagens pesadas antes do upload (Fim do erro de timeout no DB).
+  * Novo Layout Carrossel 360º: As miniaturas estáticas agora formam um carrossel lateral (no Desktop) ou inferior (Mobile) sem achatar o visualizador principal.
+  * Tabela de Medidas Inteligente: Possibilidade de informar Altura x Largura (em cm) para cada categoria de tamanho (Infantil, Feminino, Masculino) no Painel Admin. As medidas são exibidas em um card dinâmico na loja quando o cliente seleciona o tamanho.
+
+(25.0.1) 🚀 UPLOAD DE IMAGENS NA LOJA:
   * Adicionado suporte a Upload de Arquivos diretos para as imagens do Banner Hero
   * Upload de imagens agora integrado corretamente com o Supabase Storage (product-images)
   * Modals de Produto e Banner refletem a funcionalidade real de upload, permitindo armazenar arte e camisas de forma persistente.
