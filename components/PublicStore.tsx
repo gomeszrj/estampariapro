@@ -560,7 +560,12 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
                     </div>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
                       <span style={{ fontSize: 9, fontWeight: 700, background: 'rgba(124,58,237,0.15)', color: '#a78bfa', padding: '2px 7px', borderRadius: 5, textTransform: 'uppercase' }}>{item.product.category}</span>
-                      <span style={{ fontSize: 9, fontWeight: 700, background: 'rgba(255,255,255,0.05)', color: '#64748b', padding: '2px 7px', borderRadius: 5 }}>Tam. {item.size}</span>
+                      <span style={{ fontSize: 9, fontWeight: 700, background: 'rgba(255,255,255,0.05)', color: '#64748b', padding: '2px 7px', borderRadius: 5 }}>
+                        {(() => {
+                          const ps = parseSize(item.size);
+                          return ps.category !== 'Geral' ? `Tam. ${ps.category} ${ps.label}` : `Tam. ${ps.label}`;
+                        })()}
+                      </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: 11, color: '#64748b' }}>
@@ -584,7 +589,11 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
               <span style={{ fontSize: 20, fontWeight: 900, color: 'white' }}>R$ {totalPrice.toFixed(2).replace('.', ',')}</span>
             </div>           
             <a
-              href={`https://wa.me/${whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Olá! Quero fazer um pedido na ${storeName}:\n${cart.map(i => `• ${i.product.title} (${i.qty}x, Tam ${i.size}, Nome: ${i.name}, N°${i.number}) - R$${(Number(i.product.price) * i.qty).toFixed(2)}`).join('\n')}\n\nTotal Estimado: R$${totalPrice.toFixed(2)}`)}`}
+              href={`https://wa.me/${whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Olá! Quero fazer um pedido na ${storeName}:\n${cart.map(i => {
+                const ps = parseSize(i.size);
+                const sizeLabel = ps.category !== 'Geral' ? `${ps.category} ${ps.label}` : ps.label;
+                return `• ${i.product.title} (${i.qty}x, Tam ${sizeLabel}, Nome: ${i.name}, N°${i.number}) - R$${(Number(i.product.price) * i.qty).toFixed(2)}`;
+              }).join('\n')}\n\nTotal Estimado: R$${totalPrice.toFixed(2)}`)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="px-6 py-4 rounded-xl text-white font-black text-xs md:text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 w-full bg-indigo-600 hover:bg-indigo-500 shadow-[0_0_20px_rgba(79,70,229,0.3)]"
@@ -629,14 +638,48 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
                 </div>
 
                 <div style={{ marginBottom: 16 }}>
-                  <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748b', marginBottom: 8 }}>Tamanho</p>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    {(activeModal.sizes && activeModal.sizes.length > 0 ? activeModal.sizes : ['PP', 'P', 'M', 'G', 'GG']).map(s => (
-                      <button key={s} onClick={() => setSelectedSize(s)} style={{ width: 38, height: 38, borderRadius: 10, border: `1px solid ${selectedSize === s ? (activeModal.color_hex || '#7c3aed') : 'rgba(255,255,255,0.1)'}`, background: selectedSize === s ? `${activeModal.color_hex || '#7c3aed'}20` : 'transparent', color: selectedSize === s ? (activeModal.color_hex || '#a78bfa') : '#64748b', fontWeight: 800, fontSize: 11, cursor: 'pointer', transition: 'all 0.2s' }}>
-                        {s}
-                      </button>
-                    ))}
-                  </div>
+                  {(() => {
+                    const rawSizes = activeModal.sizes && activeModal.sizes.length > 0 ? activeModal.sizes : ['PP', 'P', 'M', 'G', 'GG'];
+                    const parsedSizes = rawSizes.map(parseSize);
+                    const grouped: Record<string, ParsedSize[]> = {};
+                    parsedSizes.forEach(ps => {
+                      if (!grouped[ps.category]) grouped[ps.category] = [];
+                      grouped[ps.category].push(ps);
+                    });
+                    
+                    const activeParsed = parsedSizes.find(ps => ps.raw === selectedSize);
+
+                    return (
+                      <div className="flex flex-col gap-4">
+                        {Object.entries(grouped).map(([cat, sizes]) => (
+                          <div key={cat}>
+                            {cat !== 'Geral' && <p style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: activeModal.color_hex || '#a78bfa', marginBottom: 6 }}>{cat}</p>}
+                            {cat === 'Geral' && Object.keys(grouped).length === 1 && <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748b', marginBottom: 6 }}>Tamanho</p>}
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                              {sizes.map(ps => (
+                                <button key={ps.raw} onClick={() => setSelectedSize(ps.raw)} style={{ minWidth: 38, padding: '0 8px', height: 38, borderRadius: 10, border: `1px solid ${selectedSize === ps.raw ? (activeModal.color_hex || '#7c3aed') : 'rgba(255,255,255,0.1)'}`, background: selectedSize === ps.raw ? `${activeModal.color_hex || '#7c3aed'}20` : 'transparent', color: selectedSize === ps.raw ? (activeModal.color_hex || '#a78bfa') : '#64748b', fontWeight: 800, fontSize: 11, cursor: 'pointer', transition: 'all 0.2s' }}>
+                                  {ps.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* Tabela de Medidas */}
+                        {activeParsed && activeParsed.height && activeParsed.width && (
+                          <div className="mt-2 p-3 rounded-xl border flex items-center gap-3 backdrop-blur-sm" style={{ borderColor: `${activeModal.color_hex || '#7c3aed'}30`, backgroundColor: `${activeModal.color_hex || '#7c3aed'}10` }}>
+                            <div className="flex items-center justify-center p-2 rounded-lg" style={{ backgroundColor: `${activeModal.color_hex || '#7c3aed'}20`, color: activeModal.color_hex || '#a78bfa' }}>
+                              <Icon.Rotate />
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: activeModal.color_hex || '#a78bfa' }}>Medidas - {activeParsed.category} {activeParsed.label}</p>
+                              <p className="text-xs text-slate-300 mt-0.5">Altura: <strong>{activeParsed.height}cm</strong> <span className="mx-1 text-slate-600">|</span> Largura: <strong>{activeParsed.width}cm</strong></p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>

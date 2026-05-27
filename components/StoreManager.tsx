@@ -31,7 +31,12 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
 };
 
 const CATEGORIES = ['NBA', 'UV+50', 'MANGA CURTA', 'DTF', 'FUTEBOL', 'CICLISMO', 'CORRIDA', 'PERSONALIZADO'];
-const SIZES_OPTIONS = ['PP', 'P', 'M', 'G', 'GG', 'XG', 'XXG'];
+
+const SIZES_CAT = {
+  INFANTIL: ['2 Anos', '4 Anos', '6 Anos', '8 Anos', '10 Anos', '12 Anos', '14 Anos'],
+  FEMININA: ['Fem PP', 'Fem P', 'Fem M', 'Fem G', 'Fem GG', 'Fem XG', 'Fem XXG', 'Fem ESP1', 'Fem ESP2'],
+  MASCULINA: ['Masc PP', 'Masc P', 'Masc M', 'Masc G', 'Masc GG', 'Masc XG', 'Masc XXG', 'Masc ESP1', 'Masc ESP2'],
+};
 
 /* ════════════════════════════════════════════════════
    CARD ESTATÍSTICA
@@ -205,7 +210,32 @@ const ProductModal: React.FC<{
 
   const toggleSize = (s: string) => {
     const cur = form.sizes || [];
-    set('sizes', cur.includes(s) ? cur.filter(x => x !== s) : [...cur, s]);
+    // Identify if size exists (ignoring measurements)
+    const exists = cur.find(x => x.startsWith(s + '|') || x === s);
+    if (exists) {
+      set('sizes', cur.filter(x => x !== exists));
+    } else {
+      set('sizes', [...cur, `${s}||`]);
+    }
+  };
+
+  const updateSizeMeasure = (s: string, alt: string, larg: string) => {
+    const cur = form.sizes || [];
+    const newSizes = cur.map(x => {
+      if (x.startsWith(s + '|') || x === s) {
+        return `${s}|${alt}|${larg}`;
+      }
+      return x;
+    });
+    set('sizes', newSizes);
+  };
+
+  const getSizeMeasure = (s: string) => {
+    const cur = form.sizes || [];
+    const found = cur.find(x => x.startsWith(s + '|') || x === s);
+    if (!found) return { alt: '', larg: '' };
+    const parts = found.split('|');
+    return { alt: parts[1] || '', larg: parts[2] || '' };
   };
 
   return (
@@ -279,12 +309,32 @@ const ProductModal: React.FC<{
 
             {/* Sizes */}
             <div>
-              <label style={labelStyle}>Tamanhos Disponíveis</label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {SIZES_OPTIONS.map(s => (
-                  <button key={s} onClick={() => toggleSize(s)} style={{ width: 44, height: 36, borderRadius: 10, border: `1px solid ${(form.sizes || []).includes(s) ? '#7c3aed' : 'rgba(255,255,255,0.1)'}`, background: (form.sizes || []).includes(s) ? 'rgba(124,58,237,0.2)' : 'transparent', color: (form.sizes || []).includes(s) ? '#a78bfa' : '#64748b', fontWeight: 800, fontSize: 11, cursor: 'pointer', transition: 'all 0.2s' }}>
-                    {s}
-                  </button>
+              <label style={labelStyle}>Tamanhos e Medidas (Alt x Larg em cm)</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {Object.entries(SIZES_CAT).map(([catName, sizes]) => (
+                  <div key={catName} style={{ background: 'rgba(255,255,255,0.02)', padding: 12, borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <p style={{ fontSize: 11, fontWeight: 800, color: '#a78bfa', marginBottom: 8 }}>{catName}</p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {sizes.map(s => {
+                        const isSelected = (form.sizes || []).some(x => x.startsWith(s + '|') || x === s);
+                        const measures = getSizeMeasure(s);
+                        return (
+                          <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 6, background: isSelected ? 'rgba(124,58,237,0.1)' : 'transparent', padding: 4, borderRadius: 8, border: `1px solid ${isSelected ? '#7c3aed' : 'rgba(255,255,255,0.1)'}` }}>
+                            <button onClick={() => toggleSize(s)} style={{ background: 'none', border: 'none', color: isSelected ? '#a78bfa' : '#64748b', fontWeight: 800, fontSize: 11, cursor: 'pointer', padding: '4px 8px' }}>
+                              {s}
+                            </button>
+                            {isSelected && (
+                              <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                                <input placeholder="Alt" value={measures.alt} onChange={e => updateSizeMeasure(s, e.target.value, measures.larg)} style={{ width: 40, height: 24, fontSize: 10, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: 4, textAlign: 'center' }} />
+                                <span style={{ color: '#64748b', fontSize: 10 }}>x</span>
+                                <input placeholder="Larg" value={measures.larg} onChange={e => updateSizeMeasure(s, measures.alt, e.target.value)} style={{ width: 40, height: 24, fontSize: 10, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: 4, textAlign: 'center' }} />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
