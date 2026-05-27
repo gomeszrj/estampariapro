@@ -217,7 +217,7 @@ const ProductCard: React.FC<{
   onView: (p: GmzProduct) => void;
   onAdd: (p: GmzProduct) => void;
 }> = ({ p, favorites, onFav, onView, onAdd }) => (
-  <div className="bg-[#0b0e17] rounded-2xl overflow-hidden border border-purple-500/10 transition-transform duration-300 hover:-translate-y-2 relative group flex flex-col">
+  <div className="bg-[#0b0e17] rounded-2xl overflow-hidden border border-purple-500/10 transition-transform duration-300 hover:-translate-y-2 relative group flex flex-col" style={{ WebkitTapHighlightColor: 'transparent' }}>
     {p.badge && (
       <span style={{ position: 'absolute', top: 12, left: 12, zIndex: 2, background: 'rgba(124,58,237,0.9)', color: 'white', fontSize: 9, fontWeight: 800, padding: '4px 8px', borderRadius: 6, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
         {p.badge}
@@ -606,9 +606,9 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
         )}
       </div>
 
-      <div className={`fixed inset-0 bg-black/80 backdrop-blur-md z-[1100] flex items-center justify-center p-4 transition-opacity duration-300 ${activeModal ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} onClick={() => setActiveModal(null)}>
+      <div className={`fixed inset-0 bg-black/80 backdrop-blur-md z-[1100] flex items-center justify-center p-4 transition-opacity duration-300 ${activeModal ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} onClick={() => setActiveModal(null)} style={{ WebkitTapHighlightColor: 'transparent' }}>
         {activeModal && (
-          <div className="bg-[#0b0e17] rounded-[28px] w-full max-w-[900px] shadow-2xl relative" onClick={e => e.stopPropagation()}>
+          <div className="bg-[#0b0e17] rounded-[28px] w-full max-w-[900px] max-h-[90vh] overflow-y-auto shadow-2xl relative scrollbar-thin" onClick={e => e.stopPropagation()}>
             <div className="flex justify-end pt-4 px-5 md:px-0 md:absolute md:top-4 md:right-4 z-10">
               <button onClick={() => setActiveModal(null)} className="bg-white/5 hover:bg-white/10 text-slate-400 p-2 rounded-xl transition-colors">
                 <Icon.X />
