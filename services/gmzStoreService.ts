@@ -239,4 +239,45 @@ export const gmzStoreService = {
 
     return { total, byStatus, totalOrders: orders?.length || 0, revenueByDay: days };
   },
+
+  /* ─── PUBLIC STORE METHODS (No Auth Required) ─── */
+  async getPublicSettings(tenantId?: string): Promise<GmzStoreSettings | null> {
+    let query = supabase.from('gmz_store_settings').select('*');
+    if (tenantId) {
+        query = query.eq('tenant_id', tenantId);
+    }
+    // Limit to 1 in case there are multiple and no tenant passed
+    const { data, error } = await query.limit(1).maybeSingle();
+    if (error) {
+        console.error("Error fetching public settings", error);
+        return null;
+    }
+    return data;
+  },
+
+  async getPublicBanners(tenantId?: string): Promise<GmzBanner[]> {
+    let query = supabase.from('gmz_store_banners').select('*').eq('active', true).order('sort_order', { ascending: true });
+    if (tenantId) {
+        query = query.eq('tenant_id', tenantId);
+    }
+    const { data, error } = await query;
+    if (error) {
+        console.error("Error fetching public banners", error);
+        return [];
+    }
+    return data || [];
+  },
+
+  async getPublicProducts(tenantId?: string): Promise<GmzProduct[]> {
+    let query = supabase.from('gmz_store_products').select('*').eq('active', true).order('sort_order', { ascending: true });
+    if (tenantId) {
+        query = query.eq('tenant_id', tenantId);
+    }
+    const { data, error } = await query;
+    if (error) {
+        console.error("Error fetching public products", error);
+        return [];
+    }
+    return data || [];
+  }
 };
