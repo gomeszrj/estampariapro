@@ -104,6 +104,56 @@ const MiniViewer360: React.FC<{ imageUrl?: string; color?: string }> = ({ imageU
 };
 
 /* ════════════════════════════════════════════════════
+   UTIL: RESIZE IMAGE
+════════════════════════════════════════════════════ */
+const resizeImage = (file: File, maxSize: number = 800): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxSize) {
+            height *= maxSize / width;
+            width = maxSize;
+          }
+        } else {
+          if (height > maxSize) {
+            width *= maxSize / height;
+            height = maxSize;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject(new Error('Failed to get canvas context'));
+        
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        canvas.toBlob((blob) => {
+          if (!blob) return reject(new Error('Canvas is empty'));
+          const mimeType = file.type.includes('png') ? 'image/png' : 'image/jpeg';
+          const newFile = new File([blob], file.name, {
+            type: mimeType,
+            lastModified: Date.now(),
+          });
+          resolve(newFile);
+        }, file.type.includes('png') ? 'image/png' : 'image/jpeg', 0.85);
+      };
+      img.onerror = reject;
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
+
+/* ════════════════════════════════════════════════════
    MODAL PRODUTO
 ════════════════════════════════════════════════════ */
 const ProductModal: React.FC<{
@@ -129,8 +179,10 @@ const ProductModal: React.FC<{
     if (!file) return;
     setUploading(true);
     try {
+      toast.loading('Otimizando imagem...', { id: 'upload' });
+      const resizedFile = await resizeImage(file, 800);
       toast.loading('Fazendo upload da imagem...', { id: 'upload' });
-      const url = await gmzStoreService.uploadStoreImage(file, 'products');
+      const url = await gmzStoreService.uploadStoreImage(resizedFile, 'products');
       const newImages = [...images];
       while (newImages.length <= index) newImages.push('');
       newImages[index] = url;

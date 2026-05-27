@@ -136,49 +136,15 @@ const Viewer360: React.FC<{ product: GmzProduct | null; color: string }> = ({ pr
   }
 
   return (
-    <div
-      style={{ position: 'relative', userSelect: 'none', cursor: isDragging ? 'grabbing' : 'grab' }}
-      onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
-      onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={() => setIsDragging(false)}
-    >
-      <div style={{ position: 'absolute', inset: '-20px', borderRadius: '50%', background: `radial-gradient(circle, ${color}20, transparent 70%)`, filter: 'blur(30px)', pointerEvents: 'none' }} />
-
-      <img
-        src={currentImage}
-        alt="Jersey 360"
-        style={{
-          width: '100%', maxWidth: 320, display: 'block', margin: '0 auto',
-          transform: `scaleX(${currentScaleX})`,
-          transition: isDragging || hasAllAngles ? 'none' : 'transform 0.05s linear',
-          filter: `drop-shadow(0 20px 30px rgba(0,0,0,0.6)) drop-shadow(0 0 20px ${color}40)`,
-        }}
-        draggable={false}
-      />
-
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 16 }}>
-        <button
-          onClick={() => { setAutoRotate(r => !r); }}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            background: autoRotate ? 'rgba(124,58,237,0.3)' : 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(124,58,237,0.4)', borderRadius: 8,
-            color: autoRotate ? '#a78bfa' : '#64748b', padding: '6px 12px',
-            fontSize: 11, fontWeight: 700, cursor: 'pointer', letterSpacing: '0.05em',
-          }}
-        >
-          <Icon.Rotate /> {autoRotate ? 'GIRANDO' : 'ARRASTAR'}
-        </button>
-        <span style={{ fontSize: 11, color: '#475569', fontWeight: 600 }}>360° VIEW</span>
-      </div>
-
-      {/* Static Thumbnail Gallery */}
+    <div className="flex flex-col-reverse md:flex-row gap-6 items-center w-full">
+      {/* Static Thumbnail Gallery (Vertical on Desktop, Horizontal on Mobile) */}
       {hasAllAngles && (
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginTop: 24 }}>
+        <div className="flex flex-row md:flex-col gap-3 justify-center">
           {[
             { img: front, angle: 0, label: 'Frente' },
-            { img: right, angle: 90, label: 'Lado Dir' },
+            { img: right, angle: 90, label: 'Lat. Dir' },
             { img: back, angle: 180, label: 'Costas' },
-            { img: left, angle: 270, label: 'Lado Esq' }
+            { img: left, angle: 270, label: 'Lat. Esq' }
           ].map((item, idx) => {
             const isActive = Math.abs(rotation % 360) >= (item.angle - 45) && Math.abs(rotation % 360) < (item.angle + 45) || (item.angle === 0 && Math.abs(rotation % 360) >= 315);
             return (
@@ -189,19 +155,54 @@ const Viewer360: React.FC<{ product: GmzProduct | null; color: string }> = ({ pr
                   setAutoRotate(false);
                   setRotation(item.angle);
                 }}
-                style={{
-                  width: 50, height: 50, borderRadius: 10, padding: 4, cursor: 'pointer',
-                  background: isActive ? `rgba(124,58,237,0.2)` : 'rgba(255,255,255,0.02)',
-                  border: `1px solid ${isActive ? '#7c3aed' : 'rgba(255,255,255,0.1)'}`,
-                  transition: 'all 0.2s'
-                }}
+                className={`w-14 h-14 md:w-16 md:h-16 rounded-xl p-1 cursor-pointer transition-all duration-300 border backdrop-blur-sm ${
+                  isActive ? 'bg-purple-600/20 border-purple-500 scale-110 shadow-[0_0_15px_rgba(168,85,247,0.4)]' : 'bg-white/5 border-white/10 hover:bg-white/10'
+                }`}
               >
-                <img src={item.img} alt={item.label} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                <img src={item.img} alt={item.label} className="w-full h-full object-contain drop-shadow-lg" draggable={false} />
               </div>
             );
           })}
         </div>
       )}
+
+      {/* Main 360 Viewer Area */}
+      <div
+        className="relative flex-1 w-full"
+        style={{ userSelect: 'none', cursor: isDragging ? 'grabbing' : 'grab', padding: '10px 0' }}
+        onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
+        onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={() => setIsDragging(false)}
+      >
+        <div style={{ position: 'absolute', inset: '-20px', borderRadius: '50%', background: `radial-gradient(circle, ${color}20, transparent 70%)`, filter: 'blur(30px)', pointerEvents: 'none' }} />
+
+        <img
+          src={currentImage}
+          alt="Jersey 360"
+          style={{
+            width: '100%', maxWidth: 360, display: 'block', margin: '0 auto',
+            transform: `scaleX(${currentScaleX})`,
+            transition: isDragging || hasAllAngles ? 'none' : 'transform 0.05s linear',
+            filter: `drop-shadow(0 20px 30px rgba(0,0,0,0.6)) drop-shadow(0 0 20px ${color}40)`,
+          }}
+          draggable={false}
+        />
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 24 }}>
+          <button
+            onClick={() => { setAutoRotate(r => !r); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: autoRotate ? 'rgba(124,58,237,0.3)' : 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(124,58,237,0.4)', borderRadius: 8,
+              color: autoRotate ? '#a78bfa' : '#64748b', padding: '6px 16px',
+              fontSize: 11, fontWeight: 700, cursor: 'pointer', letterSpacing: '0.05em',
+              transition: 'all 0.2s'
+            }}
+          >
+            <Icon.Rotate /> {autoRotate ? 'GIRANDO 360º' : 'ARRASTAR'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
