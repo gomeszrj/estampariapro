@@ -48,13 +48,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     useEffect(() => {
         let mounted = true;
 
-        // Force stop loading after 5 seconds to prevent black screen
+        // Force stop loading after 15 seconds to prevent black screen
         const timeout = setTimeout(() => {
             if (mounted && loading) {
                 console.error("Auth loading timed out - forcing render");
                 setLoading(false);
             }
-        }, 5000);
+        }, 15000);
 
         supabase.auth.getSession().then(async ({ data: { session } }) => {
             if (mounted) {

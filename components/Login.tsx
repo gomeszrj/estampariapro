@@ -70,8 +70,11 @@ const Login: React.FC = () => {
 
         try {
             if (mode === 'login') {
-                const { error } = await supabase.auth.signInWithPassword({ email, password });
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) throw error;
+                if (!data.session) {
+                    throw new Error("Login bem-sucedido, mas nenhuma sessão foi retornada. Verifique se o e-mail precisa ser confirmado ou se o Supabase está enviando os tokens corretamente.");
+                }
                 window.location.href = '/';
             } else if (mode === 'client_login') {
                 const clientUser = await clientService.getByPhoneAndPassword(email, password);

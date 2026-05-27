@@ -25,22 +25,19 @@ import { notify } from './components/ui/toast';
 // Helper: retry dynamic imports — auto-reload on stale chunk (after deploy)
 const lazyRetry = (importFn: () => Promise<any>) =>
   React.lazy(() =>
-    importFn().catch(() => {
-      // Chunk failed — likely stale cache after a new deploy
-      // Only reload once to avoid infinite loops
-      const hasReloaded = sessionStorage.getItem('chunk_reload');
-      if (!hasReloaded) {
-        sessionStorage.setItem('chunk_reload', '1');
+    importFn().catch((error) => {
+      console.error("Chunk failed to load", error);
+      const now = Date.now();
+      const lastReload = parseInt(sessionStorage.getItem('chunk_reload_time') || '0', 10);
+      
+      // If we haven't reloaded in the last 15 seconds, reload now
+      if (now - lastReload > 15000) {
+        sessionStorage.setItem('chunk_reload_time', now.toString());
         window.location.reload();
       }
-      return importFn(); // retry once more in case reload was prevented
+      return importFn(); // retry once more
     })
   );
-
-// Clear the reload flag on successful page load
-if (typeof window !== 'undefined') {
-  window.addEventListener('load', () => sessionStorage.removeItem('chunk_reload'));
-}
 
 // Core Page/View Imports — now lazy-loaded for instant page transitions
 import Dashboard from './components/Dashboard';

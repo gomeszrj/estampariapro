@@ -1,14 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
-import { getConfig, CONFIG_KEYS } from '../utils/config';
 
-const supabaseUrl = getConfig(CONFIG_KEYS.SUPABASE_URL);
-const supabaseAnonKey = getConfig(CONFIG_KEYS.SUPABASE_ANON_KEY);
+const supabaseUrl = 'https://mdpsrbmfzaosuvhamvbs.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kcHNyYm1memFvc3V2aGFtdmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzNTkxNjgsImV4cCI6MjA4NDkzNTE2OH0.FieQkWGUZ-iRx6XHqk8vNaa9NnNuPtkSFn6f7W5vO_U';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Supabase URL or Key missing. Check your .env file or Settings.');
-}
-
-export const supabase = createClient(supabaseUrl || 'https://placeholder.supabase.co', supabaseAnonKey || 'public-anon-key', {
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: typeof window !== 'undefined' ? window.localStorage : undefined,
     autoRefreshToken: true,
