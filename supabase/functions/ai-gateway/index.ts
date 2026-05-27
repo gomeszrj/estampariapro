@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { GoogleGenAI, Type } from "npm:@google/genai";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -26,9 +27,29 @@ serve(async (req) => {
             });
         }
 
-        const apiKey = Deno.env.get("GEMINI_API_KEY");
+        let apiKey = Deno.env.get("GEMINI_API_KEY");
+        
+        try {
+            const supabaseUrl = Deno.env.get("SUPABASE_URL");
+            const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+            if (supabaseUrl && supabaseServiceKey) {
+                const supabase = createClient(supabaseUrl, supabaseServiceKey);
+                const { data } = await supabase
+                    .from('tenant_credentials')
+                    .select('gemini_api_key')
+                    .not('gemini_api_key', 'is', null)
+                    .limit(1)
+                    .single();
+                if (data && data.gemini_api_key) {
+                    apiKey = data.gemini_api_key;
+                }
+            }
+        } catch (dbErr) {
+            console.warn("Failed to fetch credentials from DB, falling back to ENV:", dbErr);
+        }
+
         if (!apiKey) {
-            return new Response(JSON.stringify({ error: "GEMINI_API_KEY is not configured on the server." }), {
+            return new Response(JSON.stringify({ error: "GEMINI_API_KEY is not configured in DB or server." }), {
                 status: 500,
                 headers: { ...corsHeaders, "Content-Type": "application/json" },
             });

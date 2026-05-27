@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenAI } from "@google/genai";
+import { createClient } from '@supabase/supabase-js';
 
 /**
  * Vercel Serverless Function: CloudBot Agent Gateway
@@ -26,9 +27,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+  let apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+  
+  try {
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+    
+    if (supabaseUrl && supabaseServiceKey) {
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+      const { data } = await supabase
+        .from('tenant_credentials')
+        .select('gemini_api_key')
+        .not('gemini_api_key', 'is', null)
+        .limit(1)
+        .single();
+        
+      if (data && data.gemini_api_key) {
+        apiKey = data.gemini_api_key;
+      }
+    }
+  } catch (dbErr) {
+    console.warn("Failed to fetch credentials from DB, falling back to ENV:", dbErr);
+  }
+
   if (!apiKey) {
-    return res.status(500).json({ error: 'GEMINI_API_KEY não configurada no backend.' });
+    return res.status(500).json({ error: 'GEMINI_API_KEY não configurada no Banco de Dados nem no backend.' });
   }
 
   try {

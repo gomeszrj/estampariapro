@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenAI, Type } from "@google/genai";
+import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Enable CORS
@@ -26,10 +27,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Missing text parameter' });
     }
 
-    // Get key securely from backend environment variables (configured in Vercel settings)
-    const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+    // Fetch key from database tenant_credentials first
+    let apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+    
+    try {
+      const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+      const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+      
+      if (supabaseUrl && supabaseServiceKey) {
+        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+        // Get the first available credential since we are running mostly single-tenant per deploy
+        const { data } = await supabase
+          .from('tenant_credentials')
+          .select('gemini_api_key')
+          .not('gemini_api_key', 'is', null)
+          .limit(1)
+          .single();
+          
+        if (data && data.gemini_api_key) {
+          apiKey = data.gemini_api_key;
+        }
+      }
+    } catch (dbErr) {
+      console.warn("Failed to fetch credentials from DB, falling back to ENV:", dbErr);
+    }
+
     if (!apiKey) {
-      return res.status(500).json({ error: 'GEMINI_API_KEY ou VITE_GEMINI_API_KEY não foi configurada nas variáveis de ambiente da Vercel.' });
+      return res.status(500).json({ error: 'GEMINI_API_KEY não foi configurada no Banco de Dados nem nas variáveis de ambiente da Vercel.' });
     }
 
     const ai = new GoogleGenAI({ apiKey });
