@@ -18,64 +18,76 @@ const AuthContext = createContext<AuthContextType>({
     signOut: async () => { },
 });
 
+// SEC-002: Master admin is: role='admin' AND email='admin@estamparia.com'
+// We use the session user directly — avoids a second supabase.auth.getUser() call
+// which can cause AbortError when called during initialization
+const loadAdminStatus = async (userId: string, email: string): Promise<boolean> => {
+    try {
+        if (email !== 'admin@estamparia.com') return false;
+
+        const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', userId)
+            .single();
+
+        if (error) {
+            console.error('loadAdminStatus error:', error.message);
+            return false;
+        }
+
+        return profile?.role === 'admin';
+    } catch {
+        return false;
+    }
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [session, setSession] = useState<Session | null>(null);
     const [user, setUser] = useState<User | null>(null);
     const [isMasterAdmin, setIsMasterAdmin] = useState(false);
     const [loading, setLoading] = useState(true);
 
-    // SEC-002: Load master admin status from the database profile + email check
-    // NOTE: The profiles table does NOT have is_master_admin or is_master columns.
-    // Master admin is determined by: role='admin' + email='admin@estamparia.com'
-    const loadAdminStatus = async (userId: string) => {
-        try {
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('id', userId)
-                .single();
-
-            const { data: { user: currentUser } } = await supabase.auth.getUser();
-            // SEC: Require BOTH conditions — never grant master on email alone
-            const isMaster = currentUser?.email === 'admin@estamparia.com' && profile?.role === 'admin';
-            setIsMasterAdmin(isMaster);
-        } catch {
-            // SEC: On error, deny master admin access — never use email-only fallback
-            setIsMasterAdmin(false);
-        }
-    };
-
     useEffect(() => {
         let mounted = true;
 
-        // Force stop loading after 15 seconds to prevent black screen
+        // Safety timeout — gives 15s before forcing render
         const timeout = setTimeout(() => {
             if (mounted && loading) {
-                console.error("Auth loading timed out - forcing render");
+                console.warn('Auth loading timed out after 15s — forcing render');
                 setLoading(false);
             }
         }, 15000);
 
-        supabase.auth.getSession().then(async ({ data: { session } }) => {
-            if (mounted) {
-                setSession(session);
-                setUser(session?.user ?? null);
-                if (session?.user) await loadAdminStatus(session.user.id);
-                setLoading(false);
+        const handleSession = async (session: Session | null) => {
+            if (!mounted) return;
+            setSession(session);
+            const currentUser = session?.user ?? null;
+            setUser(currentUser);
+
+            if (currentUser) {
+                const isAdmin = await loadAdminStatus(currentUser.id, currentUser.email ?? '');
+                if (mounted) setIsMasterAdmin(isAdmin);
+            } else {
+                setIsMasterAdmin(false);
             }
-        }).catch(err => {
-            console.error("Auth session error:", err);
+
             if (mounted) setLoading(false);
+        };
+
+        // 1. Get existing session
+        supabase.auth.getSession().then(({ data: { session }, error }) => {
+            if (error) {
+                console.error('getSession error:', error.message);
+                if (mounted) setLoading(false);
+                return;
+            }
+            handleSession(session);
         });
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            if (mounted) {
-                setSession(session);
-                setUser(session?.user ?? null);
-                if (session?.user) await loadAdminStatus(session.user.id);
-                else setIsMasterAdmin(false);
-                setLoading(false);
-            }
+        // 2. Listen for auth state changes (login, logout, token refresh)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            handleSession(session);
         });
 
         return () => {
@@ -86,7 +98,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, []);
 
     const signOut = async () => {
-        await supabase.auth.signOut({ scope: 'local' });
+        try {
+            await supabase.auth.signOut({ scope: 'local' });
+        } catch (e) {
+            console.error('signOut error:', e);
+        }
         localStorage.removeItem('client_session');
         window.location.href = '/';
     };

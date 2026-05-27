@@ -1,2195 +1,880 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Sparkles, 
-  User, 
-  Search, 
-  Send, 
-  Wand2, 
-  Copy, 
-  CheckCircle2, 
-  AlertTriangle, 
-  MessageSquare, 
-  Loader2, 
-  FileText, 
-  Flame,
-  Shirt, 
-  RotateCcw, 
-  ArrowRight, 
-  Heart,
-  Smartphone,
-  Check,
-  Award,
-  ShieldCheck,
-  Zap,
-  Truck,
-  Eye,
-  ChevronRight,
-  Printer,
-  Compass,
-  DollarSign,
-  ShoppingBag,
-  X,
-  Info,
-  Phone,
-  Clock,
-  Mail
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
-// Product Type matching server model
+/* ═══════════════════════════════════════════════════════════
+   TYPES
+═══════════════════════════════════════════════════════════ */
 interface Product {
   id: string;
   category: string;
   title: string;
   subtitle: string;
   description: string;
-  badges: string[];
-  details: string;
+  features: string[];
   price: number;
+  originalPrice?: number;
+  badge?: string;
+  color?: string;
+  imgKey: string;
 }
 
-// AI Proposal Type matching the server return
-interface DesignProposal {
-  teamName: string;
-  colorPalette: string[];
-  chestGraphic: string;
-  collarStyle: string;
-  jerseyDetails: string;
-  slogan: string;
-  designConcept: string;
-}
-
-// Support Chat message structure
-interface SupportMessage {
+interface CartItem {
   id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  time: string;
+  product: Product;
+  qty: number;
+  size: string;
+  name: string;
+  number: string;
 }
 
-// Realized Quote Response
-interface QuoteResult {
-  productName: string;
-  quantity: number;
-  baseUnitPrice: number;
-  customFeeUnit: number;
-  discountPercentage: number;
-  finalUnitPrice: number;
-  finalTotalPrice: number;
-  deliveryEstimate: string;
-  minimumUnitsAlert: string | null;
-}
+const IMGS: Record<string, string> = {
+  "regata-lakers": "/src/assets/images/jersey_nba_purple_1779853332145.png",
+  "regata-bulls": "/src/assets/images/jersey_nba_red_1779854006937.png",
+  "manga-longa-azul": "/src/assets/images/jersey_manga_longa_1779853348937.png",
+  "manga-longa-preta": "/src/assets/images/jersey_manga_longa_preto_1779854022944.png",
+  "camiseta-roxa": "/src/assets/images/jersey_manga_curta_1779853362847.png",
+  "camiseta-branca": "/src/assets/images/jersey_manga_curta_branco_1779854037116.png",
+  "oversized-bear": "/src/assets/images/jersey_oversized_bear_1779853381876.png",
+};
 
-export default function App() {
-  // --- CORE STATE ---
-  const [products, setProducts] = useState<Product[]>([
-    {
-      id: "regata-lakers",
-      category: "NBA",
-      title: "Regata NBA Lakers Roxa",
-      subtitle: "Regata com sublimação premium e respirabilidade máxima.",
-      description: "Estilo Lakers com corte profissional e tecido Dry-Max AeroMesh.",
-      badges: ["Tec Premium", "Sublimação Total", "AeroMesh Pro"],
-      details: "Acabamento reforçado nas costuras ombro-a-ombro, gola em V, tecido AeroMesh ultra respirável ideal para alta performance em quadra e no cotidiano.",
-      price: 89.90,
-    },
-    {
-      id: "regata-bulls",
-      category: "NBA",
-      title: "Regata NBA Bulls Vermelha",
-      subtitle: "Regata Bulls Vermelha premium com tecido AeroMesh.",
-      description: "Corte clássico de basquete premium, estampa de alto brilho.",
-      badges: ["Tec Premium", "Bulls Classic", "Secagem Rápida"],
-      details: "Uniformes oficiais da Chicago Bulls Concept, costura dupla e elastano para máximo conforto e durabilidade.",
-      price: 89.90,
-    },
-    {
-      id: "manga-longa-azul",
-      category: "UV+50",
-      title: "Manga Longa UV+50 Azul",
-      subtitle: "Proteção solar extrema UV+50 com termorregulação.",
-      description: "Manga longa azul de alta performance para treinos ao ar livre.",
-      badges: ["Proteção Solar", "Termorregulação", "Flexabilidade"],
-      details: "Malha com proteção UV+50 bloqueadora de raios solares nocivos, com toque frio e ótima dispersão de suor.",
-      price: 129.90,
-    },
-    {
-      id: "manga-longa-preta",
-      category: "UV+50",
-      title: "Manga Longa UV+50 Preta",
-      subtitle: "Sleek manga longa com detalhe neon e proteção UV+50.",
-      description: "Visual tático com detalhes em circuitos de energia limão.",
-      badges: ["Proteção Solar", "Design Tático", "Toque Frio"],
-      details: "Ideal para treinos intensos sob o sol ou proteção tática em esportes ao ar livre. Tecido tecnológico super resistente.",
-      price: 129.90,
-    },
-    {
-      id: "camiseta-roxa",
-      category: "MANGA CURTA",
-      title: "Camiseta Dry Fit Roxa",
-      subtitle: "Modelagem slim fit com caimento esportivo italiano.",
-      description: "Camiseta premium Dry Fit na cor roxa de alta performance.",
-      badges: ["Dry Fit Pro", "Super Leve", "Anti-Odor"],
-      details: "A camiseta esportiva definitiva. Combina poliéster inteligente com fios elastano de toque suave, antialérgico e secagem ultra veloz.",
-      price: 69.90,
-    },
-    {
-      id: "camiseta-branca",
-      category: "MANGA CURTA",
-      title: "Camiseta Dry Fit Branca",
-      subtitle: "Peça essencial branca com recortes cinza táticos.",
-      description: "Dry Fit branca clássica com caimento estruturado moderno.",
-      badges: ["Dry Fit Pro", "Proteção Térmica", "Não Amassa"],
-      details: "Confeccionada em Poliamida Dry Touch, com painéis laterais respiráveis em cinza escuro para melhor fluxo térmico corporal.",
-      price: 69.90,
-    },
-    {
-      id: "oversized-bear",
-      category: "DTF",
-      title: "Oversized DTF Bear",
-      subtitle: "Streetwear de algodão premium com estampa de alta nitidez.",
-      description: "Estilo urbano oversized moderno com ilustração Bear robusta.",
-      badges: ["100% Algodão", "Estamparia DTF Touchless", "Modelagem Solta"],
-      details: "Malha penteada premium fio 30.1, estampa aplicada com tecnologia DTF industrial que garante cores ultra vibrantes que nunca desbotam ou racham.",
-      price: 99.90,
-    }
-  ]);
+const PRODUCTS: Product[] = [
+  { id: "regata-lakers", category: "NBA", badge: "BEST SELLER", title: "Regata NBA Lakers Roxa", subtitle: "Sublimação premium · AeroMesh Pro", description: "Estilo Lakers com corte profissional e tecido Dry-Max AeroMesh. Qualidade absurda.", features: ["Tec Premium", "Sublimação Total", "AeroMesh Pro", "Secagem Rápida"], price: 89.90, imgKey: "regata-lakers", color: "#7c3aed" },
+  { id: "regata-bulls", category: "NBA", title: "Regata NBA Bulls Vermelha", subtitle: "Bulls Classic · Secagem Rápida", description: "Corte clássico de basquete premium, estampa de alto brilho Bulls.", features: ["Tec Premium", "Bulls Classic", "Secagem Rápida", "Costura Dupla"], price: 89.90, imgKey: "regata-bulls", color: "#dc2626" },
+  { id: "manga-longa-azul", category: "UV+50", badge: "PROTEÇÃO SOLAR", title: "Manga Longa UV+50 Azul", subtitle: "Proteção UV+50 · Termorregulação", description: "Manga longa azul de alta performance para treinos ao ar livre.", features: ["Proteção UV+50", "Termorregulação", "Flexibilidade", "Toque Frio"], price: 129.90, imgKey: "manga-longa-azul", color: "#0ea5e9" },
+  { id: "manga-longa-preta", category: "UV+50", title: "Manga Longa UV+50 Preta", subtitle: "Design Tático · UV+50", description: "Visual tático com detalhes em circuitos de energia limão.", features: ["Proteção UV+50", "Design Tático", "Toque Frio", "Alta Durabilidade"], price: 129.90, imgKey: "manga-longa-preta", color: "#6366f1" },
+  { id: "camiseta-roxa", category: "MANGA CURTA", badge: "TOP GMZ", title: "Camiseta Dry Fit Roxa", subtitle: "Slim Fit · Anti-Odor", description: "A camiseta esportiva definitiva com poliéster inteligente.", features: ["Dry Fit Pro", "Super Leve", "Anti-Odor", "Slim Fit"], price: 69.90, imgKey: "camiseta-roxa", color: "#9333ea" },
+  { id: "camiseta-branca", category: "MANGA CURTA", title: "Camiseta Dry Fit Branca", subtitle: "Dry Touch · Não Amassa", description: "Dry Fit branca clássica com caimento estruturado moderno.", features: ["Dry Fit Pro", "Proteção Térmica", "Não Amassa", "Painéis Respiráveis"], price: 69.90, imgKey: "camiseta-branca", color: "#e2e8f0" },
+  { id: "oversized-bear", category: "DTF", badge: "STREETWEAR", title: "Oversized DTF Bear", subtitle: "100% Algodão · Estampa DTF", description: "Streetwear oversized moderno com ilustração Bear robusta.", features: ["100% Algodão", "Estampa DTF Touchless", "Modelagem Solta", "Cores Ultra Vibrantes"], price: 99.90, imgKey: "oversized-bear", color: "#ec4899" },
+];
 
-  const [activeTab, setActiveTab] = useState<'catalog' | 'customizer' | 'generator' | 'chat'>('catalog');
-  const [selectedProduct, setSelectedProduct] = useState<Product>(products[0] || {
-    id: "regata-lakers",
-    category: "NBA",
-    title: "Regata NBA Lakers Roxa",
-    subtitle: "Regata com sublimação premium e respirabilidade máxima.",
-    description: "Estilo Lakers com corte profissional e tecido Dry-Max AeroMesh.",
-    badges: ["Tec Premium", "Sublimação Total", "AeroMesh Pro"],
-    details: "Acabamento reforçado nas costuras ombro-a-ombro, gola em V, tecido AeroMesh ultra respirável.",
-    price: 89.90,
-  });
-  const [isApiKeyConnected, setIsApiKeyConnected] = useState<boolean | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successToast, setSuccessToast] = useState<string | null>(null);
+const CATEGORIES = [
+  { id: "nba", label: "Regatas NBA", desc: "Estilo e liberdade para jogar ou para o dia a dia.", tag: "NBA", color: "from-purple-900 to-black", imgKey: "regata-lakers" },
+  { id: "uv50", label: "Manga Longa", desc: "Proteção, conforto e performance para qualquer aventura.", tag: "UV+50", color: "from-blue-900 to-black", imgKey: "manga-longa-azul" },
+  { id: "curta", label: "Camisetas", desc: "Conforto e estilo para te acompanhar em qualquer momento.", tag: "MANGA CURTA", color: "from-violet-900 to-black", imgKey: "camiseta-roxa" },
+  { id: "dtf", label: "Oversized", desc: "Estão urbanos com estampas de alta qualidade e toque premium.", tag: "DTF", color: "from-pink-900 to-black", imgKey: "oversized-bear" },
+];
 
-  // --- IMAGES MAPPING (from compiled Gemini generation) ---
-  const jerseyImages: Record<string, string> = {
-    "regata-lakers": "/src/assets/images/jersey_nba_purple_1779853332145.png",
-    "regata-bulls": "/src/assets/images/jersey_nba_red_1779854006937.png",
-    "manga-longa-azul": "/src/assets/images/jersey_manga_longa_1779853348937.png",
-    "manga-longa-preta": "/src/assets/images/jersey_manga_longa_preto_1779854022944.png",
-    "camiseta-roxa": "/src/assets/images/jersey_manga_curta_1779853362847.png",
-    "camiseta-branca": "/src/assets/images/jersey_manga_curta_branco_1779854037116.png",
-    "oversized-bear": "/src/assets/images/jersey_oversized_bear_1779853381876.png",
-  };
+/* ═══════════════════════════════════════════════════════════
+   ICONS (inline SVG)
+═══════════════════════════════════════════════════════════ */
+const Icon = {
+  Search: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>,
+  Cart: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" /></svg>,
+  X: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>,
+  Heart: ({ filled }: { filled?: boolean }) => <svg width="16" height="16" viewBox="0 0 24 24" fill={filled ? "#ef4444" : "none"} stroke={filled ? "#ef4444" : "currentColor"} strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>,
+  Arrow: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14m-7-7 7 7-7 7" /></svg>,
+  Check: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>,
+  ChevLeft: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m15 18-6-6 6-6" /></svg>,
+  ChevRight: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 18 6-6-6-6" /></svg>,
+  Rotate: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>,
+  Star: () => <svg width="12" height="12" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>,
+  WA: () => <svg width="26" height="26" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z" /></svg>,
+  Menu: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>,
+  Trash: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>,
+  Play: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3" /></svg>,
+};
 
-  // State to hold highlighted hero jersey
-  const [heroJerseyId, setHeroJerseyId] = useState<string>("regata-lakers");
-
-  // --- CART STATE ---
-  const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
-  const [cartItems, setCartItems] = useState<any[]>([
-    {
-      id: "cart-item-1",
-      product: {
-        id: "manga-longa-azul",
-        category: "UV+50",
-        title: "Manga Longa UV+50 Azul",
-        price: 129.90
-      },
-      quantity: 1,
-      name: "ATLETA",
-      number: "07"
-    },
-    {
-      id: "cart-item-2",
-      product: {
-        id: "regata-lakers",
-        category: "NBA",
-        title: "Regata NBA Lakers Roxa",
-        price: 89.90
-      },
-      quantity: 15,
-      name: "GMZ PLAYER",
-      number: "10"
-    }
-  ]);
-
-  const [selectedDetailProduct, setSelectedDetailProduct] = useState<Product | null>(null);
-  const [favoritesList, setFavoritesList] = useState<string[]>(["regata-lakers", "camiseta-roxa"]);
-
-  // --- CUSTOMIZER & QUOTE STATE ---
-  const [quoteQuantity, setQuoteQuantity] = useState<number>(15);
-  const [hasCustomName, setHasCustomName] = useState<boolean>(true);
-  const [hasCustomNumber, setHasCustomNumber] = useState<boolean>(true);
-  const [customNameInput, setCustomNameInput] = useState<string>("ATLETA");
-  const [customNumberInput, setCustomNumberInput] = useState<string>("10");
-  const [layoutNotes, setLayoutNotes] = useState<string>("Desejamos o escudo do time no peito esquerdo em tons de prata.");
-  
-  const [quoteResult, setQuoteResult] = useState<QuoteResult | null>(null);
-  const [isCalculatingQuote, setIsCalculatingQuote] = useState<boolean>(false);
-
-  // --- AI DESIGN PROPOSAL GENERATOR STATE ---
-  const [teamConcept, setTeamConcept] = useState<string>("Tigres mecânicos neon com garras de energia azul e roxa");
-  const [predominantColor, setPredominantColor] = useState<string>("Roxo Neon e Cinza Escuro");
-  const [selectedSport, setSelectedSport] = useState<string>("Futebol Americano / Flag Football");
-  const [isGeneratingDesign, setIsGeneratingDesign] = useState<boolean>(false);
-  const [generatedProposal, setGeneratedProposal] = useState<DesignProposal | null>(null);
-
-  // --- VIRTUAL SUPPORT CHAT STATE ---
-  const [chatInput, setChatInput] = useState<string>("");
-  const [chatMessages, setChatMessages] = useState<SupportMessage[]>([
-    {
-      id: "1",
-      role: 'assistant',
-      content: "Olá! Sou o assistente inteligente da GMZ Performance. Posso ajudar você com especificações técnicas de tecidos, prazos de envio, orçamentos em lote para seu time ou explicar a sublimação total esportiva. Como posso te apoiar hoje?",
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }
-  ]);
-  const [isChatLoading, setIsChatLoading] = useState<boolean>(false);
-  const chatBottomRef = useRef<HTMLDivElement>(null);
-
-  // Auto-scroll chat console
-  useEffect(() => {
-    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatMessages]);
-
-  // Toast Notification handler
-  const triggerToast = (msg: string) => {
-    setSuccessToast(msg);
-    setTimeout(() => {
-      setSuccessToast(null);
-    }, 4000);
-  };
-
-  // Perform a system integration check on start
-  const verifySystemApi = async () => {
-    try {
-      // Connect to products api first
-      const res = await fetch('/api/products');
-      if (res.ok) {
-        setIsApiKeyConnected(true);
-        const data = await res.json();
-        setProducts(data);
-      } else {
-        setIsApiKeyConnected(false);
-      }
-    } catch (err) {
-      setIsApiKeyConnected(false);
-    }
-  };
+/* ═══════════════════════════════════════════════════════════
+   360° VIEWER COMPONENT
+═══════════════════════════════════════════════════════════ */
+const Viewer360: React.FC<{ imgKey: string; color: string }> = ({ imgKey, color }) => {
+  const [rotation, setRotation] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [autoRotate, setAutoRotate] = useState(true);
+  const lastX = useRef(0);
+  const animRef = useRef<number>();
 
   useEffect(() => {
-    verifySystemApi();
-    calculateQuotePreview();
-  }, [selectedProduct, quoteQuantity, hasCustomName, hasCustomNumber]);
-
-  // --- API CALL HANDLERS ---
-
-  // 1. Calculate Quote Preview
-  const calculateQuotePreview = async () => {
-    setIsCalculatingQuote(true);
-    try {
-      const res = await fetch('/api/quote-calculator', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          productId: selectedProduct.id,
-          quantity: quoteQuantity,
-          hasCustomName,
-          hasCustomNumber,
-          notes: layoutNotes
-        })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setQuoteResult(data);
-      } else {
-        setErrorMessage(data.error || "Erro ao computar orçamento.");
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsCalculatingQuote(false);
-    }
-  };
-
-  // 2. Generate Team Design Proposal via Gemini AI
-  const handleGenerateProposal = async () => {
-    if (!teamConcept.trim()) return;
-    setIsGeneratingDesign(true);
-    setErrorMessage(null);
-    try {
-      const res = await fetch('/api/ai-design-generator', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          teamConcept,
-          mainColor: predominantColor,
-          sport: selectedSport
-        })
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Houve uma falha na criação criativa do uniforme.");
-      }
-      setGeneratedProposal(data);
-      triggerToast("Proposta criativa de uniforme esportivo gerada com sucesso!");
-    } catch (err: any) {
-      setErrorMessage(err.message || "Erro de conexão com o servidor de IA.");
-    } finally {
-      setIsGeneratingDesign(false);
-    }
-  };
-
-  // 3. Send Message in Sales Support Chat
-  const handleSendMessage = async (e?: React.FormEvent, customText?: string) => {
-    if (e) e.preventDefault();
-    const textToSend = customText || chatInput;
-    if (!textToSend.trim()) return;
-
-    const userMsg: SupportMessage = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: textToSend,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    if (!autoRotate) return;
+    const spin = () => {
+      setRotation(r => (r + 0.3) % 360);
+      animRef.current = requestAnimationFrame(spin);
     };
+    animRef.current = requestAnimationFrame(spin);
+    return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
+  }, [autoRotate]);
 
-    setChatMessages(prev => [...prev, userMsg]);
-    if (!customText) setChatInput("");
-    setIsChatLoading(true);
-
-    try {
-      // Map entire history
-      const history = [...chatMessages, userMsg].map(m => ({
-        role: m.role,
-        content: m.content
-      }));
-
-      const res = await fetch('/api/ai-chat-assistant', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: history })
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Falha ao consultar o robô inteligente.");
-      }
-
-      setChatMessages(prev => [...prev, {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: data.response,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }]);
-    } catch (err: any) {
-      setErrorMessage(err.message || "Erro no chat de suporte.");
-    } finally {
-      setIsChatLoading(false);
-    }
+  const onMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true); setAutoRotate(false);
+    lastX.current = e.clientX;
+  };
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    const delta = e.clientX - lastX.current;
+    setRotation(r => (r + delta * 0.5) % 360);
+    lastX.current = e.clientX;
+  };
+  const onMouseUp = () => setIsDragging(false);
+  const onTouchStart = (e: React.TouchEvent) => {
+    setIsDragging(true); setAutoRotate(false);
+    lastX.current = e.touches[0].clientX;
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    const delta = e.touches[0].clientX - lastX.current;
+    setRotation(r => (r + delta * 0.5) % 360);
+    lastX.current = e.touches[0].clientX;
   };
 
-  // Copy text helper
-  const handleCopyToClipboard = (text: string, label: string = "Copiado!") => {
-    navigator.clipboard.writeText(text);
-    triggerToast(`${label} copiado para a área de transferência.`);
-  };
-
-  const addToCart = (product: Product, quantity: number, name: string, number: string) => {
-    const newItem = {
-      id: Date.now().toString(),
-      product,
-      quantity,
-      name: name || "ATLETA",
-      number: number || "10"
-    };
-    setCartItems(prev => [...prev, newItem]);
-    triggerToast(`Adicionado ao faturamento!`);
-    setIsCartOpen(true);
-  };
-
-  const removeFromCart = (id: string) => {
-    setCartItems(prev => prev.filter(item => item.id !== id));
-    triggerToast(`Item removido.`);
-  };
+  // Simulate 3D depth: scale changes with rotation
+  const scaleX = Math.abs(Math.cos((rotation * Math.PI) / 180)) * 0.3 + 0.7;
+  const isBack = Math.abs(rotation % 360) > 90 && Math.abs(rotation % 360) < 270;
 
   return (
-    <div className="min-h-screen bg-[#040507] text-slate-100 flex flex-col font-sans selection:bg-purple-600 selection:text-white" id="gmz-catalog-app">
-      
-      {/* Dynamic Floating Success Notifications */}
-      <AnimatePresence>
-        {successToast && (
-          <motion.div 
-            initial={{ opacity: 0, y: -40, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-purple-950/90 border border-purple-500/40 text-purple-200 px-6 py-3.5 rounded-xl shadow-[0_10px_40px_rgba(139,92,246,0.3)] flex items-center gap-3 backdrop-blur-md"
-            id="app-toast-alert"
-          >
-            <CheckCircle2 className="w-5 h-5 text-purple-400 shrink-0 animate-pulse" />
-            <span className="text-sm font-medium tracking-wide">{successToast}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
+    <div
+      style={{ position: 'relative', userSelect: 'none', cursor: isDragging ? 'grabbing' : 'grab' }}
+      onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
+      onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={() => setIsDragging(false)}
+    >
+      {/* Glow ring */}
+      <div style={{ position: 'absolute', inset: '-20px', borderRadius: '50%', background: `radial-gradient(circle, ${color}20, transparent 70%)`, filter: 'blur(30px)', pointerEvents: 'none' }} />
 
-      {/* --- PREMIUM UPGRADED SHOPPING CART DRAWER --- */}
-      <AnimatePresence>
-        {isCartOpen && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-end"
-            onClick={() => setIsCartOpen(false)}
-            id="cart-overlay-shadow"
-          >
-            <motion.div 
-              initial={{ x: 400 }}
-              animate={{ x: 0 }}
-              exit={{ x: 400 }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="w-full max-w-md bg-[#090b11] border-l border-purple-950/40 h-full flex flex-col justify-between shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-              id="cart-drawer-body"
-            >
-              {/* Header */}
-              <div className="p-5 border-b border-purple-950/30 flex justify-between items-center bg-[#0d0f17]">
-                <div className="flex items-center gap-2">
-                  <ShoppingBag className="w-5 h-5 text-purple-400" />
-                  <span className="font-extrabold text-white text-sm uppercase tracking-wider">Seu Faturamento ({cartItems.length})</span>
-                </div>
-                <button 
-                  onClick={() => setIsCartOpen(false)}
-                  className="p-1.5 hover:bg-slate-900 rounded-lg text-slate-400 hover:text-white transition-all"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+      <img
+        src={IMGS[imgKey]}
+        alt="Jersey 360"
+        style={{
+          width: '100%', maxWidth: 320, display: 'block', margin: '0 auto',
+          transform: `scaleX(${isBack ? -scaleX : scaleX})`,
+          transition: isDragging ? 'none' : 'transform 0.05s linear',
+          filter: `drop-shadow(0 20px 30px rgba(0,0,0,0.6)) drop-shadow(0 0 20px ${color}40)`,
+        }}
+        draggable={false}
+      />
 
-              {/* Items List */}
-              <div className="flex-1 p-5 overflow-y-auto space-y-4">
-                {cartItems.length === 0 ? (
-                  <div className="h-full flex flex-col justify-center items-center text-center space-y-3">
-                    <ShoppingBag className="w-12 h-12 text-slate-800 animate-pulse" />
-                    <p className="text-slate-400 text-xs uppercase font-bold tracking-widest">Carrinho Vazio</p>
-                    <p className="text-slate-500 text-xs">Simule ou selecione produtos para adicioná-los aqui.</p>
-                  </div>
-                ) : (
-                  cartItems.map((item) => (
-                    <div 
-                      key={item.id}
-                      className="p-3 bg-slate-950/40 border border-purple-950/20 rounded-xl flex items-start gap-3 relative group"
-                    >
-                      <img 
-                        src={jerseyImages[item.product.id]} 
-                        alt={item.product.title} 
-                        className="w-14 h-14 object-contain rounded bg-slate-900 border border-slate-950 mt-1"
-                        referrerPolicy="no-referrer"
-                      />
-                      <div className="flex-1 space-y-1">
-                        <div className="flex justify-between">
-                          <h4 className="font-bold text-xs text-white truncate max-w-[180px]">{item.product.title}</h4>
-                          <button 
-                            onClick={() => removeFromCart(item.id)}
-                            className="text-red-400 hover:text-red-500 text-[10px] font-bold uppercase hover:underline opacity-80 group-hover:opacity-100"
-                          >
-                            Excluir
-                          </button>
-                        </div>
-                        <p className="text-[10px] text-slate-400 uppercase font-black tracking-wide bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-500/10 inline-block">{item.product.category}</p>
-                        
-                        <div className="flex mt-2 items-center justify-between text-[11px] text-slate-350 bg-[#0c0d13] p-1.5 rounded border border-purple-950/30">
-                          <div>
-                            <span className="text-slate-500 font-bold uppercase tracking-wide text-[9px] block">Por Unidade:</span>
-                            <span className="font-mono text-cyan-400 font-bold">R$ {item.product.price.toFixed(2)}</span>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-slate-500 font-bold uppercase tracking-wide text-[9px] block">Quantidade:</span>
-                            <span className="font-mono text-white font-black">{item.quantity} Un.</span>
-                          </div>
-                        </div>
-
-                        {(item.name || item.number) && (
-                          <div className="text-[10px] text-purple-400 pt-1 font-mono flex gap-2">
-                            <span>Costas: {item.name || "Sem Nome"}</span>
-                            <span>• N°: {item.number || "Sem Número"}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {/* Subtotal & Checkout Actions */}
-              {cartItems.length > 0 && (
-                <div className="p-5 border-t border-purple-950/30 bg-[#0d0f17] space-y-4">
-                  <div className="space-y-1 text-xs">
-                    <div className="flex justify-between text-slate-400">
-                      <span>Qtde Total de Peças:</span>
-                      <span className="font-mono text-white font-bold">{cartItems.reduce((acc, item) => acc + item.quantity, 0)} Peças</span>
-                    </div>
-                    <div className="flex justify-between text-sm pt-2 border-t border-purple-950/20 font-extrabold text-white">
-                      <span>INVESTIMENTO TOTAL ESTIMADO:</span>
-                      <span className="font-mono text-cyan-400">R$ {cartItems.reduce((acc, item) => acc + (item.product.price * item.quantity), 0).toLocaletoLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                    </div>
-                  </div>
-
-                  <button 
-                    onClick={() => {
-                      setSelectedProduct(products.find(p => p.id === cartItems[cartItems.length - 1].product.id) || products[0]);
-                      setQuoteQuantity(cartItems.reduce((acc, item) => acc + item.quantity, 0));
-                      setActiveTab('customizer');
-                      setIsCartOpen(false);
-                      triggerToast("Carregando itens no faturamento mestre...");
-                    }}
-                    className="w-full py-3 bg-gradient-to-tr from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs uppercase tracking-widest rounded-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-1.5"
-                  >
-                    <span>Finalizar & Gerar Orçamento Oficial</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                  <p className="text-[10px] text-slate-500 text-center uppercase tracking-wider">Imprima e envie ao WhatsApp do faturamento oficial</p>
-                </div>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* --- APP HEADER BAR --- */}
-      <header className="border-b border-purple-950/30 bg-[#07090d]/85 px-6 py-4 flex flex-wrap justify-between items-center gap-4 sticky top-0 z-40 backdrop-blur-lg" id="app-marketing-header">
-        
-        {/* Logo brand marker */}
-        <div 
-          onClick={() => { setActiveTab('catalog'); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-          className="flex items-center gap-3.5 cursor-pointer hover:opacity-95 transition-all" 
-          id="brand-emblem-section"
+      {/* Controls */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 16 }}>
+        <button
+          onClick={() => { setAutoRotate(r => !r); }}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: autoRotate ? 'rgba(124,58,237,0.3)' : 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(124,58,237,0.4)', borderRadius: 8,
+            color: autoRotate ? '#a78bfa' : '#64748b', padding: '6px 12px',
+            fontSize: 11, fontWeight: 700, cursor: 'pointer', letterSpacing: '0.05em',
+          }}
         >
-          <div className="w-10 h-10 bg-gradient-to-tr from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(147,51,234,0.4)]" id="header-logo-icon">
-            <Shirt className="w-5.5 h-5.5 text-white transform -rotate-6" />
+          <Icon.Rotate /> {autoRotate ? 'GIRANDO' : 'ARRASTAR'}
+        </button>
+        <span style={{ fontSize: 11, color: '#475569', fontWeight: 600 }}>360° VIEW</span>
+      </div>
+    </div>
+  );
+};
+
+/* ═══════════════════════════════════════════════════════════
+   PRODUCT CARD COMPONENT
+═══════════════════════════════════════════════════════════ */
+const ProductCard: React.FC<{
+  p: Product;
+  favorites: Set<string>;
+  onFav: (id: string) => void;
+  onView: (p: Product) => void;
+  onAdd: (p: Product) => void;
+}> = ({ p, favorites, onFav, onView, onAdd }) => (
+  <div className="product-card" style={{ position: 'relative' }}>
+    {/* Badge */}
+    {p.badge && (
+      <span style={{ position: 'absolute', top: 12, left: 12, zIndex: 2, background: 'rgba(124,58,237,0.9)', color: 'white', fontSize: 9, fontWeight: 800, padding: '4px 8px', borderRadius: 6, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+        {p.badge}
+      </span>
+    )}
+    {/* Fav */}
+    <button className={`fav-btn ${favorites.has(p.id) ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); onFav(p.id); }}>
+      <Icon.Heart filled={favorites.has(p.id)} />
+    </button>
+
+    {/* Image */}
+    <div
+      style={{ background: `linear-gradient(135deg, rgba(13,15,23,1), ${p.color}10)`, padding: '30px 20px', cursor: 'pointer', textAlign: 'center', minHeight: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      onClick={() => onView(p)}
+    >
+      <img src={IMGS[p.imgKey]} alt={p.title} className="product-img" style={{ maxHeight: 180, maxWidth: '100%', objectFit: 'contain' }} />
+    </div>
+
+    {/* Info */}
+    <div style={{ padding: '16px 16px 20px' }}>
+      <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: p.color || '#a78bfa', background: `${p.color || '#7c3aed'}15`, padding: '3px 8px', borderRadius: 5, display: 'inline-block', marginBottom: 8 }}>
+        {p.category}
+      </span>
+      <h3 style={{ fontSize: 13, fontWeight: 800, color: 'white', lineHeight: 1.3, marginBottom: 4, cursor: 'pointer' }} onClick={() => onView(p)}>{p.title}</h3>
+      <p style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>{p.subtitle}</p>
+
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
+        <span style={{ fontSize: 20, fontWeight: 900, color: 'white' }}>R$ {p.price.toFixed(2).replace('.', ',')}</span>
+      </div>
+      <p className="installment-tag">Em até 3x sem juros</p>
+
+      <button
+        onClick={() => onAdd(p)}
+        style={{ marginTop: 14, width: '100%', padding: '10px', background: 'linear-gradient(135deg, rgba(124,58,237,0.2), rgba(79,70,229,0.2))', border: '1px solid rgba(124,58,237,0.3)', borderRadius: 10, color: '#a78bfa', fontWeight: 700, fontSize: 11, cursor: 'pointer', letterSpacing: '0.05em', textTransform: 'uppercase', transition: 'all 0.2s' }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(124,58,237,0.5), rgba(79,70,229,0.5))'; e.currentTarget.style.color = 'white'; }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(124,58,237,0.2), rgba(79,70,229,0.2))'; e.currentTarget.style.color = '#a78bfa'; }}
+      >
+        Solicitar Orçamento
+      </button>
+    </div>
+  </div>
+);
+
+/* ═══════════════════════════════════════════════════════════
+   HERO SLIDER
+═══════════════════════════════════════════════════════════ */
+const HeroSlider: React.FC<{ onCTA: () => void }> = ({ onCTA }) => {
+  const slides = [
+    { tag: 'NBA', title: 'REGATAS', subtitle: 'NBA', desc: 'Estilo e liberdade para jogar\nou para o dia a dia.', features: ['Qualidade Premium', 'Design Exclusivo', 'Sublimação Total', 'Tecido Respirável'], imgKey: 'regata-lakers', color: '#7c3aed', glow: 'rgba(124,58,237,0.4)' },
+    { tag: 'MANGA CURTA', title: 'CAMISETAS', subtitle: 'MANGA CURTA', desc: 'Conforto e estilo para te\nacompanhar em qualquer momento.', features: ['Tecido Premium', 'Respirável', 'Cores Vibrantes', 'Alta Durabilidade'], imgKey: 'camiseta-roxa', color: '#9333ea', glow: 'rgba(147,51,234,0.4)' },
+    { tag: 'UV+50', title: 'MANGA LONGA', subtitle: 'UV+50', desc: 'Proteção, conforto e performance\npara qualquer aventura.', features: ['Proteção UV+50', 'Tecido Leve', 'Secagem Rápida', 'Alta Durabilidade'], imgKey: 'manga-longa-azul', color: '#0ea5e9', glow: 'rgba(14,165,233,0.4)' },
+    { tag: 'DTF', title: 'OVERSIZED', subtitle: 'STREETWEAR', desc: 'Estão urbanos com estampas de\nalta qualidade e toque premium.', features: ['100% Algodão', 'DTF Touchless', 'Modelagem Solta', 'Ultra Vibrante'], imgKey: 'oversized-bear', color: '#ec4899', glow: 'rgba(236,72,153,0.4)' },
+  ];
+
+  const [current, setCurrent] = useState(0);
+  const [prev, setPrev] = useState<number | null>(null);
+  const [animating, setAnimating] = useState(false);
+
+  const goTo = (idx: number) => {
+    if (animating || idx === current) return;
+    setPrev(current); setCurrent(idx); setAnimating(true);
+    setTimeout(() => setAnimating(false), 600);
+  };
+  const next = () => goTo((current + 1) % slides.length);
+  const prevSlide = () => goTo((current - 1 + slides.length) % slides.length);
+
+  useEffect(() => {
+    const t = setInterval(next, 5000);
+    return () => clearInterval(t);
+  }, [current]);
+
+  const s = slides[current];
+
+  return (
+    <section style={{ position: 'relative', overflow: 'hidden', background: '#04050a', minHeight: 520, display: 'flex', alignItems: 'center' }}>
+      {/* Animated background glow */}
+      <div style={{ position: 'absolute', top: '50%', right: '10%', transform: 'translateY(-50%)', width: 600, height: 600, borderRadius: '50%', background: `radial-gradient(circle, ${s.glow}, transparent 70%)`, filter: 'blur(80px)', transition: 'all 0.8s ease', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: 'linear-gradient(rgba(124,58,237,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(124,58,237,0.03) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
+
+      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '60px 40px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center', width: '100%', position: 'relative', zIndex: 1 }}>
+        {/* Text */}
+        <div style={{ opacity: animating ? 0 : 1, transform: animating ? 'translateX(-20px)' : 'translateX(0)', transition: 'all 0.5s ease' }}>
+          <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em', color: s.color, background: `${s.color}20`, border: `1px solid ${s.color}30`, padding: '6px 14px', borderRadius: 8, display: 'inline-block', marginBottom: 20 }}>
+            {s.tag}
+          </span>
+          <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 'clamp(52px, 8vw, 90px)', fontWeight: 900, color: 'white', lineHeight: 0.9, textTransform: 'uppercase', marginBottom: 8, letterSpacing: '-0.01em' }}>
+            {s.title}
+          </h2>
+          <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 'clamp(52px, 8vw, 90px)', fontWeight: 900, lineHeight: 0.9, textTransform: 'uppercase', marginBottom: 24, letterSpacing: '-0.01em', background: `linear-gradient(to right, ${s.color}, #818cf8)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            {s.subtitle}
+          </h3>
+          <p style={{ fontSize: 15, color: '#94a3b8', lineHeight: 1.7, marginBottom: 32, whiteSpace: 'pre-line' }}>{s.desc}</p>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 36 }}>
+            {s.features.map(f => (
+              <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>
+                <div style={{ width: 20, height: 20, borderRadius: 6, background: `${s.color}20`, border: `1px solid ${s.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color, flexShrink: 0 }}>
+                  <Icon.Check />
+                </div>
+                <span style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>{f}</span>
+              </div>
+            ))}
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-black uppercase tracking-widest text-purple-400">GMZ Performance</span>
-              <span className="text-[9px] uppercase font-bold tracking-widest bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded border border-cyan-500/20">AeroMesh Pro</span>
-            </div>
-            <h1 className="text-xs font-bold tracking-tight text-slate-400 uppercase">Catálogo Premium</h1>
+
+          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+            <button className="btn-primary" onClick={onCTA} style={{ background: `linear-gradient(135deg, ${s.color}, #4f46e5)`, boxShadow: `0 4px 25px ${s.glow}` }}>
+              Ver modelos <Icon.Arrow />
+            </button>
+            <button className="btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: `${s.color}20`, border: `1px solid ${s.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color }}>
+                <Icon.Play />
+              </div>
+              Ver coleção
+            </button>
           </div>
         </div>
 
-        {/* Global Web Navigation List - EXACTLY LIKE MOCKUP WRITER */}
-        <nav className="flex items-center gap-1" id="header-nav-tabs">
-          {[
-            { label: 'Início', tab: 'catalog', action: () => { setActiveTab('catalog'); window.scrollTo({ top: 0, behavior: 'smooth' }); }},
-            { label: 'Coleções', tab: 'catalog', action: () => { setActiveTab('catalog'); setTimeout(() => { document.getElementById("categories-grid-anchored")?.scrollIntoView({ behavior: 'smooth' }); }, 100); }},
-            { label: 'Todos os produtos', tab: 'catalog', action: () => { setActiveTab('catalog'); setTimeout(() => { document.getElementById("products-grid-anchored")?.scrollIntoView({ behavior: 'smooth' }); }, 100); }},
-            { label: 'Personalize', tab: 'customizer', action: () => { setActiveTab('customizer'); calculateQuotePreview(); }},
-            { label: 'Como funciona', tab: 'catalog', action: () => { setActiveTab('catalog'); setTimeout(() => { document.getElementById("brand-process-timeline")?.scrollIntoView({ behavior: 'smooth' }); }, 100); }},
-            { label: 'Contato', tab: 'chat', action: () => { setActiveTab('chat'); }}
-          ].map((navItem, idx) => (
-            <button 
-              key={idx}
-              onClick={navItem.action}
-              className={`px-3 py-2 rounded-lg text-xs tracking-wide uppercase font-extrabold transition-all duration-200 ${
-                activeTab === navItem.tab 
-                  ? 'bg-purple-600/10 text-purple-300 font-semibold' 
-                  : 'text-slate-400 hover:text-white hover:bg-slate-900/40'
-              }`}
-              id={`nav-tab-${idx}`}
+        {/* Jersey Image */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
+          {/* Neon circle */}
+          <div style={{ position: 'absolute', width: '90%', height: '90%', borderRadius: '50%', border: '2px solid rgba(124,58,237,0.15)', boxShadow: `0 0 80px ${s.glow}, inset 0 0 80px ${s.glow}`, transition: 'all 0.8s ease', pointerEvents: 'none' }} />
+
+          <img
+            src={IMGS[s.imgKey]}
+            alt={s.title}
+            className="animate-float"
+            style={{ maxHeight: 380, objectFit: 'contain', position: 'relative', zIndex: 1, filter: `drop-shadow(0 30px 40px rgba(0,0,0,0.7)) drop-shadow(0 0 30px ${s.glow})`, opacity: animating ? 0 : 1, transform: animating ? 'scale(0.9)' : 'scale(1)', transition: 'all 0.5s ease' }}
+          />
+
+          {/* Slide counter */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 24 }}>
+            <button onClick={prevSlide} style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon.ChevLeft />
+            </button>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {slides.map((_, i) => (
+                <button key={i} onClick={() => goTo(i)} style={{ width: i === current ? 24 : 8, height: 8, borderRadius: 4, background: i === current ? s.color : 'rgba(255,255,255,0.15)', border: 'none', cursor: 'pointer', transition: 'all 0.3s ease' }} />
+              ))}
+            </div>
+            <span style={{ fontSize: 12, color: '#475569', fontWeight: 700 }}>
+              0{current + 1} / 0{slides.length}
+            </span>
+            <button onClick={next} style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon.ChevRight />
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+/* ═══════════════════════════════════════════════════════════
+   MAIN APP
+═══════════════════════════════════════════════════════════ */
+export default function App() {
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set(['regata-lakers', 'camiseta-roxa']));
+  const [activeModal, setActiveModal] = useState<Product | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [filterCat, setFilterCat] = useState('TODOS');
+  const [customName, setCustomName] = useState('');
+  const [customNumber, setCustomNumber] = useState('');
+  const [selectedSize, setSelectedSize] = useState('M');
+  const productsRef = useRef<HTMLDivElement>(null);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  const toggleFav = (id: string) => {
+    setFavorites(prev => {
+      const n = new Set(prev);
+      if (n.has(id)) { n.delete(id); showToast('Removido dos favoritos'); }
+      else { n.add(id); showToast('❤️ Adicionado aos favoritos!'); }
+      return n;
+    });
+  };
+
+  const addToCart = (p: Product, qty = 1) => {
+    setCart(prev => [...prev, { id: `${p.id}-${Date.now()}`, product: p, qty, size: selectedSize, name: customName || 'ATLETA', number: customNumber || '10' }]);
+    showToast(`✓ ${p.title} adicionado!`);
+    setCartOpen(true);
+    setActiveModal(null);
+  };
+
+  const removeFromCart = (id: string) => setCart(prev => prev.filter(i => i.id !== id));
+
+  const totalItems = cart.reduce((s, i) => s + i.qty, 0);
+  const totalPrice = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
+
+  const filteredProducts = filterCat === 'TODOS' ? PRODUCTS : PRODUCTS.filter(p => p.category === filterCat);
+
+  const scrollToProducts = () => {
+    productsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#040507', color: '#e2e8f0', fontFamily: "'Inter', sans-serif" }}>
+      {/* Toast */}
+      <div className={`toast ${toast ? 'show' : ''}`}>{toast}</div>
+
+      {/* Cart Overlay */}
+      <div className={`cart-overlay ${cartOpen ? 'open' : ''}`} onClick={() => setCartOpen(false)} />
+
+      {/* Cart Drawer */}
+      <div className={`cart-drawer ${cartOpen ? 'open' : ''}`}>
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(139,92,246,0.15)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(13,15,23,0.8)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Icon.Cart />
+            <span style={{ fontWeight: 800, fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Orçamento ({totalItems})</span>
+          </div>
+          <button onClick={() => setCartOpen(false)} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 6, borderRadius: 8 }}>
+            <Icon.X />
+          </button>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
+          {cart.length === 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60%', gap: 16, color: '#475569' }}>
+              <Icon.Cart />
+              <p style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Carrinho Vazio</p>
+              <p style={{ fontSize: 12, textAlign: 'center', color: '#334155' }}>Adicione produtos para começar seu orçamento</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {cart.map(item => (
+                <div key={item.id} style={{ display: 'flex', gap: 16, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(139,92,246,0.1)', borderRadius: 16, padding: '14px' }}>
+                  <img src={IMGS[item.product.imgKey]} alt={item.product.title} style={{ width: 60, height: 60, objectFit: 'contain', background: 'rgba(0,0,0,0.3)', borderRadius: 10 }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <p style={{ fontSize: 12, fontWeight: 800, color: 'white', lineHeight: 1.3 }}>{item.product.title}</p>
+                      <button onClick={() => removeFromCart(item.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: 2 }}>
+                        <Icon.Trash />
+                      </button>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
+                      <span style={{ fontSize: 9, fontWeight: 700, background: 'rgba(124,58,237,0.15)', color: '#a78bfa', padding: '2px 7px', borderRadius: 5, textTransform: 'uppercase' }}>{item.product.category}</span>
+                      <span style={{ fontSize: 9, fontWeight: 700, background: 'rgba(255,255,255,0.05)', color: '#64748b', padding: '2px 7px', borderRadius: 5 }}>Tam. {item.size}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 11, color: '#64748b' }}>
+                        {item.name !== 'ATLETA' && `Nome: ${item.name} • `}N°{item.number}
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 13, fontWeight: 900, color: 'white' }}>R$ {(item.product.price * item.qty).toFixed(2).replace('.', ',')}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {cart.length > 0 && (
+          <div style={{ padding: '20px 24px', borderTop: '1px solid rgba(139,92,246,0.15)', background: 'rgba(13,15,23,0.8)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+              <span style={{ fontSize: 13, color: '#94a3b8' }}>Total estimado:</span>
+              <span style={{ fontSize: 20, fontWeight: 900, color: 'white' }}>R$ {totalPrice.toFixed(2).replace('.', ',')}</span>
+            </div>           <a
+              href={`https://wa.me/5521920116800?text=${encodeURIComponent(`Olá! Quero fazer um pedido:\n${cart.map(i => `• ${i.product.title} (${i.qty}x, Tam ${i.size}, Nome: ${i.name}, N°${i.number}) - R$${(i.product.price * i.qty).toFixed(2)}`).join('\n')}\n\nTotal: R$${totalPrice.toFixed(2)}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary"
+              style={{ width: '100%', justifyContent: 'center', textDecoration: 'none' }}
             >
-              {navItem.label}
+              Finalizar via WhatsApp <Icon.Arrow />
+            </a>
+            <p style={{ fontSize: 11, color: '#475569', textAlign: 'center', marginTop: 10 }}>Você será redirecionado ao WhatsApp para confirmar</p>
+          </div>
+        )}
+      </div>
+
+      {/* Product Detail Modal */}
+      <div className={`modal-overlay ${activeModal ? 'open' : ''}`} onClick={() => setActiveModal(null)}>
+        {activeModal && (
+          <div className="modal-box" onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '16px 20px 0' }}>
+              <button onClick={() => setActiveModal(null)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 8, borderRadius: 10 }}>
+                <Icon.X />
+              </button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
+              {/* 360 viewer */}
+              <div style={{ padding: '20px 30px 30px', background: `linear-gradient(135deg, #07090d, ${activeModal.color}10)`, borderRadius: '0 0 0 28px' }}>
+                <div style={{ textAlign: 'center', marginBottom: 12 }}>
+                  <span style={{ fontSize: 10, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Arraste para girar</span>
+                </div>
+                <Viewer360 imgKey={activeModal.imgKey} color={activeModal.color || '#7c3aed'} />
+              </div>
+
+              {/* Info */}
+              <div style={{ padding: '30px 30px 30px 20px' }}>
+                <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: activeModal.color || '#a78bfa', background: `${activeModal.color || '#7c3aed'}20`, padding: '4px 10px', borderRadius: 6, display: 'inline-block', marginBottom: 12 }}>
+                  {activeModal.category}
+                </span>
+                <h2 style={{ fontSize: 20, fontWeight: 900, color: 'white', marginBottom: 8, lineHeight: 1.2 }}>{activeModal.title}</h2>
+                <p style={{ fontSize: 13, color: '#64748b', marginBottom: 16, lineHeight: 1.6 }}>{activeModal.description}</p>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 20 }}>
+                  {activeModal.features.map(f => (
+                    <span key={f} style={{ fontSize: 10, fontWeight: 700, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '4px 10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      {f}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Size */}
+                <div style={{ marginBottom: 16 }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748b', marginBottom: 8 }}>Tamanho</p>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {['PP', 'P', 'M', 'G', 'GG', 'XG'].map(s => (
+                      <button key={s} onClick={() => setSelectedSize(s)} style={{ width: 38, height: 38, borderRadius: 10, border: `1px solid ${selectedSize === s ? (activeModal.color || '#7c3aed') : 'rgba(255,255,255,0.1)'}`, background: selectedSize === s ? `${activeModal.color || '#7c3aed'}20` : 'transparent', color: selectedSize === s ? (activeModal.color || '#a78bfa') : '#64748b', fontWeight: 800, fontSize: 11, cursor: 'pointer', transition: 'all 0.2s' }}>
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Custom */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: 6, letterSpacing: '0.05em' }}>Nome nas costas</label>
+                    <input className="input-field" style={{ fontSize: 13 }} placeholder="Ex: ATLETA" value={customName} onChange={e => setCustomName(e.target.value)} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: 6, letterSpacing: '0.05em' }}>Número</label>
+                    <input className="input-field" style={{ fontSize: 13 }} placeholder="Ex: 10" value={customNumber} onChange={e => setCustomNumber(e.target.value)} />
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: 16 }}>
+                  <span style={{ fontSize: 26, fontWeight: 900, color: 'white' }}>R$ {activeModal.price.toFixed(2).replace('.', ',')}</span>
+                  <p style={{ fontSize: 11, color: '#4ade80', marginTop: 2 }}>Em até 3x sem juros</p>
+                </div>
+
+                <button className="btn-primary" onClick={() => addToCart(activeModal)} style={{ width: '100%', justifyContent: 'center' }}>
+                  Adicionar ao Orçamento <Icon.Arrow />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── HEADER ── */}
+      <header style={{ background: 'rgba(7,9,13,0.9)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(139,92,246,0.12)', padding: '0 40px', height: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+          <div style={{ width: 38, height: 38, background: 'linear-gradient(135deg, #7c3aed, #4f46e5)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(124,58,237,0.4)', fontSize: 18 }}>
+            ⚡
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 900, color: 'white', letterSpacing: '-0.01em', lineHeight: 1 }}>GMZ</div>
+            <div style={{ fontSize: 9, fontWeight: 700, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.15em' }}>Performance</div>
+          </div>
+        </div>
+
+        {/* Nav */}
+        <nav className="hide-tablet" style={{ display: 'flex', gap: 4 }}>
+          {[
+            { label: 'Início', action: () => window.scrollTo({ top: 0, behavior: 'smooth' }) },
+            { label: 'Coleções', action: scrollToProducts },
+            { label: 'Todos os produtos', action: scrollToProducts },
+            { label: 'Personalize', action: () => document.getElementById('personalize')?.scrollIntoView({ behavior: 'smooth' }) },
+            { label: 'Como funciona', action: () => document.getElementById('como-funciona')?.scrollIntoView({ behavior: 'smooth' }) },
+            { label: 'Contato', action: () => window.open('https://wa.me/5511999999999', '_blank') },
+          ].map((item, i) => (
+            <button key={i} onClick={item.action} style={{ padding: '8px 14px', background: 'none', border: 'none', color: '#64748b', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', cursor: 'pointer', borderRadius: 8, transition: 'all 0.2s' }}
+              onMouseEnter={e => { e.currentTarget.style.color = 'white'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+              onMouseLeave={e => { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.background = 'none'; }}
+            >
+              {item.label}
             </button>
           ))}
         </nav>
 
-        {/* Right Area: Search inputs, Shopping Cart indicator, contact details */}
-        <div className="flex items-center gap-4" id="header-right-actions">
-          
-          {/* Mock Search trigger */}
-          <div className="relative hidden md:block" id="header-search-bar">
-            <input 
-              type="text" 
-              placeholder="Pesquisar fardamento..." 
-              className="bg-[#0e1118]/80 border border-purple-950/40 rounded-xl py-1.5 pl-8 pr-4 text-[11px] text-white focus:outline-none focus:border-purple-600 w-44 transition-all placeholder-slate-600"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  triggerToast(`Buscando por fardamentos...`);
-                }
-              }}
-            />
-            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
-          </div>
-
-          {/* Interactive Shopping Cart Trigger Button */}
-          <button 
-            onClick={() => setIsCartOpen(true)}
-            className="p-2 bg-purple-600/10 hover:bg-purple-600/20 border border-purple-500/20 hover:border-purple-500/40 rounded-xl relative transition-all"
-            id="cart-trigger-btn"
-          >
-            <ShoppingBag className="w-4 h-4 text-purple-300" />
-            
-            {/* Real Counter showing dynamic state count */}
-            <span className="absolute -top-1.5 -right-1.5 bg-red-600 border border-slate-900 text-white rounded-full text-[9px] font-black w-4.5 h-4.5 flex items-center justify-center animate-bounce shadow">
-              {cartItems.length}
-            </span>
+        {/* Right actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '8px', color: '#64748b', cursor: 'pointer' }}>
+            <Icon.Search />
           </button>
-
-          {/* Fale Conosco CTA */}
-          <button 
-            onClick={() => setActiveTab('chat')}
-            className="hidden lg:flex px-4 py-2 bg-gradient-to-tr from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-[0_2px_15px_rgba(139,92,246,0.3)] items-center gap-2 transition-all active:scale-95"
-            id="fale-conosco-btn"
+          <button
+            onClick={() => setCartOpen(true)}
+            style={{ position: 'relative', background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)', borderRadius: 10, padding: '8px 10px', color: '#a78bfa', cursor: 'pointer', display: 'flex' }}
           >
-            <MessageSquare className="w-3.5 h-3.5" />
-            <span>Fale conosco</span>
+            <Icon.Cart />
+            {totalItems > 0 && (
+              <span style={{ position: 'absolute', top: -6, right: -6, width: 18, height: 18, background: '#7c3aed', borderRadius: '50%', fontSize: 10, fontWeight: 900, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #040507' }}>
+                {totalItems}
+              </span>
+            )}
           </button>
+          <a
+            href="https://wa.me/5511999999999"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-primary hide-mobile"
+            style={{ padding: '9px 20px', fontSize: 11, textDecoration: 'none' }}
+          >
+            Fale conosco <Icon.Arrow />
+          </a>
         </div>
       </header>
 
-      {/* --- ERROR BANNER DISMISSIBLE --- */}
-      {errorMessage && (
-        <div className="mx-6 mt-6 bg-red-950/20 border border-red-500/30 rounded-xl p-4 flex items-center justify-between gap-4 animate-bounce" id="alert-banner">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="w-5 h-5 text-red-400 shrink-0" />
+      {/* ── HERO SLIDER ── */}
+      <HeroSlider onCTA={scrollToProducts} />
+
+      {/* ── TICKER ── */}
+      <div className="ticker-wrap" style={{ padding: '14px 0', background: 'rgba(7,9,13,0.6)', overflow: 'hidden' }}>
+        <div className="ticker-tape animate-ticker" style={{ display: 'flex', gap: 60 }}>
+          {[...Array(3)].flatMap(() => [
+            '⚡ SUBLIMAÇÃO PREMIUM', '🏆 +10K CLIENTES', '🚀 ENTREGA RÁPIDA', '✨ PERSONALIZAÇÃO TOTAL', '🛡️ QUALIDADE GARANTIDA', '📦 PARA TODO O BRASIL', '⚡ TECNOLOGIA UV+50', '🎨 CORES VIBRANTES',
+          ]).map((item, i) => (
+            <span key={i} className="ticker-item">
+              <span className="ticker-dot" />
+              {item}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* ── STATS ── */}
+      <section style={{ padding: '60px 40px', background: 'rgba(7,9,13,0.4)', borderBottom: '1px solid rgba(139,92,246,0.1)' }}>
+        <div style={{ maxWidth: 1400, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 40, alignItems: 'center' }}>
+          {[
+            { n: '+5', label: 'anos de mercado', icon: '🏆' },
+            { n: '+10K', label: 'clientes atendidos', icon: '👥' },
+            { n: '+50K', label: 'peças produzidas', icon: '👕' },
+          ].map((s, i) => (
+            <div key={i} style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 32, marginBottom: 4 }}>{s.icon}</div>
+              <div style={{ fontSize: 'clamp(32px, 4vw, 52px)', fontWeight: 900, color: 'white', letterSpacing: '-0.03em', lineHeight: 1 }}>{s.n}</div>
+              <div style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#475569', marginTop: 4 }}>{s.label}</div>
+            </div>
+          ))}
+          <div style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.15)', borderRadius: 20, padding: '20px 24px', display: 'flex', gap: 16, alignItems: 'center' }}>
+            <div style={{ display: 'flex' }}>
+              {['👤', '👤', '👤'].map((a, i) => (
+                <div key={i} style={{ width: 36, height: 36, borderRadius: '50%', background: `hsl(${260 + i * 20}, 60%, 40%)`, marginLeft: i > 0 ? -10 : 0, border: '2px solid #040507', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>{a}</div>
+              ))}
+            </div>
             <div>
-              <h5 className="text-xs font-bold uppercase tracking-wider text-red-300">Aviso do Sistema</h5>
-              <p className="text-xs text-red-200 mt-1">{errorMessage}</p>
+              <div style={{ display: 'flex', gap: 2, marginBottom: 4 }}>
+                {[...Array(5)].map((_, i) => <Icon.Star key={i} />)}
+              </div>
+              <p style={{ fontSize: 12, fontStyle: 'italic', color: '#94a3b8', lineHeight: 1.4 }}>"A qualidade é absurda!"</p>
+              <p style={{ fontSize: 10, fontWeight: 700, color: '#64748b', marginTop: 4 }}>Júlio C. – SP</p>
             </div>
           </div>
-          <button 
-            onClick={() => setErrorMessage(null)} 
-            className="text-xs text-slate-400 hover:text-white uppercase font-bold tracking-wider"
-            id="dismiss-error-button"
+          <a
+            href="https://wa.me/5511999999999"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-primary"
+            style={{ justifyContent: 'center', textDecoration: 'none', padding: '14px' }}
           >
-            Fechar
+            Ver Todas <Icon.Arrow />
+          </a>
+        </div>
+      </section>
+
+      {/* ── COLLECTIONS ── */}
+      <section id="colecoes" style={{ padding: '80px 40px', maxWidth: 1400, margin: '0 auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 36 }}>
+          <h2 className="section-title">Coleções <span>em destaque</span></h2>
+          <button onClick={scrollToProducts} style={{ background: 'none', border: 'none', color: '#7c3aed', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, letterSpacing: '0.05em' }}>
+            Ver todas as coleções <Icon.Arrow />
           </button>
         </div>
-      )}
 
-      {/* ========================================================== */}
-      {/* 1. DISCOVERY / DASHBOARD VIEW TAB (HOME LIKE THE MOCKUP)   */}
-      {/* ========================================================== */}
-      <AnimatePresence mode="wait">
-        {activeTab === 'catalog' && (
-          <motion.div 
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.35 }}
-            className="flex-1"
-            id="discovery-catalogue-view"
-          >
-            
-            {/* --- HERO MAIN GRAPHIC SECTION --- */}
-            <section className="relative px-6 py-12 md:py-20 overflow-hidden border-b border-purple-950/20 bg-[#05060a]" id="hero-showcase">
-              {/* Background abstract radial glows like the mockup */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full bg-gradient-to-tr from-purple-700/10 to-transparent blur-[120px] pointer-events-none" />
-              <div className="absolute top-1/3 right-1/4 w-[350px] h-[350px] rounded-full bg-cyan-700/10 blur-[90px] pointer-events-none" />
-              
-              <div className="max-w-[1500px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 items-center relative z-10" id="hero-layout-grid">
-                
-                {/* Hero textual column */}
-                <div className="lg:col-span-5 space-y-6" id="hero-text-block">
-                  <div className="space-y-4">
-                    <span className="text-xs font-black uppercase tracking-[0.25em] text-purple-400 bg-purple-500/10 px-3 py-1.5 rounded-lg border border-purple-500/20 inline-block" id="hero-tagline-category">
-                      Coleções Alta Performance
-                    </span>
-                    <h2 className="text-4xl md:text-6xl font-black text-white leading-[1.05] tracking-tight uppercase" id="hero-title-header">
-                      VISTA SUA <br />
-                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-purple-500 to-indigo-400 selection:text-white">
-                        IDENTIDADE
-                      </span>
-                    </h2>
-                    <p className="text-[11px] md:text-xs font-black tracking-widest text-[#989eba] uppercase block">
-                      QUALIDADE. ESTILO. PERFORMANCE.
-                    </p>
-                  </div>
-                  
-                  <p className="text-slate-400 text-xs md:text-sm leading-relaxed tracking-wide font-sans max-w-lg" id="hero-promo-pitch">
-                    Sua equipe merece o melhor em quadras, pistas ou salas de campeonato. 
-                    Uniformes personalizados com materiais ultra leves Dry Touch, proteção solar homologada 
-                    e estamparia digital de toque imperceptível que não racha.
-                  </p>
-
-                  <div className="flex flex-wrap items-center gap-4 pt-2" id="hero-call-to-action">
-                    <button 
-                      onClick={() => {
-                        const targetElement = document.getElementById("categories-grid-anchored");
-                        targetElement?.scrollIntoView({ behavior: 'smooth' });
-                      }}
-                      className="px-6 py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs tracking-wider uppercase rounded-xl shadow-[0_4px_25px_rgba(139,92,246,0.35)] flex items-center gap-2 transition-all group cursor-pointer"
-                      id="hero-explore-btn"
-                    >
-                      <span>Explorar Coleções</span>
-                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-all" />
-                    </button>
-                    
-                    <button 
-                      onClick={() => {
-                        setSelectedProduct(products.find(p => p.id === "regata-lakers") || products[0]);
-                        setActiveTab('customizer');
-                      }}
-                      className="px-5 py-3.5 bg-[#11131a] hover:bg-[#1a1d26] text-slate-300 hover:text-white font-bold text-xs tracking-wider uppercase rounded-xl border border-purple-950/80 flex items-center gap-2.5 transition-all cursor-pointer"
-                      id="hero-sim-btn"
-                    >
-                      <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_10px_rgba(34,211,238,0.5)]" />
-                      <span>Simulador Uniforme</span>
-                    </button>
-                  </div>
-
-                  {/* Benefit items matching the sub-hero rows of mockup */}
-                  <div className="pt-6 border-t border-purple-950/20 grid grid-cols-1 sm:grid-cols-3 gap-4" id="hero-bullets-row">
-                    {[
-                      { title: "TECNOLOGIA", desc: "Sublimação premium", icon: Zap },
-                      { title: "QUALIDADE", desc: "Tecido e costura premium", icon: Award },
-                      { title: "ENTREGA RÁPIDA", desc: "Para todo o Brasil", icon: Truck }
-                    ].map((bullet, index) => (
-                      <div key={index} className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-purple-950/30 border border-purple-500/20 flex items-center justify-center shrink-0">
-                          <bullet.icon className="w-4 h-4 text-purple-400" />
-                        </div>
-                        <div>
-                          <p className="text-[10px] uppercase font-black tracking-wide text-white">{bullet.title}</p>
-                          <p className="text-[10px] text-slate-400">{bullet.desc}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* CENTRAL MOCKUP OVERLAPPING DISPLAY SIDE-BY-SIDE (Renders exactly matches the uploaded image jerseys) */}
-                <div className="lg:col-span-7 flex flex-col items-center justify-center relative mt-10 lg:mt-0" id="hero-rendering-display">
-                  
-                  {/* Glowing neon purple giant circle backdrop matching layout */}
-                  <div className="absolute w-[350px] md:w-[650px] h-[350px] md:h-[650px] rounded-full border-[1.5px] border-purple-700/20 shadow-[0_0_100px_rgba(168,85,247,0.15)] pointer-events-none" />
-                  <div className="absolute w-[250px] md:w-[480px] h-[250px] md:h-[480px] rounded-full bg-gradient-to-tr from-purple-600/5 via-transparent to-transparent blur-3xl pointer-events-none" />
-
-                  {/* Overlapping 4 Premium Jerseys layout in row on stage */}
-                  <div className="w-full flex items-center justify-center relative select-none" id="stage-3d-jerseys-frame">
-                    
-                    {/* Stage background panel */}
-                    <div className="absolute bottom-[-15px] w-[90%] h-6 bg-black/60 rounded-full blur-md opacity-70 pointer-events-none" />
-
-                    <div className="grid grid-cols-4 gap-2 md:gap-4 max-w-2xl w-full relative z-10">
-                      
-                      {/* Jersey 1: Regata Lakers */}
-                      <motion.div 
-                        whileHover={{ y: -12, scale: 1.05 }}
-                        transition={{ type: "spring", stiffness: 300 }}
-                        className="cursor-pointer flex flex-col items-center justify-end"
-                        onClick={() => {
-                          setSelectedProduct(products.find(p => p.id === "regata-lakers") || products[0]);
-                          setActiveTab('customizer');
-                        }}
-                      >
-                        <img 
-                          src="/src/assets/images/jersey_nba_purple_1779853332145.png" 
-                          alt="Regata Lakers Purple" 
-                          className="max-h-[140px] md:max-h-[200px] object-contain filter drop-shadow-[0_15px_15px_rgba(0,0,0,0.65)] hover:drop-shadow-[0_20px_25px_rgba(139,92,246,0.3)] transition-all duration-300"
-                          referrerPolicy="no-referrer"
-                        />
-                        <span className="text-[8px] md:text-[9px] uppercase font-black text-purple-400 bg-purple-950/40 px-2 py-0.5 mt-2 rounded border border-purple-500/10">NBA Lakers</span>
-                      </motion.div>
-
-                      {/* Jersey 2: Manga Longa Azul */}
-                      <motion.div 
-                        whileHover={{ y: -12, scale: 1.05 }}
-                        transition={{ type: "spring", stiffness: 300 }}
-                        className="cursor-pointer flex flex-col items-center justify-end"
-                        onClick={() => {
-                          setSelectedProduct(products.find(p => p.id === "manga-longa-azul") || products[0]);
-                          setActiveTab('customizer');
-                        }}
-                      >
-                        <img 
-                          src="/src/assets/images/jersey_manga_longa_1779853348937.png" 
-                          alt="Manga Longa Azul" 
-                          className="max-h-[140px] md:max-h-[200px] object-contain filter drop-shadow-[0_15px_15px_rgba(0,0,0,0.65)] hover:drop-shadow-[0_20px_25px_rgba(139,92,246,0.3)] transition-all duration-300"
-                          referrerPolicy="no-referrer"
-                        />
-                        <span className="text-[8px] md:text-[9px] uppercase font-black text-cyan-400 bg-cyan-950/40 px-2 py-0.5 mt-2 rounded border border-cyan-500/10">UV+50 Cyan</span>
-                      </motion.div>
-
-                      {/* Jersey 3: Camiseta Roxa */}
-                      <motion.div 
-                        whileHover={{ y: -12, scale: 1.05 }}
-                        transition={{ type: "spring", stiffness: 300 }}
-                        className="cursor-pointer flex flex-col items-center justify-end"
-                        onClick={() => {
-                          setSelectedProduct(products.find(p => p.id === "camiseta-roxa") || products[0]);
-                          setActiveTab('customizer');
-                        }}
-                      >
-                        <img 
-                          src="/src/assets/images/jersey_manga_curta_1779853362847.png" 
-                          alt="Dry Fit Roxa" 
-                          className="max-h-[140px] md:max-h-[200px] object-contain filter drop-shadow-[0_15px_15px_rgba(0,0,0,0.65)] hover:drop-shadow-[0_20px_25px_rgba(139,92,246,0.3)] transition-all duration-300"
-                          referrerPolicy="no-referrer"
-                        />
-                        <span className="text-[8px] md:text-[9px] uppercase font-black text-purple-400 bg-purple-950/40 px-2 py-0.5 mt-2 rounded border border-purple-500/10">Dry-Fit Purple</span>
-                      </motion.div>
-
-                      {/* Jersey 4: Oversized Bear */}
-                      <motion.div 
-                        whileHover={{ y: -12, scale: 1.05 }}
-                        transition={{ type: "spring", stiffness: 300 }}
-                        className="cursor-pointer flex flex-col items-center justify-end"
-                        onClick={() => {
-                          setSelectedProduct(products.find(p => p.id === "oversized-bear") || products[0]);
-                          setActiveTab('customizer');
-                        }}
-                      >
-                        <img 
-                          src="/src/assets/images/jersey_oversized_bear_1779853381876.png" 
-                          alt="Oversized BEAR" 
-                          className="max-h-[140px] md:max-h-[200px] object-contain filter drop-shadow-[0_15px_15px_rgba(0,0,0,0.65)] hover:drop-shadow-[0_20px_25px_rgba(139,92,246,0.3)] transition-all duration-300"
-                          referrerPolicy="no-referrer"
-                        />
-                        <span className="text-[8px] md:text-[9px] uppercase font-black text-amber-500 bg-amber-950/40 px-2 py-0.5 mt-2 rounded border border-amber-500/10 font-sans">Street Bear</span>
-                      </motion.div>
-
-                    </div>
-                  </div>
-
-                  {/* Tiny caption under overlap row */}
-                  <p className="text-[10px] text-slate-500 mt-6 tracking-widest uppercase flex items-center gap-1">
-                    <Info className="w-3 h-3 text-purple-500" /> Clique em qualquer fardamento para carregar na área de personalização
-                  </p>
-                </div>
-
-              </div>
-            </section>
-
-            {/* --- PREMIUM METRICS & FEEDBACK BANNER RIGHT BELOW HERO --- */}
-            <section className="bg-[#080a0f] border-b border-purple-950/20 px-6 py-5" id="stats-banner-showcase">
-              <div className="max-w-[1500px] mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-                
-                {/* Stats numbers */}
-                <div className="grid grid-cols-3 gap-6 md:gap-14 w-full md:w-auto text-left py-2 border-b md:border-b-0 border-purple-950/20 md:pr-10">
-                  <div>
-                    <h4 className="text-xl md:text-2xl font-black text-white font-mono tracking-tight">+5 ANOS</h4>
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">De mercado</span>
-                  </div>
-                  <div>
-                    <h4 className="text-xl md:text-2xl font-black text-white font-mono tracking-tight">+10K</h4>
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Clientes atendidos</span>
-                  </div>
-                  <div>
-                    <h4 className="text-xl md:text-2xl font-black text-white font-mono tracking-tight">+50K</h4>
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Peças produzidas</span>
-                  </div>
-                </div>
-
-                {/* Middle client recommendation */}
-                <div className="flex-1 flex items-center gap-3 justify-center md:justify-start">
-                  {/* Testimonial avatar badges */}
-                  <div className="flex -space-x-2.5">
-                    <span className="w-7.5 h-7.5 rounded-full bg-purple-500 border border-slate-900 text-[10px] font-bold flex items-center justify-center text-white" style={{ background: '#7c3aed' }}>JC</span>
-                    <span className="w-7.5 h-7.5 rounded-full bg-teal-500 border border-slate-900 text-[10px] font-bold flex items-center justify-center text-white" style={{ background: '#0d9488' }}>MA</span>
-                    <span className="w-7.5 h-7.5 rounded-full bg-blue-500 border border-slate-900 text-[10px] font-bold flex items-center justify-center text-white" style={{ background: '#2563eb' }}>FL</span>
-                  </div>
-                  <div className="text-xs">
-                    <p className="text-white font-bold tracking-wide italic leading-snug">"A qualidade do fardamento submetido é absurda! Tecido leve e visual neon impactante."</p>
-                    <p className="text-slate-500 text-[9px] uppercase font-bold tracking-wider mt-0.5">— Julio C., Cap. Vikings Flag Football</p>
-                  </div>
-                </div>
-
-                {/* Right CTA button */}
-                <button 
-                  onClick={() => setActiveTab('chat')}
-                  className="px-4 py-2 hover:bg-purple-600/10 border border-purple-950 hover:border-purple-600 text-[10px] uppercase font-extrabold tracking-widest text-purple-300 hover:text-white rounded-lg transition-colors flex items-center gap-1 shrink-0"
-                >
-                  <span>Ver todas avaliações</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-
-              </div>
-            </section>
-
-            {/* --- PREMIUM "COLEÇÕES EM DESTAQUE" BENTO SECTION --- */}
-            <section className="px-6 py-16 bg-[#06080b]" id="categories-grid-anchored">
-              <div className="max-w-[1500px] mx-auto space-y-10">
-                
-                {/* Section title header */}
-                <div className="text-center space-y-2 max-w-xl mx-auto">
-                  <span className="text-xs font-bold uppercase tracking-widest text-purple-400 block p-0">LINHAS SELECIONADAS</span>
-                  <h3 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tight">COLEÇÕES EM DESTAQUE</h3>
-                  <div className="w-16 h-1 bg-purple-500 mx-auto rounded-full" />
-                  <p className="text-xs text-slate-500 leading-normal max-w-md mx-auto">Cortes esportivos estruturados e desenvolvidos por modelistas profissionais brasileiros.</p>
-                </div>
-
-                {/* Bento Grid - 4 Large Categories matching layout */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  
-                  {/* Card 1: NBA BASKET */}
-                  <div className="bg-gradient-to-tr from-purple-950/20 to-[#0e111a] border border-purple-950/40 rounded-2xl p-6 flex flex-col justify-between h-[340px] relative overflow-hidden group shadow-xl">
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-purple-500/5 rounded-full blur-2xl group-hover:bg-purple-500/10 pointer-events-none transition-all" />
-                    
-                    {/* Visual miniature overlap */}
-                    <div className="absolute right-[-10px] bottom-[10px] w-36 h-36">
-                      <img 
-                        src="/src/assets/images/jersey_nba_purple_1779853332145.png" 
-                        alt="Regatas NBA" 
-                        className="w-full h-full object-contain filter drop-shadow-lg group-hover:scale-105 transition-all duration-300"
-                        referrerPolicy="no-referrer"
-                      />
-                    </div>
-
-                    <div className="space-y-2 relative z-10">
-                      <span className="text-[10px] uppercase font-black text-purple-300 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">NBA CATEGORY</span>
-                      <h4 className="text-xl font-black text-white uppercase tracking-tight">REGATAS</h4>
-                      <p className="text-xs text-slate-400 leading-relaxed max-w-[150px]">Estilo e liberdade para jogar ou para o dia a dia.</p>
-                    </div>
-
-                    <div className="relative z-10">
-                      <button 
-                        onClick={() => {
-                          setSelectedProduct(products.find(p => p.id === "regata-lakers") || products[0]);
-                          setActiveTab('customizer');
-                        }}
-                        className="bg-purple-600 hover:bg-purple-500 text-white font-extrabold uppercase text-[10px] tracking-wider py-2 px-4 rounded-xl shadow-lg transition-all flex items-center gap-1"
-                      >
-                        <span>Simular Farda</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Card 2: UV+50 PROTECTION */}
-                  <div className="bg-gradient-to-tr from-cyan-950/10 to-[#0e111a] border border-purple-950/40 rounded-2xl p-6 flex flex-col justify-between h-[340px] relative overflow-hidden group shadow-xl">
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-cyan-500/5 rounded-full blur-2xl group-hover:bg-cyan-500/10 pointer-events-none transition-all" />
-                    
-                    {/* Visual miniature overlap */}
-                    <div className="absolute right-[-10px] bottom-[10px] w-36 h-36">
-                      <img 
-                        src="/src/assets/images/jersey_manga_longa_1779853348937.png" 
-                        alt="Uniformes UV+50" 
-                        className="w-full h-full object-contain filter drop-shadow-lg group-hover:scale-105 transition-all duration-300"
-                        referrerPolicy="no-referrer"
-                      />
-                    </div>
-
-                    <div className="space-y-2 relative z-10">
-                      <span className="text-[10px] uppercase font-black text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">PROTEÇÃO UV+50</span>
-                      <h4 className="text-xl font-black text-white uppercase tracking-tight">MANGA LONGA</h4>
-                      <p className="text-xs text-slate-400 leading-relaxed max-w-[150px]">Proteção solar extrema no seu treino livre.</p>
-                    </div>
-
-                    <div className="relative z-10">
-                      <button 
-                        onClick={() => {
-                          setSelectedProduct(products.find(p => p.id === "manga-longa-azul") || products[0]);
-                          setActiveTab('customizer');
-                        }}
-                        className="bg-[#11131a] border border-purple-950/80 hover:border-purple-600 text-slate-300 hover:text-white font-extrabold uppercase text-[10px] tracking-wider py-2 px-4 rounded-xl shadow-lg transition-all flex items-center gap-1"
-                      >
-                        <span>Simular Farda</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Card 3: DRY FIT CAMISETA */}
-                  <div className="bg-gradient-to-tr from-purple-950/20 to-[#0e111a] border border-purple-950/40 rounded-2xl p-6 flex flex-col justify-between h-[340px] relative overflow-hidden group shadow-xl">
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-purple-500/5 rounded-full blur-2xl group-hover:bg-purple-500/10 pointer-events-none transition-all" />
-                    
-                    {/* Visual miniature overlap */}
-                    <div className="absolute right-[-10px] bottom-[10px] w-36 h-36">
-                      <img 
-                        src="/src/assets/images/jersey_manga_curta_1779853362847.png" 
-                        alt="Dry Fit Camisetas" 
-                        className="w-full h-full object-contain filter drop-shadow-lg group-hover:scale-105 transition-all duration-300"
-                        referrerPolicy="no-referrer"
-                      />
-                    </div>
-
-                    <div className="space-y-2 relative z-10">
-                      <span className="text-[10px] uppercase font-black text-purple-300 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">TECNOLOGIA SECA</span>
-                      <h4 className="text-xl font-black text-white uppercase tracking-tight">CAMISETAS</h4>
-                      <p className="text-xs text-slate-400 leading-relaxed max-w-[150px]">Modelagem inteligente que valoriza a ação esportiva.</p>
-                    </div>
-
-                    <div className="relative z-10">
-                      <button 
-                        onClick={() => {
-                          setSelectedProduct(products.find(p => p.id === "camiseta-roxa") || products[0]);
-                          setActiveTab('customizer');
-                        }}
-                        className="bg-purple-600 hover:bg-purple-500 text-white font-extrabold uppercase text-[10px] tracking-wider py-2 px-4 rounded-xl shadow-lg transition-all flex items-center gap-1"
-                      >
-                        <span>Simular Farda</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Card 4: STREETWEAR DTF OVERSIZED */}
-                  <div className="bg-gradient-to-tr from-rose-950/10 to-[#0e111a] border border-purple-950/40 rounded-2xl p-6 flex flex-col justify-between h-[340px] relative overflow-hidden group shadow-xl">
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-rose-500/5 rounded-full blur-2xl group-hover:bg-rose-500/10 pointer-events-none transition-all" />
-                    
-                    {/* Visual miniature overlap */}
-                    <div className="absolute right-[-10px] bottom-[10px] w-36 h-36">
-                      <img 
-                        src="/src/assets/images/jersey_oversized_bear_1779853381876.png" 
-                        alt="Streetwear Oversized" 
-                        className="w-full h-full object-contain filter drop-shadow-lg group-hover:scale-105 transition-all duration-300"
-                        referrerPolicy="no-referrer"
-                      />
-                    </div>
-
-                    <div className="space-y-2 relative z-10">
-                      <span className="text-[10px] uppercase font-black text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">STREETWEAR</span>
-                      <h4 className="text-xl font-black text-white uppercase tracking-tight">OVERSIZED</h4>
-                      <p className="text-xs text-slate-400 leading-relaxed max-w-[150px]">Estilo com estampa de toque zero ultra durável.</p>
-                    </div>
-
-                    <div className="relative z-10">
-                      <button 
-                        onClick={() => {
-                          setSelectedProduct(products.find(p => p.id === "oversized-bear") || products[0]);
-                          setActiveTab('customizer');
-                        }}
-                        className="bg-[#11131a] border border-purple-950/80 hover:border-purple-600 text-slate-300 hover:text-white font-extrabold uppercase text-[10px] tracking-wider py-2 px-4 rounded-xl shadow-lg transition-all flex items-center gap-1"
-                      >
-                        <span>Simular Farda</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-
-                </div>
-
-              </div>
-            </section>
-
-            {/* --- CORE "PRODUTOS EM DESTAQUE" PORTFOLIO SYSTEM MATCHING REF 100% --- */}
-            <section className="px-6 py-16 bg-[#040507] border-t border-purple-950/15 scroll-mt-20" id="products-grid-anchored">
-              <div className="max-w-[1500px] mx-auto space-y-10">
-                
-                {/* Header */}
-                <div className="text-center space-y-2 max-w-xl mx-auto">
-                  <span className="text-xs font-black uppercase tracking-widest text-[#a855f7] block">COLEÇÃO COMPLETA</span>
-                  <h3 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tight">PRODUTOS EM DESTAQUE</h3>
-                  <div className="w-16 h-1 bg-purple-500 mx-auto rounded-full" />
-                  <p className="text-xs text-slate-450 leading-relaxed">Interação completa em tempo real. Favorite, visualize detalhes ou carregue na engrenagem customizadora de lotes.</p>
-                </div>
-
-                {/* 7 Gorgeous Products Grid System */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {products.map((product) => (
-                    <motion.div 
-                      key={product.id}
-                      whileHover={{ y: -8 }}
-                      transition={{ type: "spring", stiffness: 200 }}
-                      className="bg-[#0b0d13] border border-purple-950/30 rounded-2xl p-5 flex flex-col justify-between relative group shadow-xl"
-                      id={`destaque-card-${product.id}`}
-                    >
-                      {/* Aura */}
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-44 h-44 bg-purple-600/5 rounded-full blur-2xl pointer-events-none group-hover:bg-purple-600/10 transition-all" />
-
-                      {/* Top Header Tags & Favorite Button */}
-                      <div className="flex justify-between items-center relative z-10 w-full">
-                        <span className="text-[9px] font-black uppercase tracking-wider text-purple-300 bg-purple-500/10 border border-purple-500/20 px-2 py-1 rounded">
-                          {product.category} STYLE
-                        </span>
-                        
-                        {/* Interactive Favorite Trigger */}
-                        <button 
-                          onClick={() => {
-                            if (favoritesList.includes(product.id)) {
-                              setFavoritesList(prev => prev.filter(f => f !== product.id));
-                              triggerToast("Removido dos favoritos.");
-                            } else {
-                              setFavoritesList(prev => [...prev, product.id]);
-                              triggerToast("Adicionado aos seus favoritos! ❤️");
-                            }
-                          }}
-                          className="p-1.5 bg-[#0e1119] rounded-lg border border-purple-950 hover:bg-[#131722] hover:border-purple-600/40 text-slate-400 hover:text-red-500 transition-all cursor-pointer"
-                        >
-                          <Heart className={`w-3.5 h-3.5 ${favoritesList.includes(product.id) ? 'fill-red-500 text-red-500' : ''}`} />
-                        </button>
-                      </div>
-
-                      {/* Product display premium image layout */}
-                      <div className="my-6 aspect-square max-h-[190px] flex items-center justify-center relative z-10 overflow-hidden">
-                        <img 
-                          src={jerseyImages[product.id]} 
-                          alt={product.title} 
-                          className="max-h-[180px] object-contain filter drop-shadow-[0_12px_15px_rgba(0,0,0,0.65)] hover:scale-105 transition-transform duration-500 cursor-pointer"
-                          referrerPolicy="no-referrer"
-                          onClick={() => setSelectedDetailProduct(product)}
-                        />
-                      </div>
-
-                      {/* Info & Price Tags block */}
-                      <div className="space-y-4 relative z-10">
-                        <div>
-                          <h4 
-                            onClick={() => setSelectedDetailProduct(product)}
-                            className="text-xs font-black text-white hover:text-purple-400 cursor-pointer transition-colors uppercase tracking-wide truncate"
-                          >
-                            {product.title}
-                          </h4>
-                          <span className="text-[9px] uppercase font-bold text-slate-500 block p-0 mt-0.5">{product.category} PRO SUBLIMAÇÃO</span>
-                        </div>
-
-                        {/* Price Details */}
-                        <div className="bg-[#0e1119] p-3 rounded-xl border border-purple-950/40 flex justify-between items-center">
-                          <div>
-                            <span className="text-[9px] font-bold text-slate-500 block leading-none">Preço Lote</span>
-                            <span className="font-mono text-cyan-400 text-sm font-black">R$ {product.price.toFixed(2)}</span>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-[9px] font-bold text-emerald-400 block leading-none uppercase">Lote 3x s/ juros</span>
-                            <span className="text-[9px] text-slate-400">R$ {(product.price / 3).toFixed(2)} / un</span>
-                          </div>
-                        </div>
-
-                        {/* Interactive Footer Action buttons */}
-                        <div className="flex gap-2 w-full pt-1">
-                          
-                          {/* Specific customizer action triggers */}
-                          <button 
-                            onClick={() => setSelectedDetailProduct(product)}
-                            className="flex-1 py-2 bg-slate-900 hover:bg-[#131722]/80 border border-purple-950 text-slate-300 hover:text-white font-extrabold text-[10px] uppercase rounded-xl transition-colors flex items-center justify-center gap-1 cursor-pointer"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            <span>Atalhos</span>
-                          </button>
-
-                          <button 
-                            onClick={() => {
-                              setSelectedProduct(product);
-                              setActiveTab('customizer');
-                              calculateQuotePreview();
-                            }}
-                            className="flex-1 py-2 bg-gradient-to-tr from-purple-600/80 to-indigo-600/80 hover:from-purple-600 hover:to-indigo-600 text-white font-extrabold text-[10px] uppercase rounded-xl shadow-[0_2px_10px_rgba(139,92,246,0.25)] transition-colors flex items-center justify-center gap-1 cursor-pointer"
-                          >
-                            <Wand2 className="w-3.5 h-3.5" />
-                            <span>Simular</span>
-                          </button>
-
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-
-              </div>
-            </section>
-
-            {/* --- FLOATING DETAILED PREVIEW AND QUICK ACTION MODAL OVERLAY --- */}
-            <AnimatePresence>
-              {selectedDetailProduct && (
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
-                  onClick={() => setSelectedDetailProduct(null)}
-                  id="product-details-modal-box"
-                >
-                  <motion.div 
-                    initial={{ scale: 0.95, y: 15 }}
-                    animate={{ scale: 1, y: 0 }}
-                    exit={{ scale: 0.95, y: 15 }}
-                    className="w-full max-w-2xl bg-[#090b12] border border-purple-950/40 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl relative overflow-hidden text-left"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="absolute top-0 right-0 w-36 h-36 bg-purple-500/10 rounded-bl-full pointer-events-none blur-3xl" />
-                    
-                    {/* Close button modal */}
-                    <button 
-                      onClick={() => setSelectedDetailProduct(null)}
-                      className="p-1.5 hover:bg-slate-900 rounded-lg absolute top-5 right-5 text-slate-400 hover:text-white transition-all cursor-pointer"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                      
-                      {/* Left: Product enlarged high resolution render */}
-                      <div className="flex flex-col items-center justify-center bg-slate-950/40 border border-purple-950/30 p-4 rounded-2xl relative">
-                        <img 
-                          src={jerseyImages[selectedDetailProduct.id]} 
-                          alt={selectedDetailProduct.title} 
-                          className="max-h-[220px] object-contain filter drop-shadow-[0_15px_20px_rgba(0,0,0,0.65)] hover:scale-105 transition-transform duration-500 select-none"
-                          referrerPolicy="no-referrer"
-                        />
-                        <div className="mt-4 text-center">
-                          <span className="text-[10px] text-purple-400 font-extrabold uppercase tracking-widest bg-purple-500/10 border border-purple-500/20 px-2 py-1 rounded">Tecnologia AeroMesh Pro</span>
-                        </div>
-                      </div>
-
-                      {/* Right: Technical specifications list */}
-                      <div className="space-y-4">
-                        <div className="space-y-1">
-                          <span className="text-[9px] uppercase font-bold text-[#a855f7] tracking-widest bg-purple-500/10 border border-purple-500/15 px-2.5 py-0.5 rounded inline-block">LINHA PROFISSIONAL</span>
-                          <h3 className="text-lg font-black text-white uppercase tracking-tight leading-tight">{selectedDetailProduct.title}</h3>
-                          <p className="text-[10px] text-slate-500 uppercase font-bold">Categoria: {selectedDetailProduct.category} + Sublimação total</p>
-                        </div>
-
-                        <p className="text-slate-400 text-xs leading-relaxed font-sans">{selectedDetailProduct.details}</p>
-
-                        <div className="bg-[#0d0f17] border border-purple-950/35 p-3.5 rounded-xl space-y-1 my-2">
-                          <div className="flex justify-between text-xs text-slate-400">
-                            <span>Preço Base Unitário:</span>
-                            <span className="font-mono text-white font-extrabold">R$ {selectedDetailProduct.price.toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between text-xs pt-1 border-t border-purple-950/10 text-emerald-400 font-bold">
-                            <span>Com 20% desconto em fardamentos (50+):</span>
-                            <span className="font-mono">R$ {(selectedDetailProduct.price * 0.8).toFixed(2)}</span>
-                          </div>
-                        </div>
-
-                        {/* Modal Action CTA */}
-                        <div className="space-y-2 pt-1">
-                          
-                          <button 
-                            onClick={() => {
-                              setSelectedProduct(selectedDetailProduct);
-                              setActiveTab('customizer');
-                              calculateQuotePreview();
-                              setSelectedDetailProduct(null);
-                            }}
-                            className="w-full py-3 bg-gradient-to-tr from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
-                          >
-                            <Wand2 className="w-4 h-4" />
-                            <span>Simular Fardamento Completo</span>
-                          </button>
-
-                          <div className="grid grid-cols-2 gap-2">
-                            <button 
-                              onClick={() => {
-                                addToCart(selectedDetailProduct, 1, "ATLETA", "10");
-                                setSelectedDetailProduct(null);
-                              }}
-                              className="py-2.5 bg-slate-900 hover:bg-[#12141a] border border-purple-950/40 hover:border-purple-600 text-[10px] font-bold uppercase text-slate-350 hover:text-white rounded-xl transition-all cursor-pointer"
-                            >
-                              Adicionar Retalho (1)
-                            </button>
-                            <button 
-                              onClick={() => {
-                                addToCart(selectedDetailProduct, 25, "LOTE TIME", "05");
-                                setSelectedDetailProduct(null);
-                              }}
-                              className="py-2.5 bg-purple-950/30 hover:bg-purple-900/30 border border-purple-500/30 text-[10px] font-bold uppercase text-purple-300 rounded-xl transition-all cursor-pointer"
-                            >
-                              Adicionar Lote (25)
-                            </button>
-                          </div>
-
-                        </div>
-                      </div>
-
-                    </div>
-                  </motion.div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* --- INTERACTIVE "PERSONALIZE DO SEU JEITO" BANNER CARD SECTION --- */}
-            <section className="px-6 py-10 bg-[#06080b]">
-              <div className="max-w-[1500px] mx-auto bg-gradient-to-tr from-[#0b0c13] via-[#040507] to-purple-950/20 rounded-3xl p-8 md:p-12 border border-purple-950/50 shadow-2xl flex flex-col md:flex-row justify-between items-center gap-10 relative overflow-hidden" id="promotional-banner-customized">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-purple-500/5 rounded-bl-full blur-3xl pointer-events-none" />
-                
-                {/* Text explanation */}
-                <div className="space-y-4 max-w-xl text-center md:text-left">
-                  <span className="text-[10px] uppercase font-black tracking-widest text-[#a855f7] bg-purple-500/10 border border-purple-500/15 px-3 py-1 rounded-lg">PROJETO SOB MEDIDA</span>
-                  <h4 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tight">PERSONALIZE DO SEU JEITO</h4>
-                  <p className="text-xs md:text-sm text-slate-400 leading-relaxed font-sans">
-                    Fardamento 100% autoral. Adicione nome de cada membro, numeração customizada, patrocinadores e brasões vetorizados no painel do layout. 
-                    Escolha a gola ideal, tecidos na barra e a costura tática perfeita para estufar as redes ou erguer taças.
-                  </p>
-                  
-                  <div className="pt-2 flex flex-wrap gap-3 justify-center md:justify-start">
-                    <button 
-                      onClick={() => {
-                        setSelectedProduct(products[0]);
-                        setActiveTab('customizer');
-                      }}
-                      className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs uppercase tracking-widest rounded-xl transition-all shadow-lg hover:shadow-purple-500/10 cursor-pointer"
-                    >
-                      Personalizar agora &rarr;
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setActiveTab('generator');
-                      }}
-                      className="px-5 py-3 bg-slate-900 hover:bg-[#12141a] border border-purple-950/60 text-slate-350 hover:text-white font-extrabold text-xs uppercase tracking-widest rounded-xl transition-all cursor-pointer"
-                    >
-                      Diretor criativo IA
-                    </button>
-                  </div>
-                </div>
-
-                {/* Right: Steps in flow schema vector matching reference */}
-                <div className="bg-[#0b0c11] border border-purple-950/40 p-5 rounded-2xl w-full max-w-sm shrink-0 space-y-4 shadow-xl">
-                  <h5 className="text-[10px] font-black uppercase text-purple-400 tracking-wider">Etapas de faturamento e entrega</h5>
-                  
-                  <div className="space-y-3">
-                    
-                    <div className="flex items-start gap-2.5">
-                      <div className="w-6 h-6 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-400 text-xs font-black flex items-center justify-center shrink-0">1</div>
-                      <div>
-                        <p className="text-[11px] font-bold text-white uppercase">ESCOLHA O MODELO BASE</p>
-                        <p className="text-[10px] text-slate-500">Sublimação Dry Fit ou Proteção Térmica UV+50.</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-2.5">
-                      <div className="w-6 h-6 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-400 text-xs font-black flex items-center justify-center shrink-0">2</div>
-                      <div>
-                        <p className="text-[11px] font-bold text-white uppercase">DEFINA ARQUIVOS & SEÇÕES</p>
-                        <p className="text-[10px] text-slate-500">Insira nomes, listagem de tamanhos e logo do time.</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-2.5">
-                      <div className="w-6 h-6 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-400 text-xs font-black flex items-center justify-center shrink-0">3</div>
-                      <div>
-                        <p className="text-[11px] font-bold text-white uppercase">RECEBA EM CASA COM FRETE SEGURO</p>
-                        <p className="text-[10px] text-slate-500">Confecção expressa monitorada pelos especialistas GMZ.</p>
-                      </div>
-                    </div>
-
-                  </div>
-                </div>
-
-              </div>
-            </section>
-
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ========================================================== */}
-      {/* 2. CUSTOMIZER & QUOTE CALCULATOR VIEW TAB                  */}
-      {/* ========================================================== */}
-      <AnimatePresence mode="wait">
-        {activeTab === 'customizer' && (
-          <motion.div 
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.3 }}
-            className="flex-1 max-w-[1450px] mx-auto w-full p-6 "
-            id="builder-customizer-view"
-          >
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              
-              {/* Left Column: Visual Custom Setup (lg:col-span-8) */}
-              <div className="lg:col-span-8 space-y-6" id="visual-control-panel">
-                
-                {/* Uniform Selection Header */}
-                <div className="bg-[#0b0d12] border border-purple-950/20 rounded-2xl p-5 space-y-4 shadow-xl">
-                  <div className="flex justify-between items-center border-b border-purple-950/30 pb-3">
-                    <div>
-                      <span className="text-[10px] uppercase font-black tracking-widest text-purple-400">PASSO 1 DE 3</span>
-                      <h3 className="text-base font-bold text-white uppercase tracking-tight">Selecione o fardamento esportivo</h3>
-                    </div>
-                    <span className="text-xs text-slate-400">Orçamento em tempo real</span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-[#0d0f14] p-2.5 rounded-xl border border-purple-950/40" id="product-tabs-grid">
-                    {products.map((p) => (
-                      <button
-                        key={p.id}
-                        onClick={() => {
-                          setSelectedProduct(p);
-                        }}
-                        className={`p-3 rounded-lg text-left border flex flex-col justify-between transition-all ${
-                          selectedProduct.id === p.id 
-                            ? 'bg-purple-500/10 border-purple-500/40 text-white' 
-                            : 'bg-transparent border-transparent text-slate-400 hover:text-white hover:bg-slate-900'
-                        }`}
-                        id={`product-tab-btn-${p.id}`}
-                      >
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">{p.category}</span>
-                        <span className="text-xs font-black truncate mt-1">{p.title}</span>
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-5 items-center p-4 bg-[#0d0f14]/80 rounded-xl border border-purple-950/20" id="selected-product-summary">
-                    {/* Render visual product */}
-                    <div className="w-24 h-24  rounded-lg flex items-center justify-center p-1" id="selected-rendering-thumbnail">
-                      <img 
-                        src={jerseyImages[selectedProduct.id]} 
-                        alt="Jersey Visual Summary" 
-                        className="h-20 object-contain drop-shadow-[0_5px_10px_rgba(0,0,0,0.5)]"
-                        referrerPolicy="no-referrer"
-                      />
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <h4 className="text-xs font-extrabold uppercase text-purple-400 tracking-wider">Características Base do Modelo</h4>
-                      <p className="text-sm font-black text-white">{selectedProduct.title}</p>
-                      <p className="text-xs text-slate-400 leading-relaxed">{selectedProduct.details}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Personalization specifications (Names & Numbers) */}
-                <div className="bg-[#0b0d12] border border-purple-950/20 rounded-2xl p-5 space-y-5 shadow-xl" id="customizer-options-card">
-                  <div className="flex justify-between items-center border-b border-purple-950/30 pb-3">
-                    <div>
-                      <span className="text-[10px] uppercase font-black tracking-widest text-purple-400">PASSO 2 DE 3</span>
-                      <h3 className="text-base font-bold text-white uppercase tracking-tight">Personalize Nome, Número e Observações</h3>
-                    </div>
-                    <span className="text-xs text-slate-400">Mockup Pro</span>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5" id="specifications-input-block">
-                    {/* Character custom name input */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                          <input 
-                            type="checkbox" 
-                            checked={hasCustomName}
-                            onChange={(e) => setHasCustomName(e.target.checked)}
-                            className="rounded accent-purple-500 w-3.5 h-3.5"
-                          />
-                          <span>Personalizar Nome nas Costas</span>
-                        </label>
-                        <span className="text-[10px] text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">+ R$ 10,00 Un.</span>
-                      </div>
-                      <input 
-                        type="text"
-                        value={customNameInput}
-                        onChange={(e) => setCustomNameInput(e.target.value.toUpperCase())}
-                        disabled={!hasCustomName}
-                        placeholder="NOME DO ATLETA"
-                        className="w-full p-3 bg-[#0d0f14] border border-purple-950/40 rounded-xl text-xs text-white placeholder-slate-600 focus:outline-none focus:border-purple-600 disabled:opacity-30 uppercase font-bold tracking-widest"
-                        id="custom-name-box"
-                      />
-                    </div>
-
-                    {/* Character custom number input */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                          <input 
-                            type="checkbox" 
-                            checked={hasCustomNumber}
-                            onChange={(e) => setHasCustomNumber(e.target.checked)}
-                            className="rounded accent-purple-500 w-3.5 h-3.5"
-                          />
-                          <span>Personalizar Número</span>
-                        </label>
-                        <span className="text-[10px] text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">+ R$ 5,00 Un.</span>
-                      </div>
-                      <input 
-                        type="text"
-                        maxLength={3}
-                        value={customNumberInput}
-                        onChange={(e) => setCustomNumberInput(e.target.value.replace(/\D/g, ''))}
-                        disabled={!hasCustomNumber}
-                        placeholder="10"
-                        className="w-full p-3 bg-[#0d0f14] border border-purple-950/40 rounded-xl text-xs text-white placeholder-slate-600 focus:outline-none focus:border-purple-600 disabled:opacity-30 text-center font-bold font-mono"
-                        id="custom-number-box"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Quantity Slider / Bulk selector */}
-                  <div className="space-y-3 p-4 bg-[#0d0f14]/80 rounded-xl border border-purple-950/20" id="quantity-slider-block">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="font-bold text-slate-400 uppercase tracking-wider">Quantidade total do fardamento:</span>
-                      <div className="flex items-center gap-2">
-                        <button 
-                          onClick={() => {
-                            if (quoteQuantity > 1) setQuoteQuantity(prev => prev - 1);
-                          }}
-                          className="w-7 h-7 bg-purple-950/40 hover:bg-purple-900 border border-purple-500/20 rounded flex items-center justify-center text-white"
-                        >
-                          -
-                        </button>
-                        <span className="text-sm font-black text-white bg-slate-900 px-3.5 py-1 rounded font-mono border border-purple-500/20">{quoteQuantity}</span>
-                        <button 
-                          onClick={() => setQuoteQuantity(prev => prev + 1)}
-                          className="w-7 h-7 bg-purple-950/40 hover:bg-purple-900 border border-purple-500/20 rounded flex items-center justify-center text-white"
-                        >
-                          +
-                        </button>
-                        <span className="text-[10px] text-slate-500">unids.</span>
-                      </div>
-                    </div>
-
-                    <input 
-                      type="range" 
-                      min="1" 
-                      max="100" 
-                      value={quoteQuantity}
-                      onChange={(e) => setQuoteQuantity(parseInt(e.target.value))}
-                      className="w-full accent-purple-500 h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer"
-                      id="quote-range-slider"
-                    />
-
-                    {/* Scale explanation info */}
-                    <div className="flex justify-between text-[10px] text-slate-500 font-medium">
-                      <span>1 unid. (Retalho)</span>
-                      <span className="text-purple-400 font-bold">10 unids. (Mínimo recomendado)</span>
-                      <span>50+ unids. (Super Desconto de 20%)</span>
-                    </div>
-                  </div>
-
-                  {/* Instructions details */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Observações de Layout / Escudo do Time</label>
-                    <textarea 
-                      value={layoutNotes}
-                      onChange={(e) => setLayoutNotes(e.target.value)}
-                      placeholder="Descreva as cores das mangas, posição e logotipo do brasão, patrocínio ou outras particularidades..."
-                      className="w-full min-h-[90px] p-4 bg-[#0d0f14] border border-purple-950/40 rounded-xl text-xs text-white placeholder-slate-700 focus:outline-none focus:border-purple-600 resize-none font-sans"
-                      id="quote-textarea-notes"
-                    />
-                  </div>
-                </div>
-
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+          {CATEGORIES.map(cat => (
+            <div
+              key={cat.id}
+              onClick={() => setFilterCat(cat.tag)}
+              style={{ borderRadius: 24, overflow: 'hidden', cursor: 'pointer', position: 'relative', minHeight: 340, background: 'linear-gradient(to bottom, #0d0f17, #07090d)', border: '1px solid rgba(139,92,246,0.1)', transition: 'all 0.3s ease' }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-6px)'; e.currentTarget.style.borderColor = 'rgba(124,58,237,0.4)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'rgba(139,92,246,0.1)'; }}
+            >
+              {/* Category bg jersey image */}
+              <div style={{ position: 'absolute', right: -10, bottom: 0, width: '65%', display: 'flex', justifyContent: 'center' }}>
+                <img src={IMGS[cat.imgKey]} alt={cat.label} style={{ maxHeight: 240, objectFit: 'contain', filter: 'drop-shadow(0 0 30px rgba(0,0,0,0.8))' }} />
               </div>
 
-              {/* Right Column: Detailed pricing summary simulation (lg:col-span-4) */}
-              <div className="lg:col-span-4" id="pricing-results-panel">
-                <div className="bg-[#0b0d12] border border-purple-950/20 rounded-2xl p-5 space-y-6 shadow-2xl relative overflow-hidden" id="price-card-summary">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-bl-full pointer-events-none blur-3xl" />
-                  
-                  <div className="border-b border-purple-950/30 pb-4">
-                    <span className="text-[10px] uppercase font-black tracking-widest text-cyan-400">RESULTADO DA SIMULAÇÃO</span>
-                    <h3 className="text-lg font-black text-white uppercase tracking-tight mt-0.5">Faturamento & Orçamento</h3>
-                  </div>
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(7,9,13,0.95) 50%, transparent 90%)' }} />
 
-                  {isCalculatingQuote ? (
-                    <div className="h-64 flex flex-col items-center justify-center space-y-3" id="quote-loader-frame">
-                      <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
-                      <p className="text-xs text-slate-400">Calculando desconto progressivo...</p>
-                    </div>
-                  ) : quoteResult ? (
-                    <div className="space-y-5 text-xs text-slate-350" id="quote-calculated-summary">
-                      
-                      {/* Sub-itemization */}
-                      <div className="space-y-2.5 bg-slate-900/40 p-3.5 rounded-xl border border-purple-950/40" id="itemized-pricing-list">
-                        
-                        <div className="flex justify-between">
-                          <span>Preço Base Unitário ({selectedProduct.category}):</span>
-                          <span className="font-mono text-white">R$ {quoteResult.baseUnitPrice.toFixed(2)}</span>
-                        </div>
-                        
-                        {(hasCustomName || hasCustomNumber) && (
-                          <div className="flex justify-between text-[11px] text-purple-400">
-                            <span>Personalizações unitárias:</span>
-                            <span className="font-mono">+ R$ {quoteResult.customFeeUnit.toFixed(2)}</span>
-                          </div>
-                        )}
-
-                        <div className="flex justify-between pb-1.5 border-b border-purple-950/30">
-                          <span>Soma Parcial Unitária:</span>
-                          <span className="font-mono text-white font-bold">R$ {(quoteResult.baseUnitPrice + quoteResult.customFeeUnit).toFixed(2)}</span>
-                        </div>
-
-                        {quoteResult.discountPercentage > 0 ? (
-                          <div className="flex justify-between text-emerald-400 font-bold">
-                            <span>Desconto de Lote ({quoteResult.discountPercentage}%):</span>
-                            <span className="font-mono">- R$ {((quoteResult.baseUnitPrice + quoteResult.customFeeUnit) * (quoteResult.discountPercentage / 100)).toFixed(2)} / Un.</span>
-                          </div>
-                        ) : (
-                          <div className="text-[10px] text-amber-500 italic flex items-center gap-1">
-                            <AlertTriangle className="w-3.5 h-3.5" />
-                            <span>Adicione mais 10 p/ desconto inicial</span>
-                          </div>
-                        )}
-
-                        <div className="flex justify-between pt-1.5 font-bold text-white text-xs">
-                          <span>Valor Unitário Final:</span>
-                          <span className="font-mono text-cyan-400">R$ {quoteResult.finalUnitPrice.toFixed(2)}</span>
-                        </div>
-                      </div>
-
-                      {/* Giant Display final pricing */}
-                      <div className="text-center p-4 bg-purple-500/5 border border-purple-500/20 rounded-xl space-y-1 shadow-inner" id="giant-total-price">
-                        <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Investimento Total Estimado</span>
-                        <h4 className="text-3xl font-black text-white font-mono tracking-tight">R$ {quoteResult.finalTotalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h4>
-                        <p className="text-[11px] text-slate-500">Para {quoteResult.quantity} unidades do modelo {selectedProduct.category}</p>
-                      </div>
-
-                      {/* Logistical Estimate */}
-                      <div className="space-y-2 text-xs" id="logistical-delivery-estimate">
-                        <div className="flex justify-between">
-                          <span className="text-slate-400">Prazo de Confecção / Entrega:</span>
-                          <span className="font-semibold text-white">{quoteResult.deliveryEstimate}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-400">Garantia Costura e Cor:</span>
-                          <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                            <ShieldCheck className="w-3.5 h-3.5" />
-                            <span>12 Meses integral</span>
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Alert if units below 10 requirement */}
-                      {quoteResult.minimumUnitsAlert && (
-                        <div className="bg-amber-950/20 border border-amber-500/30 text-amber-300 p-3 rounded-xl flex items-start gap-2 text-[11px]" id="qty-under-requirement-alert">
-                          <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                          <p className="leading-relaxed">{quoteResult.minimumUnitsAlert}</p>
-                        </div>
-                      )}
-
-                      {/* Active CTAs */}
-                      <div className="space-y-2.5 pt-2" id="quote-card-cta-block">
-                        <button
-                          onClick={() => {
-                            const summaryText = 
-                              `*ORÇAMENTO SIMULADO GMZ PERFORMANCE*\n` +
-                              `Item: ${quoteResult.productName}\n` +
-                              `Quantidade: ${quoteResult.quantity} unidades\n` +
-                              `Valor Unitário: R$ ${quoteResult.finalUnitPrice.toFixed(2)}\n` +
-                              `Valor Total: R$ ${quoteResult.finalTotalPrice.toFixed(2)}\n` +
-                              `Estimativa de entrega: ${quoteResult.deliveryEstimate}\n` +
-                              `Comentários: ${layoutNotes}`;
-                            handleCopyToClipboard(summaryText, "Orçamento de uniforme");
-                          }}
-                          className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold tracking-wider uppercase rounded-xl shadow-[0_4px_15px_rgba(139,92,246,0.3)] flex items-center justify-center gap-2 transition-all active:scale-95"
-                          id="copy-quote-and-close-btn"
-                        >
-                          <Copy className="w-4 h-4" />
-                          <span>Copiar Resumo da Simulação</span>
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            window.print();
-                          }}
-                          className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 border border-purple-950/50 text-[11px] font-bold uppercase text-slate-400 hover:text-white rounded-xl flex items-center justify-center gap-1.5 transition-all"
-                          id="print-quote-btn"
-                        >
-                          <Printer className="w-3.5 h-3.5" />
-                          <span>Imprimir Orçamento Oficial</span>
-                        </button>
-                      </div>
-
-                    </div>
-                  ) : null}
-
-                </div>
-              </div>
-
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ========================================================== */}
-      {/* 3. AI DESIGNblue PROPOSAL GENERATOR CARD VIRTUAL (CREATIVE)*/}
-      {/* ========================================================== */}
-      <AnimatePresence mode="wait">
-        {activeTab === 'generator' && (
-          <motion.div 
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.3 }}
-            className="flex-1 max-w-[1200px] mx-auto w-full p-6 space-y-8"
-            id="ai-concept-creator-view"
-          >
-            
-            {/* Explanatory introduction header */}
-            <div className="bg-[#0b0d12] border border-purple-950/20 rounded-2xl p-6 relative overflow-hidden shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-5" id="ai-concept-introduction">
-              <div className="space-y-1.5 flex-1">
-                <span className="text-xs font-bold uppercase tracking-widest text-purple-400 block flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-purple-400 animate-pulse" />
-                  <span>Criação de Uniformes por Inteligência Artificial</span>
+              <div style={{ position: 'relative', zIndex: 1, padding: '32px 28px' }}>
+                <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#7c3aed', background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.2)', padding: '4px 10px', borderRadius: 6, display: 'inline-block', marginBottom: 12 }}>
+                  {cat.tag}
                 </span>
-                <h2 className="text-lg md:text-xl font-black text-white uppercase tracking-tight">O DIRETOR DE DESIGN ESPORTIVO INTELIGENTE</h2>
-                <p className="text-xs text-slate-405 leading-relaxed">Preencha o conceito temático do fardamento de seu time. O assistente Gemini planejará paletas de cores esportivas de alto impacto, golas ideais, emblemas para o peito e até grito de guerra para motivar os fardados!</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start" id="ai-proposal-layout">
-              
-              {/* Left query controller (lg:col-span-4) */}
-              <div className="lg:col-span-5 bg-[#0b0d12] border border-purple-950/20 rounded-2xl p-5 space-y-4 shadow-xl" id="generator-prompt-card">
-                <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-350 border-b border-purple-950/30 pb-2">Parâmetros Criativos</h3>
-                
-                <div className="space-y-4">
-                  {/* Selected Sport Choice */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold uppercase tracking-wider text-slate-400 block">Modalidade do Time</label>
-                    <select 
-                      value={selectedSport}
-                      onChange={(e) => setSelectedSport(e.target.value)}
-                      className="w-full p-3 bg-[#0d0f14] border border-purple-950/40 rounded-xl text-xs text-white focus:outline-none focus:border-purple-600"
-                      id="sport-select-menu"
-                    >
-                      <option value="Futebol de Campo / Futsal">Futebol / Futsal</option>
-                      <option value="Basquetebol / Streetball">Basquete / Streetball</option>
-                      <option value="E-Sports / Pro Gaming">E-Sports / Pro Gaming</option>
-                      <option value="Corrida de Rua e Triatlo">Corrida / Triatlo</option>
-                      <option value="Voleibol / Vôlei de Praia">Vôlei de Praia</option>
-                      <option value="Vôlei de Quadra">Vôlei de Quadra</option>
-                      <option value="Crossfit / CrossTraining">Crossfit / Treino Funcional</option>
-                    </select>
-                  </div>
-
-                  {/* Vibe / Theme Concept */}
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between text-xs">
-                      <label className="font-bold uppercase tracking-wider text-slate-400">Concept Vibe do Uniforme</label>
-                      <button 
-                        onClick={() => {
-                          const concepts = [
-                            "Fênix cibernética de fogo ressurgindo de cinzas escuras com asas neon laranja e dourado",
-                            "Tubarões da costa norte com dentes de metal e escamas de grafite em degradê azul gelo",
-                            "Templários futuristas com armaduras pretas e linhas místicas vermelhas brilhantes",
-                            "Pantera das sombras camuflada com olhos violetas elétricos e garras roxas neon"
-                          ];
-                          setTeamConcept(concepts[Math.floor(Math.random() * concepts.length)]);
-                        }}
-                        className="text-[10px] text-purple-400 hover:underline"
-                        id="shuffle-concept-btn"
-                      >
-                        Embaralhar ideia
-                      </button>
-                    </div>
-                    <textarea 
-                      value={teamConcept}
-                      onChange={(e) => setTeamConcept(e.target.value)}
-                      className="w-full min-h-[105px] p-3.5 bg-[#0d0f14] border border-purple-950/40 rounded-xl text-xs text-white placeholder-slate-700 focus:outline-none focus:border-purple-600 resize-none font-sans"
-                      placeholder="e.g. Lobos de gelo nórdicos com garras que emitem raios azuis neon..."
-                      id="team-concept-textbox"
-                    />
-                  </div>
-
-                  {/* Color suggestion preview */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold uppercase tracking-wider text-slate-400 block font-sans">Cor Predominante da Camisa</label>
-                    <input 
-                      type="text"
-                      value={predominantColor}
-                      onChange={(e) => setPredominantColor(e.target.value)}
-                      className="w-full p-3 bg-[#0d0f14] border border-purple-950/40 rounded-xl text-xs text-white focus:outline-none focus:border-purple-600 font-sans"
-                      placeholder="e.g. Preto com detalhes em Lilás Laser e Verde Flúor"
-                      id="color-suggestion-input"
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-2">
-                  <button
-                    onClick={handleGenerateProposal}
-                    disabled={isGeneratingDesign || !teamConcept.trim()}
-                    className="w-full py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-40 text-white font-bold text-xs tracking-wider uppercase rounded-xl shadow-[0_4px_15px_rgba(139,92,246,0.3)] flex items-center justify-center gap-2 transition-all active:scale-95"
-                    id="submit-generate-layout-btn"
-                  >
-                    {isGeneratingDesign ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Desenhando proposta criativa...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Wand2 className="w-4 h-4" />
-                        <span>Gerar Proposta via Gemini AI</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* Right generated result display card (lg:col-span-8) */}
-              <div className="lg:col-span-7" id="proposal-rendering-panel">
-                <AnimatePresence mode="wait">
-                  {generatedProposal ? (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.98 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.98 }}
-                      className="bg-[#0b0d12] border border-purple-500/30 rounded-2xl p-6 space-y-6 shadow-2xl relative overflow-hidden"
-                      id="generated-team-proposal-card"
-                    >
-                      <div className="absolute top-0 right-0 w-40 h-40 bg-purple-500/10 rounded-bl-full pointer-events-none blur-3xl animate-pulse" />
-                      
-                      {/* Shield design mockup */}
-                      <div className="flex-col sm:flex-row flex justify-between items-start gap-4 border-b border-purple-950/30 pb-4">
-                        <div>
-                          <div className="flex items-center gap-1.5 text-xs text-purple-400 uppercase font-black tracking-widest">
-                            <Flame className="w-4.5 h-4.5 text-purple-400" />
-                            <span>Proposta Criativa Homologada</span>
-                          </div>
-                          <h4 className="text-2xl font-black text-white uppercase tracking-tight mt-1">{generatedProposal.teamName}</h4>
-                          <span className="text-[10px] text-slate-500 italic">Conceito sob medida para {selectedSport}</span>
-                        </div>
-
-                        <button 
-                          onClick={() => {
-                            const formatted = 
-                              `TIME SUGERIDO: ${generatedProposal.teamName}\n` +
-                              `CONCEITO: ${generatedProposal.designConcept}\n` +
-                              `GOLA: ${generatedProposal.collarStyle}\n` +
-                              `LOGOCENTRO: ${generatedProposal.chestGraphic}\n` +
-                              `CORES: ${generatedProposal.colorPalette.join(', ')}\n` +
-                              `GRITO DE GUERRA: ${generatedProposal.slogan}`;
-                            handleCopyToClipboard(formatted, "Ficha criativa do time");
-                          }}
-                          className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-purple-950/70 text-slate-400 hover:text-white rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-1.5"
-                          id="copy-proposal-btn"
-                        >
-                          <Copy className="w-3.5 h-3.5" />
-                          <span>Copiar Ficha</span>
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs" id="proposal-cards-detail-grid">
-                        
-                        <div className="space-y-3">
-                          <div className="space-y-1">
-                            <h5 className="font-extrabold uppercase tracking-widest text-slate-400">🌈 Paleta Esportiva Recomendada</h5>
-                            <div className="flex flex-wrap gap-2 pt-1" id="palette-color-boxes">
-                              {generatedProposal.colorPalette.map((color, i) => (
-                                <span 
-                                  key={i} 
-                                  className="bg-purple-950/40 border border-purple-500/20 px-2.5 py-1 rounded text-[11px] font-bold text-slate-300 flex items-center gap-1.5"
-                                >
-                                  <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-                                  <span>{color}</span>
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div className="space-y-1">
-                            <h5 className="font-extrabold uppercase tracking-widest text-slate-400">🛡️ Gráfico Central / Escudo</h5>
-                            <p className="text-slate-350 bg-[#0d0f14] p-3 rounded-xl border border-purple-950/40 leading-relaxed font-sans">{generatedProposal.chestGraphic}</p>
-                          </div>
-                        </div>
-
-                        <div className="space-y-3">
-                          <div className="grid grid-cols-2 gap-3" id="apparel-specs-proposal-grid">
-                            <div className="space-y-1">
-                              <h5 className="font-extrabold uppercase tracking-widest text-slate-400">👕 Padrão da Gola</h5>
-                              <p className="bg-[#0d0f14] p-2.5 rounded-lg border border-purple-950/40 text-white font-bold">{generatedProposal.collarStyle}</p>
-                            </div>
-                            <div className="space-y-1">
-                              <h5 className="font-extrabold uppercase tracking-widest text-slate-400">⚔️ Grito de Guerra (Nuca)</h5>
-                              <p className="bg-purple-950/15 border border-purple-500/20 p-2.5 rounded-lg text-purple-300 font-bold italic">"{generatedProposal.slogan}"</p>
-                            </div>
-                          </div>
-
-                          <div className="space-y-1">
-                            <h5 className="font-extrabold uppercase tracking-widest text-slate-400">🧵 Grafismos e Detalhes da Camisa</h5>
-                            <p className="text-slate-350 bg-[#0d0f14] p-3 rounded-xl border border-purple-950/40 leading-relaxed">{generatedProposal.jerseyDetails}</p>
-                          </div>
-                        </div>
-
-                      </div>
-
-                      {/* Philosophy summary block */}
-                      <div className="bg-[#0d0f14] border border-purple-950/30 p-4 rounded-xl space-y-1.5" id="design-concept-poetic">
-                        <h5 className="text-[10px] font-bold tracking-widest uppercase text-purple-400">Conceito e Identidade de Vendas</h5>
-                        <p className="text-xs text-slate-400 leading-relaxed font-sans">{generatedProposal.designConcept}</p>
-                      </div>
-
-                      {/* Insertion to simulator CTA */}
-                      <div className="pt-2">
-                        <button
-                          onClick={() => {
-                            setLayoutNotes(prev => 
-                              `*CONCEITO DE TIME IA*\n` +
-                              `Nome sugerido: ${generatedProposal.teamName}\n` +
-                              `Escudo: ${generatedProposal.chestGraphic}\n` +
-                              `Cores: ${generatedProposal.colorPalette.join(', ')}\n` +
-                              `Gola: ${generatedProposal.collarStyle}\n\n` +
-                              `Adicionais: ${prev}`
-                            );
-                            setActiveTab('customizer');
-                            triggerToast("Conceito mestre importado com sucesso para as notas do orçamento!");
-                          }}
-                          className="w-full py-2.5 bg-purple-950/40 hover:bg-purple-900 border border-purple-500/30 text-xs font-bold uppercase tracking-wider text-purple-200 rounded-xl transition-all"
-                          id="import-to-notes-btn"
-                        >
-                          Importar Conceito Detalhado ao Simulador de Orçamento
-                        </button>
-                      </div>
-
-                    </motion.div>
-                  ) : (
-                    <div className="border border-dashed border-purple-950/40 rounded-2xl p-16 text-center text-slate-500 space-y-2.5 shadow-inner" id="generator-empty-state">
-                      <Sparkles className="w-10 h-10 text-purple-950 mx-auto animate-pulse" />
-                      <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Nenhuma Proposta Gerada</h4>
-                      <p className="text-xs text-slate-600 max-w-sm mx-auto">Adicione o conceito criativo de seu elenco para que o Gemini elabore as diretrizes visuais perfeitas em segundos.</p>
-                    </div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ========================================================== */}
-      {/* 4. SALES ASSISTANT / INTEGRATIVE CUSTOM CHAT BOT (VIRTUAL) */}
-      {/* ========================================================== */}
-      <AnimatePresence mode="wait">
-        {activeTab === 'chat' && (
-          <motion.div 
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.3 }}
-            className="flex-1 max-w-[850px] mx-auto w-full p-6"
-            id="virtual-sales-support-view"
-          >
-            <div className="bg-[#0b0d12] border border-purple-950/20 rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[650px]" id="chat-assistance-container">
-              
-              {/* Header block with avatar */}
-              <div className="bg-[#0d0f14] border-b border-purple-950/30 p-4 flex justify-between items-center" id="support-chat-header">
-                <div className="flex items-center gap-3" id="bot-avatar-emblem">
-                  <div className="w-9 h-9 rounded-xl bg-purple-600/15 border border-purple-500/30 flex items-center justify-center relative">
-                    <MessageSquare className="w-4.5 h-4.5 text-purple-400" />
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 absolute bottom-0 right-0 border border-[#0d0f14]" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-black tracking-tight text-white uppercase flex items-center gap-1.5">
-                      Consultor GMZ Performance
-                    </h4>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Auxiliar inteligente de vendas em atacado</p>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => {
-                    setChatMessages([
-                      {
-                        id: "1",
-                        role: 'assistant',
-                        content: "Histórico limpo. Estou pronto para tirar qualquer dúvida sobre nossos fardamentos personalizados!",
-                        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                      }
-                    ]);
-                    triggerToast("Memória do consultor reiniciada.");
-                  }}
-                  className="text-[9px] uppercase font-bold text-slate-500 hover:text-white hover:underline transition-all"
-                  id="reset-history-btn"
-                >
-                  Limpar Chat
+                <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 38, fontWeight: 900, color: 'white', textTransform: 'uppercase', lineHeight: 0.95, marginBottom: 12, letterSpacing: '-0.01em' }}>
+                  {cat.label}
+                </h3>
+                <p style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.6, marginBottom: 24, maxWidth: 200 }}>{cat.desc}</p>
+                <button style={{ background: 'none', border: 'none', color: '#7c3aed', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, letterSpacing: '0.05em' }}>
+                  Ver coleção <Icon.Arrow />
                 </button>
               </div>
-
-              {/* Preloaded interactive macro queries */}
-              <div className="p-2 bg-[#08090d] border-b border-purple-950/20 flex gap-2 overflow-x-auto whitespace-nowrap scrollbar-none text-xs text-slate-450" id="preset-queries-shortcut-row">
-                {[
-                  "Qual a quantidade mínima para personalizar?",
-                  "Qual o tecido usado nas regatas?",
-                  "Quais são as garantias e o frete?",
-                  "Oferecem descontos para fardamentos?"
-                ].map((shortcutStr, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleSendMessage(undefined, shortcutStr)}
-                    className="px-3 py-1 bg-slate-900 hover:bg-[#12141c] text-slate-300 hover:text-white border border-purple-950 rounded-lg text-[10px] inline-block transition-all shadow-sm select-none"
-                    id={`shortcut-query-${idx}`}
-                  >
-                    ⭐ {shortcutStr}
-                  </button>
-                ))}
-              </div>
-
-              {/* Chat message listing layout */}
-              <div className="flex-1 p-5 overflow-y-auto space-y-4 bg-transparent" id="chat-messages-viewer">
-                {chatMessages.map((msg) => (
-                  <div 
-                    key={msg.id}
-                    className={`flex flex-col max-w-[85%] ${msg.role === 'user' ? 'ml-auto items-end' : 'mr-auto items-start'}`}
-                    id={`chat-bubble-${msg.id}`}
-                  >
-                    <div className={`p-3.5 rounded-2xl text-xs leading-relaxed ${
-                      msg.role === 'user' 
-                        ? 'bg-gradient-to-tr from-purple-800 to-slate-900 text-white border border-purple-500/25 rounded-tr-none shadow-md' 
-                        : 'bg-[#0e1117] text-slate-300 border border-purple-950/50 rounded-tl-none shadow-sm'
-                    }`}>
-                      <p className="select-text whitespace-pre-line">{msg.content}</p>
-                    </div>
-                    <span className="text-[9px] text-slate-500 mt-1 font-mono">{msg.time}</span>
-                  </div>
-                ))}
-
-                {isChatLoading && (
-                  <div className="mr-auto items-start max-w-[85%] flex flex-col" id="chat-assistant-spinner">
-                    <div className="p-3.5 bg-[#0e1117] border border-purple-950/50 rounded-2xl rounded-tl-none text-xs text-slate-400 italic flex items-center gap-2">
-                      <span className="flex h-2 w-2 items-center justify-center relative">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-cyan-500"></span>
-                      </span>
-                      <span>Consultando catálogos de fardamentos...</span>
-                    </div>
-                  </div>
-                )}
-                <div ref={chatBottomRef} />
-              </div>
-
-              {/* Input sender form box */}
-              <form onSubmit={handleSendMessage} className="p-4 bg-[#0d0f14] border-t border-purple-950/30 flex items-center gap-2.5" id="chat-input-row">
-                <input 
-                  type="text"
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  placeholder="Pergunte ao consultor GMZ sobre materiais, quantidades ou prazos..."
-                  className="flex-1 p-3 bg-[#08090d] border border-purple-950/40 rounded-xl text-xs text-white placeholder-slate-600 focus:outline-none focus:border-purple-600"
-                  id="chat-user-textbox"
-                />
-                
-                <button
-                  type="submit"
-                  disabled={isChatLoading || !chatInput.trim()}
-                  className="p-3.5 bg-gradient-to-tr from-purple-600/20 to-indigo-600/10 hover:from-purple-600/30 text-purple-300 border border-purple-500/30 hover:border-purple-500/45 rounded-xl transition-all disabled:opacity-30"
-                  id="chat-send-trigger"
-                >
-                  <Send className="w-4 h-4" />
-                </button>
-              </form>
-
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ========================================================== */}
-      {/* 5. BRAND WORKFLOW TIMELINE PATH ("QUALIDADE EM CADA DETALHE")*/}
-      {/* ========================================================== */}
-      <section className="px-6 py-12 bg-[#050608] border-t border-purple-950/15" id="brand-process-timeline">
-        <div className="max-w-[1400px] mx-auto space-y-8">
-          
-          <div className="text-center space-y-1">
-            <h4 className="text-xs font-bold uppercase tracking-widest text-purple-400">PASSO A PASSO DA COMPRA</h4>
-            <h3 className="text-lg font-black text-white uppercase tracking-tight">Qualidade em Cada Detalhe</h3>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-6 text-center relative" id="process-steps-timeline">
-            {/* Steps indicator item 1 */}
-            <div className="space-y-3 bg-[#0b0d12]/50 p-4 border border-purple-950/20 rounded-xl" id="step-one">
-              <div className="w-10 h-10 bg-purple-500/10 border border-purple-500/20 rounded-full flex items-center justify-center mx-auto text-purple-400 font-bold font-mono text-sm shadow-md">
-                1
-              </div>
-              <h5 className="text-xs font-extrabold text-white uppercase tracking-wide">Escolha</h5>
-              <p className="text-[11px] text-slate-500 leading-normal">Selecione o modelo esportivo desejado no catálogo.</p>
-            </div>
-
-            {/* Steps indicator item 2 */}
-            <div className="space-y-3 bg-[#0b0d12]/50 p-4 border border-purple-950/20 rounded-xl" id="step-two">
-              <div className="w-10 h-10 bg-purple-500/10 border border-purple-500/20 rounded-full flex items-center justify-center mx-auto text-purple-400 font-bold font-mono text-sm shadow-md">
-                2
-              </div>
-              <h5 className="text-xs font-extrabold text-white uppercase tracking-wide">Personalize</h5>
-              <p className="text-[11px] text-slate-500 leading-normal">Defina nomes, números, patrocínios e escudo.</p>
-            </div>
-
-            {/* Steps indicator item 3 */}
-            <div className="space-y-3 bg-[#0b0d12]/50 p-4 border border-purple-950/20 rounded-xl" id="step-three">
-              <div className="w-10 h-10 bg-purple-500/10 border border-purple-500/20 rounded-full flex items-center justify-center mx-auto text-purple-400 font-bold font-mono text-sm shadow-md">
-                3
-              </div>
-              <h5 className="text-xs font-extrabold text-white uppercase tracking-wide">Aprovação</h5>
-              <p className="text-[11px] text-slate-500 leading-normal">Nossa equipe cria o layout digital 3D completo.</p>
-            </div>
-
-            {/* Steps indicator item 4 */}
-            <div className="space-y-3 bg-[#0b0d12]/50 p-4 border border-purple-950/20 rounded-xl" id="step-four">
-              <div className="w-10 h-10 bg-purple-500/10 border border-purple-500/20 rounded-full flex items-center justify-center mx-auto text-purple-400 font-bold font-mono text-sm shadow-md">
-                4
-              </div>
-              <h5 className="text-xs font-extrabold text-white uppercase tracking-wide">Produção</h5>
-              <p className="text-[11px] text-slate-500 leading-normal">Sublimação total digital pro com costura esportiva.</p>
-            </div>
-
-            {/* Steps indicator item 5 */}
-            <div className="space-y-3 bg-[#0b0d12]/50 p-4 border border-purple-950/20 rounded-xl" id="step-five">
-              <div className="w-10 h-10 bg-purple-500/10 border border-purple-500/20 rounded-full flex items-center justify-center mx-auto text-purple-400 font-bold font-mono text-sm shadow-md">
-                5
-              </div>
-              <h5 className="text-xs font-extrabold text-white uppercase tracking-wide">Entrega rápida</h5>
-              <p className="text-[11px] text-slate-500 leading-normal">Despacho garantido de seu lote com frete rastreável.</p>
-            </div>
-          </div>
+          ))}
         </div>
       </section>
 
-      {/* --- CELLPHONE ORDER PROMOTION BOX ("COMPRE DE ONDE ESTIVER") --- */}
-      <section className="px-6 py-10 bg-[#090b10] border-t border-purple-950/20" id="promotional-banner-card">
-        <div className="max-w-[1200px] mx-auto bg-gradient-to-r from-purple-950/20 via-[#0c0d14] to-purple-950/20 rounded-2xl p-6 md:p-10 border border-purple-950/60 shadow-2xl flex flex-col md:flex-row justify-between items-center gap-8 relative overflow-hidden" id="promo-banner-container">
-          <div className="space-y-4 max-w-xl text-center md:text-left" id="promo-text-field">
-            <span className="text-[10px] uppercase font-bold tracking-widest text-purple-400 bg-purple-500/10 border border-purple-500/15 px-3 py-1 rounded inline-block">PEDIDO DIRETO</span>
-            <h4 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight">Compre de Onde Estiver</h4>
-            <p className="text-xs md:text-sm text-slate-350 leading-relaxed font-sans">
-              Interaja com nosso catálogo, simule os fardamentos de sua agremiação ou use nosso Diretor de Design por IA para receber um dossiê criativo. Nossa equipe de faturamento estará aguardando para validar seus arquivos.
+      {/* ── PRODUCTS ── */}
+      <section ref={productsRef} id="produtos" style={{ padding: '0 40px 80px', maxWidth: 1400, margin: '0 auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
+          <h2 className="section-title">Produtos <span>em destaque</span></h2>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {['TODOS', 'NBA', 'UV+50', 'MANGA CURTA', 'DTF'].map(cat => (
+              <button
+                key={cat}
+                onClick={() => setFilterCat(cat)}
+                style={{ padding: '7px 14px', borderRadius: 10, border: `1px solid ${filterCat === cat ? '#7c3aed' : 'rgba(255,255,255,0.08)'}`, background: filterCat === cat ? 'rgba(124,58,237,0.2)' : 'transparent', color: filterCat === cat ? '#a78bfa' : '#64748b', fontSize: 11, fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.05em', transition: 'all 0.2s' }}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 20 }}>
+          {filteredProducts.map(p => (
+            <ProductCard key={p.id} p={p} favorites={favorites} onFav={toggleFav} onView={setActiveModal} onAdd={addToCart} />
+          ))}
+        </div>
+      </section>
+
+      {/* ── FEATURES STRIP ── */}
+      <section style={{ background: 'rgba(7,9,13,0.6)', borderTop: '1px solid rgba(139,92,246,0.1)', borderBottom: '1px solid rgba(139,92,246,0.1)', padding: '40px 40px' }}>
+        <div style={{ maxWidth: 1400, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
+          {[
+            { icon: '⚡', title: 'Tecnologia Premium', desc: 'Estampas com cores vivas e alta durabilidade' },
+            { icon: '🧵', title: 'Tecidos Selecionados', desc: 'Conforto, leveza e máximo desempenho' },
+            { icon: '✂️', title: 'Acabamento Premium', desc: 'Costuras reforçadas e caimento perfeito' },
+            { icon: '🔒', title: 'Compra Segura', desc: 'Seus dados protegidos do início ao fim' },
+            { icon: '💬', title: 'Atendimento Humanizado', desc: 'Estamos prontos para te ajudar sempre' },
+          ].map((f, i) => (
+            <div key={i} className="feature-badge">
+              <div className="feature-badge-icon">
+                <span style={{ fontSize: 20 }}>{f.icon}</span>
+              </div>
+              <div>
+                <p style={{ fontSize: 12, fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>{f.title}</p>
+                <p style={{ fontSize: 11, color: '#475569', lineHeight: 1.4 }}>{f.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── PERSONALIZE CTA ── */}
+      <section id="personalize" style={{ padding: '80px 40px', maxWidth: 1400, margin: '0 auto' }}>
+        <div style={{ background: 'linear-gradient(135deg, rgba(13,15,23,0.9), rgba(124,58,237,0.05))', border: '1px solid rgba(124,58,237,0.15)', borderRadius: 32, padding: '60px', position: 'relative', overflow: 'hidden', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center' }}>
+          <div style={{ position: 'absolute', top: -100, right: -100, width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(124,58,237,0.15), transparent 70%)', pointerEvents: 'none' }} />
+
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ width: 60, height: 60, background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)', borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, marginBottom: 24 }}>
+              🎨
+            </div>
+            <h2 className="section-title" style={{ marginBottom: 12 }}>Personalize <span>do seu jeito</span></h2>
+            <p style={{ fontSize: 15, color: '#94a3b8', lineHeight: 1.7, marginBottom: 32 }}>
+              Adicione nome, número e monte sua peça exclusiva<br />como você sempre imaginou.
             </p>
-            
-            <div className="pt-2 flex flex-wrap gap-2.5 justify-center md:justify-start" id="promo-cta-row">
-              <button 
-                onClick={() => {
-                  setSelectedProduct(products[0]);
-                  setActiveTab('customizer');
-                }}
-                className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold uppercase rounded-xl shadow-lg transition-all"
-                id="promo-order-now-btn"
-              >
-                Iniciar Orçamento Simulador
-              </button>
-              <button 
-                onClick={() => {
-                  setActiveTab('chat');
-                }}
-                className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 border border-purple-950/60 text-xs font-bold uppercase text-slate-350 hover:text-white rounded-xl transition-all"
-                id="promo-talk-support-btn"
-              >
-                Falar c/ Suporte de Vendas
-              </button>
-            </div>
+            <a
+              href="https://wa.me/5511999999999?text=Olá! Quero personalizar um uniforme"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary"
+              style={{ textDecoration: 'none', display: 'inline-flex' }}
+            >
+              Personalizar agora <Icon.Arrow />
+            </a>
           </div>
 
-          {/* Interactive cellphone mockup vector details */}
-          <div className="w-52 h-44 bg-gradient-to-b from-purple-600/5 to-cyan-500/5 rounded-2xl border border-purple-950/40 p-4 relative shrink-0 flex flex-col justify-between" id="visual-phone-mock">
-            <div className="text-center font-bold text-[10px] text-purple-400 uppercase tracking-widest bg-purple-500/10 p-1.5 rounded-lg border border-purple-500/20">
-              GMZ MOBILE ACTIVE
-            </div>
-            
-            <div className="space-y-1 text-[10px] text-slate-400" id="quick-indicators-mobile">
-              <div className="flex justify-between border-b border-purple-950/40 pb-1">
-                <span>Visualizador 3D:</span>
-                <span className="text-emerald-400 font-bold font-mono">ONLINE</span>
-              </div>
-              <div className="flex justify-between border-b border-purple-950/40 pb-1">
-                <span>Lote Estimado:</span>
-                <span className="text-white font-bold font-mono">{quoteQuantity} Unids</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Desconto Lote:</span>
-                <span className="text-purple-300 font-bold font-mono">Até 20%</span>
-              </div>
-            </div>
-
-            <div className="w-full text-center py-2 bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-[9px] tracking-wider uppercase rounded-lg cursor-pointer transition-all" onClick={() => handleCopyToClipboard("https://gmzperformance.com/catalogo", "Link do catálogo")}>
-              Compartilhar Catálogo
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr auto 1fr', alignItems: 'center', gap: 12 }}>
+              {[
+                { step: '1', icon: '👕', label: 'Escolha o modelo' },
+                null,
+                { step: '2', icon: '✏️', label: 'Personalize' },
+                null,
+                { step: '3', icon: '📦', label: 'Receba em casa' },
+              ].map((item, i) => {
+                if (!item) return <div key={i} style={{ textAlign: 'center', color: '#475569', fontSize: 20, fontWeight: 100 }}>→</div>;
+                return (
+                  <div key={i} style={{ textAlign: 'center' }}>
+                    <div style={{ width: 56, height: 56, borderRadius: 18, background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, margin: '0 auto 10px' }}>{item.icon}</div>
+                    <p style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: 1.3 }}>{item.label}</p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
       </section>
 
-      {/* --- MASTER THEMED BOTTOM FOOTER --- */}
-      <footer className="border-t border-purple-950/20 bg-[#020204] py-8 px-6 text-xs text-slate-500 flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-left max-w-[1500px] w-full mx-auto" id="applet-footer">
-        <div id="footer-logo">
-          <p className="font-bold text-white uppercase tracking-wider">GMZ Performance S.A.</p>
-          <p className="text-[10px] text-slate-650 mt-1">Sua farda. Seu time. Sua glória. © 2026. Todos os direitos reservados.</p>
+      {/* ── COMO FUNCIONA ── */}
+      <section id="como-funciona" style={{ padding: '0 40px 80px', maxWidth: 1400, margin: '0 auto' }}>
+        <h2 className="section-title" style={{ marginBottom: 48, textAlign: 'center' }}>Como <span>funciona</span></h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 24 }}>
+          {[
+            { n: '01', icon: '💬', title: 'Entre em contato', desc: 'Fale com nossa equipe via WhatsApp e conte sobre seu projeto ou time.' },
+            { n: '02', icon: '🎨', title: 'Criação do design', desc: 'Nossos artistas criam o design exclusivo do seu uniforme personalizado.' },
+            { n: '03', icon: '✅', title: 'Aprovação', desc: 'Você aprova o arte-final antes da produção começar.' },
+            { n: '04', icon: '🚀', title: 'Produção e entrega', desc: 'Produzimos com tecnologia de sublimação e entregamos para todo o Brasil.' },
+          ].map((step, i) => (
+            <div key={i} style={{ background: 'rgba(13,15,23,0.6)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 20, padding: '28px 24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 48, fontWeight: 900, color: 'rgba(124,58,237,0.3)', lineHeight: 1 }}>{step.n}</div>
+                <div style={{ fontSize: 32 }}>{step.icon}</div>
+              </div>
+              <h3 style={{ fontSize: 16, fontWeight: 800, color: 'white', marginBottom: 8 }}>{step.title}</h3>
+              <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.7 }}>{step.desc}</p>
+            </div>
+          ))}
         </div>
+      </section>
 
-        <div className="flex flex-wrap gap-5 justify-center text-[10px] uppercase font-bold tracking-wider text-slate-500" id="footer-links-row">
-          <span className="hover:text-purple-400 transition-colors pointer-events-none">Sublimação Dry-Max</span>
-          <span className="hover:text-purple-400 transition-colors pointer-events-none">Garantia Costura Dupla</span>
-          <span className="hover:text-purple-400 transition-colors pointer-events-none">Prazo de Confecção Garantido</span>
-          <span className="hover:text-purple-450 transition-colors pointer-events-none text-xs flex items-center gap-1">
-            <Heart className="w-3 px-0 text-red-500" /> Feito no Brasil
-          </span>
+      {/* ── FOOTER ── */}
+      <footer style={{ background: 'rgba(7,9,13,0.8)', borderTop: '1px solid rgba(139,92,246,0.1)', padding: '60px 40px 30px' }}>
+        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 40, marginBottom: 48 }}>
+            {/* Brand */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <div style={{ width: 36, height: 36, background: 'linear-gradient(135deg, #7c3aed, #4f46e5)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>⚡</div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: 'white' }}>GMZ</div>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.15em' }}>Performance</div>
+                </div>
+              </div>
+              <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.7, marginBottom: 20 }}>A GMZ Performance nasceu da paixão pelo esporte e do compromisso com a qualidade.</p>
+              <div style={{ display: 'flex', gap: 10 }}>
+                {['📷', '📘', '🎵'].map((s, i) => (
+                  <a key={i} href="#" style={{ width: 36, height: 36, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, textDecoration: 'none' }}>{s}</a>
+                ))}
+              </div>
+            </div>
+
+            {/* Links */}
+            <div>
+              <h4 style={{ fontSize: 13, fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 20 }}>Links Rápidos</h4>
+              {['Início', 'Coleções', 'Todos os produtos', 'Personalize', 'Como funciona', 'Contato'].map((l, i) => (
+                <div key={i} style={{ marginBottom: 10 }}>
+                  <a href="#" style={{ fontSize: 13, color: '#475569', textDecoration: 'none', transition: 'color 0.2s' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#a78bfa')}
+                    onMouseLeave={e => (e.currentTarget.style.color = '#475569')}
+                  >{l}</a>
+                </div>
+              ))}
+            </div>
+
+            {/* Atendimento */}
+            <div>
+              <h4 style={{ fontSize: 13, fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 20 }}>Atendimento</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {[
+                  { icon: '💬', text: 'Fale conosco no WhatsApp' },
+                  { icon: '📞', text: '(11) 99999-9999' },
+                  { icon: '🕐', text: 'Seg à Sex, 9h às 18h' },
+                  { icon: '📧', text: 'contato@gmzperformance.com.br' },
+                ].map((item, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#475569' }}>
+                    <span>{item.icon}</span> {item.text}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Payment */}
+            <div>
+              <h4 style={{ fontSize: 13, fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 20 }}>Formas de Pagamento</h4>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+                {['VISA', 'Master', 'Elo', 'Pix', 'Boleto'].map((p, i) => (
+                  <span key={i} style={{ padding: '6px 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, fontSize: 11, fontWeight: 700, color: '#64748b' }}>{p}</span>
+                ))}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px', background: 'rgba(74,222,128,0.05)', border: '1px solid rgba(74,222,128,0.15)', borderRadius: 12 }}>
+                <span style={{ fontSize: 18 }}>🔒</span>
+                <div>
+                  <p style={{ fontSize: 11, fontWeight: 800, color: '#4ade80', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Site 100% Seguro</p>
+                  <p style={{ fontSize: 10, color: '#475569' }}>Seus dados protegidos com criptografia SSL</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="divider" style={{ marginBottom: 24 }} />
+          <p style={{ textAlign: 'center', fontSize: 12, color: '#334155' }}>
+            © 2024 GMZ Performance. Todos os direitos reservados.
+          </p>
         </div>
       </footer>
 
+      {/* WhatsApp Float */}
+      <a href="https://wa.me/5511999999999" target="_blank" rel="noopener noreferrer" className="wa-float" title="Fale conosco">
+        <Icon.WA />
+      </a>
     </div>
   );
 }

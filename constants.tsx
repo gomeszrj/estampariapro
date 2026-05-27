@@ -1,22 +1,46 @@
 import { Fabric, SizeGrade, OrderStatus } from './types';
 import React from 'react';
 
-// Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
+// Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 21.9 -> 22.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '21.8.9';
+export const SYSTEM_VERSION = '25.0.0';
 export const APP_NAME = 'Gomesz Speed Print';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.8.9 (Performance + Correções + Gestão de SaaS):
-- Performance: Lazy loading em todos os módulos pesados (Orders, Products, Finance, etc.)
-  * Tempo de troca entre abas reduzido para quase instantâneo.
-  * renderContent agora memoizado via useMemo.
-- Correções de Botões:
-  * Kanban: "Novo Item de Produção" agora navega para o módulo de Pedidos.
-  * Header: Avatar do usuário agora usa logo da empresa (sem placeholder externo).
-- Novo Módulo de Gestão de SaaS (completo):
-  * Tabela de Tenants com avatares, badges de plano, barra de uso de armazenamento.
-  * Sidebar analítica com Gráfico de MRR, Donut de assinaturas por plano e atividades recentes.
-  * Menu de Ações rápidas por tenant (inline dropdowns funcionais).
-  * KPIs atualizados em tempo real (MRR, Churn, Usuários Ativos).`;
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 25.0.0 — "World-Class Release" (27/05/2026):
+
+🚀 PERFORMANCE & ARQUITETURA:
+  * Keep-Alive Navigation: troca entre telas agora é INSTANTÂNEA (0ms) via ViewPanel CSS
+  * AuthContext reescrito do zero — elimina AbortError e dupla chamada getUser()
+  * Proteção contra loop de login infinito removida
+
+🏪 LOJA GMZ PERFORMANCE (NOVO):
+  * Loja online completa com design premium dark/neon
+  * Hero Slider animado com 4 slides e auto-rotação
+  * Visualizador 360° interativo nos produtos (drag-to-rotate)
+  * Carrinho de orçamento + checkout via WhatsApp
+  * Ticker animado, seção de stats, coleções, features, FAQ, footer
+
+🛠️ MÓDULO ADMIN DA LOJA (NOVO):
+  * Dashboard com gráficos de receita e pedidos (Recharts)
+  * CRUD completo de Produtos com viewer 360°, upload de imagem, badge, features
+  * Editor de Banners com preview em tempo real
+  * Gerenciamento de Pedidos com filtros e atualização de status
+  * Editor Visual da loja com preview ao vivo
+  * Configurações completas da loja
+
+🔐 SEGURANÇA — MÓDULO DE CREDENCIAIS (NOVO):
+  * Credenciais e API Keys gerenciadas via banco de dados (criptografado)
+  * Remoção de chaves expostas hardcoded no código-fonte
+  * Painel de Credenciais em Ajustes para configuração centralizada
+  * Suporte a: Supabase, WhatsApp API, Google AI, OpenAI, SMTP, MercadoPago
+
+🗄️ BANCO DE DADOS:
+  * Novas tabelas: gmz_store_products, gmz_store_banners, gmz_store_orders
+  * Nova tabela: gmz_store_settings, order_audit_log
+  * Índices de performance adicionados
+
+👑 MASTER ADMIN:
+  * admin@estamparia.com agora detectado corretamente via role='admin' no DB
+  * Botão SAIR dissociado do avatar (evitar logout acidental)`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [

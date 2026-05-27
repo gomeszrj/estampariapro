@@ -22,43 +22,33 @@ import { supabase } from './services/supabase';
 import { Toaster, toast } from 'sonner';
 import { notify } from './components/ui/toast';
 
-// Helper: retry dynamic imports — auto-reload on stale chunk (after deploy)
-const lazyRetry = (importFn: () => Promise<any>) =>
-  React.lazy(() =>
-    importFn().catch((error) => {
-      console.error("Chunk failed to load", error);
-      const now = Date.now();
-      const lastReload = parseInt(sessionStorage.getItem('chunk_reload_time') || '0', 10);
-      
-      // If we haven't reloaded in the last 15 seconds, reload now
-      if (now - lastReload > 15000) {
-        sessionStorage.setItem('chunk_reload_time', now.toString());
-        window.location.reload();
-      }
-      return importFn(); // retry once more
-    })
-  );
+// Keep-alive view panel — renders once, hides with CSS when inactive
+// This is the KEY to instant navigation: no lazy unmount/remount
+const ViewPanel: React.FC<{ active: boolean; children: React.ReactNode }> = ({ active, children }) => (
+  <div style={{ display: active ? 'block' : 'none' }}>{children}</div>
+);
 
-// Core Page/View Imports — now lazy-loaded for instant page transitions
+// Core Page/View Imports — lazy on first access, then kept alive in DOM
 import Dashboard from './components/Dashboard';
-const Orders = lazyRetry(() => import('./components/Orders'));
-const Kanban = lazyRetry(() => import('./components/Kanban'));
-const StoreControl = lazyRetry(() => import('./components/StoreControl'));
-const Products = lazyRetry(() => import('./components/Products'));
-const Settings = lazyRetry(() => import('./components/Settings'));
-const Finance = lazyRetry(() => import('./components/Finance'));
-const Clients = lazyRetry(() => import('./components/Clients'));
-const CatalogRequests = lazyRetry(() => import('./components/CatalogRequests'));
-const Inventory = lazyRetry(() => import('./components/Inventory'));
-const ArtQueue = lazyRetry(() => import('./components/ArtQueue'));
-const MasterAdmin = lazyRetry(() => import('./components/MasterAdmin'));
-const CloudBot = lazyRetry(() => import('./components/CloudBot').then(m => ({ default: m.CloudBot })));
-const WhatsAppManager = lazyRetry(() => import('./components/WhatsAppManager').then(m => ({ default: m.WhatsAppManager })));
+const Orders = React.lazy(() => import('./components/Orders'));
+const Kanban = React.lazy(() => import('./components/Kanban'));
+const StoreControl = React.lazy(() => import('./components/StoreControl'));
+const StoreManager = React.lazy(() => import('./components/StoreManager'));
+const Products = React.lazy(() => import('./components/Products'));
+const Settings = React.lazy(() => import('./components/Settings'));
+const Finance = React.lazy(() => import('./components/Finance'));
+const Clients = React.lazy(() => import('./components/Clients'));
+const CatalogRequests = React.lazy(() => import('./components/CatalogRequests'));
+const Inventory = React.lazy(() => import('./components/Inventory'));
+const ArtQueue = React.lazy(() => import('./components/ArtQueue'));
+const MasterAdmin = React.lazy(() => import('./components/MasterAdmin'));
+const CloudBot = React.lazy(() => import('./components/CloudBot').then(m => ({ default: m.CloudBot })));
+const WhatsAppManager = React.lazy(() => import('./components/WhatsAppManager').then(m => ({ default: m.WhatsAppManager })));
 
-// Separate Portals / Public entry-points (Keep lazy to keep initial load small)
-const ClientPortal = lazyRetry(() => import('./components/ClientPortal'));
-const PublicStore = lazyRetry(() => import('./components/PublicStore'));
-const OrderTracker = lazyRetry(() => import('./components/OrderTracker'));
+// Separate Portals / Public entry-points
+const ClientPortal = React.lazy(() => import('./components/ClientPortal'));
+const PublicStore = React.lazy(() => import('./components/PublicStore'));
+const OrderTracker = React.lazy(() => import('./components/OrderTracker'));
 
 
 const AuthenticatedApp: React.FC = () => {
@@ -158,26 +148,11 @@ const AuthenticatedApp: React.FC = () => {
     setIsLinksOpen(false);
   };
 
-  const renderContent = React.useMemo(() => {
-    switch (activeView) {
-      case 'dashboard': return <Dashboard orders={orders} setOrders={setOrders} products={products} />;
-      case 'orders': return <Orders orders={orders} setOrders={setOrders} products={products} clients={clients} setClients={setClients} botDraft={botDraft} onDraftUsed={() => setBotDraft(null)} isMasterAdmin={isMasterAdmin} />;
-      case 'kanban': return <Kanban orders={orders} setOrders={setOrders} setActiveView={setActiveView} />;
-      case 'products': return <Products />;
-      case 'store-control': return <StoreControl products={products} setProducts={setProducts} readOnly={false} />;
-      case 'catalog-requests': return <CatalogRequests />;
-      case 'settings': return <Settings />;
-      case 'finance': return <Finance orders={orders} products={products} />;
-      case 'clients': return <Clients clients={clients} setClients={setClients} orders={orders} />;
-      case 'inventory': return <Inventory />;
-      case 'art-queue': return <ArtQueue />;
-      case 'cloudbot': return <CloudBot onCreateOrder={handleBotOrder} />;
-      case 'crm': return <WhatsAppManager />;
-      case 'master-admin': return isMasterAdmin ? <MasterAdmin /> : null;
-      default: return null;
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeView, orders, products, clients, botDraft, isMasterAdmin]);
+  // Keep-alive: track which views have ever been visited
+  const renderedViews = React.useRef<Set<string>>(new Set(['dashboard']));
+  if (!renderedViews.current.has(activeView)) {
+    renderedViews.current.add(activeView);
+  }
 
   if (isClientPortal) {
     return (
@@ -292,7 +267,7 @@ const AuthenticatedApp: React.FC = () => {
                 <button onClick={signOut} className="text-[9px] text-rose-500 font-black hover:text-rose-400 uppercase tracking-widest mt-0.5 w-full text-right">SAIR</button>
               </div>
               
-              <div className="relative group cursor-pointer" onClick={signOut}>
+              <div className="relative group cursor-pointer">
                 <div className="absolute inset-0 bg-[#6366f1]/20 rounded-full blur-md group-hover:bg-[#6366f1]/40 transition-all"></div>
                 <div className="w-10 h-10 rounded-full bg-[#1e293b] border-2 border-[#1e293b] group-hover:border-[#6366f1] relative z-10 overflow-hidden flex items-center justify-center text-white font-black text-sm transition-colors">
                   {companyLogo
@@ -321,8 +296,69 @@ const AuthenticatedApp: React.FC = () => {
 
         <div className="p-4 md:p-10 max-w-[1600px] mx-auto w-full">
           <ErrorBoundary>
+            {/* Dashboard rendered eagerly — always in DOM */}
+            <ViewPanel active={activeView === 'dashboard'}>
+              <Dashboard orders={orders} setOrders={setOrders} products={products} />
+            </ViewPanel>
+
+            {/* All other views: lazy on first load, then kept alive for instant switching */}
             <Suspense fallback={<PageSkeleton />}>
-              {renderContent}
+              {renderedViews.current.has('orders') && (
+                <ViewPanel active={activeView === 'orders'}>
+                  <Orders orders={orders} setOrders={setOrders} products={products} clients={clients} setClients={setClients} botDraft={botDraft} onDraftUsed={() => setBotDraft(null)} isMasterAdmin={isMasterAdmin} />
+                </ViewPanel>
+              )}
+              {renderedViews.current.has('kanban') && (
+                <ViewPanel active={activeView === 'kanban'}>
+                  <Kanban orders={orders} setOrders={setOrders} setActiveView={setActiveView} />
+                </ViewPanel>
+              )}
+              {renderedViews.current.has('products') && (
+                <ViewPanel active={activeView === 'products'}><Products /></ViewPanel>
+              )}
+              {renderedViews.current.has('store-control') && (
+                <ViewPanel active={activeView === 'store-control'}>
+                  <StoreControl products={products} setProducts={setProducts} readOnly={false} />
+                </ViewPanel>
+              )}
+              {renderedViews.current.has('store-manager') && (
+                <ViewPanel active={activeView === 'store-manager'}>
+                  <StoreManager />
+                </ViewPanel>
+              )}
+              {renderedViews.current.has('catalog-requests') && (
+                <ViewPanel active={activeView === 'catalog-requests'}><CatalogRequests /></ViewPanel>
+              )}
+              {renderedViews.current.has('settings') && (
+                <ViewPanel active={activeView === 'settings'}><Settings /></ViewPanel>
+              )}
+              {renderedViews.current.has('finance') && (
+                <ViewPanel active={activeView === 'finance'}>
+                  <Finance orders={orders} products={products} />
+                </ViewPanel>
+              )}
+              {renderedViews.current.has('clients') && (
+                <ViewPanel active={activeView === 'clients'}>
+                  <Clients clients={clients} setClients={setClients} orders={orders} />
+                </ViewPanel>
+              )}
+              {renderedViews.current.has('inventory') && (
+                <ViewPanel active={activeView === 'inventory'}><Inventory /></ViewPanel>
+              )}
+              {renderedViews.current.has('art-queue') && (
+                <ViewPanel active={activeView === 'art-queue'}><ArtQueue /></ViewPanel>
+              )}
+              {renderedViews.current.has('cloudbot') && (
+                <ViewPanel active={activeView === 'cloudbot'}>
+                  <CloudBot onCreateOrder={handleBotOrder} />
+                </ViewPanel>
+              )}
+              {renderedViews.current.has('crm') && (
+                <ViewPanel active={activeView === 'crm'}><WhatsAppManager /></ViewPanel>
+              )}
+              {isMasterAdmin && renderedViews.current.has('master-admin') && (
+                <ViewPanel active={activeView === 'master-admin'}><MasterAdmin /></ViewPanel>
+              )}
             </Suspense>
           </ErrorBoundary>
         </div>

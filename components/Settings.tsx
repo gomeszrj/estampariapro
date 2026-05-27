@@ -7,7 +7,7 @@ import { notify } from './ui/toast';
 import { ConfirmModal } from './ui/ConfirmModal';
 
 const Settings: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'company' | 'team' | 'bot'>('company');
+  const [activeTab, setActiveTab] = useState<'company' | 'team' | 'bot' | 'credentials'>('company');
   const [company, setCompany] = useState<CompanySettings>({
     name: '',
     cnpj: '',
@@ -22,6 +22,8 @@ const Settings: React.FC = () => {
     evolution_instance_name: '',
     cloudbot_enabled: false,
   });
+
+  const [credentials, setCredentials] = useState<any>({});
 
   // Team State
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -66,6 +68,11 @@ const Settings: React.FC = () => {
       setSplashDuration(localDuration ? parseInt(localDuration, 10) : 1600);
       setSplashLogoUrl(localLogoUrl || '');
       setSplashMessage(localMessage || 'Carregando estrutura digital...');
+
+      // Load credentials
+      const { credentialsService } = await import('../services/credentialsService');
+      const creds = await credentialsService.getCredentials();
+      if (creds) setCredentials(creds);
     } catch (error) {
       console.error("Error loading settings", error);
     } finally {
@@ -131,6 +138,9 @@ const Settings: React.FC = () => {
     try {
       await settingsService.saveSettings(company);
       
+      const { credentialsService } = await import('../services/credentialsService');
+      await credentialsService.saveCredentials(credentials);
+
       // Save Splash Screen settings in localStorage
       localStorage.setItem('splash_enabled', String(splashEnabled));
       localStorage.setItem('splash_duration', String(splashDuration));
@@ -180,7 +190,7 @@ const Settings: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-center border-b border-[#1e293b] pb-6 gap-6 animate-in slide-in-from-right-8 duration-150">
         <div>
           <h2 className="text-4xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 mb-2 uppercase">
-            {activeTab === 'company' ? 'Identidade Corporativa' : activeTab === 'team' ? 'Gestão de Equipe' : 'Configurações de IA'}
+            {activeTab === 'company' ? 'Identidade Corporativa' : activeTab === 'team' ? 'Gestão de Equipe' : activeTab === 'credentials' ? 'Credenciais & API' : 'Configurações de IA'}
           </h2>
           <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">
             <span>
@@ -188,12 +198,14 @@ const Settings: React.FC = () => {
                 ? 'Configure os dados oficiais que darão autoridade aos seus documentos.'
                 : activeTab === 'team'
                   ? 'Gerencie os usuários e permissões de acesso ao sistema.'
-                  : 'Configure a inteligência artificial do seu CloudBot.'}
+                  : activeTab === 'credentials'
+                    ? 'Proteja suas senhas, chaves de API e integrações.'
+                    : 'Configure a inteligência artificial do seu CloudBot.'}
             </span>
           </p>
         </div>
 
-        <div className="flex bg-[#0b1221] p-1.5 rounded-2xl border border-[#1e293b]">
+        <div className="flex bg-[#0b1221] p-1.5 rounded-2xl border border-[#1e293b] flex-wrap gap-2 justify-center">
           <button
             onClick={() => setActiveTab('company')}
             className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${
@@ -222,7 +234,17 @@ const Settings: React.FC = () => {
                 : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
           >
-            Bot & Inteligência
+            Bot & IA
+          </button>
+          <button
+            onClick={() => setActiveTab('credentials')}
+            className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2 ${
+              activeTab === 'credentials' 
+                ? 'bg-purple-600 text-white shadow-[0_4px_20px_rgba(147,51,234,0.3)]' 
+                : 'text-purple-400/70 hover:text-purple-400 hover:bg-purple-900/20'
+            }`}
+          >
+            <Lock size={14} /> Credenciais Seguras
           </button>
         </div>
       </div>
@@ -691,6 +713,158 @@ const Settings: React.FC = () => {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'credentials' && (
+        <div className="animate-in fade-in zoom-in-95 duration-300">
+          <div className="flex justify-end mb-8">
+            <button
+              onClick={handleSave}
+              disabled={isLoadingSettings}
+              className={`px-10 py-4 rounded-2xl font-black uppercase text-xs tracking-[0.2em] transition-all flex items-center gap-3 shadow-2xl ${
+                saved 
+                  ? 'bg-purple-950/40 text-purple-400 border border-purple-500/30 shadow-[0_0_15px_rgba(147,51,234,0.15)]' 
+                  : 'bg-purple-600 text-white hover:bg-purple-500 shadow-[0_4px_20px_rgba(147,51,234,0.2)]'
+              }`}
+            >
+              <span>{saved ? <CheckCircle2 className="w-5 h-5" /> : <Save className="w-5 h-5" />}</span>
+              {saved ? 'Credenciais Salvas' : (isLoadingSettings ? 'Salvando...' : 'Salvar Credenciais')}
+            </button>
+          </div>
+
+          <div className="bg-[#0b1221] border border-[#1e293b] rounded-xl p-10 shadow-2xl space-y-10">
+            <div className="flex items-center gap-4 border-b border-[#1e293b] pb-6">
+              <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center border border-purple-500/20 shadow-[0_0_15px_rgba(147,51,234,0.1)]">
+                <Shield className="w-6 h-6 text-purple-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-white tracking-tighter">APIs e Integrações</h3>
+                <p className="text-slate-400 text-sm font-medium">Chaves e tokens para comunicação externa. Mantidos de forma segura no banco de dados.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
+                  <MessageSquare className="w-3 h-3 text-[#25D366]" /> API WhatsApp (Evolution)
+                </label>
+                <input
+                  type="password"
+                  value={credentials.whatsapp_api_key || ''}
+                  onChange={(e) => setCredentials({ ...credentials, whatsapp_api_key: e.target.value })}
+                  className="w-full bg-[#05080E] border border-[#1e293b] rounded-xl px-5 py-4 text-sm text-white focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all outline-none"
+                  placeholder="••••••••••••••••"
+                />
+              </div>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
+                  <Phone className="w-3 h-3 text-[#25D366]" /> Phone Instance ID
+                </label>
+                <input
+                  type="text"
+                  value={credentials.whatsapp_phone_id || ''}
+                  onChange={(e) => setCredentials({ ...credentials, whatsapp_phone_id: e.target.value })}
+                  className="w-full bg-[#05080E] border border-[#1e293b] rounded-xl px-5 py-4 text-sm text-white focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all outline-none"
+                  placeholder="Ex: estamparia-pro-wa"
+                />
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Google Gemini API Key</label>
+                <input
+                  type="password"
+                  value={credentials.gemini_api_key || ''}
+                  onChange={(e) => setCredentials({ ...credentials, gemini_api_key: e.target.value })}
+                  className="w-full bg-[#05080E] border border-[#1e293b] rounded-xl px-5 py-4 text-sm text-white focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all outline-none"
+                  placeholder="AIzaSy••••••••••••••••"
+                />
+              </div>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">OpenAI API Key</label>
+                <input
+                  type="password"
+                  value={credentials.openai_api_key || ''}
+                  onChange={(e) => setCredentials({ ...credentials, openai_api_key: e.target.value })}
+                  className="w-full bg-[#05080E] border border-[#1e293b] rounded-xl px-5 py-4 text-sm text-white focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all outline-none"
+                  placeholder="sk-••••••••••••••••"
+                />
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
+                  <Landmark className="w-3 h-3 text-[#009EE3]" /> Mercado Pago Access Token
+                </label>
+                <input
+                  type="password"
+                  value={credentials.mercadopago_access_token || ''}
+                  onChange={(e) => setCredentials({ ...credentials, mercadopago_access_token: e.target.value })}
+                  className="w-full bg-[#05080E] border border-[#1e293b] rounded-xl px-5 py-4 text-sm text-white focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all outline-none"
+                  placeholder="APP_USR-••••••••••••••••"
+                />
+              </div>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
+                  <Landmark className="w-3 h-3 text-[#009EE3]" /> Mercado Pago Public Key
+                </label>
+                <input
+                  type="text"
+                  value={credentials.mercadopago_public_key || ''}
+                  onChange={(e) => setCredentials({ ...credentials, mercadopago_public_key: e.target.value })}
+                  className="w-full bg-[#05080E] border border-[#1e293b] rounded-xl px-5 py-4 text-sm text-white focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all outline-none"
+                  placeholder="APP_USR-••••••••••••••••"
+                />
+              </div>
+
+              <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-4 gap-4 bg-white/5 p-6 rounded-xl border border-white/5 mt-4">
+                <div className="col-span-1 md:col-span-4 border-b border-[#1e293b] pb-4 mb-2 flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-slate-400" />
+                  <span className="text-white font-bold text-sm">Configuração de SMTP (Envio de E-mails)</span>
+                </div>
+                
+                <div className="space-y-3 md:col-span-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">SMTP Host</label>
+                  <input
+                    type="text"
+                    value={credentials.smtp_host || ''}
+                    onChange={(e) => setCredentials({ ...credentials, smtp_host: e.target.value })}
+                    className="w-full bg-[#05080E] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-white focus:border-purple-500/50 focus:ring-1 outline-none"
+                    placeholder="smtp.gmail.com"
+                  />
+                </div>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">SMTP Port</label>
+                  <input
+                    type="number"
+                    value={credentials.smtp_port || ''}
+                    onChange={(e) => setCredentials({ ...credentials, smtp_port: parseInt(e.target.value) || 0 })}
+                    className="w-full bg-[#05080E] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-white focus:border-purple-500/50 focus:ring-1 outline-none"
+                    placeholder="587"
+                  />
+                </div>
+                <div className="space-y-3 md:col-span-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">SMTP User</label>
+                  <input
+                    type="text"
+                    value={credentials.smtp_user || ''}
+                    onChange={(e) => setCredentials({ ...credentials, smtp_user: e.target.value })}
+                    className="w-full bg-[#05080E] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-white focus:border-purple-500/50 focus:ring-1 outline-none"
+                    placeholder="email@empresa.com"
+                  />
+                </div>
+                <div className="space-y-3 md:col-span-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">SMTP Password</label>
+                  <input
+                    type="password"
+                    value={credentials.smtp_pass || ''}
+                    onChange={(e) => setCredentials({ ...credentials, smtp_pass: e.target.value })}
+                    className="w-full bg-[#05080E] border border-[#1e293b] rounded-xl px-4 py-3 text-sm text-white focus:border-purple-500/50 focus:ring-1 outline-none"
+                    placeholder="••••••••"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
