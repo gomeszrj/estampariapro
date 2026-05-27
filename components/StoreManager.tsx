@@ -22,12 +22,12 @@ import {
 type ActiveTab = 'dashboard' | 'produtos' | 'banners' | 'pedidos' | 'editor' | 'configuracoes';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.FC<any> }> = {
-  novo:      { label: 'Novo',       color: '#60a5fa', bg: 'rgba(96,165,250,0.1)',   icon: Clock },
-  orcamento: { label: 'Orçamento',  color: '#f59e0b', bg: 'rgba(245,158,11,0.1)',   icon: DollarSign },
-  aprovado:  { label: 'Aprovado',   color: '#a78bfa', bg: 'rgba(167,139,250,0.1)',  icon: CheckCircle },
-  producao:  { label: 'Produção',   color: '#f97316', bg: 'rgba(249,115,22,0.1)',   icon: Zap },
-  entregue:  { label: 'Entregue',   color: '#4ade80', bg: 'rgba(74,222,128,0.1)',   icon: Truck },
-  cancelado: { label: 'Cancelado',  color: '#f87171', bg: 'rgba(248,113,113,0.1)', icon: XCircle },
+  novo: { label: 'Novo', color: '#60a5fa', bg: 'rgba(96,165,250,0.1)', icon: Clock },
+  orcamento: { label: 'Orçamento', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', icon: DollarSign },
+  aprovado: { label: 'Aprovado', color: '#a78bfa', bg: 'rgba(167,139,250,0.1)', icon: CheckCircle },
+  producao: { label: 'Produção', color: '#f97316', bg: 'rgba(249,115,22,0.1)', icon: Zap },
+  entregue: { label: 'Entregue', color: '#4ade80', bg: 'rgba(74,222,128,0.1)', icon: Truck },
+  cancelado: { label: 'Cancelado', color: '#f87171', bg: 'rgba(248,113,113,0.1)', icon: XCircle },
 };
 
 const CATEGORIES = ['NBA', 'UV+50', 'MANGA CURTA', 'DTF', 'FUTEBOL', 'CICLISMO', 'CORRIDA', 'PERSONALIZADO'];
@@ -137,9 +137,9 @@ const resizeImage = (file: File, maxSize: number = 800): Promise<File> => {
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         if (!ctx) return reject(new Error('Failed to get canvas context'));
-        
+
         ctx.drawImage(img, 0, 0, width, height);
-        
+
         canvas.toBlob((blob) => {
           if (!blob) return reject(new Error('Canvas is empty'));
           const mimeType = file.type.includes('png') ? 'image/png' : 'image/jpeg';
@@ -193,9 +193,9 @@ const ProductModal: React.FC<{
       newImages[index] = url;
       set('image_url', newImages.join('|||'));
       toast.success('Upload concluído!', { id: 'upload' });
-    } catch (err: any) { 
+    } catch (err: any) {
       console.error('Upload Error:', err);
-      toast.error(err?.message || 'Erro ao carregar imagem', { id: 'upload' }); 
+      toast.error(err?.message || 'Erro ao carregar imagem', { id: 'upload' });
     }
     finally { setUploading(false); }
   };
@@ -455,7 +455,7 @@ const BannerModal: React.FC<{
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const set = (k: keyof GmzBanner, v: any) => setForm(f => ({ ...f, [k]: v }));
-  
+
   const rawUrl = form.image_url || '';
   const urlParts = rawUrl.split('|||');
   const imgSrc = urlParts[0] || '';
@@ -463,7 +463,7 @@ const BannerModal: React.FC<{
   const imgY = Number(urlParts[2]) || 0;
   const imgScale = urlParts[3] !== undefined ? Number(urlParts[3]) : 1;
 
-  const updatePosition = (key: 'x'|'y'|'scale', val: number) => {
+  const updatePosition = (key: 'x' | 'y' | 'scale', val: number) => {
     const x = key === 'x' ? val : imgX;
     const y = key === 'y' ? val : imgY;
     const s = key === 'scale' ? val : imgScale;
@@ -484,9 +484,9 @@ const BannerModal: React.FC<{
       const url = await gmzStoreService.uploadStoreImage(file, 'banners');
       set('image_url', `${url}|||${imgX}|||${imgY}|||${imgScale}`);
       toast.success('Upload concluído!', { id: 'upload' });
-    } catch (err: any) { 
+    } catch (err: any) {
       console.error('Upload Error Banner:', err);
-      toast.error(err?.message || 'Erro ao carregar imagem', { id: 'upload' }); 
+      toast.error(err?.message || 'Erro ao carregar imagem', { id: 'upload' });
     }
     finally { setUploading(false); }
   };
@@ -504,7 +504,7 @@ const BannerModal: React.FC<{
         {/* Live Preview */}
         <div style={{ margin: '20px 28px', borderRadius: 16, overflow: 'hidden', background: form.bg_color || '#040507', border: '1px solid rgba(255,255,255,0.06)', minHeight: 140, position: 'relative', display: 'flex', alignItems: 'center', padding: '30px 40px' }}>
           <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '50%', background: `radial-gradient(ellipse at center, ${form.accent_color}30, transparent 70%)`, pointerEvents: 'none' }} />
-          
+
           {imgSrc && (
             <img src={imgSrc} alt="Preview" style={{ position: 'absolute', right: 40, top: '50%', transform: `translate(0, -50%) translate(${imgX * 0.4}px, ${imgY * 0.4}px) scale(${imgScale})`, maxHeight: 120, objectFit: 'contain', zIndex: 1, pointerEvents: 'none' }} />
           )}
@@ -553,7 +553,7 @@ const BannerModal: React.FC<{
           </div>
 
           <div style={{ gridColumn: '1/-1', background: 'rgba(255,255,255,0.02)', padding: 16, borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)' }}>
-            <label style={{...labelStyle, marginBottom: 12}}>Posicionamento Manual da Imagem</label>
+            <label style={{ ...labelStyle, marginBottom: 12 }}>Posicionamento Manual da Imagem</label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
               <div>
                 <label style={{ fontSize: 10, color: '#94a3b8', display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -760,12 +760,12 @@ export const StoreManager: React.FC = () => {
   ].filter(d => d.value > 0) : [];
 
   const TABS = [
-    { id: 'dashboard',      label: 'Dashboard',    icon: BarChart3 },
-    { id: 'produtos',       label: 'Produtos',      icon: Package },
-    { id: 'banners',        label: 'Banners',       icon: ImageIcon },
-    { id: 'pedidos',        label: 'Pedidos Loja',  icon: ShoppingCart },
-    { id: 'editor',         label: 'Editor Visual', icon: Layers },
-    { id: 'configuracoes',  label: 'Configurações', icon: Settings },
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+    { id: 'produtos', label: 'Produtos', icon: Package },
+    { id: 'banners', label: 'Banners', icon: ImageIcon },
+    { id: 'pedidos', label: 'Pedidos Loja', icon: ShoppingCart },
+    { id: 'editor', label: 'Editor Visual', icon: Layers },
+    { id: 'configuracoes', label: 'Configurações', icon: Settings },
   ];
 
   return (
