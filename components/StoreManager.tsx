@@ -132,7 +132,10 @@ const ProductModal: React.FC<{
       const url = await gmzStoreService.uploadStoreImage(file, 'products');
       set('image_url', url);
       toast.success('Upload concluído!', { id: 'upload' });
-    } catch { toast.error('Erro ao carregar imagem', { id: 'upload' }); }
+    } catch (err: any) { 
+      console.error('Upload Error:', err);
+      toast.error(err?.message || 'Erro ao carregar imagem', { id: 'upload' }); 
+    }
     finally { setUploading(false); }
   };
 
@@ -357,7 +360,10 @@ const BannerModal: React.FC<{
       const url = await gmzStoreService.uploadStoreImage(file, 'banners');
       set('image_url', `${url}|||${imgX}|||${imgY}|||${imgScale}`);
       toast.success('Upload concluído!', { id: 'upload' });
-    } catch { toast.error('Erro ao carregar imagem', { id: 'upload' }); }
+    } catch (err: any) { 
+      console.error('Upload Error Banner:', err);
+      toast.error(err?.message || 'Erro ao carregar imagem', { id: 'upload' }); 
+    }
     finally { setUploading(false); }
   };
 
