@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { tenantService } from '../services/tenantService';
-import { ShieldAlert, Activity, Plus, LayoutList, RefreshCw, Zap } from 'lucide-react';
+import { ShieldAlert, Activity, Plus, LayoutList, RefreshCw, Zap, FileBarChart } from 'lucide-react';
 import { notify } from './ui/toast';
 import { ConfirmModal } from './ui/ConfirmModal';
 
@@ -20,12 +20,10 @@ const MasterAdmin: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'todos' | 'ativos' | 'vencidos' | 'bloqueados'>('todos');
   const [runningExpire, setRunningExpire] = useState(false);
 
-  // Modals editing state
   const [editingTenant, setEditingTenant] = useState<any>(null);
   const [editingPlanDb, setEditingPlanDb] = useState<any>(null);
   const [generatingMPLink, setGeneratingMPLink] = useState<string | null>(null);
 
-  // Dynamic Confirm Modal State
   const [confirmConfig, setConfirmConfig] = useState<{
     isOpen: boolean;
     title: string;
@@ -81,17 +79,14 @@ const MasterAdmin: React.FC = () => {
     load();
   }, [load]);
 
-  // Save Tenant changes and custom modules permissions
   const handleSaveEdit = async (updatedFields: any, permissions: Permissions) => {
     if (!editingTenant) return;
     try {
       await tenantService.updateTenant(editingTenant.id, updatedFields);
-
       const tenantProfiles = profiles.filter(p => p.tenant_id === editingTenant.id);
       for (const profile of tenantProfiles) {
         await tenantService.upsertUserPermissions(profile.id, editingTenant.id, permissions);
       }
-
       setEditingTenant(null);
       await load();
       notify.success('Dados do Inquilino e Permissões atualizados!');
@@ -100,7 +95,6 @@ const MasterAdmin: React.FC = () => {
     }
   };
 
-  // Create or Update SaaS Plan DB preset
   const handleSavePlanDb = async (planData: any) => {
     if (!editingPlanDb) return;
     try {
@@ -157,7 +151,6 @@ const MasterAdmin: React.FC = () => {
           await load();
         } catch (e: any) {
           notify.error('Erro ao excluir assinante: ' + (e?.message || 'Erro desconhecido.'));
-          console.error(e);
         }
       },
       'danger'
@@ -231,47 +224,55 @@ const MasterAdmin: React.FC = () => {
   };
 
   return (
-    <div className="animate-in slide-in-from-bottom-4 duration-500 p-6 max-w-7xl mx-auto space-y-8 pb-32">
+    <div className="space-y-6 animate-in slide-in-from-right-4 duration-300 pb-20">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-center border-b border-[#1e293b] pb-6 gap-6">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-black text-slate-100 uppercase tracking-tighter flex items-center gap-3">
-            <ShieldAlert className="w-8 h-8 text-rose-500" /> Gestão SaaS
-          </h2>
-          <p className="text-slate-500 font-medium mt-2">Controle de Assinaturas, Módulos e Mercado Pago.</p>
+          <h2 className="text-3xl font-black text-white tracking-tight">Gestão de SaaS</h2>
+          <p className="text-slate-400 text-xs font-medium mt-1">Gerencie tenants, planos, assinaturas e uso do sistema.</p>
         </div>
-        <div className="flex flex-wrap gap-2 items-center">
+        <div className="flex gap-3">
           <button
             onClick={handleRunExpireCheck}
             disabled={runningExpire}
-            className="flex items-center gap-2 px-4 py-3 bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
+            className="bg-[#151B2B] text-slate-300 px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg border border-[#1e293b] flex items-center gap-2 hover:bg-[#1a2235] transition-all disabled:opacity-50"
           >
-            {runningExpire ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-            Verificar Vencimentos
+            {runningExpire ? <RefreshCw className="w-4 h-4 animate-spin" /> : <FileBarChart className="w-4 h-4" />}
+            Relatórios
           </button>
-          <div className="flex bg-[#0f172a] border border-[#1e293b] rounded-2xl p-1 gap-1">
-            {(['ativos', 'novo', 'planos'] as const).map(tab => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-5 py-3 flex items-center gap-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                  activeTab === tab
-                    ? 'bg-[#8B5CF6] text-white shadow-lg'
-                    : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
-                }`}
-              >
-                {tab === 'ativos' && <Activity className="w-4 h-4" />}
-                {tab === 'novo' && <Plus className="w-4 h-4" />}
-                {tab === 'planos' && <LayoutList className="w-4 h-4" />}
-                {tab === 'ativos' ? 'Assinantes' : tab === 'novo' ? 'Cadastrar' : 'Planos SaaS'}
-              </button>
-            ))}
-          </div>
+          <button
+            onClick={() => setActiveTab('novo')}
+            className="bg-[#6366F1] hover:bg-[#4F46E5] text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-lg shadow-indigo-900/20 transition-all flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" /> Novo Tenant
+          </button>
         </div>
+      </header>
+
+      {/* Sub-tabs */}
+      <div className="flex gap-2 border-b border-[#1e293b] pb-0">
+        {(['ativos', 'novo', 'planos'] as const).map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-5 py-3 text-[11px] font-black uppercase tracking-widest transition-all border-b-2 -mb-px ${
+              activeTab === tab
+                ? 'text-white border-[#6366F1]'
+                : 'text-slate-500 border-transparent hover:text-slate-300'
+            }`}
+          >
+            {tab === 'ativos' && <Activity className="w-4 h-4 inline mr-2" />}
+            {tab === 'novo' && <Plus className="w-4 h-4 inline mr-2" />}
+            {tab === 'planos' && <LayoutList className="w-4 h-4 inline mr-2" />}
+            {tab === 'ativos' ? 'Assinantes' : tab === 'novo' ? 'Cadastrar' : 'Planos SaaS'}
+          </button>
+        ))}
       </div>
 
       {loading ? (
-        <div className="text-slate-500 font-bold p-10 text-center animate-pulse">Carregando dados globais...</div>
+        <div className="flex items-center justify-center h-64">
+          <div className="w-8 h-8 border-2 border-[#6366F1] border-t-transparent rounded-full animate-spin" />
+        </div>
       ) : (
         <>
           {activeTab === 'ativos' && (

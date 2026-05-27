@@ -174,10 +174,10 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 animate-in slide-in-from-bottom-6 duration-700 pb-20">
+    <div className="max-w-5xl mx-auto space-y-8 animate-in slide-in-from-bottom-6 duration-150 pb-20">
 
       {/* Header Tabs */}
-      <div className="flex flex-col md:flex-row justify-between items-center border-b border-[#1e293b] pb-6 gap-6 animate-in slide-in-from-right-8 duration-700">
+      <div className="flex flex-col md:flex-row justify-between items-center border-b border-[#1e293b] pb-6 gap-6 animate-in slide-in-from-right-8 duration-150">
         <div>
           <h2 className="text-4xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 mb-2 uppercase">
             {activeTab === 'company' ? 'Identidade Corporativa' : activeTab === 'team' ? 'Gestão de Equipe' : 'Configurações de IA'}

@@ -227,7 +227,7 @@ const Inventory: React.FC = () => {
 
 
     return (
-        <div className="flex flex-col gap-6 animate-in slide-in-from-right-8 duration-700 relative">
+        <div className="flex flex-col gap-6 animate-in slide-in-from-right-8 duration-150 relative">
             {/* Purchase Modal */}
             {isPurchasing && purchaseItem && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">

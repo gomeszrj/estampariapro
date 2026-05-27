@@ -472,7 +472,7 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
               >
                 <div className="aspect-[4/5] relative overflow-hidden bg-[#1C1C26]">
                   {product.imageUrl ? (
-                    <img src={product.imageUrl} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={product.name} />
+                    <img src={product.imageUrl} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-150" alt={product.name} />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-[#0f172a]"><Tag className="w-8 h-8 opacity-20" /></div>
                   )}

@@ -152,7 +152,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) =>
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-700 pb-10">
+    <div className="space-y-6 animate-in fade-in duration-150 pb-10">
       <header className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-2">
         <div>
           <p className="text-slate-400 text-sm font-bold mb-1">Olá, Admin!</p>

@@ -3,15 +3,20 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 17.9 -> 18.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '21.8.8';
+export const SYSTEM_VERSION = '21.8.9';
 export const APP_NAME = 'Gomesz Speed Print';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.8.8 (Novo Módulo de Produtos):
-- Transformação arquitetural para o formato Master-Detail no Catálogo:
-  * 5 novos Cards de KPI no topo (Total, Ativos, Em Produção, Desativados, Estoque).
-  * Painel Lateral Direto (Sidebar) para inspeção rápida de qualquer produto sem precisar abrir modal.
-  * Abas internas na Sidebar (Detalhes, Variações, Estoque e Histórico).
-  * Filtros organizados numa nova barra de ferramentas centralizada.
-  * O design escuro (#151B2B) consolida o tema Premium GMZ Performance.`;
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 21.8.9 (Performance + Correções + Gestão de SaaS):
+- Performance: Lazy loading em todos os módulos pesados (Orders, Products, Finance, etc.)
+  * Tempo de troca entre abas reduzido para quase instantâneo.
+  * renderContent agora memoizado via useMemo.
+- Correções de Botões:
+  * Kanban: "Novo Item de Produção" agora navega para o módulo de Pedidos.
+  * Header: Avatar do usuário agora usa logo da empresa (sem placeholder externo).
+- Novo Módulo de Gestão de SaaS (completo):
+  * Tabela de Tenants com avatares, badges de plano, barra de uso de armazenamento.
+  * Sidebar analítica com Gráfico de MRR, Donut de assinaturas por plano e atividades recentes.
+  * Menu de Ações rápidas por tenant (inline dropdowns funcionais).
+  * KPIs atualizados em tempo real (MRR, Churn, Usuários Ativos).`;
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [

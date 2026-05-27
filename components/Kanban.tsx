@@ -21,6 +21,7 @@ const statuses = [
 interface KanbanProps {
   orders: Order[];
   setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
+  setActiveView?: (view: string) => void;
 }
 
 interface KanbanCardProps {
@@ -301,7 +302,7 @@ const Kanban: React.FC<KanbanProps> = ({ orders, setOrders }) => {
   const atrasados = orders.filter(o => new Date(o.deliveryDate) < new Date() && o.status !== OrderStatus.FINISHED).length;
 
   return (
-    <div className="h-[calc(100vh-1.5rem)] flex flex-col gap-4 animate-in slide-in-from-right-8 duration-700 bg-[#05080E] -m-4 sm:-m-8 p-4 sm:p-8">
+    <div className="h-[calc(100vh-1.5rem)] flex flex-col gap-4 animate-in slide-in-from-right-8 duration-150 bg-[#05080E] -m-4 sm:-m-8 p-4 sm:p-8">
       {/* Header */}
       <header className="flex justify-between items-center">
         <div>
@@ -313,7 +314,7 @@ const Kanban: React.FC<KanbanProps> = ({ orders, setOrders }) => {
           <button onClick={() => notify.info('A visualização do calendário ficará disponível em breve.')} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#1e293b] text-slate-300 hover:bg-[#0b1221] hover:text-white transition-colors text-[11px] font-black uppercase tracking-widest">
             <CalendarIcon className="w-4 h-4" /> Ver calendário
           </button>
-          <button onClick={() => notify.info('Acesse o módulo de Pedidos para criar um novo item de produção.')} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#4f46e5] text-white hover:bg-indigo-500 transition-colors shadow-[0_0_20px_rgba(79,70,229,0.3)] text-[11px] font-black uppercase tracking-widest">
+          <button onClick={() => setActiveView?.('orders')} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#4f46e5] text-white hover:bg-indigo-500 transition-colors shadow-[0_0_20px_rgba(79,70,229,0.3)] text-[11px] font-black uppercase tracking-widest">
             <Plus className="w-4 h-4" /> Novo item de produção
           </button>
         </div>

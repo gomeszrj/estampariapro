@@ -42,23 +42,21 @@ if (typeof window !== 'undefined') {
   window.addEventListener('load', () => sessionStorage.removeItem('chunk_reload'));
 }
 
-// Core Page/View Imports (Static imports to prevent chunk loading errors in production)
+// Core Page/View Imports — now lazy-loaded for instant page transitions
 import Dashboard from './components/Dashboard';
-import Orders from './components/Orders';
-import Kanban from './components/Kanban';
-import StoreControl from './components/StoreControl';
-import Products from './components/Products';
-import Settings from './components/Settings';
-import Finance from './components/Finance';
-import Clients from './components/Clients';
-import CatalogRequests from './components/CatalogRequests';
-import Inventory from './components/Inventory';
-import ArtQueue from './components/ArtQueue';
-import MasterAdmin from './components/MasterAdmin';
-
-// Sub-systems / CRM
-import { CloudBot } from './components/CloudBot';
-import { WhatsAppManager } from './components/WhatsAppManager';
+const Orders = lazyRetry(() => import('./components/Orders'));
+const Kanban = lazyRetry(() => import('./components/Kanban'));
+const StoreControl = lazyRetry(() => import('./components/StoreControl'));
+const Products = lazyRetry(() => import('./components/Products'));
+const Settings = lazyRetry(() => import('./components/Settings'));
+const Finance = lazyRetry(() => import('./components/Finance'));
+const Clients = lazyRetry(() => import('./components/Clients'));
+const CatalogRequests = lazyRetry(() => import('./components/CatalogRequests'));
+const Inventory = lazyRetry(() => import('./components/Inventory'));
+const ArtQueue = lazyRetry(() => import('./components/ArtQueue'));
+const MasterAdmin = lazyRetry(() => import('./components/MasterAdmin'));
+const CloudBot = lazyRetry(() => import('./components/CloudBot').then(m => ({ default: m.CloudBot })));
+const WhatsAppManager = lazyRetry(() => import('./components/WhatsAppManager').then(m => ({ default: m.WhatsAppManager })));
 
 // Separate Portals / Public entry-points (Keep lazy to keep initial load small)
 const ClientPortal = lazyRetry(() => import('./components/ClientPortal'));
@@ -163,11 +161,11 @@ const AuthenticatedApp: React.FC = () => {
     setIsLinksOpen(false);
   };
 
-  const renderContent = () => {
+  const renderContent = React.useMemo(() => {
     switch (activeView) {
       case 'dashboard': return <Dashboard orders={orders} setOrders={setOrders} products={products} />;
       case 'orders': return <Orders orders={orders} setOrders={setOrders} products={products} clients={clients} setClients={setClients} botDraft={botDraft} onDraftUsed={() => setBotDraft(null)} isMasterAdmin={isMasterAdmin} />;
-      case 'kanban': return <Kanban orders={orders} setOrders={setOrders} />;
+      case 'kanban': return <Kanban orders={orders} setOrders={setOrders} setActiveView={setActiveView} />;
       case 'products': return <Products />;
       case 'store-control': return <StoreControl products={products} setProducts={setProducts} readOnly={false} />;
       case 'catalog-requests': return <CatalogRequests />;
@@ -181,7 +179,8 @@ const AuthenticatedApp: React.FC = () => {
       case 'master-admin': return isMasterAdmin ? <MasterAdmin /> : null;
       default: return null;
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeView, orders, products, clients, botDraft, isMasterAdmin]);
 
   if (isClientPortal) {
     return (
@@ -298,8 +297,11 @@ const AuthenticatedApp: React.FC = () => {
               
               <div className="relative group cursor-pointer" onClick={signOut}>
                 <div className="absolute inset-0 bg-[#6366f1]/20 rounded-full blur-md group-hover:bg-[#6366f1]/40 transition-all"></div>
-                <div className="w-10 h-10 rounded-full bg-slate-800 border-2 border-[#1e293b] group-hover:border-[#6366f1] relative z-10 overflow-hidden flex items-center justify-center text-white font-bold transition-colors">
-                  <img src="https://i.pravatar.cc/150?u=admin" alt="Avatar" className="w-full h-full object-cover" />
+                <div className="w-10 h-10 rounded-full bg-[#1e293b] border-2 border-[#1e293b] group-hover:border-[#6366f1] relative z-10 overflow-hidden flex items-center justify-center text-white font-black text-sm transition-colors">
+                  {companyLogo
+                    ? <img src={companyLogo} alt="Avatar" className="w-full h-full object-cover" />
+                    : <span>{(user?.email || 'A')[0].toUpperCase()}</span>
+                  }
                 </div>
               </div>
 
@@ -323,7 +325,7 @@ const AuthenticatedApp: React.FC = () => {
         <div className="p-4 md:p-10 max-w-[1600px] mx-auto w-full">
           <ErrorBoundary>
             <Suspense fallback={<PageSkeleton />}>
-              {renderContent()}
+              {renderContent}
             </Suspense>
           </ErrorBoundary>
         </div>
