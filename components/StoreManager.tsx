@@ -331,6 +331,7 @@ const BannerModal: React.FC<{
   });
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const set = (k: keyof GmzBanner, v: any) => setForm(f => ({ ...f, [k]: v }));
   
   const rawUrl = form.image_url || '';
   const urlParts = rawUrl.split('|||');
