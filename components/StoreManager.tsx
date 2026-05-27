@@ -122,15 +122,19 @@ const ProductModal: React.FC<{
   const fileRef = useRef<HTMLInputElement>(null);
 
   const set = (k: keyof GmzProduct, v: any) => setForm(f => ({ ...f, [k]: v }));
+  const images = (form.image_url || '').split('|||');
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
     try {
       toast.loading('Fazendo upload da imagem...', { id: 'upload' });
       const url = await gmzStoreService.uploadStoreImage(file, 'products');
-      set('image_url', url);
+      const newImages = [...images];
+      while (newImages.length <= index) newImages.push('');
+      newImages[index] = url;
+      set('image_url', newImages.join('|||'));
       toast.success('Upload concluído!', { id: 'upload' });
     } catch (err: any) { 
       console.error('Upload Error:', err);
@@ -173,26 +177,43 @@ const ProductModal: React.FC<{
           {/* Left column */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             {/* Image upload + 360 preview */}
-            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(139,92,246,0.3)', borderRadius: 16, padding: 20, textAlign: 'center' }}>
-              {form.image_url ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-                  <MiniViewer360 imageUrl={form.image_url} color={form.color_hex} />
-                  <button onClick={() => fileRef.current?.click()} style={{ fontSize: 12, color: '#a78bfa', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Trocar imagem</button>
-                </div>
-              ) : (
-                <button onClick={() => fileRef.current?.click()} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, width: '100%' }}>
-                  <Upload size={32} color="#475569" />
-                  <p style={{ fontSize: 13, fontWeight: 700, color: '#64748b' }}>Clique para fazer upload</p>
-                  <p style={{ fontSize: 11, color: '#334155' }}>PNG, JPG até 5MB</p>
-                </button>
-              )}
-              <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleUpload} />
+            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(139,92,246,0.3)', borderRadius: 16, padding: 20 }}>
+              <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>Imagens do Produto (360º)</p>
+                <p style={{ fontSize: 11, color: '#64748b' }}>Adicione até 4 ângulos para habilitar a rotação 360º</p>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                {[
+                  { label: 'Frente', icon: '👕', index: 0 },
+                  { label: 'Costas', icon: '🎽', index: 1 },
+                  { label: 'Lat. Direita', icon: '➡️', index: 2 },
+                  { label: 'Lat. Esquerda', icon: '⬅️', index: 3 }
+                ].map((slot) => (
+                  <div key={slot.index} style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', border: '1px solid rgba(255,255,255,0.05)', position: 'relative' }}>
+                    <p style={{ fontSize: 10, fontWeight: 800, color: '#a78bfa', textTransform: 'uppercase', marginBottom: 8 }}>{slot.label}</p>
+                    {images[slot.index] ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, width: '100%' }}>
+                        <img src={images[slot.index]} alt={slot.label} style={{ width: 60, height: 60, objectFit: 'contain', filter: `drop-shadow(0 4px 8px ${form.color_hex}40)` }} />
+                        <label style={{ fontSize: 10, color: '#a78bfa', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+                          Trocar <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handleUploadImage(e, slot.index)} />
+                        </label>
+                      </div>
+                    ) : (
+                      <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, cursor: 'pointer', width: '100%', padding: '10px 0' }}>
+                        <Upload size={20} color="#475569" />
+                        <span style={{ fontSize: 10, color: '#64748b' }}>Upload</span>
+                        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handleUploadImage(e, slot.index)} />
+                      </label>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Image URL alternative */}
             <div>
-              <label style={labelStyle}>URL da Imagem (alternativa)</label>
-              <input style={inputStyle} placeholder="https://..." value={form.image_url || ''} onChange={e => set('image_url', e.target.value)} />
+              <label style={labelStyle}>URL das Imagens (Separadas por |||)</label>
+              <input style={inputStyle} placeholder="url1|||url2|||url3|||url4" value={form.image_url || ''} onChange={e => set('image_url', e.target.value)} />
             </div>
 
             {/* Color picker */}

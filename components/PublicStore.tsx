@@ -53,7 +53,10 @@ const Icon = {
 
 const getProductImg = (p: GmzProduct | null) => {
   if (!p) return FALLBACK_IMGS["regata-lakers"];
-  if (p.image_url) return p.image_url;
+  if (p.image_url) {
+    const images = p.image_url.split('|||');
+    return images[0] || p.image_url;
+  }
   // Tenta mapear o id ou title se não tiver imagem salva
   const slug = p.id?.toLowerCase() || '';
   if (slug.includes('regata')) return FALLBACK_IMGS["regata-lakers"];
@@ -107,10 +110,30 @@ const Viewer360: React.FC<{ product: GmzProduct | null; color: string }> = ({ pr
 
   const scaleX = Math.abs(Math.cos((rotation * Math.PI) / 180)) * 0.3 + 0.7;
   const isBack = Math.abs(rotation % 360) > 90 && Math.abs(rotation % 360) < 270;
-  
-  // Switch image based on rotation if image_url_back exists
-  const hasBackImage = product?.image_url_back;
-  const currentImage = hasBackImage && isBack ? product.image_url_back : getProductImg(product);
+
+  const images = product?.image_url ? product.image_url.split('|||') : [];
+  const front = images[0] || getProductImg(product);
+  const back = images[1] || product?.image_url_back || '';
+  const right = images[2] || '';
+  const left = images[3] || '';
+
+  const hasAllAngles = front && back && right && left;
+  const hasBackImage = !!back;
+
+  let currentImage = front;
+  let currentScaleX = scaleX;
+
+  if (hasAllAngles) {
+    const angle = Math.abs(rotation % 360);
+    if (angle >= 45 && angle < 135) currentImage = right;
+    else if (angle >= 135 && angle < 225) currentImage = back;
+    else if (angle >= 225 && angle < 315) currentImage = left;
+    else currentImage = front;
+    currentScaleX = 1; // Don't squash if we have all 4 images
+  } else if (hasBackImage) {
+    if (isBack) currentImage = back;
+    currentScaleX = isBack ? -scaleX : scaleX;
+  }
 
   return (
     <div
@@ -125,8 +148,8 @@ const Viewer360: React.FC<{ product: GmzProduct | null; color: string }> = ({ pr
         alt="Jersey 360"
         style={{
           width: '100%', maxWidth: 320, display: 'block', margin: '0 auto',
-          transform: `scaleX(${!hasBackImage && isBack ? -scaleX : scaleX})`,
-          transition: isDragging ? 'none' : 'transform 0.05s linear',
+          transform: `scaleX(${currentScaleX})`,
+          transition: isDragging || hasAllAngles ? 'none' : 'transform 0.05s linear',
           filter: `drop-shadow(0 20px 30px rgba(0,0,0,0.6)) drop-shadow(0 0 20px ${color}40)`,
         }}
         draggable={false}
@@ -147,6 +170,38 @@ const Viewer360: React.FC<{ product: GmzProduct | null; color: string }> = ({ pr
         </button>
         <span style={{ fontSize: 11, color: '#475569', fontWeight: 600 }}>360° VIEW</span>
       </div>
+
+      {/* Static Thumbnail Gallery */}
+      {hasAllAngles && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginTop: 24 }}>
+          {[
+            { img: front, angle: 0, label: 'Frente' },
+            { img: right, angle: 90, label: 'Lado Dir' },
+            { img: back, angle: 180, label: 'Costas' },
+            { img: left, angle: 270, label: 'Lado Esq' }
+          ].map((item, idx) => {
+            const isActive = Math.abs(rotation % 360) >= (item.angle - 45) && Math.abs(rotation % 360) < (item.angle + 45) || (item.angle === 0 && Math.abs(rotation % 360) >= 315);
+            return (
+              <div 
+                key={idx}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setAutoRotate(false);
+                  setRotation(item.angle);
+                }}
+                style={{
+                  width: 50, height: 50, borderRadius: 10, padding: 4, cursor: 'pointer',
+                  background: isActive ? `rgba(124,58,237,0.2)` : 'rgba(255,255,255,0.02)',
+                  border: `1px solid ${isActive ? '#7c3aed' : 'rgba(255,255,255,0.1)'}`,
+                  transition: 'all 0.2s'
+                }}
+              >
+                <img src={item.img} alt={item.label} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
