@@ -217,7 +217,7 @@ const ProductCard: React.FC<{
   onView: (p: GmzProduct) => void;
   onAdd: (p: GmzProduct) => void;
 }> = ({ p, favorites, onFav, onView, onAdd }) => (
-  <div className="bg-[#0b0e17] rounded-2xl overflow-hidden border border-purple-500/10 transition-transform duration-300 hover:-translate-y-2 relative group flex flex-col" style={{ WebkitTapHighlightColor: 'transparent' }}>
+  <div className="bg-[#0b0e17] rounded-2xl overflow-hidden border border-purple-500/10 transition-transform duration-300 hover:-translate-y-2 relative group flex flex-col" style={{ WebkitTapHighlightColor: 'transparent', userSelect: 'none' }}>
     {p.badge && (
       <span style={{ position: 'absolute', top: 12, left: 12, zIndex: 2, background: 'rgba(124,58,237,0.9)', color: 'white', fontSize: 9, fontWeight: 800, padding: '4px 8px', borderRadius: 6, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
         {p.badge}
@@ -231,7 +231,7 @@ const ProductCard: React.FC<{
       style={{ background: `linear-gradient(135deg, rgba(13,15,23,1), ${p.color_hex || '#7c3aed'}10)`, padding: '30px 20px', cursor: 'pointer', textAlign: 'center', minHeight: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       onClick={() => onView(p)}
     >
-      <img src={getProductImg(p)} alt={p.title} className="product-img" style={{ maxHeight: 180, maxWidth: '100%', objectFit: 'contain' }} />
+      <img src={getProductImg(p)} alt={p.title} className="product-img" style={{ maxHeight: 180, maxWidth: '100%', objectFit: 'contain' }} draggable={false} />
     </div>
 
     <div style={{ padding: '16px 16px 20px' }}>
@@ -606,21 +606,21 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
         )}
       </div>
 
-      <div className={`fixed inset-0 bg-black/80 backdrop-blur-md z-[1100] flex flex-col items-center justify-end md:justify-center p-0 md:p-4 transition-all duration-300 ${activeModal ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} onClick={() => setActiveModal(null)} style={{ WebkitTapHighlightColor: 'transparent' }}>
+      <div className={`fixed inset-0 bg-black/80 backdrop-blur-md z-[1100] flex flex-col items-center justify-end lg:justify-center p-0 lg:p-4 transition-all duration-300 ${activeModal ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} onClick={() => setActiveModal(null)} style={{ WebkitTapHighlightColor: 'transparent' }}>
         {activeModal && (
-          <div className="bg-[#0b0e17] w-full max-w-[900px] max-h-[92dvh] md:max-h-[90vh] overflow-y-auto shadow-2xl relative scrollbar-thin rounded-t-[32px] md:rounded-[28px] pb-8 md:pb-0 transition-transform duration-300 translate-y-0" onClick={e => e.stopPropagation()}>
+          <div className="bg-[#0b0e17] w-full max-w-[1000px] max-h-[92dvh] lg:max-h-[90vh] overflow-y-auto shadow-2xl relative scrollbar-thin rounded-t-[32px] lg:rounded-[28px] pb-8 lg:pb-0 transition-transform duration-300 translate-y-0" onClick={e => e.stopPropagation()}>
             {/* Mobile Drag Handle */}
-            <div className="w-full flex justify-center pt-3 pb-1 md:hidden">
+            <div className="w-full flex justify-center pt-3 pb-1 lg:hidden">
               <div className="w-12 h-1.5 bg-white/20 rounded-full"></div>
             </div>
             
-            <div className="flex justify-end pt-2 px-5 md:px-0 md:absolute md:top-4 md:right-4 z-10 absolute right-0 top-2">
+            <div className="flex justify-end pt-2 px-5 lg:px-0 lg:absolute lg:top-4 lg:right-4 z-10 absolute right-0 top-2">
               <button onClick={() => setActiveModal(null)} className="bg-white/5 hover:bg-white/10 text-slate-400 p-2 rounded-xl transition-colors backdrop-blur-md">
                 <Icon.X />
               </button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-0 relative mt-2 md:mt-0">
-              <div className="p-4 md:p-8 rounded-t-[32px] md:rounded-l-[28px] md:rounded-tr-none" style={{ background: `linear-gradient(135deg, #07090d, ${activeModal.color_hex || '#7c3aed'}10)` }}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 relative mt-2 lg:mt-0">
+              <div className="p-4 lg:p-8 rounded-t-[32px] lg:rounded-l-[28px] lg:rounded-tr-none flex flex-col items-center justify-center min-h-[300px]" style={{ background: `linear-gradient(135deg, #07090d, ${activeModal.color_hex || '#7c3aed'}10)` }}>
                 <div className="text-center mb-3">
                   <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Arraste para girar</span>
                 </div>
