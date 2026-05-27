@@ -606,16 +606,21 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
         )}
       </div>
 
-      <div className={`fixed inset-0 bg-black/80 backdrop-blur-md z-[1100] flex items-center justify-center p-4 transition-opacity duration-300 ${activeModal ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} onClick={() => setActiveModal(null)} style={{ WebkitTapHighlightColor: 'transparent' }}>
+      <div className={`fixed inset-0 bg-black/80 backdrop-blur-md z-[1100] flex flex-col items-center justify-end md:justify-center p-0 md:p-4 transition-all duration-300 ${activeModal ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} onClick={() => setActiveModal(null)} style={{ WebkitTapHighlightColor: 'transparent' }}>
         {activeModal && (
-          <div className="bg-[#0b0e17] rounded-[28px] w-full max-w-[900px] max-h-[90vh] overflow-y-auto shadow-2xl relative scrollbar-thin" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-end pt-4 px-5 md:px-0 md:absolute md:top-4 md:right-4 z-10">
-              <button onClick={() => setActiveModal(null)} className="bg-white/5 hover:bg-white/10 text-slate-400 p-2 rounded-xl transition-colors">
+          <div className="bg-[#0b0e17] w-full max-w-[900px] max-h-[92dvh] md:max-h-[90vh] overflow-y-auto shadow-2xl relative scrollbar-thin rounded-t-[32px] md:rounded-[28px] pb-8 md:pb-0 transition-transform duration-300 translate-y-0" onClick={e => e.stopPropagation()}>
+            {/* Mobile Drag Handle */}
+            <div className="w-full flex justify-center pt-3 pb-1 md:hidden">
+              <div className="w-12 h-1.5 bg-white/20 rounded-full"></div>
+            </div>
+            
+            <div className="flex justify-end pt-2 px-5 md:px-0 md:absolute md:top-4 md:right-4 z-10 absolute right-0 top-2">
+              <button onClick={() => setActiveModal(null)} className="bg-white/5 hover:bg-white/10 text-slate-400 p-2 rounded-xl transition-colors backdrop-blur-md">
                 <Icon.X />
               </button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-0 relative">
-              <div className="p-6 md:p-8 rounded-t-3xl md:rounded-l-[28px] md:rounded-tr-none" style={{ background: `linear-gradient(135deg, #07090d, ${activeModal.color_hex || '#7c3aed'}10)` }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-0 relative mt-2 md:mt-0">
+              <div className="p-4 md:p-8 rounded-t-[32px] md:rounded-l-[28px] md:rounded-tr-none" style={{ background: `linear-gradient(135deg, #07090d, ${activeModal.color_hex || '#7c3aed'}10)` }}>
                 <div className="text-center mb-3">
                   <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Arraste para girar</span>
                 </div>
