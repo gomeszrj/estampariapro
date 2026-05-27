@@ -117,9 +117,9 @@ export const gmzStoreService = {
     if (error) throw error;
   },
 
-  async uploadProductImage(file: File, productId: string): Promise<string> {
+  async uploadStoreImage(file: File, folder: 'products' | 'banners' = 'products'): Promise<string> {
     const ext = file.name.split('.').pop();
-    const path = `gmz-products/${productId}-${Date.now()}.${ext}`;
+    const path = `gmz-${folder}/${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from('product-images').upload(path, file, { upsert: true });
     if (error) throw error;
     const { data } = supabase.storage.from('product-images').getPublicUrl(path);

@@ -128,11 +128,11 @@ const ProductModal: React.FC<{
     if (!file) return;
     setUploading(true);
     try {
-      // For now, create object URL for preview (real upload needs product ID)
-      const url = URL.createObjectURL(file);
+      toast.loading('Fazendo upload da imagem...', { id: 'upload' });
+      const url = await gmzStoreService.uploadStoreImage(file, 'products');
       set('image_url', url);
-      toast.info('Imagem carregada. Salve o produto para confirmar.');
-    } catch { toast.error('Erro ao carregar imagem'); }
+      toast.success('Upload concluído!', { id: 'upload' });
+    } catch { toast.error('Erro ao carregar imagem', { id: 'upload' }); }
     finally { setUploading(false); }
   };
 
@@ -326,7 +326,23 @@ const BannerModal: React.FC<{
     cta_text: 'Explorar Coleções', bg_color: '#040507',
     accent_color: '#7c3aed', active: true, sort_order: 0,
   });
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  
   const set = (k: keyof GmzBanner, v: any) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      toast.loading('Fazendo upload da imagem...', { id: 'upload' });
+      const url = await gmzStoreService.uploadStoreImage(file, 'banners');
+      set('image_url', url);
+      toast.success('Upload concluído!', { id: 'upload' });
+    } catch { toast.error('Erro ao carregar imagem', { id: 'upload' }); }
+    finally { setUploading(false); }
+  };
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={onClose}>
@@ -375,7 +391,13 @@ const BannerModal: React.FC<{
           </div>
           <div>
             <label style={labelStyle}>URL da Imagem/Jersey</label>
-            <input style={inputStyle} placeholder="https://..." value={form.image_url || ''} onChange={e => set('image_url', e.target.value)} />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input style={{ ...inputStyle, flex: 1 }} placeholder="https://..." value={form.image_url || ''} onChange={e => set('image_url', e.target.value)} />
+              <button onClick={() => fileRef.current?.click()} style={{ ...btnGhostStyle, padding: '10px 14px', minWidth: 'fit-content' }} disabled={uploading}>
+                <Upload size={14} /> {uploading ? '...' : 'Upload'}
+              </button>
+            </div>
+            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleUpload} />
           </div>
           <div>
             <label style={labelStyle}>Cor de Destaque</label>
