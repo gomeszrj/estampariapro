@@ -161,13 +161,13 @@ const ProductCard: React.FC<{
   onView: (p: GmzProduct) => void;
   onAdd: (p: GmzProduct) => void;
 }> = ({ p, favorites, onFav, onView, onAdd }) => (
-  <div className="product-card" style={{ position: 'relative' }}>
+  <div className="bg-[#0b0e17] rounded-2xl overflow-hidden border border-purple-500/10 transition-transform duration-300 hover:-translate-y-2 relative group flex flex-col">
     {p.badge && (
       <span style={{ position: 'absolute', top: 12, left: 12, zIndex: 2, background: 'rgba(124,58,237,0.9)', color: 'white', fontSize: 9, fontWeight: 800, padding: '4px 8px', borderRadius: 6, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
         {p.badge}
       </span>
     )}
-    <button className={`fav-btn ${favorites.has(p.id) ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); onFav(p.id); }}>
+    <button className={`absolute top-3 right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all bg-black/20 backdrop-blur-md border border-white/10 hover:bg-black/40 hover:scale-110 ${favorites.has(p.id) ? 'text-red-500' : 'text-white'}`} onClick={(e) => { e.stopPropagation(); onFav(p.id); }}>
       <Icon.Heart filled={favorites.has(p.id)} />
     </button>
 
@@ -188,7 +188,7 @@ const ProductCard: React.FC<{
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
         <span style={{ fontSize: 20, fontWeight: 900, color: 'white' }}>R$ {Number(p.price).toFixed(2).replace('.', ',')}</span>
       </div>
-      <p className="installment-tag">Em até 3x sem juros</p>
+      <p className="text-[#4ade80] text-[10px] font-bold">Em até 3x sem juros</p>
 
       <button
         onClick={() => onAdd(p)}
@@ -248,12 +248,12 @@ const HeroSlider: React.FC<{ banners: GmzBanner[], onCTA: () => void }> = ({ ban
   const imgData = parseImage(s.image_url);
 
   return (
-    <section style={{ position: 'relative', overflow: 'hidden', background: s.bg_color || '#04050a', minHeight: 520, display: 'flex', alignItems: 'center' }}>
-      <div style={{ position: 'absolute', top: '50%', right: '10%', transform: 'translateY(-50%)', width: 600, height: 600, borderRadius: '50%', background: `radial-gradient(circle, ${glow}, transparent 70%)`, filter: 'blur(80px)', transition: 'all 0.8s ease', pointerEvents: 'none' }} />
+    <section className="relative overflow-hidden min-h-[520px] flex items-center" style={{ background: s.bg_color || '#04050a' }}>
+      <div className="absolute top-1/2 right-[-20%] md:right-[10%] -translate-y-1/2 w-[300px] h-[300px] md:w-[600px] md:h-[600px] rounded-full pointer-events-none transition-all duration-700 blur-[50px] md:blur-[80px]" style={{ background: `radial-gradient(circle, ${glow}, transparent 70%)` }} />
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: 'linear-gradient(rgba(124,58,237,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(124,58,237,0.03) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
 
-      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '60px 40px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center', width: '100%', position: 'relative', zIndex: 1 }}>
-        <div style={{ opacity: animating ? 0 : 1, transform: animating ? 'translateX(-20px)' : 'translateX(0)', transition: 'all 0.5s ease' }}>
+      <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 py-12 md:px-10 md:py-16 grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-14 items-center">
+        <div style={{ opacity: animating ? 0 : 1, transform: animating ? 'translateX(-20px)' : 'translateX(0)', transition: 'all 0.5s ease' }} className="text-center md:text-left order-2 md:order-1">
           <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em', color: color, background: `${color}20`, border: `1px solid ${color}30`, padding: '6px 14px', borderRadius: 8, display: 'inline-block', marginBottom: 20 }}>
             DESTAQUE
           </span>
@@ -265,14 +265,14 @@ const HeroSlider: React.FC<{ banners: GmzBanner[], onCTA: () => void }> = ({ ban
           </h3>
           <p style={{ fontSize: 15, color: '#94a3b8', lineHeight: 1.7, marginBottom: 32, whiteSpace: 'pre-line' }}>{s.description || ''}</p>
 
-          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-            <button className="btn-primary" onClick={onCTA} style={{ background: `linear-gradient(135deg, ${color}, #4f46e5)`, boxShadow: `0 4px 25px ${glow}` }}>
+          <div className="flex gap-3 flex-wrap justify-center md:justify-start">
+            <button className="px-6 py-3 md:px-8 md:py-4 rounded-xl text-white font-black text-xs md:text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105" onClick={onCTA} style={{ background: `linear-gradient(135deg, ${color}, #4f46e5)`, boxShadow: `0 4px 25px ${glow}` }}>
               {s.cta_text || 'Ver Coleção'} <Icon.Arrow />
             </button>
           </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
+        <div className="flex flex-col items-center relative order-1 md:order-2">
           <div style={{ position: 'absolute', width: '90%', height: '90%', borderRadius: '50%', border: '2px solid rgba(124,58,237,0.15)', boxShadow: `0 0 80px ${glow}, inset 0 0 80px ${glow}`, transition: 'all 0.8s ease', pointerEvents: 'none' }} />
 
           <img
@@ -468,17 +468,17 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
 
   return (
     <div className="gmz-store" style={{ minHeight: '100vh', background: '#040507', color: '#e2e8f0', fontFamily: "'Inter', sans-serif" }}>
-      <div className={`toast ${toast ? 'show' : ''}`}>{toast}</div>
+      <div className={`fixed bottom-4 left-1/2 -translate-x-1/2 bg-white text-[#040507] px-6 py-3 rounded-full font-bold text-sm shadow-xl z-[2000] transition-all duration-300 ${toast ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'}`}>{toast}</div>
 
-      <div className={`cart-overlay ${cartOpen ? 'open' : ''}`} onClick={() => setCartOpen(false)} />
+      <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-[999] transition-opacity duration-300 ${cartOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} onClick={() => setCartOpen(false)} />
 
-      <div className={`cart-drawer ${cartOpen ? 'open' : ''}`}>
-        <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(139,92,246,0.15)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(13,15,23,0.8)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div className={`fixed inset-y-0 right-0 w-full md:w-[450px] bg-[#040507] border-l border-purple-500/15 z-[1000] flex flex-col transition-transform duration-500 ease-out ${cartOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className="px-6 py-5 border-b border-purple-500/15 flex justify-between items-center bg-[#0d0f17]/80">
+          <div className="flex items-center gap-2">
             <Icon.Cart />
-            <span style={{ fontWeight: 800, fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Orçamento ({totalItems})</span>
+            <span className="font-black text-sm uppercase tracking-widest">Orçamento ({totalItems})</span>
           </div>
-          <button onClick={() => setCartOpen(false)} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 6, borderRadius: 8 }}>
+          <button onClick={() => setCartOpen(false)} className="bg-transparent border-none text-slate-500 hover:text-white cursor-pointer p-2 rounded-lg transition-colors">
             <Icon.X />
           </button>
         </div>
@@ -531,8 +531,8 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
               href={`https://wa.me/${whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Olá! Quero fazer um pedido na ${storeName}:\n${cart.map(i => `• ${i.product.title} (${i.qty}x, Tam ${i.size}, Nome: ${i.name}, N°${i.number}) - R$${(Number(i.product.price) * i.qty).toFixed(2)}`).join('\n')}\n\nTotal Estimado: R$${totalPrice.toFixed(2)}`)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-primary"
-              style={{ width: '100%', justifyContent: 'center', textDecoration: 'none' }}
+              className="px-6 py-4 rounded-xl text-white font-black text-xs md:text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 w-full bg-indigo-600 hover:bg-indigo-500 shadow-[0_0_20px_rgba(79,70,229,0.3)]"
+              style={{ textDecoration: 'none' }}
             >
               Finalizar via WhatsApp <Icon.Arrow />
             </a>
@@ -541,18 +541,18 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
         )}
       </div>
 
-      <div className={`modal-overlay ${activeModal ? 'open' : ''}`} onClick={() => setActiveModal(null)}>
+      <div className={`fixed inset-0 bg-black/80 backdrop-blur-md z-[1100] flex items-center justify-center p-4 transition-opacity duration-300 ${activeModal ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} onClick={() => setActiveModal(null)}>
         {activeModal && (
-          <div className="modal-box" onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '16px 20px 0' }}>
-              <button onClick={() => setActiveModal(null)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 8, borderRadius: 10 }}>
+          <div className="bg-[#0b0e17] rounded-[28px] w-full max-w-[900px] shadow-2xl relative" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-end pt-4 px-5 md:px-0 md:absolute md:top-4 md:right-4 z-10">
+              <button onClick={() => setActiveModal(null)} className="bg-white/5 hover:bg-white/10 text-slate-400 p-2 rounded-xl transition-colors">
                 <Icon.X />
               </button>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
-              <div style={{ padding: '20px 30px 30px', background: `linear-gradient(135deg, #07090d, ${activeModal.color_hex || '#7c3aed'}10)`, borderRadius: '0 0 0 28px' }}>
-                <div style={{ textAlign: 'center', marginBottom: 12 }}>
-                  <span style={{ fontSize: 10, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Arraste para girar</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-0 relative">
+              <div className="p-6 md:p-8 rounded-t-3xl md:rounded-l-[28px] md:rounded-tr-none" style={{ background: `linear-gradient(135deg, #07090d, ${activeModal.color_hex || '#7c3aed'}10)` }}>
+                <div className="text-center mb-3">
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Arraste para girar</span>
                 </div>
                 <Viewer360 product={activeModal} color={activeModal.color_hex || '#7c3aed'} />
               </div>
@@ -599,7 +599,7 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
                   <p style={{ fontSize: 11, color: '#4ade80', marginTop: 2 }}>Em até {settings?.installments || 3}x sem juros</p>
                 </div>
 
-                <button className="btn-primary" onClick={() => addToCart(activeModal)} style={{ width: '100%', justifyContent: 'center' }}>
+                <button className="px-6 py-4 rounded-xl text-white font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 transition-all duration-300 hover:scale-105 w-full bg-indigo-600 hover:bg-indigo-500 mt-4" onClick={() => addToCart(activeModal)}>
                   Adicionar ao Orçamento <Icon.Arrow />
                 </button>
               </div>
@@ -608,18 +608,18 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
         )}
       </div>
 
-      <header style={{ background: 'rgba(7,9,13,0.9)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(139,92,246,0.12)', padding: '0 40px', height: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-          <div style={{ width: 38, height: 38, background: `linear-gradient(135deg, ${primaryColor}, #4f46e5)`, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 20px ${primaryColor}66`, fontSize: 18 }}>
+      <header className="sticky top-0 z-[100] h-[72px] flex items-center justify-between px-4 md:px-10 bg-[#07090d]/90 backdrop-blur-xl border-b border-purple-500/10">
+        <div className="flex items-center gap-3 cursor-pointer">
+          <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center text-lg md:text-xl" style={{ background: `linear-gradient(135deg, ${primaryColor}, #4f46e5)`, boxShadow: `0 0 20px ${primaryColor}66` }}>
             ⚡
           </div>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 900, color: 'white', letterSpacing: '-0.01em', lineHeight: 1 }}>{storeName.split(' ')[0]}</div>
-            <div style={{ fontSize: 9, fontWeight: 700, color: primaryColor, textTransform: 'uppercase', letterSpacing: '0.15em' }}>{storeName.split(' ').slice(1).join(' ')}</div>
+            <div className="text-sm md:text-base font-black text-white tracking-tight leading-none">{storeName.split(' ')[0]}</div>
+            <div className="text-[9px] md:text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: primaryColor }}>{storeName.split(' ').slice(1).join(' ')}</div>
           </div>
         </div>
 
-        <nav style={{ display: 'flex', gap: 4 }}>
+        <nav className="hidden md:flex gap-1">
           {[
             { label: 'Início', action: () => window.scrollTo({ top: 0, behavior: 'smooth' }) },
             { label: 'Todos os produtos', action: scrollToProducts },
@@ -651,12 +651,12 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
 
       <HeroSlider banners={banners} onCTA={scrollToProducts} />
 
-      <div className="ticker-wrap" style={{ padding: '14px 0', background: 'rgba(7,9,13,0.6)', overflow: 'hidden', borderTop: '1px solid rgba(139,92,246,0.15)', borderBottom: '1px solid rgba(139,92,246,0.15)' }}>
-        <div className="ticker-tape animate-ticker" style={{ display: 'flex', gap: 60, whiteSpace: 'nowrap' }}>
+      <div className="ticker-wrap py-3 bg-[#07090d]/60 overflow-hidden border-y border-purple-500/10">
+        <div className="ticker-tape animate-ticker flex gap-8 md:gap-14 whitespace-nowrap">
           {[...Array(3)].flatMap(() => [
             '⚡ SUBLIMAÇÃO PREMIUM', '🏆 +10K CLIENTES', '🚀 ENTREGA RÁPIDA', '✨ PERSONALIZAÇÃO TOTAL', '🛡️ QUALIDADE GARANTIDA', '📦 PARA TODO O BRASIL', '⚡ TECNOLOGIA UV+50', '🎨 CORES VIBRANTES',
           ]).map((item, i) => (
-            <span key={i} className="ticker-item">
+            <span key={i} className="ticker-item text-xs md:text-sm">
               <span className="ticker-dot" />
               {item}
             </span>
@@ -664,10 +664,10 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
         </div>
       </div>
 
-      <section ref={productsRef} id="produtos" style={{ padding: '80px 40px', maxWidth: 1400, margin: '0 auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
-          <h2 className="section-title">Produtos <span>em destaque</span></h2>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <section ref={productsRef} id="produtos" className="px-4 py-12 md:px-10 md:py-20 max-w-[1400px] mx-auto">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
+          <h2 className="section-title text-center md:text-left">Produtos <span>em destaque</span></h2>
+          <div className="flex gap-2 flex-wrap justify-center">
             {activeCats.map(cat => (
               <button
                 key={cat}
@@ -691,8 +691,8 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
         )}
       </section>
 
-      <section style={{ background: 'rgba(7,9,13,0.6)', borderTop: '1px solid rgba(139,92,246,0.1)', borderBottom: '1px solid rgba(139,92,246,0.1)', padding: '40px 40px' }}>
-        <div style={{ maxWidth: 1400, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
+      <section className="bg-[#07090d]/60 border-y border-purple-500/10 px-4 py-10 md:px-10 md:py-16">
+        <div className="max-w-[1400px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {[
             { icon: '⚡', title: 'Tecnologia Premium', desc: 'Estampas com cores vivas e alta durabilidade' },
             { icon: '🧵', title: 'Tecidos Selecionados', desc: 'Conforto, leveza e máximo desempenho' },
@@ -712,8 +712,8 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
         </div>
       </section>
 
-      <footer style={{ background: 'rgba(7,9,13,0.8)', padding: '60px 40px 30px' }}>
-        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+      <footer className="bg-[#07090d]/80 pt-10 pb-6 px-4 md:px-10">
+        <div className="max-w-[1400px] mx-auto text-center">
           <p style={{ textAlign: 'center', fontSize: 12, color: '#334155' }}>
             © 2024 {storeName}. Todos os direitos reservados.
           </p>
