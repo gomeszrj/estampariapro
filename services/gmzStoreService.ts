@@ -118,12 +118,22 @@ export const gmzStoreService = {
   },
 
   async uploadStoreImage(file: File, folder: 'products' | 'banners' = 'products'): Promise<string> {
-    const ext = file.name.split('.').pop();
-    const path = `gmz-${folder}/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from('product-images').upload(path, file, { upsert: true });
-    if (error) throw error;
-    const { data } = supabase.storage.from('product-images').getPublicUrl(path);
-    return data.publicUrl;
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `gmz-${folder}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from('product-images').upload(path, file, { upsert: true });
+      if (error) throw error;
+      const { data } = supabase.storage.from('product-images').getPublicUrl(path);
+      return data.publicUrl;
+    } catch (err) {
+      console.warn('Supabase storage failed, falling back to Base64:', err);
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
   },
 
   /* ─── BANNERS ─── */

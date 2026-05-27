@@ -235,6 +235,18 @@ const HeroSlider: React.FC<{ banners: GmzBanner[], onCTA: () => void }> = ({ ban
   const color = s.accent_color || '#7c3aed';
   const glow = color + '66'; // adiciona opacidade hex
 
+  const parseImage = (url?: string) => {
+    if (!url) return { src: FALLBACK_IMGS["regata-lakers"], x: 0, y: 0, scale: 1 };
+    const parts = url.split('|||');
+    return {
+      src: parts[0] || FALLBACK_IMGS["regata-lakers"],
+      x: Number(parts[1]) || 0,
+      y: Number(parts[2]) || 0,
+      scale: Number(parts[3]) || 1
+    };
+  };
+  const imgData = parseImage(s.image_url);
+
   return (
     <section style={{ position: 'relative', overflow: 'hidden', background: s.bg_color || '#04050a', minHeight: 520, display: 'flex', alignItems: 'center' }}>
       <div style={{ position: 'absolute', top: '50%', right: '10%', transform: 'translateY(-50%)', width: 600, height: 600, borderRadius: '50%', background: `radial-gradient(circle, ${glow}, transparent 70%)`, filter: 'blur(80px)', transition: 'all 0.8s ease', pointerEvents: 'none' }} />
@@ -264,10 +276,16 @@ const HeroSlider: React.FC<{ banners: GmzBanner[], onCTA: () => void }> = ({ ban
           <div style={{ position: 'absolute', width: '90%', height: '90%', borderRadius: '50%', border: '2px solid rgba(124,58,237,0.15)', boxShadow: `0 0 80px ${glow}, inset 0 0 80px ${glow}`, transition: 'all 0.8s ease', pointerEvents: 'none' }} />
 
           <img
-            src={s.image_url || FALLBACK_IMGS["regata-lakers"]}
+            src={imgData.src}
             alt={s.title}
             className="animate-float"
-            style={{ maxHeight: 380, objectFit: 'contain', position: 'relative', zIndex: 1, filter: `drop-shadow(0 30px 40px rgba(0,0,0,0.7)) drop-shadow(0 0 30px ${glow})`, opacity: animating ? 0 : 1, transform: animating ? 'scale(0.9)' : 'scale(1)', transition: 'all 0.5s ease' }}
+            style={{ 
+              maxHeight: 380, objectFit: 'contain', position: 'relative', zIndex: 1, 
+              filter: `drop-shadow(0 30px 40px rgba(0,0,0,0.7)) drop-shadow(0 0 30px ${glow})`, 
+              opacity: animating ? 0 : 1, 
+              transform: `translate(${imgData.x}px, ${imgData.y}px) scale(${animating ? 0.9 : imgData.scale})`, 
+              transition: 'all 0.5s ease' 
+            }}
           />
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 24 }}>

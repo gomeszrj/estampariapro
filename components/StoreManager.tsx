@@ -329,7 +329,24 @@ const BannerModal: React.FC<{
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   
-  const set = (k: keyof GmzBanner, v: any) => setForm(f => ({ ...f, [k]: v }));
+  const rawUrl = form.image_url || '';
+  const urlParts = rawUrl.split('|||');
+  const imgSrc = urlParts[0] || '';
+  const imgX = Number(urlParts[1]) || 0;
+  const imgY = Number(urlParts[2]) || 0;
+  const imgScale = urlParts[3] !== undefined ? Number(urlParts[3]) : 1;
+
+  const updatePosition = (key: 'x'|'y'|'scale', val: number) => {
+    const x = key === 'x' ? val : imgX;
+    const y = key === 'y' ? val : imgY;
+    const s = key === 'scale' ? val : imgScale;
+    set('image_url', `${imgSrc}|||${x}|||${y}|||${s}`);
+  };
+
+  const updateSrc = (newSrc: string) => {
+    if (!newSrc) return set('image_url', '');
+    set('image_url', `${newSrc}|||${imgX}|||${imgY}|||${imgScale}`);
+  };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -338,7 +355,7 @@ const BannerModal: React.FC<{
     try {
       toast.loading('Fazendo upload da imagem...', { id: 'upload' });
       const url = await gmzStoreService.uploadStoreImage(file, 'banners');
-      set('image_url', url);
+      set('image_url', `${url}|||${imgX}|||${imgY}|||${imgScale}`);
       toast.success('Upload concluído!', { id: 'upload' });
     } catch { toast.error('Erro ao carregar imagem', { id: 'upload' }); }
     finally { setUploading(false); }
@@ -357,11 +374,16 @@ const BannerModal: React.FC<{
         {/* Live Preview */}
         <div style={{ margin: '20px 28px', borderRadius: 16, overflow: 'hidden', background: form.bg_color || '#040507', border: '1px solid rgba(255,255,255,0.06)', minHeight: 140, position: 'relative', display: 'flex', alignItems: 'center', padding: '30px 40px' }}>
           <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '50%', background: `radial-gradient(ellipse at center, ${form.accent_color}30, transparent 70%)`, pointerEvents: 'none' }} />
-          <div>
+          
+          {imgSrc && (
+            <img src={imgSrc} alt="Preview" style={{ position: 'absolute', right: 40, top: '50%', transform: `translate(0, -50%) translate(${imgX * 0.4}px, ${imgY * 0.4}px) scale(${imgScale})`, maxHeight: 120, objectFit: 'contain', zIndex: 1, pointerEvents: 'none' }} />
+          )}
+
+          <div style={{ position: 'relative', zIndex: 2 }}>
             <p style={{ fontSize: 11, fontWeight: 800, color: form.accent_color, textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: 6 }}>Preview</p>
             <h3 style={{ fontSize: 28, fontWeight: 900, color: 'white', textTransform: 'uppercase', lineHeight: 1, marginBottom: 4 }}>{form.title || 'TÍTULO'}</h3>
             <h4 style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', lineHeight: 1, marginBottom: 12, color: form.accent_color }}>{form.subtitle || 'SUBTÍTULO'}</h4>
-            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 16 }}>{form.description}</p>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 16, maxWidth: 300 }}>{form.description}</p>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: form.accent_color, color: 'white', padding: '8px 20px', borderRadius: 10, fontSize: 11, fontWeight: 800 }}>
               {form.cta_text || 'CTA'} →
             </div>
@@ -389,15 +411,39 @@ const BannerModal: React.FC<{
             <label style={labelStyle}>Link do Botão (URL)</label>
             <input style={inputStyle} placeholder="/#colecoes" value={form.cta_url || ''} onChange={e => set('cta_url', e.target.value)} />
           </div>
-          <div>
+          <div style={{ gridColumn: '1/-1' }}>
             <label style={labelStyle}>URL da Imagem/Jersey</label>
             <div style={{ display: 'flex', gap: 8 }}>
-              <input style={{ ...inputStyle, flex: 1 }} placeholder="https://..." value={form.image_url || ''} onChange={e => set('image_url', e.target.value)} />
+              <input style={{ ...inputStyle, flex: 1 }} placeholder="https://..." value={imgSrc} onChange={e => updateSrc(e.target.value)} />
               <button onClick={() => fileRef.current?.click()} style={{ ...btnGhostStyle, padding: '10px 14px', minWidth: 'fit-content' }} disabled={uploading}>
                 <Upload size={14} /> {uploading ? '...' : 'Upload'}
               </button>
             </div>
             <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleUpload} />
+          </div>
+
+          <div style={{ gridColumn: '1/-1', background: 'rgba(255,255,255,0.02)', padding: 16, borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)' }}>
+            <label style={{...labelStyle, marginBottom: 12}}>Posicionamento Manual da Imagem</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+              <div>
+                <label style={{ fontSize: 10, color: '#94a3b8', display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <span>X (Horizontal)</span> <span>{imgX}px</span>
+                </label>
+                <input type="range" min="-400" max="400" value={imgX} onChange={e => updatePosition('x', Number(e.target.value))} style={{ width: '100%', accentColor: form.accent_color }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 10, color: '#94a3b8', display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <span>Y (Vertical)</span> <span>{imgY}px</span>
+                </label>
+                <input type="range" min="-400" max="400" value={imgY} onChange={e => updatePosition('y', Number(e.target.value))} style={{ width: '100%', accentColor: form.accent_color }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 10, color: '#94a3b8', display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <span>Escala (Tamanho)</span> <span>{imgScale.toFixed(2)}x</span>
+                </label>
+                <input type="range" min="0.1" max="3" step="0.05" value={imgScale} onChange={e => updatePosition('scale', Number(e.target.value))} style={{ width: '100%', accentColor: form.accent_color }} />
+              </div>
+            </div>
           </div>
           <div>
             <label style={labelStyle}>Cor de Destaque</label>
