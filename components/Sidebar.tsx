@@ -14,12 +14,13 @@ import { notify } from './ui/toast';
 interface SidebarProps {
   activeView: string;
   setActiveView: (view: string) => void;
-  isOpen?: boolean;
-  setIsOpen?: (open: boolean) => void;
+  isOpen: boolean;
+  setIsOpen?: (val: boolean) => void;
   isMasterAdmin?: boolean;
+  tenantId?: string;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, setIsOpen, isMasterAdmin }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, setIsOpen, isMasterAdmin, tenantId }) => {
   const [cloudBotEnabled, setCloudBotEnabled] = React.useState(false);
   const [companyName, setCompanyName]         = React.useState('Minha Estamparia');
   const [companyLogo, setCompanyLogo]         = React.useState('');
@@ -198,12 +199,12 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
               <p className="px-5 text-[10px] font-black uppercase tracking-widest text-[#5A6578] mb-2">Links Externos</p>
 
               <div className="w-full flex items-center justify-between px-5 py-3 rounded-2xl text-white/70 border border-transparent hover:border-[#1e293b] hover:bg-white/5 hover:text-white transition-all group">
-                <a href="/catalogo" target="_blank" className="flex items-center gap-4 flex-1">
+                <a href={`/catalogo${tenantId ? `?tenant=${tenantId}` : ''}`} target="_blank" className="flex items-center gap-4 flex-1">
                   <Share2 className="w-5 h-5 text-[#5A6578] group-hover:text-white transition-colors" />
                   <span className="font-black uppercase text-[11px] tracking-widest">Catálogo</span>
                 </a>
                 <button
-                  onClick={() => handleCopyLink('/catalogo')}
+                  onClick={() => handleCopyLink(`/catalogo${tenantId ? `?tenant=${tenantId}` : ''}`)}
                   className="opacity-0 group-hover:opacity-100 p-2 hover:bg-white/10 rounded-lg transition-all"
                   title="Copiar Link"
                 >
@@ -212,12 +213,12 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
               </div>
 
               <div className="w-full flex items-center justify-between px-5 py-3 rounded-2xl text-white/70 border border-transparent hover:border-[#1e293b] hover:bg-white/5 hover:text-white transition-all group">
-                <a href="/?view=client_portal" target="_blank" className="flex items-center gap-4 flex-1">
+                <a href={`/?view=client_portal${tenantId ? `&tenant=${tenantId}` : ''}`} target="_blank" className="flex items-center gap-4 flex-1">
                   <ExternalLink className="w-5 h-5 text-[#5A6578] group-hover:text-white transition-colors" />
                   <span className="font-black uppercase text-[11px] tracking-widest">Portal Disp.</span>
                 </a>
                 <button
-                  onClick={() => handleCopyLink('/?view=client_portal')}
+                  onClick={() => handleCopyLink(`/?view=client_portal${tenantId ? `&tenant=${tenantId}` : ''}`)}
                   className="opacity-0 group-hover:opacity-100 p-2 hover:bg-white/10 rounded-lg transition-all"
                   title="Copiar Link"
                 >

@@ -22,24 +22,11 @@ const AuthContext = createContext<AuthContextType>({
 // We use the session user directly — avoids a second supabase.auth.getUser() call
 // which can cause AbortError when called during initialization
 const loadAdminStatus = async (userId: string, email: string): Promise<boolean> => {
-    try {
-        if (email !== 'admin@estamparia.com') return false;
-
-        const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', userId)
-            .single();
-
-        if (error) {
-            console.error('loadAdminStatus error:', error.message);
-            return false;
-        }
-
-        return profile?.role === 'admin';
-    } catch {
-        return false;
+    // SEC-002: Master admin is strictly defined by email to prevent RLS/Tenant lockouts.
+    if (email === 'admin@estamparia.com') {
+        return true;
     }
+    return false;
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

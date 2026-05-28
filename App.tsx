@@ -137,6 +137,9 @@ const AuthenticatedApp: React.FC = () => {
     return <Login />;
   }
 
+  // Extract tenant from URL for public views
+  const publicTenantId = new URLSearchParams(window.location.search).get('tenant') || undefined;
+
   const handleBotOrder = (data: { clientName: string; items: any[]; briefing: string }) => {
     setBotDraft(data);
     setActiveView('orders');
@@ -166,7 +169,7 @@ const AuthenticatedApp: React.FC = () => {
   if (isPublicCatalog) {
     return (
       <Suspense fallback={<PageSkeleton />}>
-        <PublicStore />
+        <PublicStore tenantId={publicTenantId} />
       </Suspense>
     );
   }
@@ -222,7 +225,14 @@ const AuthenticatedApp: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-[#0b1221] text-slate-200 relative">
-      <Sidebar activeView={activeView} setActiveView={setActiveView} isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} isMasterAdmin={isMasterAdmin} />
+      <Sidebar 
+        activeView={activeView} 
+        setActiveView={setActiveView} 
+        isOpen={isSidebarOpen} 
+        setIsOpen={setIsSidebarOpen} 
+        isMasterAdmin={isMasterAdmin}
+        tenantId={tenantData?.id || undefined}
+      />
       <main className="flex-1 flex flex-col min-w-0">
         <header className="h-20 bg-[#05080E] border-b border-[#1e293b] flex items-center justify-between px-4 md:px-10 sticky top-0 z-30">
           <div className="flex items-center gap-3">
