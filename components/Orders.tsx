@@ -361,6 +361,17 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
       const parsedDiscount = typeof discountValue === 'number' ? discountValue : (parseFloat((discountValue || "0").toString()) || 0);
       const finalTotalValue = Math.max(0, calculatedTotal - parsedDiscount);
 
+      let calculatedAmountPaid = 0;
+      if (paymentStatus === PaymentStatus.FULL) {
+        calculatedAmountPaid = finalTotalValue;
+      } else if (paymentStatus === PaymentStatus.HALF) {
+        calculatedAmountPaid = customAmountPaid ? parseFloat(customAmountPaid.toString()) : (finalTotalValue / 2);
+      } else if (paymentStatus === PaymentStatus.DEPOSIT) {
+        calculatedAmountPaid = customAmountPaid ? parseFloat(customAmountPaid.toString()) : 0;
+      } else {
+        calculatedAmountPaid = customAmountPaid ? parseFloat(customAmountPaid.toString()) : 0;
+      }
+
       const orderData = {
         orderNumber: await orderService.getNextOrderNumber(),
         clientId: clientsByName.get((clientName || '').toLowerCase())?.id || null, // Will be handled if not found? Service doesn't create client on fly currently.
@@ -370,9 +381,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
         paymentStatus: paymentStatus, // Save payment status
         discountValue: parsedDiscount,
         totalValue: finalTotalValue,
-        amountPaid: paymentStatus === PaymentStatus.FULL
-          ? finalTotalValue
-          : (customAmountPaid ? parseFloat(customAmountPaid.toString()) : 0),
+        amountPaid: calculatedAmountPaid,
         createdAt: new Date().toISOString(),
         deliveryDate: deliveryDate,
         briefing: editingOrderId ? undefined : newOrderBriefing,
@@ -471,10 +480,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
           clientId: clientIdToUse,
           orderNumber: orderData.orderNumber,
           designFileUrls: designFileUrls,
-          // If FULL, we might want to ensure amountPaid == totalValue in backend or just handle in UI
-          amountPaid: paymentStatus === PaymentStatus.FULL
-            ? orderData.totalValue
-            : ((paymentStatus === PaymentStatus.HALF || paymentStatus === PaymentStatus.DEPOSIT) && !customAmountPaid ? orderData.totalValue / 2 : orderData.amountPaid)
+          amountPaid: calculatedAmountPaid
         });
       }
 
@@ -687,7 +693,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                           {(paymentStatus === PaymentStatus.HALF || paymentStatus === PaymentStatus.DEPOSIT || paymentStatus === PaymentStatus.PENDING) && (
                             <input
                               type="number"
-                              placeholder="R$ Pago"
+                              placeholder={paymentStatus === PaymentStatus.HALF ? "R$ (Padrão 50%)" : "R$ Pago"}
                               value={customAmountPaid}
                               onChange={e => setCustomAmountPaid(e.target.value)}
                               className="w-full mt-2 bg-[#0f172a] border border-[#1e293b] rounded-xl px-3 py-2 text-[10px] text-emerald-400 font-mono focus:ring-1 focus:ring-emerald-500 outline-none"
@@ -1090,7 +1096,7 @@ value={internalNotes}
                   </div>
                   <div>
                     <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Valor</p>
-                    <p className="text-xs font-bold text-slate-300">R$ {order.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    <p className="text-xs font-bold text-slate-300">R$ {(order.totalValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                   </div>
                   <div>
                     <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Pago</p>
@@ -1101,7 +1107,7 @@ value={internalNotes}
                       Lucro
                     </p>
                     <p className={`text-[10px] font-bold ${isPaid ? 'text-emerald-500' : 'text-rose-500'}`}>
-                      R$ {profit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      R$ {(profit || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </p>
                   </div>
                 </div>
@@ -1124,7 +1130,8 @@ value={internalNotes}
                     <FileText className="w-3.5 h-3.5" />
                   </button>
                   <button onClick={() => {
-                      const link = getWhatsAppLink(order.clientName, '5511999999999', getStatusUpdateMessage(order));
+                      const phone = clientsByName.get((order.clientName || '').toLowerCase())?.whatsapp || '5511999999999';
+                      const link = getWhatsAppLink(phone, getStatusUpdateMessage(order, order.status));
                       window.open(link, '_blank');
                     }} className="w-8 h-8 rounded-lg bg-[#0f172a] border border-[#1e293b] flex items-center justify-center text-slate-400 hover:text-[#25D366] hover:border-[#25D366]/50 transition-colors" title="WhatsApp">
                     <Send className="w-3.5 h-3.5" />
@@ -1201,7 +1208,7 @@ value={internalNotes}
         <ConfirmModal
           isOpen={true}
           title="Confirmar Recebimento"
-          message={`Confirmar recebimento INTEGRAL de R$ ${confirmPaymentOrder.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} para o Pedido #${confirmPaymentOrder.orderNumber}?\n\nIsso gerará um lançamento de receita no financeiro.`}
+          message={`Confirmar recebimento INTEGRAL de R$ ${(confirmPaymentOrder.totalValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} para o Pedido #${confirmPaymentOrder.orderNumber}?\n\nIsso gerará um lançamento de receita no financeiro.`}
           variant="success"
           confirmLabel="Confirmar Pagamento"
           onConfirm={() => { doReceivePayment(confirmPaymentOrder); setConfirmPaymentOrder(null); }}

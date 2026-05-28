@@ -5,6 +5,7 @@ import { agentService, ChatMessage, AgentContext } from '../services/agentServic
 import { productService } from '../services/productService';
 import { orderService } from '../services/orderService';
 import { Product } from '../types';
+import { notify } from './ui/toast';
 
 interface CloudBotProps {
     onCreateOrder?: (data: { clientName: string; items: any[]; briefing: string }) => void;

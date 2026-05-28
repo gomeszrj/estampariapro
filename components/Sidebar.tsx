@@ -3,7 +3,7 @@ import React from 'react';
 import {
   LayoutDashboard, Package, ShoppingCart, Trello, Users,
   Settings, TrendingUp, Box, MessageSquare, Inbox, Bot,
-  ExternalLink, Share2, Copy, Palette, ShieldAlert
+  ExternalLink, Share2, Copy, Palette, ShieldAlert, Truck
 } from 'lucide-react';
 import { settingsService } from '../services/settingsService';
 import { tenantService } from '../services/tenantService';
@@ -125,6 +125,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
     can('can_view_clients')    && { id: 'clients',          label: 'Clientes',      icon: Users },
     can('can_view_crm')        && { id: 'crm',              label: 'Central WhatsApp', icon: MessageSquare },
     can('can_view_inventory')  && { id: 'inventory',        label: 'Estoque',       icon: Box },
+    can('can_view_inventory')  && { id: 'suppliers',        label: 'Fornecedores',  icon: Truck },
     (isMasterAdmin && cloudBotEnabled) && { id: 'cloudbot', label: 'CloudBot Agent', icon: Bot },
     can('can_view_finance')    && { id: 'finance',          label: 'Financeiro',    icon: TrendingUp },
     // SaaS Management: master admin only (hard-coded, never a DB permission)

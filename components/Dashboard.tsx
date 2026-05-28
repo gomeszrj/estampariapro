@@ -237,7 +237,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) =>
              
              {[
                { label: 'Pedido recebido', count: counts.received, color: 'blue', icon: PackageCheck },
-               { label: 'Arte aprovada', count: orders.filter(o => o.status === OrderStatus.ART_APPROVAL).length, color: 'purple', icon: Palette },
+               { label: 'Arte aprovada', count: orders.filter(o => o.status === OrderStatus.SUBLIMATION).length, color: 'purple', icon: Palette },
                { label: 'Em produção', count: counts.production, color: 'pink', icon: Hammer },
                { label: 'Sublimação', count: orders.filter(o => o.status === OrderStatus.FINALIZATION).length, color: 'yellow', icon: Printer },
                { label: 'Finalizado', count: counts.finished, color: 'emerald', icon: CheckCircle2 }
@@ -345,11 +345,11 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) =>
                   else if (isSoon) { dateColor = 'text-amber-500'; bgCard = 'bg-amber-500/5 border-amber-500/20'; }
                   
                   let statusColor = 'text-slate-400 bg-slate-800';
-                  let statusLabel = item.status;
+                  let statusLabel: string = item.status;
                   if (item.status === OrderStatus.IN_PRODUCTION) { statusColor = 'text-blue-400 bg-blue-500/10'; statusLabel = 'Produção'; }
                   if (item.status === OrderStatus.RECEIVED) { statusColor = 'text-amber-400 bg-amber-500/10'; statusLabel = 'Aguardando'; }
                   if (item.status === OrderStatus.FINALIZATION) { statusColor = 'text-yellow-400 bg-yellow-500/10'; statusLabel = 'Finalização'; }
-                  if (item.status === OrderStatus.ART_APPROVAL) { statusColor = 'text-purple-400 bg-purple-500/10'; statusLabel = 'Aprovação'; }
+                  if (item.status === OrderStatus.SUBLIMATION) { statusColor = 'text-purple-400 bg-purple-500/10'; statusLabel = 'Aprovação'; }
                   
                   const day = item.deliveryDate ? item.deliveryDate.split('-')[2] : '--';
                   const month = item.deliveryDate ? item.deliveryDate.split('-')[1] : '--';

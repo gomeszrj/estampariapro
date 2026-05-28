@@ -602,11 +602,11 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
       {/* DELETE CONFIRM */}
       <ConfirmModal
         isOpen={!!confirmDeleteClient}
-        title="Excluir Cliente"
-        message={`Deseja excluir permanentemente o cliente ${confirmDeleteClient?.name}?`}
-        warning={confirmDeleteClient && confirmDeleteClient.orderCount > 0 
+        title="Deletar Cliente Permanente"
+        message={
+          confirmDeleteClient?.orderCount > 0
           ? `CUIDADO: Este cliente possui ${confirmDeleteClient.orderCount} pedidos vinculados. Excluir o cliente também excluirá permanentemente todos os pedidos, históricos e arquivos anexados a ele. Esta ação não pode ser desfeita.`
-          : undefined
+          : `Tem certeza que deseja DELETAR o cliente ${confirmDeleteClient?.name}? Esta ação não pode ser desfeita.`
         }
         confirmText={confirmDeleteClient && confirmDeleteClient.orderCount > 0 ? "Excluir Cliente e Todos os Pedidos" : "Excluir Cliente"}
         cancelText="Cancelar"

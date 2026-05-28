@@ -13,6 +13,22 @@ interface CartItem {
   number: string;
 }
 
+interface ParsedSize {
+  raw: string;
+  category: string;
+  label: string;
+  height?: string;
+  width?: string;
+}
+
+const parseSize = (size: string): ParsedSize => {
+  try {
+    const obj = JSON.parse(size);
+    if (obj.label) return obj as ParsedSize;
+  } catch (e) {}
+  return { raw: size, category: 'Geral', label: size };
+};
+
 // Fallback images in case DB doesn't have an image_url
 const FALLBACK_IMGS: Record<string, string> = {
   "regata-lakers": "/assets/images/jersey_nba_purple_1779853332145.png",
@@ -606,23 +622,35 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
         )}
       </div>
 
-      <div className={`fixed inset-0 bg-black/80 backdrop-blur-md z-[1100] flex flex-col items-center justify-end lg:justify-center p-0 lg:p-4 transition-all duration-300 ${activeModal ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} onClick={() => setActiveModal(null)} style={{ WebkitTapHighlightColor: 'transparent' }}>
-        {activeModal && (
-          <div className="bg-[#0b0e17] w-full max-w-[1000px] max-h-[92dvh] lg:max-h-[90vh] overflow-y-auto shadow-2xl relative scrollbar-thin rounded-t-[32px] lg:rounded-[28px] pb-8 lg:pb-0 transition-transform duration-300 translate-y-0" onClick={e => e.stopPropagation()}>
+      {/* Modal backdrop — only rendered when activeModal exists, avoiding blue-flash */}
+      {activeModal && (
+        <div
+          className="fixed inset-0 z-[1100] flex flex-col items-end lg:items-center justify-end lg:justify-center p-0 lg:p-4"
+          style={{ background: 'rgba(0,0,0,0.85)', WebkitTapHighlightColor: 'transparent' }}
+          onClick={() => setActiveModal(null)}
+        >
+          <div
+            className="bg-[#0b0e17] w-full max-w-[1000px] max-h-[92dvh] lg:max-h-[90vh] overflow-y-auto shadow-2xl relative rounded-t-[32px] lg:rounded-[28px] pb-8 lg:pb-0"
+            style={{ WebkitTapHighlightColor: 'transparent' }}
+            onClick={e => e.stopPropagation()}
+          >
             {/* Mobile Drag Handle */}
             <div className="w-full flex justify-center pt-3 pb-1 lg:hidden">
               <div className="w-12 h-1.5 bg-white/20 rounded-full"></div>
             </div>
-            
-            <div className="flex justify-end pt-2 px-5 lg:px-0 lg:absolute lg:top-4 lg:right-4 z-10 absolute right-0 top-2">
-              <button onClick={() => setActiveModal(null)} className="bg-white/5 hover:bg-white/10 text-slate-400 p-2 rounded-xl transition-colors backdrop-blur-md">
-                <Icon.X />
-              </button>
-            </div>
+
+            <button
+              onClick={() => setActiveModal(null)}
+              className="absolute top-3 right-3 z-20 bg-white/5 hover:bg-white/10 text-slate-400 p-2 rounded-xl transition-colors"
+              style={{ WebkitTapHighlightColor: 'transparent' }}
+            >
+              <Icon.X />
+            </button>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 relative mt-2 lg:mt-0">
-              <div className="p-4 lg:p-8 rounded-t-[32px] lg:rounded-l-[28px] lg:rounded-tr-none flex flex-col items-center justify-center min-h-[300px]" style={{ background: `linear-gradient(135deg, #07090d, ${activeModal.color_hex || '#7c3aed'}10)` }}>
-                <div className="text-center mb-3">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Arraste para girar</span>
+              <div className="p-4 lg:p-8 rounded-t-[32px] lg:rounded-l-[28px] lg:rounded-tr-none flex flex-col items-center justify-center min-h-[280px]" style={{ background: `linear-gradient(135deg, #07090d, ${activeModal.color_hex || '#7c3aed'}15)` }}>
+                <div className="text-center mb-2">
+                  <span className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">Arraste para girar • Visualização 360°</span>
                 </div>
                 <Viewer360 product={activeModal} color={activeModal.color_hex || '#7c3aed'} />
               </div>
@@ -709,8 +737,8 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
               </div>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <header className="sticky top-0 z-[100] h-[72px] flex items-center justify-between px-4 md:px-10 bg-[#07090d]/90 backdrop-blur-xl border-b border-purple-500/10">
         <div className="flex items-center gap-3 cursor-pointer">

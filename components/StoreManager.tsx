@@ -72,7 +72,7 @@ const MiniViewer360: React.FC<{ imageUrl?: string; color?: string }> = ({ imageU
   const [dragging, setDragging] = useState(false);
   const [auto, setAuto] = useState(true);
   const lastX = useRef(0);
-  const raf = useRef<number>();
+  const raf = useRef<number>(0);
 
   useEffect(() => {
     if (!auto) return;

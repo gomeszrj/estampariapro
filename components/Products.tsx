@@ -5,13 +5,15 @@ import {
   TrendingUp, Box, XCircle
 } from 'lucide-react';
 import { productService } from '../services/productService';
-import { Product } from '../types';
+import { supplierService } from '../services/supplierService';
+import { Product, Supplier, ProductSupplier } from '../types';
 import { FABRICS, GRADES } from '../constants';
 import { notify } from './ui/toast';
 import { ConfirmModal } from './ui/ConfirmModal';
 
 const Products: React.FC = () => {
     const [products, setProducts] = useState<Product[]>([]);
+    const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('Todas as categorias');
@@ -49,10 +51,19 @@ const Products: React.FC = () => {
     const loadProducts = async () => {
         setLoading(true);
         try {
-            const data = await productService.getAll();
+            const [data, suppliersData] = await Promise.all([
+                productService.getAll(),
+                supplierService.getAll()
+            ]);
+            
+            // For each product, we could load its suppliers, but for performance 
+            // we will load it when selecting if needed, or just rely on what we fetch here.
+            // Since we didn't add it to getAll() we fetch it on select.
+            
             setProducts(data);
+            setAllSuppliers(suppliersData);
             if (data.length > 0) {
-                setSelectedProduct(data[0]);
+                handleSelectProduct(data[0]);
             }
         } catch (error) {
             console.error("Failed to load products", error);
@@ -69,9 +80,21 @@ const Products: React.FC = () => {
     useEffect(() => {
         if (selectedProduct) {
             const updated = products.find(p => p.id === selectedProduct.id);
-            if (updated) setSelectedProduct(updated);
+            if (updated && updated !== selectedProduct) {
+                // Ensure we don't lose the suppliers if we update the product
+                handleSelectProduct(updated);
+            }
         }
     }, [products]);
+
+    const handleSelectProduct = async (product: Product) => {
+        try {
+            const suppliers = await productService.getProductSuppliers(product.id);
+            setSelectedProduct({ ...product, suppliers });
+        } catch (err) {
+            setSelectedProduct(product);
+        }
+    };
 
     // --- Actions ---
 
@@ -372,7 +395,7 @@ const Products: React.FC = () => {
                             return (
                                 <div
                                     key={product.id}
-                                    onClick={() => setSelectedProduct(product)}
+                                    onClick={() => handleSelectProduct(product)}
                                     className={`group bg-[#151B2B] rounded-2xl border transition-all duration-300 flex overflow-hidden cursor-pointer h-36 ${isSelected ? 'border-[#6366F1] shadow-[0_0_15px_rgba(99,102,241,0.1)]' : 'border-[#1e293b] hover:border-slate-600 shadow-lg'}`}
                                 >
                                     {/* Left Image */}
@@ -474,7 +497,7 @@ const Products: React.FC = () => {
 
                         {/* Tabs */}
                         <div className="flex px-5 mt-6 border-b border-[#1e293b]">
-                            {['detalhes', 'variações', 'estoque', 'histórico'].map((tab) => (
+                            {['detalhes', 'variações', 'fornecedores', 'estoque', 'histórico'].map((tab) => (
                                 <button 
                                     key={tab}
                                     onClick={() => setSidebarTab(tab as any)}
@@ -503,7 +526,9 @@ const Products: React.FC = () => {
                                     </div>
                                     <div className="flex">
                                         <div className="w-1/3 text-[10px] text-slate-500 font-bold uppercase flex items-center gap-2"><Box className="w-3 h-3" /> Fornecedor</div>
-                                        <div className="w-2/3 text-xs text-slate-300">Confecção Interna</div>
+                                        <div className="w-2/3 text-xs text-slate-300">
+                                            {selectedProduct.suppliers?.find(s => s.is_default)?.supplier?.name || 'Não definido'}
+                                        </div>
                                     </div>
                                     <div className="flex">
                                         <div className="w-1/3 text-[10px] text-slate-500 font-bold uppercase flex items-center gap-2"><Box className="w-3 h-3" /> Cód. Barras</div>
@@ -526,6 +551,27 @@ const Products: React.FC = () => {
                                             <span className="text-xs text-rose-400">Nenhuma grade definida.</span>
                                         )}
                                     </div>
+                                </div>
+                            )}
+                            {sidebarTab === 'fornecedores' && (
+                                <div className="space-y-4">
+                                    <p className="text-xs text-slate-500 font-bold">Fornecedores vinculados:</p>
+                                    {selectedProduct.suppliers && selectedProduct.suppliers.length > 0 ? (
+                                        selectedProduct.suppliers.map(ps => (
+                                            <div key={ps.id} className="bg-[#1e293b] p-3 rounded-lg border border-[#334155] flex justify-between items-center">
+                                                <div>
+                                                    <p className="text-xs font-bold text-white flex items-center gap-2">
+                                                        {ps.supplier?.name} 
+                                                        {ps.is_default && <span className="bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded text-[8px] uppercase">Padrão</span>}
+                                                    </p>
+                                                    <p className="text-[10px] text-slate-400 mt-0.5">Custo: R$ {ps.cost_price.toFixed(2)}</p>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <span className="text-xs text-rose-400 block text-center mt-4">Nenhum fornecedor vinculado.</span>
+                                    )}
+                                    <p className="text-[9px] text-slate-500 text-center mt-4">Para adicionar, clique em Editar Produto.</p>
                                 </div>
                             )}
                             {sidebarTab === 'estoque' && (

@@ -42,6 +42,7 @@ const CatalogRequests = React.lazy(() => import('./components/CatalogRequests'))
 const Inventory = React.lazy(() => import('./components/Inventory'));
 const ArtQueue = React.lazy(() => import('./components/ArtQueue'));
 const MasterAdmin = React.lazy(() => import('./components/MasterAdmin'));
+const Suppliers = React.lazy(() => import('./components/Suppliers').then(m => ({ default: m.Suppliers })));
 const CloudBot = React.lazy(() => import('./components/CloudBot').then(m => ({ default: m.CloudBot })));
 const WhatsAppManager = React.lazy(() => import('./components/WhatsAppManager').then(m => ({ default: m.WhatsAppManager })));
 
@@ -344,6 +345,9 @@ const AuthenticatedApp: React.FC = () => {
               )}
               {renderedViews.current.has('inventory') && (
                 <ViewPanel active={activeView === 'inventory'}><Inventory /></ViewPanel>
+              )}
+              {renderedViews.current.has('suppliers') && (
+                <ViewPanel active={activeView === 'suppliers'}><Suppliers /></ViewPanel>
               )}
               {renderedViews.current.has('art-queue') && (
                 <ViewPanel active={activeView === 'art-queue'}><ArtQueue /></ViewPanel>

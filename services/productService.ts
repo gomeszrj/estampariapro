@@ -106,6 +106,82 @@ export const productService = {
             .delete()
             .eq('id', recipeId);
         if (error) throw error;
+    },
+
+    // Suppliers
+    async getProductSuppliers(productId: string) {
+        const { data, error } = await supabase
+            .from('product_suppliers')
+            .select(`
+                *,
+                supplier:suppliers (*)
+            `)
+            .eq('product_id', productId);
+
+        if (error) throw error;
+        return data.map((item: any) => ({
+            id: item.id,
+            product_id: item.product_id,
+            supplier_id: item.supplier_id,
+            supplier: item.supplier,
+            cost_price: item.cost_price,
+            is_default: item.is_default
+        }));
+    },
+
+    async addProductSupplier(supplierData: { product_id: string; supplier_id: string; cost_price: number; is_default: boolean }) {
+        if (supplierData.is_default) {
+            // Reset others to false
+            await supabase.from('product_suppliers').update({ is_default: false }).eq('product_id', supplierData.product_id);
+        }
+
+        const { data, error } = await supabase
+            .from('product_suppliers')
+            .insert([supplierData])
+            .select(`*, supplier:suppliers (*)`)
+            .single();
+
+        if (error) throw error;
+        return {
+            id: data.id,
+            product_id: data.product_id,
+            supplier_id: data.supplier_id,
+            supplier: data.supplier,
+            cost_price: data.cost_price,
+            is_default: data.is_default
+        };
+    },
+
+    async updateProductSupplier(id: string, updates: { cost_price?: number; is_default?: boolean }, productId: string) {
+        if (updates.is_default) {
+            // Reset others
+            await supabase.from('product_suppliers').update({ is_default: false }).eq('product_id', productId);
+        }
+
+        const { data, error } = await supabase
+            .from('product_suppliers')
+            .update(updates)
+            .eq('id', id)
+            .select(`*, supplier:suppliers (*)`)
+            .single();
+
+        if (error) throw error;
+        return {
+            id: data.id,
+            product_id: data.product_id,
+            supplier_id: data.supplier_id,
+            supplier: data.supplier,
+            cost_price: data.cost_price,
+            is_default: data.is_default
+        };
+    },
+
+    async removeProductSupplier(id: string) {
+        const { error } = await supabase
+            .from('product_suppliers')
+            .delete()
+            .eq('id', id);
+        if (error) throw error;
     }
 };
 
