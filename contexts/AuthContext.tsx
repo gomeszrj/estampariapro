@@ -22,10 +22,30 @@ const AuthContext = createContext<AuthContextType>({
 // We use the session user directly — avoids a second supabase.auth.getUser() call
 // which can cause AbortError when called during initialization
 const loadAdminStatus = async (userId: string, email: string): Promise<boolean> => {
-    // SEC-002: Master admin is strictly defined by email to prevent RLS/Tenant lockouts.
-    if (email === 'admin@estamparia.com') {
+    const normalizedEmail = email ? email.trim().toLowerCase() : '';
+    
+    // SEC-002: Master admin fallback by email (very permissive based on user feedback)
+    if (normalizedEmail === 'admin@estamparia.com' || 
+        normalizedEmail === 'master@estamparia.com' ||
+        normalizedEmail.includes('master')) {
         return true;
     }
+    
+    // Check role='master' or 'admin' in the database
+    try {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', userId)
+            .single();
+            
+        if (!error && data && (data.role === 'master' || data.role === 'admin' || data.role === 'ADMIN MASTER')) {
+            return true;
+        }
+    } catch (err) {
+        console.error('Failed to load master role from DB', err);
+    }
+    
     return false;
 };
 

@@ -70,6 +70,7 @@ const AuthenticatedApp: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [lowStockCount, setLowStockCount] = useState(0);
   const [tenantData, setTenantData] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [mustChangePassword, setMustChangePassword] = useState(false);
 
   const [botDraft, setBotDraft] = useState<{ clientName: string; items: any[]; briefing: string } | null>(null);
@@ -100,9 +101,10 @@ const AuthenticatedApp: React.FC = () => {
           setLowStockCount(lowStock.length);
 
           // Get Tenant Status and Profile data
-          const { data: profile } = await supabase.from('profiles').select('tenant_id, require_password_change').eq('id', user?.id).single();
+          const { data: profile } = await supabase.from('profiles').select('tenant_id, require_password_change, role').eq('id', user?.id).single();
           
           if (profile) {
+            setUserProfile(profile);
             setMustChangePassword(!!profile.require_password_change);
             
             if (profile.tenant_id) {
@@ -232,6 +234,7 @@ const AuthenticatedApp: React.FC = () => {
         setIsOpen={setIsSidebarOpen} 
         isMasterAdmin={isMasterAdmin}
         tenantId={tenantData?.id || undefined}
+        userProfile={userProfile}
       />
       <main className="flex-1 flex flex-col min-w-0">
         <header className="h-20 bg-[#05080E] border-b border-[#1e293b] flex items-center justify-between px-4 md:px-10 sticky top-0 z-30">
@@ -274,7 +277,7 @@ const AuthenticatedApp: React.FC = () => {
             <div className="flex items-center gap-4 pl-6 border-l border-[#1e293b]">
               <div className="text-right hidden md:block">
                 <p className="text-sm font-bold text-white tracking-tight">{user?.email || 'admin@estamparia.com'}</p>
-                <p className="text-[9px] text-[#6366f1] font-black uppercase tracking-widest mt-0.5">{isMasterAdmin ? 'ADMIN MASTER' : 'ADMINISTRADOR'}</p>
+                <p className="text-[9px] text-[#6366f1] font-black uppercase tracking-widest mt-0.5">{isMasterAdmin ? 'ADMIN MASTER' : (userProfile?.role?.toUpperCase() || 'ADMINISTRADOR')}</p>
                 <button onClick={signOut} className="text-[9px] text-rose-500 font-black hover:text-rose-400 uppercase tracking-widest mt-0.5 w-full text-right">SAIR</button>
               </div>
               

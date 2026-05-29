@@ -18,9 +18,10 @@ interface SidebarProps {
   setIsOpen?: (val: boolean) => void;
   isMasterAdmin?: boolean;
   tenantId?: string;
+  userProfile?: any;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, setIsOpen, isMasterAdmin, tenantId }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, setIsOpen, isMasterAdmin, tenantId, userProfile }) => {
   const [cloudBotEnabled, setCloudBotEnabled] = React.useState(false);
   const [companyName, setCompanyName]         = React.useState('Minha Estamparia');
   const [companyLogo, setCompanyLogo]         = React.useState('');
@@ -265,8 +266,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
                 <img src="https://i.pravatar.cc/150?u=admin" alt="User" className="w-full h-full object-cover" />
               </div>
               <div className="flex flex-col">
-                <span className="text-white text-xs font-bold">Administrador</span>
-                <span className="text-[#6366f1] text-[9px] font-black tracking-widest uppercase mt-0.5">ADMIN MASTER</span>
+                <span className="text-white text-xs font-bold">{userProfile?.full_name || 'Usuário'}</span>
+                <span className="text-[#6366f1] text-[9px] font-black tracking-widest uppercase mt-0.5">{isMasterAdmin ? 'ADMIN MASTER' : (userProfile?.role?.toUpperCase() || 'ADMINISTRADOR')}</span>
               </div>
             </div>
             <span className="text-slate-500">
