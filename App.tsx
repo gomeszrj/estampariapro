@@ -86,6 +86,19 @@ const AuthenticatedApp: React.FC = () => {
           // If public, ONLY load products to be faster and safer
           const fetchedProducts = await productService.getAll();
           setProducts(fetchedProducts);
+        } else if (isMasterAdmin) {
+          // SEC-MASTER: Master Admin não carrega dados privados de nenhum tenant
+          // Apenas carrega o próprio profile para exibir nome/email no header
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('tenant_id, require_password_change, role')
+            .eq('id', user?.id)
+            .single();
+          if (profile) {
+            setUserProfile(profile);
+            setMustChangePassword(!!profile.require_password_change);
+            // Não carrega tenantData — Master Admin não é bloqueado por assinatura
+          }
         } else {
           const [fetchedClients, fetchedProducts, fetchedOrders, fetchedInventory] = await Promise.all([
             clientService.getAll(),

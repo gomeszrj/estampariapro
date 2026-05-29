@@ -18,16 +18,19 @@ const AuthContext = createContext<AuthContextType>({
     signOut: async () => { },
 });
 
-// SEC-002: Master admin is: role='admin' AND email='admin@estamparia.com'
+// SEC-002: Master admin is: role='master'/'admin' OR email in MASTER_EMAILS allowlist
 // We use the session user directly — avoids a second supabase.auth.getUser() call
 // which can cause AbortError when called during initialization
+
+// SEC-002: Allowlist de emails com acesso Master Admin garantido por email
+// ATENÇÃO: NÃO use includes() — apenas emails exatos são permitidos
+const MASTER_EMAILS = ['admin@estamparia.com', 'master@estamparia.com'];
+
 const loadAdminStatus = async (userId: string, email: string): Promise<boolean> => {
     const normalizedEmail = email ? email.trim().toLowerCase() : '';
     
-    // SEC-002: Master admin fallback by email (very permissive based on user feedback)
-    if (normalizedEmail === 'admin@estamparia.com' || 
-        normalizedEmail === 'master@estamparia.com' ||
-        normalizedEmail.includes('master')) {
+    // SEC-002: Verificação por email exato — apenas emails da allowlist são Master Admin
+    if (MASTER_EMAILS.includes(normalizedEmail)) {
         return true;
     }
     

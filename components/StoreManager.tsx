@@ -9,7 +9,7 @@ import {
   Move, GripVertical, ChevronUp, Layers, Zap, Target,
   ShoppingCart, Activity
 } from 'lucide-react';
-import { gmzStoreService, GmzProduct, GmzBanner, GmzOrder, GmzStoreSettings } from '../services/gmzStoreService';
+import { gmzStoreService, getTenantId, GmzProduct, GmzBanner, GmzOrder, GmzStoreSettings } from '../services/gmzStoreService';
 import { toast } from 'sonner';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -647,6 +647,7 @@ export const StoreManager: React.FC = () => {
   const [orderFilter, setOrderFilter] = useState('todos');
   const [searchTerm, setSearchTerm] = useState('');
   const [saving, setSaving] = useState(false);
+  const [tenantId, setTenantId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -663,6 +664,9 @@ export const StoreManager: React.FC = () => {
       if (o.status === 'fulfilled') setOrders(o.value);
       if (a.status === 'fulfilled') setAnalytics(a.value);
       if (s.status === 'fulfilled' && s.value) setSettings(s.value);
+      
+      const tId = await getTenantId();
+      if (tId) setTenantId(tId);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   }, []);
@@ -791,7 +795,7 @@ export const StoreManager: React.FC = () => {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
-            <a href="https://estampariapro.vercel.app?view=public_catalog" target="_blank" rel="noopener noreferrer" style={{ ...btnGhostStyle, textDecoration: 'none' }}>
+            <a href={`https://estampariapro.vercel.app?view=public_catalog${tenantId ? `&tenant=${tenantId}` : ''}`} target="_blank" rel="noopener noreferrer" style={{ ...btnGhostStyle, textDecoration: 'none' }}>
               <ExternalLink size={14} /> Ver Loja
             </a>
             <button onClick={load} style={btnGhostStyle}><RefreshCw size={14} /></button>

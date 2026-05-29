@@ -46,7 +46,8 @@ const Products: React.FC = () => {
     const activeProducts = products.filter(p => p.published).length;
     const disabledProducts = totalProducts - activeProducts;
     const mockInProduction = 8; // Placeholder based on mockup
-    const mockTotalStock = 1856; // Placeholder
+    // Remove mockup to prevent confusion
+    const mockTotalStock = 0;
 
     const loadProducts = async () => {
         setLoading(true);
@@ -308,7 +309,7 @@ const Products: React.FC = () => {
             </header>
 
             {/* KPIs */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-[#151B2B] p-5 rounded-2xl border border-[#1e293b] flex flex-col justify-between shadow-lg">
                     <div className="p-2.5 rounded-xl bg-purple-500/10 w-fit mb-3"><Package className="w-5 h-5 text-purple-400" /></div>
                     <h3 className="text-slate-400 text-[9px] font-bold uppercase tracking-widest mb-1">Total de Produtos</h3>
@@ -321,12 +322,7 @@ const Products: React.FC = () => {
                     <p className="text-2xl font-black text-white">{activeProducts}</p>
                     <div className="h-0.5 bg-emerald-500 w-full mt-2 rounded"></div>
                 </div>
-                <div className="bg-[#151B2B] p-5 rounded-2xl border border-[#1e293b] flex flex-col justify-between shadow-lg">
-                    <div className="p-2.5 rounded-xl bg-orange-500/10 w-fit mb-3"><TrendingUp className="w-5 h-5 text-orange-400" /></div>
-                    <h3 className="text-slate-400 text-[9px] font-bold uppercase tracking-widest mb-1">Em Produção</h3>
-                    <p className="text-2xl font-black text-white">{mockInProduction}</p>
-                    <div className="h-0.5 bg-orange-500 w-full mt-2 rounded"></div>
-                </div>
+
                 <div className="bg-[#151B2B] p-5 rounded-2xl border border-[#1e293b] flex flex-col justify-between shadow-lg">
                     <div className="p-2.5 rounded-xl bg-rose-500/10 w-fit mb-3"><XCircle className="w-5 h-5 text-rose-400" /></div>
                     <h3 className="text-slate-400 text-[9px] font-bold uppercase tracking-widest mb-1">Desativados</h3>
@@ -391,7 +387,7 @@ const Products: React.FC = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 h-[calc(100vh-420px)] min-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                         {filtered.map(product => {
                             const isSelected = selectedProduct?.id === product.id;
-                            const mockStock = Math.floor(Math.random() * 150) + 20; // Visual mockup consistency
+                            const productStock = 0; // Integration with physical stock pending
                             return (
                                 <div
                                     key={product.id}
@@ -425,7 +421,7 @@ const Products: React.FC = () => {
                                             <span className="text-sm font-black text-white">R$ {product.basePrice.toFixed(2)}</span>
                                             <div className="text-right">
                                                 <span className="block text-[8px] font-bold text-slate-500 uppercase">Estoque</span>
-                                                <span className="text-[10px] font-black text-emerald-500">{mockStock} un.</span>
+                                                <span className="text-[10px] font-black text-emerald-500">{productStock} un.</span>
                                             </div>
                                         </div>
 

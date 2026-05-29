@@ -72,7 +72,13 @@ export interface GmzStoreSettings {
   installments: number;
 }
 
-const getTenantId = async () => {
+export const getTenantId = async () => {
+  // 1. If there's a tenant in the URL (public store visit), use that
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlTenant = urlParams.get('tenant');
+  if (urlTenant) return urlTenant;
+
+  // 2. Otherwise get the logged in user's tenant
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
   const { data } = await supabase.from('profiles').select('tenant_id').eq('id', user.id).single();

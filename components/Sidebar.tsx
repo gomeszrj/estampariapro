@@ -116,7 +116,11 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
   };
 
   // ── Build menu items ──────────────────────────────────────────────────────
-  const menuItems = [
+  // SEC-MASTER: Se for Master Admin, exibe SOMENTE o painel de Gestão SaaS
+  // Não exibe pedidos, clientes, produtos ou qualquer dado de tenant
+  const menuItems = isMasterAdmin
+    ? [{ id: 'master-admin', label: 'Gestão SaaS', icon: ShieldAlert }]
+    : [
     can('can_view_dashboard')  && { id: 'dashboard',       label: 'Agenda',        icon: LayoutDashboard },
     can('can_view_orders')     && { id: 'orders',           label: 'Pedidos',       icon: ShoppingCart },
     can('can_view_kanban')     && { id: 'kanban',           label: 'Fluxo',         icon: Trello },
@@ -128,10 +132,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
     can('can_view_crm')        && { id: 'crm',              label: 'Central WhatsApp', icon: MessageSquare },
     can('can_view_inventory')  && { id: 'inventory',        label: 'Estoque',       icon: Box },
     can('can_view_inventory')  && { id: 'suppliers',        label: 'Fornecedores',  icon: Truck },
-    (isMasterAdmin && cloudBotEnabled) && { id: 'cloudbot', label: 'CloudBot Agent', icon: Bot },
+    (cloudBotEnabled)          && { id: 'cloudbot', label: 'CloudBot Agent', icon: Bot },
     can('can_view_finance')    && { id: 'finance',          label: 'Financeiro',    icon: TrendingUp },
-    // SaaS Management: master admin only (hard-coded, never a DB permission)
-    isMasterAdmin              && { id: 'master-admin',     label: 'Gestão SaaS',   icon: ShieldAlert },
   ].filter(Boolean) as { id: string; label: string; icon: React.ElementType }[];
 
   const handleCopyLink = (path: string) => {
@@ -194,8 +196,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
             </button>
           ))}
 
-          {/* External links — only for users with any actual permissions */}
-          {(isMasterAdmin || (permsLoaded && permissions)) && (
+          {/* External links — somente para tenants normais, nunca para Master Admin */}
+          {!isMasterAdmin && (isMasterAdmin || (permsLoaded && permissions)) && (
             <div className="pt-4 mt-4 border-t border-[#1e293b] space-y-2">
               <p className="px-5 text-[10px] font-black uppercase tracking-widest text-[#5A6578] mb-2">Links Externos</p>
 
@@ -230,8 +232,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
           )}
         </nav>
 
-        {/* Settings + Version */}
-        {can('can_view_settings') && (
+        {/* Settings — somente para tenants normais, nunca para Master Admin */}
+        {!isMasterAdmin && can('can_view_settings') && (
           <div className="p-6 border-t border-[#1e293b]">
             <button
               onClick={() => {

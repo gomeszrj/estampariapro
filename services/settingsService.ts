@@ -96,6 +96,7 @@ export const settingsService = {
 
         const payload = {
             id: settingsId,
+            tenant_id: settingsId !== 'default' ? settingsId : undefined,
             name: settings.name,
             cnpj: settings.cnpj,
             address: settings.address,
