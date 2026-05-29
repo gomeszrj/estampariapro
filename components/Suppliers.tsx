@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Supplier } from '../types';
 import { supplierService } from '../services/supplierService';
 import { Plus, Search, Edit2, Trash2, Truck, Phone, X, Save } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import { notify as toast } from './ui/toast';
 
 export const Suppliers: React.FC = () => {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
