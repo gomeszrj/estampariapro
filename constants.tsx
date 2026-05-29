@@ -3,14 +3,21 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 21.9 -> 22.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '25.0.2';
+export const SYSTEM_VERSION = '25.1.0';
 export const APP_NAME = 'Gomesz Speed Print';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 25.0.2 — "Layout 360 e Tabela de Medidas" (27/05/2026):
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 25.1.0 — "Gestão de SaaS e Multi-Tenant" (29/05/2026):
 
-👕 MÓDULO LOJA (STORE MANAGER & PUBLIC STORE):
-  * Otimizador de Imagens Client-Side: Redimensionamento automático de imagens pesadas antes do upload (Fim do erro de timeout no DB).
-  * Novo Layout Carrossel 360º: As miniaturas estáticas agora formam um carrossel lateral (no Desktop) ou inferior (Mobile) sem achatar o visualizador principal.
-  * Tabela de Medidas Inteligente: Possibilidade de informar Altura x Largura (em cm) para cada categoria de tamanho (Infantil, Feminino, Masculino) no Painel Admin. As medidas são exibidas em um card dinâmico na loja quando o cliente seleciona o tamanho.
+🏢 GESTÃO DE SAAS:
+  * Isolamento completo de dados por Tenant (RLS 100% ativado no Supabase).
+  * Painel de Master Admin para gestão de Tenants e Inadimplência.
+  * Credenciais de API (WhatsApp, Gemini) agora protegidas e isoladas por tenant.
+  * Correção no catálogo público (Public Store) com roteamento via tenant URL.
+  * Ajuste de Mockups visuais no Dashboard de Produtos para não causar confusão.
+
+(25.0.2) 👗 LAYOUT 360 E TABELA DE MEDIDAS:
+  * Otimizador de Imagens Client-Side: Redimensionamento automático de imagens pesadas antes do upload.
+  * Novo Layout Carrossel 360º.
+  * Tabela de Medidas Inteligente.
 
 (25.0.1) 🚀 UPLOAD DE IMAGENS NA LOJA:
   * Adicionado suporte a Upload de Arquivos diretos para as imagens do Banner Hero
