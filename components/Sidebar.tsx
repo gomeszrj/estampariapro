@@ -107,7 +107,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
         'can_view_dashboard', 'can_view_orders', 
         'can_view_kanban', 'can_view_art_queue', 'can_view_products', 
         'can_view_catalog', 'can_view_clients', 'can_view_crm', 
-        'can_view_inventory', 'can_view_finance', 'can_view_settings'
+        'can_view_inventory', 'can_view_finance', 'can_view_settings', 'can_view_store'
       ];
       return coreKeys.includes(permKey);
     }
@@ -126,7 +126,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
     can('can_view_kanban')     && { id: 'kanban',           label: 'Fluxo',         icon: Trello },
     can('can_view_art_queue')  && { id: 'art-queue',        label: 'Fila de Arte',  icon: Palette },
     can('can_view_products')   && { id: 'products',         label: 'Produtos',      icon: Package },
-    { id: 'store-manager',      label: 'Admin Loja',    icon: ShoppingCart },
+    can('can_view_store')      && { id: 'store-manager',      label: 'Admin Loja',    icon: ShoppingCart },
     can('can_view_catalog')    && { id: 'catalog-requests', label: 'Solicitações',  icon: Inbox },
     can('can_view_clients')    && { id: 'clients',          label: 'Clientes',      icon: Users },
     can('can_view_crm')        && { id: 'crm',              label: 'Central WhatsApp', icon: MessageSquare },

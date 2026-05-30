@@ -88,9 +88,12 @@ export const getTenantId = async () => {
 export const gmzStoreService = {
   /* ─── PRODUCTS ─── */
   async getProducts(): Promise<GmzProduct[]> {
+    const tenantId = await getTenantId();
+    if (!tenantId) return [];
     const { data, error } = await supabase
       .from('gmz_store_products')
       .select('*')
+      .eq('tenant_id', tenantId)
       .order('sort_order', { ascending: true });
     if (error) throw error;
     return data || [];
@@ -144,9 +147,12 @@ export const gmzStoreService = {
 
   /* ─── BANNERS ─── */
   async getBanners(): Promise<GmzBanner[]> {
+    const tenantId = await getTenantId();
+    if (!tenantId) return [];
     const { data, error } = await supabase
       .from('gmz_store_banners')
       .select('*')
+      .eq('tenant_id', tenantId)
       .order('sort_order', { ascending: true });
     if (error) throw error;
     return data || [];
@@ -181,9 +187,12 @@ export const gmzStoreService = {
 
   /* ─── ORDERS ─── */
   async getOrders(): Promise<GmzOrder[]> {
+    const tenantId = await getTenantId();
+    if (!tenantId) return [];
     const { data, error } = await supabase
       .from('gmz_store_orders')
       .select('*')
+      .eq('tenant_id', tenantId)
       .order('created_at', { ascending: false });
     if (error) throw error;
     return data || [];
@@ -232,9 +241,12 @@ export const gmzStoreService = {
 
   /* ─── ANALYTICS ─── */
   async getAnalytics() {
+    const tenantId = await getTenantId();
+    if (!tenantId) return null;
     const { data: orders } = await supabase
       .from('gmz_store_orders')
-      .select('total_price, status, created_at, items');
+      .select('total_price, status, created_at, items')
+      .eq('tenant_id', tenantId);
 
     const total = orders?.reduce((s, o) => s + Number(o.total_price), 0) || 0;
     const byStatus = {

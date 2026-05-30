@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { productService } from '../services/productService';
 import { supplierService } from '../services/supplierService';
+import { inventoryService } from '../services/inventoryService';
+import { orderService } from '../services/orderService';
 import { Product, Supplier, ProductSupplier } from '../types';
 import { FABRICS, GRADES } from '../constants';
 import { notify } from './ui/toast';
@@ -18,6 +20,9 @@ const Products: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('Todas as categorias');
     const [statusFilter, setStatusFilter] = useState('Todos');
+
+    const [inProductionCount, setInProductionCount] = useState(0);
+    const [totalStock, setTotalStock] = useState(0);
 
     // UI States
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -45,16 +50,15 @@ const Products: React.FC = () => {
     const totalProducts = products.length;
     const activeProducts = products.filter(p => p.published).length;
     const disabledProducts = totalProducts - activeProducts;
-    const mockInProduction = 8; // Placeholder based on mockup
-    // Remove mockup to prevent confusion
-    const mockTotalStock = 0;
 
     const loadProducts = async () => {
         setLoading(true);
         try {
-            const [data, suppliersData] = await Promise.all([
+            const [data, suppliersData, inventoryData, ordersData] = await Promise.all([
                 productService.getAll(),
-                supplierService.getAll()
+                supplierService.getAll(),
+                inventoryService.getAll().catch(() => []),
+                orderService.getAll().catch(() => [])
             ]);
             
             // For each product, we could load its suppliers, but for performance 
@@ -63,6 +67,9 @@ const Products: React.FC = () => {
             
             setProducts(data);
             setAllSuppliers(suppliersData);
+            setTotalStock(inventoryData.reduce((acc: number, item: any) => acc + (Number(item.quantity) || 0), 0));
+            setInProductionCount(ordersData.filter((o: any) => o.status === 'IN_PRODUCTION' || o.status === 'SUBLIMATION').length);
+
             if (data.length > 0) {
                 handleSelectProduct(data[0]);
             }
@@ -300,8 +307,7 @@ const Products: React.FC = () => {
                 </div>
             </header>
 
-            {/* KPIs */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <div className="bg-[#151B2B] p-5 rounded-2xl border border-[#1e293b] flex flex-col justify-between shadow-lg">
                     <div className="p-2.5 rounded-xl bg-purple-500/10 w-fit mb-3"><Package className="w-5 h-5 text-purple-400" /></div>
                     <h3 className="text-slate-400 text-[9px] font-bold uppercase tracking-widest mb-1">Total de Produtos</h3>
@@ -314,7 +320,12 @@ const Products: React.FC = () => {
                     <p className="text-2xl font-black text-white">{activeProducts}</p>
                     <div className="h-0.5 bg-emerald-500 w-full mt-2 rounded"></div>
                 </div>
-
+                <div className="bg-[#151B2B] p-5 rounded-2xl border border-[#1e293b] flex flex-col justify-between shadow-lg">
+                    <div className="p-2.5 rounded-xl bg-orange-500/10 w-fit mb-3"><TrendingUp className="w-5 h-5 text-orange-400" /></div>
+                    <h3 className="text-slate-400 text-[9px] font-bold uppercase tracking-widest mb-1">Em Produção</h3>
+                    <p className="text-2xl font-black text-white">{inProductionCount}</p>
+                    <div className="h-0.5 bg-orange-500 w-full mt-2 rounded"></div>
+                </div>
                 <div className="bg-[#151B2B] p-5 rounded-2xl border border-[#1e293b] flex flex-col justify-between shadow-lg">
                     <div className="p-2.5 rounded-xl bg-rose-500/10 w-fit mb-3"><XCircle className="w-5 h-5 text-rose-400" /></div>
                     <h3 className="text-slate-400 text-[9px] font-bold uppercase tracking-widest mb-1">Desativados</h3>
@@ -324,7 +335,7 @@ const Products: React.FC = () => {
                 <div className="bg-[#151B2B] p-5 rounded-2xl border border-[#1e293b] flex flex-col justify-between shadow-lg">
                     <div className="p-2.5 rounded-xl bg-blue-500/10 w-fit mb-3"><Package className="w-5 h-5 text-blue-400" /></div>
                     <h3 className="text-slate-400 text-[9px] font-bold uppercase tracking-widest mb-1">Estoque Total</h3>
-                    <p className="text-2xl font-black text-white">{mockTotalStock.toLocaleString('pt-BR')} <span className="text-sm font-bold text-slate-500">un.</span></p>
+                    <p className="text-2xl font-black text-white">{totalStock.toLocaleString('pt-BR')} <span className="text-sm font-bold text-slate-500">un.</span></p>
                     <div className="h-0.5 bg-blue-500 w-full mt-2 rounded"></div>
                 </div>
             </div>
