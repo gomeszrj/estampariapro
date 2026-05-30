@@ -38,12 +38,17 @@ const loadAdminStatus = async (userId: string, email: string): Promise<boolean> 
     try {
         const { data, error } = await supabase
             .from('profiles')
-            .select('role')
+            .select('role, tenant_id')
             .eq('id', userId)
             .single();
             
-        if (!error && data && (data.role === 'master' || data.role === 'admin' || data.role === 'ADMIN MASTER')) {
-            return true;
+        if (!error && data) {
+            const isMasterRole = data.role === 'master' || data.role === 'ADMIN MASTER' || data.role === 'admin';
+            const isMasterTenant = data.tenant_id === '00000000-0000-0000-0000-000000000001';
+            
+            if (isMasterRole && isMasterTenant) {
+                return true;
+            }
         }
     } catch (err) {
         console.error('Failed to load master role from DB', err);
