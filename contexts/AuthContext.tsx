@@ -24,7 +24,7 @@ const AuthContext = createContext<AuthContextType>({
 
 // SEC-002: Allowlist de emails com acesso Master Admin garantido por email
 // ATENÇÃO: NÃO use includes() — apenas emails exatos são permitidos
-const MASTER_EMAILS = ['admin@estamparia.com', 'master@estamparia.com'];
+const MASTER_EMAILS = ['master@estamparia.com'];
 
 const loadAdminStatus = async (userId: string, email: string): Promise<boolean> => {
     const normalizedEmail = email ? email.trim().toLowerCase() : '';
