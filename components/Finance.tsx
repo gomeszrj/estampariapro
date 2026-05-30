@@ -472,9 +472,7 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
       <div className="bg-[#151B2B] rounded-2xl border border-[#1e293b] p-6 shadow-lg">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-sm font-black text-white tracking-widest uppercase">Fluxo de caixa</h3>
-          <button className="bg-[#0b1221] hover:bg-slate-800 border border-[#1e293b] text-slate-300 px-4 py-2 rounded-lg text-[10px] font-bold shadow-sm transition-all flex items-center gap-2" onClick={() => notify.info('Exportação será liberada em breve.')}>
-            <Download className="w-3.5 h-3.5" /> Exportar relatório <ChevronRight className="w-3 h-3 rotate-90 ml-1" />
-          </button>
+
         </div>
         
         <div className="overflow-x-auto">

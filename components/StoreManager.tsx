@@ -10,6 +10,7 @@ import {
   ShoppingCart, Activity
 } from 'lucide-react';
 import { gmzStoreService, getTenantId, GmzProduct, GmzBanner, GmzOrder, GmzStoreSettings } from '../services/gmzStoreService';
+import { tenantService } from '../services/tenantService';
 import { toast } from 'sonner';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -635,7 +636,7 @@ export const StoreManager: React.FC = () => {
   const [orders, setOrders] = useState<GmzOrder[]>([]);
   const [analytics, setAnalytics] = useState<any>(null);
   const [settings, setSettings] = useState<Partial<GmzStoreSettings>>({
-    store_name: 'GMZ Performance', store_subtitle: 'Uniformes Esportivos Premium',
+    store_name: '', store_subtitle: 'Uniformes Esportivos Premium',
     primary_color: '#7c3aed', accent_color: '#4f46e5',
     hero_title: 'VISTA SUA IDENTIDADE', hero_subtitle: 'QUALIDADE. ESTILO. PERFORMANCE.',
     hero_description: 'Peças produzidas com alta tecnologia para quem vive o esporte.',
@@ -648,6 +649,7 @@ export const StoreManager: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [saving, setSaving] = useState(false);
   const [tenantId, setTenantId] = useState<string | null>(null);
+  const [tenantName, setTenantName] = useState<string>('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -666,7 +668,13 @@ export const StoreManager: React.FC = () => {
       if (s.status === 'fulfilled' && s.value) setSettings(s.value);
       
       const tId = await getTenantId();
-      if (tId) setTenantId(tId);
+      if (tId) {
+        setTenantId(tId);
+        try {
+          const tenant = await tenantService.getTenantById(tId);
+          if (tenant && tenant.name) setTenantName(tenant.name);
+        } catch (e) { console.error('Erro ao buscar tenant', e); }
+      }
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   }, []);
@@ -789,7 +797,7 @@ export const StoreManager: React.FC = () => {
             <div style={{ width: 48, height: 48, background: 'linear-gradient(135deg, #7c3aed, #4f46e5)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(124,58,237,0.4)', fontSize: 22 }}>⚡</div>
             <div>
               <h1 style={{ fontSize: 24, fontWeight: 900, color: 'white', letterSpacing: '-0.02em', marginBottom: 2 }}>
-                Admin da Loja <span style={{ color: '#7c3aed' }}>GMZ Performance</span>
+                Admin da Loja <span style={{ color: '#7c3aed' }}>{tenantName || settings.store_name || 'Personalizada'}</span>
               </h1>
               <p style={{ fontSize: 13, color: '#475569' }}>Gerencie produtos, banners, pedidos e configurações da sua loja online</p>
             </div>

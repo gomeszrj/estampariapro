@@ -111,9 +111,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chatId, clientName, what
                         <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest">{whatsappId}</p>
                     </div>
                 </div>
-                <button onClick={() => notify.info('Configurações do contato em desenvolvimento.')} className="text-slate-500 hover:text-white transition-colors">
-                    <MoreVertical className="w-5 h-5" />
-                </button>
+
             </div>
 
             {/* Messages Area */}
@@ -140,9 +138,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chatId, clientName, what
             {/* Input Area */}
             <div className="p-4 border-t border-[#1e293b] bg-[#0f172a]">
                 <div className="flex gap-2 items-end">
-                    <button onClick={() => notify.info('O envio de anexos será liberado na próxima versão.')} className="p-3 rounded-xl text-slate-500 hover:bg-slate-800 hover:text-slate-300 transition-all">
-                        <Paperclip className="w-5 h-5" />
-                    </button>
+
                     <div className="flex-1 bg-[#1C1C26] border border-[#1e293b] rounded-2xl flex items-center px-4 py-2 focus-within:ring-2 focus-within:ring-indigo-500/50 transition-all">
                         <textarea
                             value={newMessage}
@@ -152,9 +148,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chatId, clientName, what
                             className="w-full bg-transparent border-none focus:ring-0 text-sm text-slate-200 placeholder:text-slate-600 resize-none h-6 max-h-32 py-1 scrollbar-hide"
                             rows={1}
                         />
-                        <button onClick={() => notify.info('Teclado de emojis em desenvolvimento.')} className="ml-2 text-slate-600 hover:text-indigo-400">
-                            <Smile className="w-5 h-5" />
-                        </button>
+
                     </div>
                     <button
                         onClick={handleSend}

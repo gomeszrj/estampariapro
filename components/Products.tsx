@@ -284,15 +284,7 @@ const Products: React.FC = () => {
                     <p className="text-slate-400 text-xs font-medium mt-1">Cadastre e gerencie seus produtos e variações.</p>
                 </div>
                 <div className="flex gap-4">
-                    <button className="bg-[#151B2B] text-slate-300 px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg border border-[#1e293b] flex items-center gap-2 hover:bg-[#1a2235] transition-all">
-                        <Folder className="w-4 h-4" />
-                        Categorias
-                        <ChevronRight className="w-3 h-3 rotate-90 ml-1" />
-                    </button>
-                    <button className="bg-[#151B2B] text-slate-300 px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg border border-[#1e293b] flex items-center gap-2 hover:bg-[#1a2235] transition-all" onClick={() => notify.info('Exportação será liberada em breve.')}>
-                        <Download className="w-4 h-4" />
-                        Exportar
-                    </button>
+
                     <button
                         onClick={() => {
                             setEditingProduct({

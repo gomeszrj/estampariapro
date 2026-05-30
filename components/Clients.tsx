@@ -207,9 +207,7 @@ const Clients: React.FC<ClientsProps> = ({ clients, setClients, orders }) => {
           <p className="text-slate-500 mt-1">Cadastre e gerencie seus clientes e acompanhe o histórico de pedidos e compras.</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="hidden md:flex px-4 py-2.5 rounded-xl bg-[#0b1221] border border-[#1e293b] text-slate-400 text-xs font-black uppercase tracking-widest items-center gap-2 cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => notify.info('Filtro "Mais recentes" estará disponível em breve.')}>
-            Mais recentes <ArrowRight className="w-3 h-3 rotate-90" />
-          </div>
+
           <button className="hidden md:flex px-4 py-2.5 rounded-xl bg-[#0b1221] border border-[#1e293b] text-slate-400 text-xs font-black uppercase tracking-widest items-center gap-2 hover:bg-slate-800 transition-colors" onClick={handleExportCSV}>
             <Download className="w-4 h-4" /> Exportar
           </button>

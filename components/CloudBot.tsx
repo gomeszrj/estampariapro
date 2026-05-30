@@ -221,12 +221,7 @@ export const CloudBot: React.FC<CloudBotProps> = ({ onCreateOrder }) => {
                     </div>
                 </div>
 
-                <div className="mt-auto pt-6 border-t border-[#1e293b]">
-                    <button onClick={() => { if(typeof notify !== 'undefined') notify.info('A geração forçada de pedidos estará disponível em breve.'); else alert('Em breve!'); }} className="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 shadow-lg shadow-purple-900/20 transition-all active:scale-95 group">
-                        <Save className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                        Forçar Geração de Pedido
-                    </button>
-                </div>
+
             </div>
         </div>
     );
