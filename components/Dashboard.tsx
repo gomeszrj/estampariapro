@@ -381,41 +381,6 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) =>
              })}
           </div>
         </div>
-
-        {/* FATURAMENTO DOS ÚLTIMOS 6 MESES */}
-        <div className="bg-[#0b1221] rounded-2xl border border-[#1e293b] p-6 shadow-xl flex flex-col h-[400px]">
-          <div className="flex justify-between items-start mb-6 shrink-0">
-            <div>
-              <h3 className="text-sm font-black text-white tracking-widest uppercase">Faturamento dos últimos 6 meses</h3>
-              <p className="text-xs text-slate-500 mt-1">Análise de faturamento mensal</p>
-            </div>
-
-          </div>
-          
-          <div className="flex-1 w-full min-h-0">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={[
-                { name: 'Jan', value: 18200 },
-                { name: 'Fev', value: 22800 },
-                { name: 'Mar', value: 19600 },
-                { name: 'Abr', value: 27400 },
-                { name: 'Mai', value: 28500 },
-                { name: 'Jun', value: 31200 },
-              ]} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="name" stroke="#334155" fontSize={10} tickLine={false} axisLine={false} />
-                <YAxis stroke="#334155" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(value) => `${value/1000}k`} />
-                <RechartsTooltip content={<CustomTooltip />} />
-                <Area type="monotone" dataKey="value" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" dot={{ stroke: '#8b5cf6', strokeWidth: 2, fill: '#0b1221', r: 4 }} activeDot={{ r: 6, fill: '#8b5cf6' }} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
       </div>
 
       {selectedOrder && (

@@ -66,8 +66,8 @@ export const STATUS_CONFIG = {
   [OrderStatus.RECEIVED]: { label: 'Aguardando', color: 'bg-[#0f172a] text-purple-400 border-purple-900/50' },
   [OrderStatus.IN_PRODUCTION]: { label: 'Em Produção', color: 'bg-[#0f172a] text-blue-400 border-blue-900/50' },
   [OrderStatus.SUBLIMATION]: { label: 'Sublimação', color: 'bg-[#0f172a] text-orange-400 border-orange-900/50' },
-  [OrderStatus.FINALIZATION]: { label: 'Finalização', color: 'bg-[#0f172a] text-emerald-400 border-emerald-900/50' },
-  [OrderStatus.FINISHED]: { label: 'Concluídos Hoje', color: 'bg-[#0f172a] text-emerald-500 border-emerald-500/50' },
+  [OrderStatus.FINALIZATION]: { label: 'Conferido', color: 'bg-[#0f172a] text-emerald-400 border-emerald-900/50' },
+  [OrderStatus.FINISHED]: { label: 'Concluído', color: 'bg-[#0f172a] text-emerald-500 border-emerald-500/50' },
   // Store Flow
   [OrderStatus.STORE_REQUEST]: { label: 'Solicitação Nova', color: 'bg-pink-900/30 text-pink-400 border-pink-900/50' },
   [OrderStatus.STORE_CONFERENCE]: { label: 'Em Conferência', color: 'bg-violet-900/30 text-violet-400 border-violet-900/50' },
