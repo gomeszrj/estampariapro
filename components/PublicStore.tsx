@@ -438,16 +438,16 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
       }
       .gmz-store .btn-primary {
         display: inline-flex; align-items: center; gap: 8px;
-        padding: 14px 28px; background: linear-gradient(135deg, #7c3aed, #4f46e5);
+        padding: 14px 28px; background: linear-gradient(135deg, ${primaryColor}, ${settings?.accent_color || '#4f46e5'});
         color: white; font-weight: 700; font-size: 12px;
         text-transform: uppercase; letter-spacing: 0.1em;
         border-radius: 12px; border: none; cursor: pointer;
-        box-shadow: 0 4px 25px rgba(124,58,237,0.35);
+        box-shadow: 0 4px 25px ${primaryColor}59;
         transition: all 0.2s ease; text-decoration: none;
       }
-      .gmz-store .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 35px rgba(124,58,237,0.5); filter: brightness(1.1); }
+      .gmz-store .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 35px ${primaryColor}80; filter: brightness(1.1); }
       .gmz-store .section-title { font-size: clamp(22px, 3vw, 30px); font-weight: 800; color: white; letter-spacing: -0.02em; }
-      .gmz-store .section-title span { color: #a855f7; }
+      .gmz-store .section-title span { color: ${primaryColor}; }
       .gmz-store .product-card {
         background: rgba(13,15,23,0.8); border: 1px solid rgba(139,92,246,0.1);
         border-radius: 20px; overflow: hidden; transition: all 0.3s ease;
@@ -745,9 +745,15 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
           <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center text-lg md:text-xl" style={{ background: `linear-gradient(135deg, ${primaryColor}, #4f46e5)`, boxShadow: `0 0 20px ${primaryColor}66` }}>
             ⚡
           </div>
-          <div>
-            <div className="text-sm md:text-base font-black text-white tracking-tight leading-none">{storeName.split(' ')[0]}</div>
-            <div className="text-[9px] md:text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: primaryColor }}>{storeName.split(' ').slice(1).join(' ')}</div>
+          <div className="flex flex-col">
+            {settings?.logo_url ? (
+              <img src={settings.logo_url} alt={storeName} style={{ height: 40, width: 'auto', objectFit: 'contain' }} />
+            ) : (
+              <>
+                <div className="text-sm md:text-base font-black tracking-tighter leading-none" style={{ color: 'white' }}>{storeName.split(' ')[0]}</div>
+                <div className="text-[9px] md:text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: primaryColor }}>{storeName.split(' ').slice(1).join(' ')}</div>
+              </>
+            )}
           </div>
         </div>
 

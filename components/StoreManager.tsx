@@ -1174,6 +1174,29 @@ export const StoreManager: React.FC = () => {
                 <h3 style={{ fontSize: 14, fontWeight: 800, color: 'white', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <Palette size={14} color="#7c3aed" /> Identidade Visual
                 </h3>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={labelStyle}>Logo da Loja</label>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    {settings.logo_url && (
+                      <img src={settings.logo_url} alt="Logo" style={{ height: 40, width: 'auto', objectFit: 'contain', background: 'rgba(255,255,255,0.05)', padding: 4, borderRadius: 8 }} />
+                    )}
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: 'rgba(124,58,237,0.1)', color: '#a78bfa', borderRadius: 8, cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>
+                      <Upload size={14} /> Upload Logo
+                      <input type="file" accept="image/*" style={{ display: 'none' }} onChange={async e => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        toast.info('Fazendo upload da logo...');
+                        try {
+                          const url = await gmzStoreService.uploadStoreImage(file, 'banners');
+                          setSettings(s => ({ ...s, logo_url: url }));
+                          toast.success('Logo atualizada!');
+                        } catch (err) {
+                          toast.error('Erro ao subir logo');
+                        }
+                      }} />
+                    </label>
+                  </div>
+                </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                   <div>
                     <label style={labelStyle}>Cor Primária</label>

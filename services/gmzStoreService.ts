@@ -58,6 +58,7 @@ export interface GmzStoreSettings {
   id?: string;
   tenant_id?: string;
   store_name: string;
+  logo_url?: string;
   store_subtitle: string;
   whatsapp?: string;
   email?: string;
