@@ -68,7 +68,7 @@ const Products: React.FC = () => {
             setProducts(data);
             setAllSuppliers(suppliersData);
             setTotalStock(inventoryData.reduce((acc: number, item: any) => acc + (Number(item.quantity) || 0), 0));
-            setInProductionCount(ordersData.filter((o: any) => o.status === 'IN_PRODUCTION' || o.status === 'SUBLIMATION').length);
+            setInProductionCount(ordersData.filter((o: any) => o.status === 'IN_PRODUCTION').length);
 
             if (data.length > 0) {
                 handleSelectProduct(data[0]);

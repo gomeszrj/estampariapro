@@ -13,7 +13,6 @@ import { notify } from './ui/toast';
 const statuses = [
   OrderStatus.RECEIVED,
   OrderStatus.IN_PRODUCTION,
-  OrderStatus.SUBLIMATION,
   OrderStatus.FINALIZATION,
   OrderStatus.FINISHED,
 ];
@@ -364,7 +363,6 @@ const Kanban: React.FC<KanbanProps> = ({ orders, setOrders, setActiveView }) => 
   // Calculate Metrics
   const emProducao = orders.filter(o => o.status === OrderStatus.IN_PRODUCTION).length;
   const aguardando = orders.filter(o => o.status === OrderStatus.RECEIVED).length;
-  const sublimacao = orders.filter(o => o.status === OrderStatus.SUBLIMATION).length;
   const finalizados = orders.filter(o => o.status === OrderStatus.FINISHED).length;
   const atrasados = orders.filter(o => new Date(o.deliveryDate) < new Date() && o.status !== OrderStatus.FINISHED).length;
 
@@ -388,7 +386,7 @@ const Kanban: React.FC<KanbanProps> = ({ orders, setOrders, setActiveView }) => 
       </header>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         {/* Metric Card 1 */}
         <div className="bg-[#0b1221] rounded-2xl p-4 border border-[#1e293b] flex items-center gap-4 relative overflow-hidden group">
           <div className="w-12 h-12 rounded-xl bg-blue-900/20 text-blue-500 flex items-center justify-center shrink-0">
@@ -413,19 +411,6 @@ const Kanban: React.FC<KanbanProps> = ({ orders, setOrders, setActiveView }) => 
             <p className="text-[9px] text-slate-500 mt-0.5">Pedidos</p>
           </div>
           <div className="absolute bottom-0 right-4 w-6 h-0.5 bg-purple-500 rounded-full"></div>
-        </div>
-
-        {/* Metric Card 3 */}
-        <div className="bg-[#0b1221] rounded-2xl p-4 border border-[#1e293b] flex items-center gap-4 relative overflow-hidden">
-          <div className="w-12 h-12 rounded-xl bg-orange-900/20 text-orange-500 flex items-center justify-center shrink-0">
-             <Settings className="w-5 h-5" />
-          </div>
-          <div>
-            <h4 className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Sublimação</h4>
-            <div className="text-2xl font-black text-white leading-none">{sublimacao}</div>
-            <p className="text-[9px] text-slate-500 mt-0.5">Pedidos</p>
-          </div>
-          <div className="absolute bottom-0 right-4 w-6 h-0.5 bg-orange-500 rounded-full"></div>
         </div>
 
         {/* Metric Card 4 */}

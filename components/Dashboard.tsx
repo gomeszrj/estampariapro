@@ -235,9 +235,8 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) =>
              
              {[
                { label: 'Pedido recebido', count: counts.received, color: 'blue', icon: PackageCheck },
-               { label: 'Arte aprovada', count: orders.filter(o => o.status === OrderStatus.SUBLIMATION).length, color: 'purple', icon: Palette },
+               { label: 'Arte e Finalização', count: counts.finalization, color: 'purple', icon: Palette },
                { label: 'Em produção', count: counts.production, color: 'pink', icon: Hammer },
-               { label: 'Sublimação', count: orders.filter(o => o.status === OrderStatus.FINALIZATION).length, color: 'yellow', icon: Printer },
                { label: 'Finalizado', count: counts.finished, color: 'emerald', icon: CheckCircle2 }
              ].map((step, i) => {
                 const colorMap: any = {
