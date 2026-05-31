@@ -328,7 +328,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) =>
             </div>
           </div>
           
-          <div className="overflow-y-auto flex-1 pr-2 custom-scrollbar relative flex flex-col gap-3">
+          <div className="overflow-y-auto flex-1 pr-2 custom-scrollbar relative grid grid-cols-1 sm:grid-cols-2 gap-4 content-start pb-4">
              {sortedOrders.map((item, i) => {
                   if (item.status === OrderStatus.FINISHED) return null; // Esconder finalizados da agenda
 
@@ -344,37 +344,36 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) =>
                   let statusColor = 'text-slate-400 bg-slate-800';
                   let statusLabel: string = item.status;
                   if (item.status === OrderStatus.IN_PRODUCTION) { statusColor = 'text-blue-400 bg-blue-500/10'; statusLabel = 'Produção'; }
-                  if (item.status === OrderStatus.RECEIVED) { statusColor = 'text-amber-400 bg-amber-500/10'; statusLabel = 'Aguardando'; }
-                  if (item.status === OrderStatus.FINALIZATION) { statusColor = 'text-yellow-400 bg-yellow-500/10'; statusLabel = 'Finalização'; }
-                  if (item.status === OrderStatus.SUBLIMATION) { statusColor = 'text-purple-400 bg-purple-500/10'; statusLabel = 'Aprovação'; }
+                  if (item.status === OrderStatus.RECEIVED) { statusColor = 'text-purple-400 bg-purple-500/10'; statusLabel = 'Aguardando'; }
+                  if (item.status === OrderStatus.FINALIZATION) { statusColor = 'text-emerald-400 bg-emerald-500/10'; statusLabel = 'Conferido'; }
                   
                   const day = item.deliveryDate ? item.deliveryDate.split('-')[2] : '--';
                   const month = item.deliveryDate ? item.deliveryDate.split('-')[1] : '--';
 
                   return (
-                    <div key={item.id} onClick={() => handleOrderClick(item)} className={`border border-[#1e293b] rounded-2xl p-3 flex items-center gap-4 cursor-pointer hover:border-slate-600 transition-colors group ${bgCard}`}>
-                      {/* Data Box */}
-                      <div className={`w-14 h-14 rounded-xl flex flex-col items-center justify-center shrink-0 border border-current/10 ${isLate ? 'bg-rose-500/10' : isSoon ? 'bg-amber-500/10' : 'bg-slate-800'} ${dateColor}`}>
-                         <span className="text-2xl font-black leading-none">{day}</span>
-                         <span className="text-[9px] font-bold uppercase tracking-widest mt-0.5">{month}</span>
+                    <div key={item.id} onClick={() => handleOrderClick(item)} className={`border border-[#1e293b] rounded-2xl p-4 flex flex-col gap-3 cursor-pointer hover:border-slate-500 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(0,0,0,0.4)] group ${bgCard}`}>
+                      {/* Top Header: Date & Status */}
+                      <div className="flex justify-between items-start">
+                        <div className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center shrink-0 border border-current/10 ${isLate ? 'bg-rose-500/10 shadow-[0_0_10px_rgba(244,63,94,0.1)]' : isSoon ? 'bg-amber-500/10 shadow-[0_0_10px_rgba(245,158,11,0.1)]' : 'bg-[#0b1221]'} ${dateColor}`}>
+                           <span className="text-xl font-black leading-none">{day}</span>
+                           <span className="text-[8px] font-bold uppercase tracking-widest mt-0.5">{month}</span>
+                        </div>
+                        <span className={`px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-widest ${statusColor}`}>
+                           {statusLabel}
+                        </span>
                       </div>
                       
                       {/* Order Info */}
-                      <div className="flex-1 min-w-0">
-                         <div className="flex items-center gap-2 mb-1">
-                            <span className="text-white font-black truncate group-hover:text-emerald-400 transition-colors">{item.clientName}</span>
-                            <span className="text-slate-500 text-[10px] font-bold">#{item.orderNumber}</span>
+                      <div className="flex-1 min-w-0 flex flex-col justify-end mt-1">
+                         <div className="flex items-center gap-2 mb-1.5">
+                            <span className="text-white text-xs font-black truncate group-hover:text-indigo-400 transition-colors" title={item.clientName}>{item.clientName}</span>
                          </div>
-                         <div className="text-slate-500 text-[10px] uppercase truncate">
-                            {item.items && item.items.length > 0 ? products.find(p => p.id === item.items![0].productId)?.name || 'Produto' : 'Diversos'}
+                         <div className="flex justify-between items-center pt-2 border-t border-[#1e293b]/50">
+                            <span className="text-slate-500 text-[9px] uppercase font-bold truncate tracking-widest max-w-[60%]">
+                               {item.items && item.items.length > 0 ? products.find(p => p.id === item.items![0].productId)?.name || item.items[0].productName : 'Diversos'}
+                            </span>
+                            <span className="text-slate-400 text-[10px] font-black bg-black/20 px-1.5 py-0.5 rounded">#{item.orderNumber}</span>
                          </div>
-                      </div>
-
-                      {/* Status */}
-                      <div className="shrink-0 hidden sm:block">
-                         <span className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${statusColor}`}>
-                           {statusLabel}
-                         </span>
                       </div>
                     </div>
                   );
