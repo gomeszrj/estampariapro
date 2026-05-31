@@ -263,6 +263,22 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, orders, onMove }) =
   );
 };
 
+const HOLIDAYS = [
+  '2026-01-01', // Ano Novo
+  '2026-02-17', // Carnaval
+  '2026-04-03', // Sexta-feira Santa
+  '2026-04-21', // Tiradentes
+  '2026-05-01', // Dia do Trabalho
+  '2026-06-04', // Corpus Christi
+  '2026-09-07', // Independência
+  '2026-10-12', // Nossa Senhora Aparecida
+  '2026-11-02', // Finados
+  '2026-11-15', // Proclamação da República
+  '2026-12-25', // Natal
+  // 2027
+  '2027-01-01', '2027-02-09', '2027-03-26', '2027-04-21', '2027-05-01', '2027-05-27', '2027-09-07', '2027-10-12', '2027-11-02', '2027-11-15', '2027-12-25'
+];
+
 const KanbanCalendar: React.FC<{ orders: Order[], onMove: (id: string, status: OrderStatus) => void }> = ({ orders, onMove }) => {
   const [currentDate, setCurrentDate] = React.useState(new Date());
 
@@ -280,48 +296,83 @@ const KanbanCalendar: React.FC<{ orders: Order[], onMove: (id: string, status: O
   for (let i = 1; i <= daysInMonth; i++) days.push(new Date(currentDate.getFullYear(), currentDate.getMonth(), i));
 
   return (
-    <div className="flex-1 bg-[#0b1221]/80 rounded-2xl border border-[#1e293b] p-6 flex flex-col min-h-0 overflow-y-auto scrollbar-hide">
+    <div className="flex-1 bg-[#05080e]/90 rounded-3xl border border-[#1e293b]/50 p-8 flex flex-col min-h-0 overflow-y-auto custom-scrollbar shadow-2xl relative overflow-hidden backdrop-blur-xl">
+      {/* Background glow effects */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+
       {/* Calendar Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-xl font-black text-white uppercase tracking-wider">{monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}</h3>
-        <div className="flex gap-2">
-          <button onClick={prevMonth} className="p-2 bg-[#1e293b] text-white rounded-lg hover:bg-slate-700 transition-colors"><ChevronLeft className="w-4 h-4" /></button>
-          <button onClick={nextMonth} className="p-2 bg-[#1e293b] text-white rounded-lg hover:bg-slate-700 transition-colors"><ChevronRight className="w-4 h-4" /></button>
+      <div className="flex justify-between items-center mb-8 relative z-10">
+        <h3 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-100 to-slate-400 uppercase tracking-widest">{monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}</h3>
+        <div className="flex gap-3">
+          <button onClick={prevMonth} className="p-2.5 bg-[#0b1221] border border-[#1e293b] text-slate-300 rounded-xl hover:bg-slate-800 hover:text-white transition-all shadow-lg hover:shadow-indigo-500/10"><ChevronLeft className="w-5 h-5" /></button>
+          <button onClick={nextMonth} className="p-2.5 bg-[#0b1221] border border-[#1e293b] text-slate-300 rounded-xl hover:bg-slate-800 hover:text-white transition-all shadow-lg hover:shadow-indigo-500/10"><ChevronRight className="w-5 h-5" /></button>
         </div>
       </div>
       
       {/* Days of week */}
-      <div className="grid grid-cols-7 gap-2 mb-2">
+      <div className="grid grid-cols-7 gap-3 mb-4 relative z-10">
         {dayNames.map(day => (
-          <div key={day} className="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">{day}</div>
+          <div key={day} className="text-center text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">{day}</div>
         ))}
       </div>
 
       {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-2 flex-1">
+      <div className="grid grid-cols-7 gap-3 flex-1 relative z-10">
         {days.map((date, idx) => {
-          if (!date) return <div key={`empty-${idx}`} className="bg-[#1e293b]/20 rounded-xl"></div>;
+          if (!date) return <div key={`empty-${idx}`} className="bg-[#0b1221]/20 border border-dashed border-[#1e293b]/30 rounded-2xl"></div>;
           
           const dateStr = date.toISOString().split('T')[0];
           const dayOrders = orders.filter(o => (o.deliveryDate || '').startsWith(dateStr));
           const isToday = new Date().toISOString().split('T')[0] === dateStr;
+          const isHoliday = HOLIDAYS.includes(dateStr);
 
           return (
-            <div key={dateStr} className={`bg-[#05080E] rounded-xl border ${isToday ? 'border-[#4f46e5]' : 'border-[#1e293b]'} p-2 flex flex-col gap-1 min-h-[100px]`}>
-              <div className={`text-right text-[12px] font-black ${isToday ? 'text-[#4f46e5]' : 'text-slate-500'}`}>{date.getDate()}</div>
-              <div className="flex flex-col gap-1 overflow-y-auto max-h-[80px] scrollbar-hide">
+            <div key={dateStr} className={`relative bg-gradient-to-b from-[#0b1221] to-[#05080e] rounded-2xl border ${isToday ? 'border-[#6366f1] shadow-[0_0_25px_rgba(99,102,241,0.15)]' : isHoliday ? 'border-rose-500/30 bg-rose-950/10' : 'border-[#1e293b] hover:border-slate-700'} p-3 flex flex-col gap-2 min-h-[140px] transition-all duration-300 group`}>
+              {/* Day Header */}
+              <div className="flex justify-between items-start mb-1">
+                {isHoliday ? (
+                   <span className="text-[8px] font-black uppercase tracking-widest text-rose-400 bg-rose-500/10 px-2 py-1 rounded border border-rose-500/20 shadow-[0_0_10px_rgba(244,63,94,0.1)]">Feriado</span>
+                ) : isToday ? (
+                   <span className="text-[8px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded border border-indigo-500/20 shadow-[0_0_10px_rgba(99,102,241,0.1)]">Hoje</span>
+                ) : <span></span>}
+                
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-[13px] font-black transition-all duration-300 ${isToday ? 'bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.5)]' : isHoliday ? 'bg-rose-950 text-rose-500' : 'bg-[#1e293b]/50 text-slate-400 group-hover:bg-slate-800 group-hover:text-white'}`}>{date.getDate()}</div>
+              </div>
+              
+              {/* Orders List */}
+              <div className="flex flex-col gap-2 overflow-y-auto flex-1 custom-scrollbar pr-1 -mr-1">
                 {dayOrders.map(order => {
-                  let color = 'bg-slate-500';
-                  if (order.status === OrderStatus.RECEIVED) color = 'bg-purple-500';
-                  else if (order.status === OrderStatus.IN_PRODUCTION) color = 'bg-blue-500';
-                  else if (order.status === OrderStatus.SUBLIMATION) color = 'bg-orange-500';
-                  else if (order.status === OrderStatus.FINALIZATION) color = 'bg-emerald-400';
-                  else if (order.status === OrderStatus.FINISHED) color = 'bg-emerald-500';
+                  let color = 'bg-[#0f172a]/50 text-slate-300 border-slate-700/50 hover:bg-slate-800/80 hover:border-slate-600';
+                  let dotColor = 'bg-slate-400';
+                  
+                  if (order.status === OrderStatus.RECEIVED) {
+                     color = 'bg-purple-950/30 text-purple-300 border-purple-900/50 hover:bg-purple-900/40 hover:border-purple-500/60';
+                     dotColor = 'bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]';
+                  }
+                  else if (order.status === OrderStatus.IN_PRODUCTION) {
+                     color = 'bg-blue-950/30 text-blue-300 border-blue-900/50 hover:bg-blue-900/40 hover:border-blue-500/60';
+                     dotColor = 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]';
+                  }
+                  else if (order.status === OrderStatus.FINALIZATION) {
+                     color = 'bg-emerald-950/30 text-emerald-300 border-emerald-900/50 hover:bg-emerald-900/40 hover:border-emerald-500/60';
+                     dotColor = 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]';
+                  }
+                  else if (order.status === OrderStatus.FINISHED) {
+                     color = 'bg-[#0b1221]/30 text-emerald-700/60 border-emerald-900/20 opacity-70 hover:opacity-100 hover:bg-[#0b1221]';
+                     dotColor = 'bg-emerald-700/60';
+                  }
                   
                   return (
-                    <div key={order.id} className="bg-[#1e293b] rounded-md px-1.5 py-1 flex items-center gap-1.5 overflow-hidden">
-                      <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${color}`}></div>
-                      <span className="text-[9px] font-bold text-slate-300 truncate whitespace-nowrap">#{order.orderNumber} {order.clientName}</span>
+                    <div key={order.id} className={`border rounded-xl p-2.5 flex flex-col gap-1.5 transition-all duration-300 cursor-pointer backdrop-blur-md relative overflow-hidden group/item ${color}`}>
+                      <div className="flex items-center gap-2 relative z-10">
+                        <div className={`w-1.5 h-1.5 rounded-full shrink-0 transition-transform group-hover/item:scale-125 ${dotColor}`}></div>
+                        <span className="text-[10px] font-black truncate w-full tracking-wide drop-shadow-sm">{order.clientName}</span>
+                      </div>
+                      <div className="flex items-center justify-between pl-3.5 relative z-10">
+                        <span className="text-[8.5px] font-bold opacity-60 tracking-[0.15em] uppercase">#{order.orderNumber}</span>
+                        <span className="text-[8.5px] font-bold opacity-80 bg-black/30 px-1.5 py-0.5 rounded shadow-inner">{order.items?.length || 0} unid</span>
+                      </div>
                     </div>
                   );
                 })}
@@ -369,13 +420,23 @@ const Kanban: React.FC<KanbanProps> = ({ orders, setOrders, setActiveView }) => 
   return (
     <div className="h-[calc(100vh-1.5rem)] flex flex-col gap-4 animate-in slide-in-from-right-8 duration-150 bg-[#05080E] -m-4 sm:-m-8 p-4 sm:p-8">
       {/* Header */}
-      <header className="flex justify-between items-center">
+      <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
           <h2 className="text-3xl font-black text-slate-100 tracking-tight">Produção</h2>
           <p className="text-[12px] text-slate-400 mt-1">Acompanhe o fluxo de produção em tempo real e gerencie as etapas.</p>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+            <input
+              type="text"
+              placeholder="Buscar pedido ou cliente..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 bg-[#0b1221] border border-[#1e293b] rounded-xl text-xs text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none w-full sm:w-64 transition-all"
+            />
+          </div>
           <button onClick={() => setKanbanView(kanbanView === 'calendar' ? 'board' : 'calendar')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#1e293b] transition-colors text-[11px] font-black uppercase tracking-widest ${kanbanView === 'calendar' ? 'bg-[#1e293b] text-white' : 'text-slate-300 hover:bg-[#0b1221] hover:text-white'}`}>
             {kanbanView === 'calendar' ? <><Package className="w-4 h-4" /> Ver Quadro Kanban</> : <><CalendarIcon className="w-4 h-4" /> Ver calendário</>}
           </button>
