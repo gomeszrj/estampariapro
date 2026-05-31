@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Supplier } from '../types';
 import { supplierService } from '../services/supplierService';
-import { Plus, Search, Edit2, Trash2, Truck, Phone, X, Save } from 'lucide-react';
+import { productService } from '../services/productService';
+import { Product } from '../types';
+import { Plus, Search, Edit2, Trash2, Truck, Phone, X, Save, DollarSign } from 'lucide-react';
 import { notify as toast } from './ui/toast';
 
 export const Suppliers: React.FC = () => {
@@ -11,6 +13,12 @@ export const Suppliers: React.FC = () => {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [supplierProducts, setSupplierProducts] = useState<any[]>([]);
+  
+  // States for adding a new product cost
+  const [selectedProductId, setSelectedProductId] = useState('');
+  const [costPrice, setCostPrice] = useState('');
   
   const [formData, setFormData] = useState({
     name: '',
@@ -21,7 +29,15 @@ export const Suppliers: React.FC = () => {
 
   useEffect(() => {
     loadSuppliers();
+    loadAllProducts();
   }, []);
+
+  const loadAllProducts = async () => {
+    try {
+      const data = await productService.getAll();
+      setAllProducts(data);
+    } catch (e) { console.error('Erro ao buscar produtos:', e); }
+  };
 
   const loadSuppliers = async () => {
     try {
@@ -35,7 +51,7 @@ export const Suppliers: React.FC = () => {
     }
   };
 
-  const handleOpenModal = (supplier?: Supplier) => {
+  const handleOpenModal = async (supplier?: Supplier) => {
     if (supplier) {
       setEditingSupplier(supplier);
       setFormData({
@@ -44,10 +60,18 @@ export const Suppliers: React.FC = () => {
         whatsapp: supplier.whatsapp || '',
         notes: supplier.notes || ''
       });
+      // Load supplier products
+      try {
+        const sps = await supplierService.getSupplierProducts(supplier.id);
+        setSupplierProducts(sps);
+      } catch (e) { console.error(e); }
     } else {
       setEditingSupplier(null);
+      setSupplierProducts([]);
       setFormData({ name: '', contact_name: '', whatsapp: '', notes: '' });
     }
+    setSelectedProductId('');
+    setCostPrice('');
     setIsModalOpen(true);
   };
 
@@ -75,6 +99,41 @@ export const Suppliers: React.FC = () => {
       loadSuppliers();
     } catch (error) {
       toast.error('Erro ao salvar fornecedor');
+    }
+  };
+
+  const handleAddSupplierProduct = async () => {
+    if (!editingSupplier) return;
+    if (!selectedProductId || !costPrice) {
+      toast.error('Selecione um produto e informe o custo');
+      return;
+    }
+    try {
+      await supplierService.saveSupplierProduct({
+        supplier_id: editingSupplier.id,
+        product_id: selectedProductId,
+        cost_price: Number(costPrice)
+      });
+      toast.success('Custo adicionado!');
+      // Reload
+      const sps = await supplierService.getSupplierProducts(editingSupplier.id);
+      setSupplierProducts(sps);
+      setSelectedProductId('');
+      setCostPrice('');
+    } catch (e) {
+      toast.error('Erro ao adicionar custo');
+    }
+  };
+
+  const handleDeleteSupplierProduct = async (id: string) => {
+    if (!editingSupplier) return;
+    try {
+      await supplierService.deleteSupplierProduct(id);
+      toast.success('Custo removido!');
+      const sps = await supplierService.getSupplierProducts(editingSupplier.id);
+      setSupplierProducts(sps);
+    } catch (e) {
+      toast.error('Erro ao remover custo');
     }
   };
 
@@ -245,6 +304,56 @@ export const Suppliers: React.FC = () => {
                 </div>
               </div>
             </form>
+            
+            {editingSupplier ? (
+              <div className="p-6 border-t border-[#1e293b] bg-[#0b1121]">
+                <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2"><DollarSign className="w-4 h-4 text-emerald-500" /> Tabela de Custos (Produtos)</h3>
+                <div className="flex gap-2 mb-4">
+                  <select
+                    value={selectedProductId}
+                    onChange={e => setSelectedProductId(e.target.value)}
+                    className="flex-1 bg-[#1e293b] border border-[#334155] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500"
+                  >
+                    <option value="">Selecione um produto...</option>
+                    {allProducts.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="number" step="0.01" min="0"
+                    placeholder="R$ Custo"
+                    value={costPrice}
+                    onChange={e => setCostPrice(e.target.value)}
+                    className="w-24 bg-[#1e293b] border border-[#334155] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500"
+                  />
+                  <button onClick={handleAddSupplierProduct} className="bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded-lg transition-colors">
+                    <Plus className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                  {supplierProducts.length === 0 ? (
+                    <p className="text-xs text-slate-500 text-center py-2">Nenhum custo cadastrado para este fornecedor.</p>
+                  ) : (
+                    supplierProducts.map(sp => (
+                      <div key={sp.id} className="flex justify-between items-center bg-[#1e293b] border border-[#334155] p-2 rounded-lg">
+                        <span className="text-sm text-slate-300 truncate pr-2">{sp.products?.name}</span>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className="text-sm font-bold text-emerald-400">R$ {Number(sp.cost_price).toFixed(2)}</span>
+                          <button onClick={() => handleDeleteSupplierProduct(sp.id)} className="text-slate-500 hover:text-rose-500 p-1">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="px-6 py-4 bg-[#0b1121] border-t border-[#1e293b] text-xs text-slate-400 text-center">
+                Salve o fornecedor primeiro para poder vincular produtos e custos.
+              </div>
+            )}
             
             <div className="p-6 border-t border-[#1e293b] flex justify-end gap-3">
               <button

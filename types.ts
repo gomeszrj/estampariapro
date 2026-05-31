@@ -69,6 +69,7 @@ export interface Order {
   totalValue: number;
   discountValue?: number; // New: Value of discount applied
   amountPaid?: number; // New: Custom partial payment amount
+  supplierId?: string; // Selected supplier for margin calculation
   createdAt: string;
   deliveryDate: string;
   notes?: string;

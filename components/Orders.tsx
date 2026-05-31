@@ -47,6 +47,7 @@ import { printServiceOrder, printInvoice } from '../utils/printUtils';
 import { orderService } from '../services/orderService';
 import { clientService } from '../services/clientService';
 import { financeService } from '../services/financeService';
+import { supplierService } from '../services/supplierService';
 import { notify } from './ui/toast';
 import { ConfirmModal } from './ui/ConfirmModal';
 import { ColumnDef } from '@tanstack/react-table';
@@ -127,6 +128,30 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
   const [layoutUrls, setLayoutUrls] = useState<string[]>([]);
   const [designFileUrls, setDesignFileUrls] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  
+  // Suppliers & Margins
+  const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [supplierId, setSupplierId] = useState<string>('');
+  const [supplierProducts, setSupplierProducts] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    loadSuppliers();
+  }, []);
+
+  const loadSuppliers = async () => {
+    try {
+      const data = await supplierService.getAll();
+      setSuppliers(data);
+    } catch (e) { console.error('Erro ao buscar fornecedores:', e); }
+  };
+
+  React.useEffect(() => {
+    if (supplierId) {
+      supplierService.getSupplierProducts(supplierId).then(setSupplierProducts).catch(console.error);
+    } else {
+      setSupplierProducts([]);
+    }
+  }, [supplierId]);
 
   // Confirm modal states (UX-001)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -194,6 +219,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
     setDelayReason(order.delayReason || '');
     setOrderType(order.orderType || OrderType.SALE);
     setPaymentStatus(order.paymentStatus || PaymentStatus.PENDING);
+    setSupplierId(order.supplierId || '');
     setParsedItems((order.items || []).length > 0 ? (order.items || []).map(i => ({
       product: i.productName,
       grade: (i.gradeLabel || 'Unidade') as any,
@@ -329,6 +355,8 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
     setDesignFileUrls([]);
     setIsUploading(false);
     setIsPartialEditMode(false);
+    setSupplierId('');
+    setSupplierProducts([]);
   };
 
   const handleDelete = (id: string) => {
@@ -382,6 +410,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
         discountValue: parsedDiscount,
         totalValue: finalTotalValue,
         amountPaid: calculatedAmountPaid,
+        supplierId: supplierId || undefined,
         createdAt: new Date().toISOString(),
         deliveryDate: deliveryDate,
         briefing: editingOrderId ? undefined : newOrderBriefing,
@@ -467,6 +496,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
           delayReason,
           orderType,
           paymentStatus,
+          supplierId: supplierId || undefined,
           clientId: clientIdToUse,
           amountPaid: orderData.amountPaid,
           items: orderData.items,
@@ -711,6 +741,65 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                           />
                         </div>
                       </div>
+
+                      {/* Supplier & Margin Section */}
+                      <div className="mt-4 pt-4 border-t border-[#1e293b] grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                        <div>
+                          <label className="text-[9px] font-bold text-slate-500 uppercase block mb-2">Fornecedor do Pedido</label>
+                          <select
+                            value={supplierId}
+                            onChange={(e) => setSupplierId(e.target.value)}
+                            className="w-full bg-[#0b1221] border border-slate-700 rounded-xl px-3 py-3 text-[10px] font-black text-slate-200 uppercase outline-none focus:border-purple-500"
+                          >
+                            <option value="">Produção Interna (Nenhum)</option>
+                            {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                          </select>
+                        </div>
+                        {supplierId && (
+                          <div className="bg-[#0f172a] rounded-xl p-3 border border-emerald-900/30 flex items-center justify-between">
+                            <div>
+                              <p className="text-[9px] font-bold text-slate-500 uppercase mb-0.5">Custo Calculado</p>
+                              <p className="text-sm font-black text-slate-300">R$ {(() => {
+                                const totalCost = parsedItems.reduce((acc, curr) => {
+                                  const prod = productsByName.get((curr.product || '').trim().toLowerCase());
+                                  if (prod) {
+                                    const sp = supplierProducts.find(s => s.product_id === prod.id);
+                                    if (sp) return acc + (Number(sp.cost_price) * (curr.quantity || 0));
+                                  }
+                                  return acc;
+                                }, 0);
+                                return totalCost.toFixed(2);
+                              })()}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-[9px] font-bold text-emerald-500 uppercase mb-0.5">Lucro Estimado</p>
+                              <p className="text-sm font-black text-emerald-400">R$ {(() => {
+                                const calculatedTotal = parsedItems.reduce((acc, curr) => {
+                                  const prod = productsByName.get((curr.product || '').trim().toLowerCase());
+                                  const price = prod ? prod.basePrice : 35;
+                                  return acc + (curr.quantity || 0) * price;
+                                }, 0);
+                                const parsedDiscount = typeof discountValue === 'number' ? discountValue : (parseFloat((discountValue || "0").toString()) || 0);
+                                const finalTotalValue = Math.max(0, calculatedTotal - parsedDiscount);
+                                
+                                const totalCost = parsedItems.reduce((acc, curr) => {
+                                  const prod = productsByName.get((curr.product || '').trim().toLowerCase());
+                                  if (prod) {
+                                    const sp = supplierProducts.find(s => s.product_id === prod.id);
+                                    if (sp) return acc + (Number(sp.cost_price) * (curr.quantity || 0));
+                                  }
+                                  return acc;
+                                }, 0);
+                                
+                                const margin = finalTotalValue - totalCost;
+                                const pct = finalTotalValue > 0 ? (margin / finalTotalValue) * 100 : 0;
+                                return `${margin.toFixed(2)} (${pct.toFixed(0)}%)`;
+                              })()}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
                     </div>
 
                     {/* Layout Images — Multiple */}
