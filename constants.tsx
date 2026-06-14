@@ -3,7 +3,7 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 21.9 -> 22.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '25.3.1';
+export const SYSTEM_VERSION = '25.4.0';
 export const APP_NAME = 'Gomesz Speed Print';
 export const LATEST_RELEASE_NOTES = `Novidades da Versão 25.3.1 — "Correção de Upload" (02/06/2026):
 

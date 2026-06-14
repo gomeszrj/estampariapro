@@ -4,6 +4,15 @@ Registro de todas as alterações relevantes e marcos de versão do ERP Multi-Te
 
 ---
 
+## [v25.4.0] — 2026-06-13
+### Adicionado & Melhorado
+- **Múltiplos Fornecedores por Pedido**: Suporte para associar fornecedores diferentes a itens individuais dentro do mesmo pedido, com custos de unidade e fornecedor salvos de forma estática no momento do pedido (`supplier_id` e `unit_cost` no item).
+- **Isolamento de Tenants (Fornecedores)**: Refatoração completa nos serviços de Fornecedores (`supplierService.ts`) e Produtos (`productService.ts`) para blindagem total de vazamentos de dados entre lojas usando a cláusula `.eq('tenant_id', tenantId)`.
+- **Custo de Produção Interna vs Fornecedor**: O catálogo agora exibe o Custo Interno de forma independente dos custos via fornecedores, gerando margens de lucro dinâmicas na interface de produtos.
+- **Mega CRM (Oculto)**: Funcionalidades do painel Evolution CRM desativadas visualmente para os tenants até posterior liberação da versão estável.
+
+---
+
 ## [v21.8] — 2026-05-20
 ### Adicionado
 - **TanStack React Query Cache:** Configuração global do `QueryClient` e `QueryClientProvider` no `App.tsx` para otimização de performance e caching de dados na árvore de componentes.

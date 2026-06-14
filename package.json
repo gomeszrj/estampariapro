@@ -1,7 +1,7 @@
 {
   "name": "estampariapro",
   "private": true,
-  "version": "25.3.1",
+  "version": "25.4.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
