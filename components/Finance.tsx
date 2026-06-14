@@ -60,6 +60,8 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
+  const [showAllIncome, setShowAllIncome] = useState(false);
+  const [showAllExpense, setShowAllExpense] = useState(false);
 
   // Month/Year Filter State
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
@@ -438,17 +440,17 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
         </div>
 
         {/* CONTAS A RECEBER */}
-        <div className="lg:col-span-3 bg-[#151B2B] p-6 rounded-2xl border border-[#1e293b] shadow-lg flex flex-col h-[380px]">
+        <div className={`lg:col-span-3 bg-[#151B2B] p-6 rounded-2xl border border-[#1e293b] shadow-lg flex flex-col ${showAllIncome ? 'h-auto min-h-[380px]' : 'h-[380px]'}`}>
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-sm font-black text-white tracking-widest uppercase">Contas a receber</h3>
-            <span className="text-[10px] text-[#6366F1] font-bold cursor-pointer hover:underline uppercase">Ver todas</span>
+            <span onClick={() => setShowAllIncome(!showAllIncome)} className="text-[10px] text-[#6366F1] font-bold cursor-pointer hover:underline uppercase">{showAllIncome ? 'Ocultar' : 'Ver todas'}</span>
           </div>
           
           <div className="flex-1 overflow-y-auto pr-2 space-y-4 custom-scrollbar">
             {incomeTransactions.length === 0 ? (
               <div className="text-center py-10 opacity-50 text-xs text-slate-500 font-bold">Nenhuma conta.</div>
             ) : (
-              incomeTransactions.slice(0, 5).map(t => (
+              (showAllIncome ? incomeTransactions : incomeTransactions.slice(0, 5)).map(t => (
                 <div key={t.id} className="flex items-center gap-3 group">
                   <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-[10px] font-black text-white ${getRandomColor(t.id)}`}>
                     {getInitials(t.description)}
@@ -475,17 +477,17 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
         </div>
 
         {/* CONTAS A PAGAR */}
-        <div className="lg:col-span-3 bg-[#151B2B] p-6 rounded-2xl border border-[#1e293b] shadow-lg flex flex-col h-[380px]">
+        <div className={`lg:col-span-3 bg-[#151B2B] p-6 rounded-2xl border border-[#1e293b] shadow-lg flex flex-col ${showAllExpense ? 'h-auto min-h-[380px]' : 'h-[380px]'}`}>
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-sm font-black text-white tracking-widest uppercase">Contas a pagar</h3>
-            <span className="text-[10px] text-[#6366F1] font-bold cursor-pointer hover:underline uppercase">Ver todas</span>
+            <span onClick={() => setShowAllExpense(!showAllExpense)} className="text-[10px] text-[#6366F1] font-bold cursor-pointer hover:underline uppercase">{showAllExpense ? 'Ocultar' : 'Ver todas'}</span>
           </div>
           
           <div className="flex-1 overflow-y-auto pr-2 space-y-4 custom-scrollbar">
             {expenseTransactions.length === 0 ? (
               <div className="text-center py-10 opacity-50 text-xs text-slate-500 font-bold">Nenhuma conta.</div>
             ) : (
-              expenseTransactions.slice(0, 5).map(t => (
+              (showAllExpense ? expenseTransactions : expenseTransactions.slice(0, 5)).map(t => (
                 <div key={t.id} className="flex items-center gap-3 group">
                   <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-[10px] font-black text-white ${getRandomColor(t.id + 'p')}`}>
                     {getInitials(t.description)}
@@ -558,6 +560,87 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* DETAILED PRINT REPORT */}
+      <div className="hidden print:block mt-8 break-before-page bg-white p-8">
+        <h3 className="text-xl font-black text-black uppercase mb-4 border-b-2 border-slate-800 pb-2">
+          Relatório Descriminado - {selectedMonth.toString().padStart(2, '0')}/{selectedYear}
+        </h3>
+        
+        <h4 className="text-sm font-bold text-black uppercase mt-6 mb-2">1. Receitas / Entradas</h4>
+        <table className="w-full text-left text-[11px] mb-6 border-collapse">
+           <thead>
+             <tr className="border-b-2 border-slate-400">
+               <th className="pb-2 pt-2 px-1">Data</th>
+               <th className="pb-2 pt-2 px-1">Descrição</th>
+               <th className="text-right pb-2 pt-2 px-1">Valor</th>
+             </tr>
+           </thead>
+           <tbody>
+             {incomeTransactions.map(t => (
+               <tr key={t.id} className="border-b border-slate-200">
+                 <td className="py-2 px-1 text-black">{new Date(t.date).toLocaleDateString('pt-BR')}</td>
+                 <td className="py-2 px-1 text-black">{t.description}</td>
+                 <td className="text-right font-bold py-2 px-1 text-black">R$ {formatMoney(t.amount)}</td>
+               </tr>
+             ))}
+           </tbody>
+        </table>
+
+        <h4 className="text-sm font-bold text-black uppercase mt-6 mb-2">2. Despesas Operacionais</h4>
+        <table className="w-full text-left text-[11px] mb-6 border-collapse">
+           <thead>
+             <tr className="border-b-2 border-slate-400">
+               <th className="pb-2 pt-2 px-1">Data</th>
+               <th className="pb-2 pt-2 px-1">Descrição</th>
+               <th className="pb-2 pt-2 px-1">Categoria</th>
+               <th className="text-right pb-2 pt-2 px-1">Valor</th>
+             </tr>
+           </thead>
+           <tbody>
+             {expenseTransactions.map(t => (
+               <tr key={t.id} className="border-b border-slate-200">
+                 <td className="py-2 px-1 text-black">{new Date(t.date).toLocaleDateString('pt-BR')}</td>
+                 <td className="py-2 px-1 text-black">{t.description}</td>
+                 <td className="py-2 px-1 uppercase text-black">{t.category}</td>
+                 <td className="text-right font-bold py-2 px-1 text-black">R$ {formatMoney(t.amount)}</td>
+               </tr>
+             ))}
+           </tbody>
+        </table>
+
+        <h4 className="text-sm font-bold text-black uppercase mt-6 mb-2">3. Pedidos do Mês (Faturamento e Custo)</h4>
+        <table className="w-full text-left text-[11px] mb-6 border-collapse">
+           <thead>
+             <tr className="border-b-2 border-slate-400">
+               <th className="pb-2 pt-2 px-1">Pedido</th>
+               <th className="pb-2 pt-2 px-1">Cliente</th>
+               <th className="text-right pb-2 pt-2 px-1">Faturamento</th>
+               <th className="text-right pb-2 pt-2 px-1">Custo Insumos</th>
+             </tr>
+           </thead>
+           <tbody>
+             {currentMonthOrders.map(o => {
+               const cost = o.items.reduce((acc, item) => {
+                 let c = item.unitCost;
+                 if (c === undefined || c === null) {
+                   const p = products.find(prod => prod.id === item.productId);
+                   c = p?.costPrice || 0;
+                 }
+                 return acc + (c * item.quantity);
+               }, 0);
+               return (
+                 <tr key={o.id} className="border-b border-slate-200">
+                   <td className="py-2 px-1 text-black">#{o.orderNumber}</td>
+                   <td className="py-2 px-1 text-black">{o.clientName}</td>
+                   <td className="text-right font-bold py-2 px-1 text-black">R$ {formatMoney(o.totalValue || 0)}</td>
+                   <td className="text-right font-bold py-2 px-1 text-black">R$ {formatMoney(cost)}</td>
+                 </tr>
+               )
+             })}
+           </tbody>
+        </table>
       </div>
 
     </div>
