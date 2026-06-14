@@ -3,11 +3,21 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 21.9 -> 22.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '25.4.0';
+export const SYSTEM_VERSION = '25.5.0';
 export const APP_NAME = 'Gomesz Speed Print';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 25.3.1 — "Correção de Upload" (02/06/2026):
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 25.5.0 — "Financeiro Real" (14/06/2026):
 
-🚀 ATUALIZAÇÃO NO CHECKOUT:
+🚀 ATUALIZAÇÃO NO MÓDULO FINANCEIRO:
+  * Filtro de Período Dinâmico: Agora é possível selecionar o Mês e Ano para gerar relatórios reais em tempo real.
+  * Fluxo de Caixa Real: O balanço abandonou as estimativas. Agora, exibimos Faturamento Bruto (soma de vendas), Receitas Realizadas (pagamentos recebidos no mês), Custo de Produção (custo de fornecedores e insumos) e Despesas Operacionais, resultando no Lucro Líquido exato.
+  * Correção de Caixa: Solucionamos a falha silenciosa que impedia pagamentos recebidos na aba "Pedidos" de refletirem automaticamente no Financeiro.
+
+(25.4.0) Múltiplos Fornecedores e Custos:
+  * Múltiplos Fornecedores: Agora você pode escolher um fornecedor diferente para CADA item do seu pedido!
+  * Margem Dinâmica: O sistema salva o custo interno de produção e separa o lucro de revenda.
+  * Isolamento Total: As listas de fornecedores e produtos agora são blindadas por Tenant.
+
+(25.3.1) Correção de Upload:
   * Inserido aviso visual de limite de tamanho de arquivo (50 MB) para o upload de artes.
   * Estrutura de banco de dados oficial configurada para receber arquivos com sucesso no Storage de produção.
 

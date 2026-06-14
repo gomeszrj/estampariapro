@@ -4,6 +4,15 @@ Registro de todas as alterações relevantes e marcos de versão do ERP Multi-Te
 
 ---
 
+## [v25.5.0] — 2026-06-14
+### Adicionado & Melhorado
+- **Módulo Financeiro Real**: O painel "Financeiro" foi totalmente reformulado, abandonando métricas estáticas e "previsões" ilusórias em prol de dados consolidados em tempo real baseados nas entradas/saídas do banco.
+- **Filtro de Período Dinâmico**: Adicionados seletores visuais de Mês e Ano no cabeçalho do financeiro. Todos os KPIs (Faturamento, Receita, Custos, Lucro) e tabelas recalculam imediatamente para refletir apenas o mês selecionado.
+- **Fluxo de Caixa Preciso**: Nova tabela de Balanço Gerencial que consolida *Faturamento Bruto*, *Receitas Realizadas* (pagamentos efetivos), *Custo de Produção/Fornecedor* (valor somado dos insumos de cada item no mês), *Despesas Operacionais* manuais e o *Lucro Líquido Real*.
+- **Correção de Comunicação de Caixa**: Resolvido bug crítico onde recebimentos de pagamentos disparados pela tela "Pedidos" usavam a chave `transaction_date` incorretamente e falhavam ao espelhar como receita no caixa financeiro (agora padronizado para `date`).
+
+---
+
 ## [v25.4.0] — 2026-06-13
 ### Adicionado & Melhorado
 - **Múltiplos Fornecedores por Pedido**: Suporte para associar fornecedores diferentes a itens individuais dentro do mesmo pedido, com custos de unidade e fornecedor salvos de forma estática no momento do pedido (`supplier_id` e `unit_cost` no item).
