@@ -5,6 +5,38 @@ import { inventoryService } from './inventoryService';
 import { clientService } from './clientService';
 import { whatsappService } from './whatsappService';
 
+// ============================
+// LOCAL SUPPLIER CACHE
+// Stores supplier/cost data per order item in localStorage
+// as a permanent fallback when the DB column doesn't exist.
+// ============================
+const SUPPLIER_CACHE_KEY = 'estamparia_supplier_cache';
+
+type SupplierCacheEntry = { supplierId?: string; unitCost?: number };
+type SupplierCache = Record<string, SupplierCacheEntry[]>; // key = orderId
+
+function readSupplierCache(): SupplierCache {
+    try {
+        return JSON.parse(localStorage.getItem(SUPPLIER_CACHE_KEY) || '{}');
+    } catch { return {}; }
+}
+
+function saveSupplierCache(cache: SupplierCache) {
+    try {
+        localStorage.setItem(SUPPLIER_CACHE_KEY, JSON.stringify(cache));
+    } catch { /* ignore quota errors */ }
+}
+
+export function cacheOrderSuppliers(orderId: string, items: OrderItem[]) {
+    const cache = readSupplierCache();
+    cache[orderId] = items.map(i => ({ supplierId: i.supplierId, unitCost: i.unitCost }));
+    saveSupplierCache(cache);
+}
+
+export function getCachedOrderSuppliers(orderId: string): SupplierCacheEntry[] {
+    return readSupplierCache()[orderId] || [];
+}
+
 export const orderService = {
   async uploadFile(file: File, path: string): Promise<string> {
     const MAX_MB = 50;
@@ -124,17 +156,23 @@ export const orderService = {
                 .insert(dbItems);
 
             if (itemsError) {
-                if (itemsError.message && itemsError.message.includes('supplier_id')) {
-                    console.warn("[Fallback] Supabase missing supplier_id. Saving without it.");
+                // If the column is missing in the DB, save without it and cache locally
+                if (itemsError.message && (itemsError.message.includes('supplier_id') || itemsError.message.includes('unit_cost') || itemsError.message.includes('schema cache'))) {
+                    console.warn("[Fallback] Saving order_items without supplier/cost columns — run SQL migration to enable permanently.");
                     const safeItems = dbItems.map((item: any) => {
                         const { supplier_id, unit_cost, ...rest } = item;
                         return rest;
                     });
                     const { error: fallbackError } = await supabase.from('order_items').insert(safeItems);
                     if (fallbackError) throw fallbackError;
+                    // Cache supplier data locally so it can be restored on edit
+                    cacheOrderSuppliers(orderData.id, order.items);
                 } else {
                     throw itemsError;
                 }
+            } else {
+                // Save to cache as well for consistency
+                cacheOrderSuppliers(orderData.id, order.items);
             }
 
             // NEW: Deduct stock from physical products
@@ -320,17 +358,23 @@ export const orderService = {
                     .insert(dbItems);
 
                 if (insertError) {
-                    if (insertError.message && insertError.message.includes('supplier_id')) {
-                        console.warn("[Fallback] Supabase missing supplier_id. Updating without it.");
+                    // If the column is missing in the DB, save without it and cache locally
+                    if (insertError.message && (insertError.message.includes('supplier_id') || insertError.message.includes('unit_cost') || insertError.message.includes('schema cache'))) {
+                        console.warn("[Fallback] Updating order_items without supplier/cost columns — run SQL migration to enable permanently.");
                         const safeItems = dbItems.map((item: any) => {
                             const { supplier_id, unit_cost, ...rest } = item;
                             return rest;
                         });
                         const { error: fallbackError } = await supabase.from('order_items').insert(safeItems);
                         if (fallbackError) throw fallbackError;
+                        // Cache supplier data locally
+                        cacheOrderSuppliers(id, updates.items!);
                     } else {
                         throw insertError;
                     }
+                } else {
+                    // Cache supplier data even when save was successful
+                    cacheOrderSuppliers(id, updates.items!);
                 }
             }
         }

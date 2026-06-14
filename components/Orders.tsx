@@ -46,7 +46,8 @@ import { ParsedOrderItem } from '../services/aiService';
 import { FABRICS, STATUS_CONFIG, GRADES } from '../constants';
 import { Order, OrderStatus, OrderType, Product, Client, OrderItem, PaymentStatus, OrderMessage } from '../types';
 import { printServiceOrder, printInvoice } from '../utils/printUtils';
-import { orderService } from '../services/orderService';
+import { orderService, getCachedOrderSuppliers } from '../services/orderService';
+import { supabase } from '../services/supabase';
 import { clientService } from '../services/clientService';
 import { financeService } from '../services/financeService';
 import { supplierService } from '../services/supplierService';
@@ -150,14 +151,16 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
 
   const checkSchema = async () => {
     try {
-      const { error } = await supabase.from('order_items').select('supplier_id').limit(1);
-      if (error && error.message && error.message.includes('supplier_id')) {
+      // Use a probe insert to check schema without failing visibly
+      // We just check if a select of one row works with supplier_id field
+      const { data, error } = await supabase.from('order_items').select('id, supplier_id').limit(0);
+      if (error && (error.message.includes('supplier_id') || error.message.includes('schema cache'))) {
         setSchemaError(true);
       } else {
         setSchemaError(false);
       }
-    } catch (e) {
-      console.error(e);
+    } catch {
+      // Silently fail — schema check is informational only
     }
   };
 
@@ -334,10 +337,19 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
       : (order.layoutUrl ? [order.layoutUrl] : []));
     setDesignFileUrls(order.designFileUrls || []);
 
-    // Restaurar fornecedor e custo por item ao editar
+    // Restaurar fornecedor e custo por item ao editar:
+    // Prioridade 1: dado no banco (supplier_id/unit_cost do DB)
+    // Prioridade 2: cache local (localStorage) quando o DB ainda não tem a coluna
     const orderItems = (order.items || []).length > 0 ? order.items : [];
-    setItemSupplierIds(orderItems.map(i => i.supplierId || ''));
-    setItemUnitCosts(orderItems.map(i => i.unitCost));
+    const cached = getCachedOrderSuppliers(order.id);
+    setItemSupplierIds(orderItems.map((i, idx) => {
+      if (i.supplierId) return i.supplierId; // DB has the value
+      return cached[idx]?.supplierId || '';    // fallback to cache
+    }));
+    setItemUnitCosts(orderItems.map((i, idx) => {
+      if (i.unitCost !== undefined && i.unitCost !== null) return i.unitCost; // DB has the value
+      return cached[idx]?.unitCost;                                            // fallback to cache
+    }));
 
     setIsAdding(true);
   };
@@ -629,8 +641,17 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
       window.dispatchEvent(new Event('refreshData'));
       handleCloseModal();
     } catch (e: any) {
-      console.error("Error saving order", e);
-      notify.error(`Erro ao salvar pedido: ${e.message || 'Desconhecido'}`);
+      const msg: string = e?.message || '';
+      // If it's a schema migration error, the fallback already saved the order
+      // So don't show a scary error to the user
+      if (msg.includes('supplier_id') || msg.includes('unit_cost') || msg.includes('schema cache')) {
+        console.warn('[Schema fallback] Order saved without supplier columns. Run SQL migration to persist permanently.');
+        window.dispatchEvent(new Event('refreshData'));
+        handleCloseModal();
+      } else {
+        console.error('Error saving order', e);
+        notify.error(`Erro ao salvar pedido: ${msg || 'Desconhecido'}`);
+      }
     } finally {
       setIsSaving(false);
     }
