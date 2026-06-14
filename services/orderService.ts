@@ -163,7 +163,7 @@ export const orderService = {
                     category: 'sale',
                     amount: paid,
                     description: `Pgt. Venda #${orderData.order_number} (${orderData.client_name})`,
-                    transaction_date: new Date().toISOString()
+                    date: new Date().toISOString()
                 });
             } catch (e) {
                 console.error("Failed to sync finance", e);
@@ -325,7 +325,7 @@ export const orderService = {
                         category: 'sale',
                         amount: currentOrder.amountPaid,
                         description: `Pgt. Venda #${currentOrder.orderNumber} (${currentOrder.clientName})`,
-                        transaction_date: new Date().toISOString()
+                        date: new Date().toISOString()
                     });
                 }
             } catch (e) {

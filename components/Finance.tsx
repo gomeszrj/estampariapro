@@ -60,6 +60,10 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
 
+  // Month/Year Filter State
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+
   // New Transaction Form State
   const [newTransaction, setNewTransaction] = useState<Partial<Transaction>>({
     type: 'expense',
@@ -108,39 +112,57 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
 
   // --- CALCULATIONS ---
 
-  // 1. Revenue
-  const incomeTransactions = transactions.filter(t => t.type === 'income');
+  // 0. Filter Data for Selected Month
+  const isCurrentMonth = (dateString: string | undefined) => {
+    if (!dateString) return false;
+    const date = new Date(dateString);
+    return date.getMonth() + 1 === selectedMonth && date.getFullYear() === selectedYear;
+  };
+
+  const revenueOrders = orders.filter(o => o.orderType !== OrderType.BUDGET);
+  const currentMonthTransactions = transactions.filter(t => isCurrentMonth(t.date));
+  const currentMonthOrders = revenueOrders.filter(o => isCurrentMonth(o.createdAt));
+
+  // 1. Revenue (Realizada no mês)
+  const incomeTransactions = currentMonthTransactions.filter(t => t.type === 'income');
   const totalRevenue = incomeTransactions.reduce((acc, curr) => acc + curr.amount, 0);
 
-  // 2. Production Costs
-  const revenueOrders = orders.filter(o => o.orderType !== OrderType.BUDGET);
-  const productionCosts = revenueOrders.reduce((acc, order) => {
+  // 2. Production Costs (Custos dos pedidos do mês)
+  const productionCosts = currentMonthOrders.reduce((acc, order) => {
     return acc + order.items.reduce((itemAcc, item) => {
-      const product = products.find(p => p.id === item.productId);
-      const unitCost = product?.costPrice || 0;
-      return itemAcc + (unitCost * item.quantity);
+      // Use frozen unitCost from order if available, else fallback to current product cost
+      let cost = item.unitCost;
+      if (cost === undefined || cost === null) {
+        const product = products.find(p => p.id === item.productId);
+        cost = product?.costPrice || 0;
+      }
+      return itemAcc + (cost * item.quantity);
     }, 0);
   }, 0);
 
-  // 3. Operating Expenses
-  const expenseTransactions = transactions.filter(t => t.type === 'expense');
+  // 3. Operating Expenses (Despesas do mês)
+  const expenseTransactions = currentMonthTransactions.filter(t => t.type === 'expense');
   const operatingExpenses = expenseTransactions.reduce((acc, curr) => acc + curr.amount, 0);
 
-  // 4. Total Outflow & Net Profit
+  // 4. Total Outflow & Net Profit (Mensal)
   const totalOutflow = operatingExpenses + productionCosts;
   const netProfit = totalRevenue - totalOutflow;
   const margin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
-  // Mocking "Faturamento" as total from Orders (placed value), not necessarily received
-  const totalFaturamento = revenueOrders.reduce((acc, order) => acc + (order.totalValue || 0), 0);
+  // Faturamento Bruto (Pedidos realizados no mês)
+  const totalFaturamento = currentMonthOrders.reduce((acc, order) => acc + (order.totalValue || 0), 0);
 
-  // 5. Chart Data
+  // 5. Chart Data (Últimos 6 meses, ignorando o filtro atual)
   const monthlyData: Record<string, { revenue: number, expense: number, cost: number, profit: number }> = {};
 
-  incomeTransactions.forEach(t => {
+  transactions.forEach(t => {
     const key = t.date.slice(0, 7);
     if (!monthlyData[key]) monthlyData[key] = { revenue: 0, expense: 0, cost: 0, profit: 0 };
-    monthlyData[key].revenue += t.amount;
+    if (t.type === 'income') {
+      monthlyData[key].revenue += t.amount;
+    } else {
+      monthlyData[key].expense += t.amount;
+    }
   });
 
   revenueOrders.forEach(o => {
@@ -148,16 +170,14 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
     const key = o.createdAt.slice(0, 7);
     if (!monthlyData[key]) monthlyData[key] = { revenue: 0, expense: 0, cost: 0, profit: 0 };
     const orderCost = o.items.reduce((acc, item) => {
-      const p = products.find(prod => prod.id === item.productId);
-      return acc + ((p?.costPrice || 0) * item.quantity);
+      let cost = item.unitCost;
+      if (cost === undefined || cost === null) {
+        const p = products.find(prod => prod.id === item.productId);
+        cost = p?.costPrice || 0;
+      }
+      return acc + (cost * item.quantity);
     }, 0);
     monthlyData[key].cost += orderCost;
-  });
-
-  expenseTransactions.forEach(t => {
-    const key = t.date.slice(0, 7);
-    if (!monthlyData[key]) monthlyData[key] = { revenue: 0, expense: 0, cost: 0, profit: 0 };
-    monthlyData[key].expense += t.amount;
   });
 
   Object.keys(monthlyData).forEach(key => {
@@ -297,10 +317,27 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
           <p className="text-slate-400 text-xs font-medium mt-1">Acompanhe o desempenho financeiro da sua estamparia.</p>
         </div>
         <div className="flex gap-4">
-           <div className="bg-[#151B2B] text-slate-300 px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg border border-[#1e293b] flex items-center gap-2 cursor-pointer hover:bg-[#1a2235] transition-all">
+           <div className="bg-[#151B2B] text-slate-300 px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg border border-[#1e293b] flex items-center gap-2 transition-all">
              <Calendar className="w-4 h-4" />
-             Maio / 2026
-             <ChevronRight className="w-3 h-3 rotate-90 ml-2" />
+             <select 
+               className="bg-transparent text-white outline-none font-black uppercase text-[10px] tracking-widest cursor-pointer"
+               value={selectedMonth}
+               onChange={(e) => setSelectedMonth(Number(e.target.value))}
+             >
+               {["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"].map((m, i) => (
+                 <option key={i} value={i + 1} className="bg-slate-900">{m}</option>
+               ))}
+             </select>
+             <span className="text-slate-600">/</span>
+             <select 
+               className="bg-transparent text-white outline-none font-black uppercase text-[10px] tracking-widest cursor-pointer"
+               value={selectedYear}
+               onChange={(e) => setSelectedYear(Number(e.target.value))}
+             >
+               {[2025, 2026, 2027, 2028].map((y) => (
+                 <option key={y} value={y} className="bg-slate-900">{y}</option>
+               ))}
+             </select>
            </div>
            <button
              onClick={() => setIsAdding(true)}
@@ -479,34 +516,36 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-[#1e293b] text-slate-500 text-[10px] uppercase tracking-widest font-bold">
-                <th className="pb-4 px-4 font-bold w-1/3">Descrição</th>
-                <th className="pb-4 px-4 font-bold text-right">Previsto (Mai/26)</th>
-                <th className="pb-4 px-4 font-bold text-right">Realizado (Mai/26)</th>
-                <th className="pb-4 px-4 font-bold text-right">Diferença</th>
+                <th className="pb-4 px-4 font-bold w-1/2">Indicador / Categoria</th>
+                <th className="pb-4 px-4 font-bold text-right">Valor Consolidado</th>
+                <th className="pb-4 px-4 font-bold text-right">% Relativa</th>
               </tr>
             </thead>
             <tbody className="text-xs font-medium">
               <tr className="border-b border-[#1e293b]/50 hover:bg-[#0b1221] transition-colors">
-                <td className="py-4 px-4 text-slate-300 font-bold">Saldo inicial</td>
-                <td className="py-4 px-4 text-slate-200 text-right">R$ 12.000,00</td>
-                <td className="py-4 px-4 text-slate-200 text-right font-bold">R$ 12.000,00</td>
-                <td className="py-4 px-4 text-emerald-400 text-right">R$ 0,00</td>
+                <td className="py-4 px-4 text-slate-300 font-bold">1. Faturamento Bruto <span className="text-[9px] text-slate-500 ml-2 font-normal">(Soma de todos os pedidos)</span></td>
+                <td className="py-4 px-4 text-slate-200 text-right font-black text-sm">R$ {formatMoney(totalFaturamento)}</td>
+                <td className="py-4 px-4 text-slate-500 text-right">-</td>
               </tr>
               <tr className="border-b border-[#1e293b]/50 hover:bg-[#0b1221] transition-colors">
-                <td className="py-4 px-4 text-slate-300 font-bold">Receitas</td>
-                <td className="py-4 px-4 text-slate-200 text-right">R$ 50.000,00</td>
-                <td className="py-4 px-4 text-slate-200 text-right font-bold">R$ {formatMoney(totalRevenue)}</td>
-                <td className={`py-4 px-4 text-right font-bold ${totalRevenue >= 50000 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {totalRevenue >= 50000 ? '+' : ''} R$ {formatMoney(totalRevenue - 50000)}
-                </td>
+                <td className="py-4 px-4 text-emerald-400 font-bold">2. Receitas Realizadas <span className="text-[9px] text-slate-500 ml-2 font-normal">(Dinheiro em caixa)</span></td>
+                <td className="py-4 px-4 text-emerald-400 text-right font-black text-sm">R$ {formatMoney(totalRevenue)}</td>
+                <td className="py-4 px-4 text-emerald-500/50 text-right">{totalFaturamento > 0 ? ((totalRevenue / totalFaturamento) * 100).toFixed(1) : 0}% <span className="text-[9px]">do Fat.</span></td>
               </tr>
               <tr className="border-b border-[#1e293b]/50 hover:bg-[#0b1221] transition-colors">
-                <td className="py-4 px-4 text-slate-300 font-bold">Despesas</td>
-                <td className="py-4 px-4 text-slate-200 text-right">R$ 20.000,00</td>
-                <td className="py-4 px-4 text-slate-200 text-right font-bold">R$ {formatMoney(totalOutflow)}</td>
-                <td className={`py-4 px-4 text-right font-bold ${totalOutflow <= 20000 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {totalOutflow <= 20000 ? '+' : ''} R$ {formatMoney(20000 - totalOutflow)}
-                </td>
+                <td className="py-4 px-4 text-orange-400 font-bold">3. Custo de Produção/Fornecedor <span className="text-[9px] text-slate-500 ml-2 font-normal">(Insumos/Terceirização)</span></td>
+                <td className="py-4 px-4 text-orange-400 text-right font-black text-sm">- R$ {formatMoney(productionCosts)}</td>
+                <td className="py-4 px-4 text-orange-500/50 text-right">{totalRevenue > 0 ? ((productionCosts / totalRevenue) * 100).toFixed(1) : 0}% <span className="text-[9px]">da Rec.</span></td>
+              </tr>
+              <tr className="border-b border-[#1e293b]/50 hover:bg-[#0b1221] transition-colors">
+                <td className="py-4 px-4 text-rose-400 font-bold">4. Despesas Operacionais <span className="text-[9px] text-slate-500 ml-2 font-normal">(Aluguel, luz, salários, avulsos)</span></td>
+                <td className="py-4 px-4 text-rose-400 text-right font-black text-sm">- R$ {formatMoney(operatingExpenses)}</td>
+                <td className="py-4 px-4 text-rose-500/50 text-right">{totalRevenue > 0 ? ((operatingExpenses / totalRevenue) * 100).toFixed(1) : 0}% <span className="text-[9px]">da Rec.</span></td>
+              </tr>
+              <tr className="bg-[#1e1b4b]/20 hover:bg-[#1e1b4b]/40 transition-colors">
+                <td className="py-5 px-4 text-[#818cf8] font-black uppercase tracking-widest text-sm">5. Lucro Líquido Real</td>
+                <td className={`py-5 px-4 text-right font-black text-lg ${netProfit >= 0 ? 'text-[#818cf8]' : 'text-rose-500'}`}>R$ {formatMoney(netProfit)}</td>
+                <td className={`py-5 px-4 text-right font-black ${netProfit >= 0 ? 'text-[#818cf8]' : 'text-rose-500'}`}>{totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : 0}% <span className="text-[9px] font-medium">Margem</span></td>
               </tr>
             </tbody>
           </table>
