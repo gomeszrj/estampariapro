@@ -610,9 +610,9 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
 
       window.dispatchEvent(new Event('refreshData'));
       handleCloseModal();
-    } catch (e) {
+    } catch (e: any) {
       console.error("Error saving order", e);
-      notify.error('Erro ao salvar pedido.');
+      notify.error(`Erro ao salvar pedido: ${e.message || 'Desconhecido'}`);
     } finally {
       setIsSaving(false);
     }
