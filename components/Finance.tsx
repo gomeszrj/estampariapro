@@ -25,7 +25,8 @@ import {
   ArrowDown,
   ArrowUp,
   MoreVertical,
-  Download
+  Download,
+  Printer
 } from 'lucide-react';
 import { Order, OrderStatus, OrderType, Product, Transaction } from '../types';
 import { financeService } from '../services/financeService';
