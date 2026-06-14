@@ -200,7 +200,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
       const prod = productsByName.get((item.product || '').trim().toLowerCase());
       if (prod) {
         const cost = supplierCostsMap.get(`${supplierId}__${prod.id}`);
-        return cost !== undefined ? cost : (prod.costPrice ? prod.costPrice : undefined);
+        return cost !== undefined ? Number(cost) : (prod.costPrice ? Number(prod.costPrice) : undefined);
       }
       return undefined;
     });
@@ -250,16 +250,16 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
     // Se o campo atualizado for o 'product', auto-preenche o custo
     if (field === 'product') {
       const prod = productsByName.get((value || '').trim().toLowerCase());
-      const supplierId = itemSupplierIds[index];
+      const currentSupplierId = itemSupplierIds[index] || supplierId;
       
       setItemUnitCosts(prev => {
         const next = [...prev];
         if (prod) {
-          if (supplierId) {
-            const cost = supplierCostsMap.get(`${supplierId}__${prod.id}`);
-            next[index] = cost !== undefined ? cost : (prod.costPrice ? prod.costPrice : undefined);
+          if (currentSupplierId) {
+            const cost = supplierCostsMap.get(`${currentSupplierId}__${prod.id}`);
+            next[index] = cost !== undefined ? Number(cost) : (prod.costPrice ? Number(prod.costPrice) : undefined);
           } else {
-            next[index] = prod.costPrice ? prod.costPrice : undefined;
+            next[index] = prod.costPrice ? Number(prod.costPrice) : undefined;
           }
         } else {
           next[index] = undefined;
@@ -277,7 +277,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
 
   const addNewManualItem = () => {
     setParsedItems(prev => [...prev, { product: '', grade: 'Unidade', size: 'UN', quantity: 1 }]);
-    setItemSupplierIds(prev => [...prev, '']);
+    setItemSupplierIds(prev => [...prev, supplierId || '']);
     setItemUnitCosts(prev => [...prev, undefined]);
   };
 
