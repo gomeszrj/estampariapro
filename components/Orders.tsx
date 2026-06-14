@@ -38,7 +38,8 @@ import {
   MoreVertical,
   ChevronDown,
   Settings2,
-  Truck
+  Truck,
+  AlertCircle
 } from 'lucide-react';
 import { getWhatsAppLink, getStatusUpdateMessage } from '../utils/whatsappUtils';
 import { ParsedOrderItem } from '../services/aiService';
@@ -139,9 +140,26 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
   const [itemSupplierIds, setItemSupplierIds] = useState<string[]>([]);
   const [itemUnitCosts, setItemUnitCosts] = useState<(number | undefined)[]>([]);
 
+  // Schema Validation Check
+  const [schemaError, setSchemaError] = useState(false);
+
   React.useEffect(() => {
     loadSuppliers();
+    checkSchema();
   }, []);
+
+  const checkSchema = async () => {
+    try {
+      const { error } = await supabase.from('order_items').select('supplier_id').limit(1);
+      if (error && error.message && error.message.includes('supplier_id')) {
+        setSchemaError(true);
+      } else {
+        setSchemaError(false);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const loadSuppliers = async () => {
     try {
@@ -699,6 +717,15 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
 
   return (
     <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500 pb-10">
+      {schemaError && (
+        <div className="bg-rose-600 border border-rose-400 text-white p-4 rounded-xl shadow-2xl flex items-center justify-between mb-4 animate-bounce">
+          <div>
+            <h3 className="font-black uppercase tracking-widest text-sm flex items-center gap-2"><AlertCircle className="w-5 h-5"/> Atenção: Banco de dados desatualizado</h3>
+            <p className="text-xs font-medium mt-1">O sistema não consegue salvar o Fornecedor porque a coluna <b>supplier_id</b> não existe no Supabase. Por favor, acesse o painel SQL do Supabase e execute o script de atualização.</p>
+          </div>
+        </div>
+      )}
+
       <header className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-2">
         <div>
           <h2 className="text-3xl font-black text-white tracking-tight mb-1">Pedidos</h2>
