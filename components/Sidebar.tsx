@@ -163,7 +163,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
         />
       )}
 
-      <aside className={`w-72 bg-[#05080E] border-r border-[#1e293b] h-screen fixed md:sticky top-0 left-0 z-50 flex flex-col transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+      <aside className={`w-72 bg-[#05080E] border-r border-[#1e293b] h-screen fixed md:sticky top-0 left-0 z-50 flex flex-col transition-transform duration-300 print:hidden ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
         {/* Logo */}
         <div className="p-6 border-b border-[#1e293b] flex items-center justify-center">
           <h1 className="flex items-center gap-3">

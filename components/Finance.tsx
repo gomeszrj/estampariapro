@@ -316,7 +316,7 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
           </h2>
           <p className="text-slate-400 text-xs font-medium mt-1">Acompanhe o desempenho financeiro da sua estamparia.</p>
         </div>
-        <div className="flex gap-4">
+        <div className="flex gap-4 print:hidden">
            <div className="bg-[#151B2B] text-slate-300 px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg border border-[#1e293b] flex items-center gap-2 transition-all">
              <Calendar className="w-4 h-4" />
              <select 
@@ -339,6 +339,13 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
                ))}
              </select>
            </div>
+           <button
+             onClick={() => window.print()}
+             className="bg-[#0f172a] hover:bg-slate-800 text-slate-300 border border-[#1e293b] px-4 py-2.5 rounded-xl font-bold text-xs shadow-lg transition-all flex items-center gap-2"
+           >
+             <Printer className="w-4 h-4" />
+             Imprimir
+           </button>
            <button
              onClick={() => setIsAdding(true)}
              className="bg-[#6366F1] hover:bg-[#4F46E5] text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-lg transition-all flex items-center gap-2"
