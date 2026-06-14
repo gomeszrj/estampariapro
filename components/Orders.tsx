@@ -37,7 +37,8 @@ import {
   Package,
   MoreVertical,
   ChevronDown,
-  Settings2
+  Settings2,
+  Truck
 } from 'lucide-react';
 import { getWhatsAppLink, getStatusUpdateMessage } from '../utils/whatsappUtils';
 import { ParsedOrderItem } from '../services/aiService';
