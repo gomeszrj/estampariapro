@@ -10,7 +10,10 @@ const Login: React.FC = () => {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [mode, setMode] = useState<'login' | 'tracker' | 'client_login'>('login');
+    const [mode, setMode] = useState<'login' | 'tracker' | 'client_login' | 'forgot_password'>('login');
+    const [forgotEmail, setForgotEmail] = useState('');
+    const [forgotSent, setForgotSent] = useState(false);
+    const [forgotLoading, setForgotLoading] = useState(false);
 
     // Tracker State
     const [trackNumber, setTrackNumber] = useState('');
@@ -90,6 +93,24 @@ const Login: React.FC = () => {
             setError(err.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleForgotPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!forgotEmail) return;
+        setForgotLoading(true);
+        setError(null);
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+                redirectTo: `${window.location.origin}/?reset_password=true`
+            });
+            if (error) throw error;
+            setForgotSent(true);
+        } catch (err: any) {
+            setError(err.message || 'Erro ao enviar e-mail. Verifique o endereço informado.');
+        } finally {
+            setForgotLoading(false);
         }
     };
 
@@ -286,17 +307,18 @@ const Login: React.FC = () => {
 
                             <div className="mb-10 mt-4">
                                 <span className="text-[12px] font-medium text-slate-400 mb-2 block">
-                                    {mode === 'login' ? 'Bem-vindo de volta! 👋' : mode === 'client_login' ? 'PORTAL DO CLIENTE 👋' : 'RASTREAMENTO 👋'}
+                                    {mode === 'login' ? 'Bem-vindo de volta! 👋' : mode === 'client_login' ? 'PORTAL DO CLIENTE 👋' : mode === 'forgot_password' ? 'RECUPERAR ACESSO 🔑' : 'RASTREAMENTO 👋'}
                                 </span>
                                 <h2 className="text-[32px] font-bold text-white mb-3">
-                                    {mode === 'login' ? 'Acesse ' : mode === 'client_login' ? 'Seu ' : 'Buscar '}
+                                    {mode === 'login' ? 'Acesse ' : mode === 'client_login' ? 'Seu ' : mode === 'forgot_password' ? 'Recuperar ' : 'Buscar '}
                                     <span className="bg-gradient-to-r from-[#48C6EF] to-[#8B5CF6] bg-clip-text text-transparent">
-                                        {mode === 'login' ? 'sua conta' : mode === 'client_login' ? 'espaço' : 'pedido'}
+                                        {mode === 'login' ? 'sua conta' : mode === 'client_login' ? 'espaço' : mode === 'forgot_password' ? 'senha' : 'pedido'}
                                     </span>
                                 </h2>
                                 <p className="text-sm text-slate-400 font-medium">
                                     {mode === 'login' ? 'Entre com suas credenciais para acessar' : 
                                      mode === 'client_login' ? 'Acesse com seu documento ou telefone' :
+                                     mode === 'forgot_password' ? 'Informe seu e-mail e enviaremos um link para redefinir sua senha.' :
                                      'Digite o número do seu pedido para ver o status.'}
                                      <br/>
                                      {mode === 'login' && (
@@ -382,6 +404,61 @@ const Login: React.FC = () => {
                                     </div>
                                 </div>
 
+                            ) : mode === 'forgot_password' ? (
+                                /* ── FORGOT PASSWORD MODE ── */
+                                <div className="space-y-6">
+                                    {forgotSent ? (
+                                        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-6 text-center space-y-4">
+                                            <div className="w-14 h-14 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto">
+                                                <svg className="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                            </div>
+                                            <h3 className="text-white font-black text-lg">E-mail enviado!</h3>
+                                            <p className="text-slate-400 text-sm">Verifique sua caixa de entrada (e o spam) em <span className="text-white font-bold">{forgotEmail}</span>. O link expira em 1 hora.</p>
+                                            <button
+                                                onClick={() => { setMode('login'); setError(null); setForgotSent(false); }}
+                                                className="w-full py-3 bg-gradient-to-r from-[#2563EB] to-[#8B5CF6] text-white font-bold rounded-xl text-sm mt-2"
+                                            >
+                                                Voltar para o Login
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <form onSubmit={handleForgotPassword} className="space-y-4">
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">E-MAIL DA CONTA</label>
+                                                <div className="relative">
+                                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                                                    <input
+                                                        type="email"
+                                                        value={forgotEmail}
+                                                        onChange={(e) => setForgotEmail(e.target.value)}
+                                                        className="w-full bg-[#13141C] border border-[#1e293b] rounded-xl py-3.5 pl-11 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-[#48C6EF]/50 focus:ring-1 focus:ring-[#48C6EF]/30 transition-all text-sm font-medium"
+                                                        placeholder="seu@email.com"
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="submit"
+                                                disabled={forgotLoading}
+                                                className="w-full bg-gradient-to-r from-[#2563EB] via-[#48C6EF] to-[#8B5CF6] hover:opacity-90 text-white font-semibold py-3.5 rounded-xl transition-all duration-300 shadow-lg disabled:opacity-40 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2"
+                                            >
+                                                {forgotLoading ? (
+                                                    <><span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> Enviando...</>
+                                                ) : (
+                                                    <>Enviar link de recuperação <ArrowRight className="w-4 h-4" /></>
+                                                )}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => { setMode('login'); setError(null); }}
+                                                className="w-full text-slate-400 hover:text-white text-xs font-medium transition-colors flex items-center justify-center gap-2 pt-2"
+                                            >
+                                                <ArrowRight className="w-3.5 h-3.5 rotate-180" /> Voltar para o Login
+                                            </button>
+                                        </form>
+                                    )}
+                                </div>
+
                             ) : (
                             /* ── LOGIN / CLIENT LOGIN MODE ── */
                             <>
@@ -443,9 +520,15 @@ const Login: React.FC = () => {
                                             </div>
                                             <span className="text-xs text-slate-400 group-hover:text-slate-300 transition-colors font-medium">Lembrar-me</span>
                                         </label>
-                                        <a href="#" onClick={(e) => e.preventDefault()} className="text-xs text-[#3B82F6] hover:text-[#8B5CF6] font-medium transition-colors">
-                                            Esqueci minha senha
-                                        </a>
+                                        {mode === 'login' && (
+                                            <button
+                                                type="button"
+                                                onClick={() => { setMode('forgot_password'); setError(null); setForgotSent(false); setForgotEmail(''); }}
+                                                className="text-xs text-[#3B82F6] hover:text-[#8B5CF6] font-medium transition-colors"
+                                            >
+                                                Esqueci minha senha
+                                            </button>
+                                        )}
                                     </div>
 
                                     {/* Submit */}

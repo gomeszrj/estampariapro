@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { XCircle, PhoneCall, Mail, LayoutList, ChevronUp, ChevronDown, KeyRound } from 'lucide-react';
+import { XCircle, PhoneCall, Mail, LayoutList, ChevronUp, ChevronDown, KeyRound, Send } from 'lucide-react';
+import { supabase } from '../../services/supabase';
 import { tenantService } from '../../services/tenantService';
 import { PermissionsPanel } from './PermissionsPanel';
 import { Permissions, ALL_PERMISSIONS_OFF, PermissionKey, MODULE_LIST } from './types';
@@ -40,6 +41,7 @@ export const SaaSEditModal: React.FC<SaaSEditModalProps> = ({
   const [resetUserId, setResetUserId] = useState<string | null>(null);
   const [resetNewPassword, setResetNewPassword] = useState('');
   const [resettingPassword, setResettingPassword] = useState(false);
+  const [sendingResetEmail, setSendingResetEmail] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -112,6 +114,22 @@ export const SaaSEditModal: React.FC<SaaSEditModalProps> = ({
       setResetNewPassword('');
     } finally {
       setResettingPassword(false);
+    }
+  };
+
+  const handleSendResetEmail = async (userEmail: string, userName: string) => {
+    if (!userEmail) return notify.warning('Usuário não possui e-mail cadastrado.');
+    setSendingResetEmail(userEmail);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {
+        redirectTo: `${window.location.origin}/?reset_password=true`
+      });
+      if (error) throw error;
+      notify.success(`Link de recuperação enviado para ${userEmail}!`);
+    } catch (e: any) {
+      notify.error('Erro ao enviar e-mail: ' + (e?.message || 'Tente novamente'));
+    } finally {
+      setSendingResetEmail(null);
     }
   };
 
@@ -269,19 +287,35 @@ export const SaaSEditModal: React.FC<SaaSEditModalProps> = ({
                   <p className="text-sm text-slate-500">Nenhum usuário encontrado.</p>
                 ) : (
                   tenantProfiles.map(p => (
-                    <div key={p.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-[#1C1C26] p-3 rounded-xl border border-[#1e293b]">
-                      <div>
-                        <p className="text-sm font-black text-slate-200">{p.full_name || 'Sem Nome'}</p>
-                        <p className="text-[10px] text-slate-500 font-mono">{p.role} · {p.id.substring(0, 8)}...</p>
+                    <div key={p.id} className="flex flex-col gap-3 bg-[#1C1C26] p-3 rounded-xl border border-[#1e293b]">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-black text-slate-200">{p.full_name || 'Sem Nome'}</p>
+                          <p className="text-[10px] text-slate-500 font-mono">{p.role} · {p.id.substring(0, 8)}...</p>
+                        </div>
+                        {/* Send Reset Email */}
+                        <button
+                          onClick={() => handleSendResetEmail(p.email || tenant.admin_email, p.full_name)}
+                          disabled={sendingResetEmail === (p.email || tenant.admin_email)}
+                          className="px-3 py-2 bg-blue-600/20 border border-blue-500/30 text-blue-400 hover:bg-blue-500/20 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 transition-all disabled:opacity-50"
+                        >
+                          {sendingResetEmail === (p.email || tenant.admin_email) ? (
+                            <span className="w-3 h-3 border border-blue-400 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Send className="w-3 h-3" />
+                          )}
+                          Enviar Link
+                        </button>
                       </div>
+                      {/* Manual password reset */}
                       {resetUserId === p.id ? (
-                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <div className="flex items-center gap-2">
                           <input
                             type="text"
                             value={resetNewPassword}
                             onChange={e => setResetNewPassword(e.target.value)}
-                            placeholder="Nova senha (min 6)"
-                            className="bg-[#0f172a] border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 font-bold outline-none focus:ring-1 focus:ring-amber-500 w-full sm:w-40"
+                            placeholder="Nova senha (mín 6 chars)"
+                            className="bg-[#0f172a] border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 font-bold outline-none focus:ring-1 focus:ring-amber-500 flex-1"
                           />
                           <button
                             onClick={() => handleResetPasswordClick(p.id, p.full_name)}
@@ -300,9 +334,9 @@ export const SaaSEditModal: React.FC<SaaSEditModalProps> = ({
                       ) : (
                         <button
                           onClick={() => { setResetUserId(p.id); setResetNewPassword(''); }}
-                          className="px-3 py-2 bg-[#0f172a] border border-amber-500/30 text-amber-500 hover:bg-amber-500/10 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 transition-all"
+                          className="px-3 py-2 bg-[#0f172a] border border-amber-500/30 text-amber-500 hover:bg-amber-500/10 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 transition-all w-full justify-center"
                         >
-                          <KeyRound className="w-3 h-3" /> Redefinir Senha
+                          <KeyRound className="w-3 h-3" /> Definir Senha Manualmente
                         </button>
                       )}
                     </div>
