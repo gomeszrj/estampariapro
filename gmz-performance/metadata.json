@@ -1,0 +1,6 @@
+{
+  "name": "GMZ Performance",
+  "description": "Catálogo online e interativo de uniformes esportivos premium e vestuário de alta performance da GMZ Performance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

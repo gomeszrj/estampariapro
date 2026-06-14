@@ -1,0 +1,14 @@
+PASSO A PASSO PARA INICIAR O SISTEMA (SEM ERROS):
+
+1. O Windows bloqueou o comando "npm" por segurança (Erro PSSecurityException).
+2. Para resolver, eu criei um arquivo automático para você.
+3. Vá na pasta: d:\GOMESZ SPEED PRINT\estamapariapro\erp-estamparia-ai-first
+4. Procure o arquivo: INICIAR_SISTEMA.bat
+5. Dê dois cliques nele.
+
+Isso vai abrir uma janela preta e iniciar o site (Frontend) sem precisar digitar comandos.
+
+LEMBRETE:
+O site vai abrir, mas para a Inteligência Artificial funcionar, você precisa colocar sua chave do Gemini no arquivo:
+estampariapro\.env.local
+(Onde está escrito VITE_GEMINI_API_KEY=PLACEHOLDER_API_KEY)

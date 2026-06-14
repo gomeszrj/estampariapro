@@ -1,0 +1,880 @@
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+
+/* ═══════════════════════════════════════════════════════════
+   TYPES
+═══════════════════════════════════════════════════════════ */
+interface Product {
+  id: string;
+  category: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  features: string[];
+  price: number;
+  originalPrice?: number;
+  badge?: string;
+  color?: string;
+  imgKey: string;
+}
+
+interface CartItem {
+  id: string;
+  product: Product;
+  qty: number;
+  size: string;
+  name: string;
+  number: string;
+}
+
+const IMGS: Record<string, string> = {
+  "regata-lakers": "/src/assets/images/jersey_nba_purple_1779853332145.png",
+  "regata-bulls": "/src/assets/images/jersey_nba_red_1779854006937.png",
+  "manga-longa-azul": "/src/assets/images/jersey_manga_longa_1779853348937.png",
+  "manga-longa-preta": "/src/assets/images/jersey_manga_longa_preto_1779854022944.png",
+  "camiseta-roxa": "/src/assets/images/jersey_manga_curta_1779853362847.png",
+  "camiseta-branca": "/src/assets/images/jersey_manga_curta_branco_1779854037116.png",
+  "oversized-bear": "/src/assets/images/jersey_oversized_bear_1779853381876.png",
+};
+
+const PRODUCTS: Product[] = [
+  { id: "regata-lakers", category: "NBA", badge: "BEST SELLER", title: "Regata NBA Lakers Roxa", subtitle: "Sublimação premium · AeroMesh Pro", description: "Estilo Lakers com corte profissional e tecido Dry-Max AeroMesh. Qualidade absurda.", features: ["Tec Premium", "Sublimação Total", "AeroMesh Pro", "Secagem Rápida"], price: 89.90, imgKey: "regata-lakers", color: "#7c3aed" },
+  { id: "regata-bulls", category: "NBA", title: "Regata NBA Bulls Vermelha", subtitle: "Bulls Classic · Secagem Rápida", description: "Corte clássico de basquete premium, estampa de alto brilho Bulls.", features: ["Tec Premium", "Bulls Classic", "Secagem Rápida", "Costura Dupla"], price: 89.90, imgKey: "regata-bulls", color: "#dc2626" },
+  { id: "manga-longa-azul", category: "UV+50", badge: "PROTEÇÃO SOLAR", title: "Manga Longa UV+50 Azul", subtitle: "Proteção UV+50 · Termorregulação", description: "Manga longa azul de alta performance para treinos ao ar livre.", features: ["Proteção UV+50", "Termorregulação", "Flexibilidade", "Toque Frio"], price: 129.90, imgKey: "manga-longa-azul", color: "#0ea5e9" },
+  { id: "manga-longa-preta", category: "UV+50", title: "Manga Longa UV+50 Preta", subtitle: "Design Tático · UV+50", description: "Visual tático com detalhes em circuitos de energia limão.", features: ["Proteção UV+50", "Design Tático", "Toque Frio", "Alta Durabilidade"], price: 129.90, imgKey: "manga-longa-preta", color: "#6366f1" },
+  { id: "camiseta-roxa", category: "MANGA CURTA", badge: "TOP GMZ", title: "Camiseta Dry Fit Roxa", subtitle: "Slim Fit · Anti-Odor", description: "A camiseta esportiva definitiva com poliéster inteligente.", features: ["Dry Fit Pro", "Super Leve", "Anti-Odor", "Slim Fit"], price: 69.90, imgKey: "camiseta-roxa", color: "#9333ea" },
+  { id: "camiseta-branca", category: "MANGA CURTA", title: "Camiseta Dry Fit Branca", subtitle: "Dry Touch · Não Amassa", description: "Dry Fit branca clássica com caimento estruturado moderno.", features: ["Dry Fit Pro", "Proteção Térmica", "Não Amassa", "Painéis Respiráveis"], price: 69.90, imgKey: "camiseta-branca", color: "#e2e8f0" },
+  { id: "oversized-bear", category: "DTF", badge: "STREETWEAR", title: "Oversized DTF Bear", subtitle: "100% Algodão · Estampa DTF", description: "Streetwear oversized moderno com ilustração Bear robusta.", features: ["100% Algodão", "Estampa DTF Touchless", "Modelagem Solta", "Cores Ultra Vibrantes"], price: 99.90, imgKey: "oversized-bear", color: "#ec4899" },
+];
+
+const CATEGORIES = [
+  { id: "nba", label: "Regatas NBA", desc: "Estilo e liberdade para jogar ou para o dia a dia.", tag: "NBA", color: "from-purple-900 to-black", imgKey: "regata-lakers" },
+  { id: "uv50", label: "Manga Longa", desc: "Proteção, conforto e performance para qualquer aventura.", tag: "UV+50", color: "from-blue-900 to-black", imgKey: "manga-longa-azul" },
+  { id: "curta", label: "Camisetas", desc: "Conforto e estilo para te acompanhar em qualquer momento.", tag: "MANGA CURTA", color: "from-violet-900 to-black", imgKey: "camiseta-roxa" },
+  { id: "dtf", label: "Oversized", desc: "Estão urbanos com estampas de alta qualidade e toque premium.", tag: "DTF", color: "from-pink-900 to-black", imgKey: "oversized-bear" },
+];
+
+/* ═══════════════════════════════════════════════════════════
+   ICONS (inline SVG)
+═══════════════════════════════════════════════════════════ */
+const Icon = {
+  Search: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>,
+  Cart: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" /></svg>,
+  X: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>,
+  Heart: ({ filled }: { filled?: boolean }) => <svg width="16" height="16" viewBox="0 0 24 24" fill={filled ? "#ef4444" : "none"} stroke={filled ? "#ef4444" : "currentColor"} strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>,
+  Arrow: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14m-7-7 7 7-7 7" /></svg>,
+  Check: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>,
+  ChevLeft: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m15 18-6-6 6-6" /></svg>,
+  ChevRight: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 18 6-6-6-6" /></svg>,
+  Rotate: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>,
+  Star: () => <svg width="12" height="12" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>,
+  WA: () => <svg width="26" height="26" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z" /></svg>,
+  Menu: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>,
+  Trash: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>,
+  Play: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3" /></svg>,
+};
+
+/* ═══════════════════════════════════════════════════════════
+   360° VIEWER COMPONENT
+═══════════════════════════════════════════════════════════ */
+const Viewer360: React.FC<{ imgKey: string; color: string }> = ({ imgKey, color }) => {
+  const [rotation, setRotation] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [autoRotate, setAutoRotate] = useState(true);
+  const lastX = useRef(0);
+  const animRef = useRef<number>();
+
+  useEffect(() => {
+    if (!autoRotate) return;
+    const spin = () => {
+      setRotation(r => (r + 0.3) % 360);
+      animRef.current = requestAnimationFrame(spin);
+    };
+    animRef.current = requestAnimationFrame(spin);
+    return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
+  }, [autoRotate]);
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true); setAutoRotate(false);
+    lastX.current = e.clientX;
+  };
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    const delta = e.clientX - lastX.current;
+    setRotation(r => (r + delta * 0.5) % 360);
+    lastX.current = e.clientX;
+  };
+  const onMouseUp = () => setIsDragging(false);
+  const onTouchStart = (e: React.TouchEvent) => {
+    setIsDragging(true); setAutoRotate(false);
+    lastX.current = e.touches[0].clientX;
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    const delta = e.touches[0].clientX - lastX.current;
+    setRotation(r => (r + delta * 0.5) % 360);
+    lastX.current = e.touches[0].clientX;
+  };
+
+  // Simulate 3D depth: scale changes with rotation
+  const scaleX = Math.abs(Math.cos((rotation * Math.PI) / 180)) * 0.3 + 0.7;
+  const isBack = Math.abs(rotation % 360) > 90 && Math.abs(rotation % 360) < 270;
+
+  return (
+    <div
+      style={{ position: 'relative', userSelect: 'none', cursor: isDragging ? 'grabbing' : 'grab' }}
+      onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
+      onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={() => setIsDragging(false)}
+    >
+      {/* Glow ring */}
+      <div style={{ position: 'absolute', inset: '-20px', borderRadius: '50%', background: `radial-gradient(circle, ${color}20, transparent 70%)`, filter: 'blur(30px)', pointerEvents: 'none' }} />
+
+      <img
+        src={IMGS[imgKey]}
+        alt="Jersey 360"
+        style={{
+          width: '100%', maxWidth: 320, display: 'block', margin: '0 auto',
+          transform: `scaleX(${isBack ? -scaleX : scaleX})`,
+          transition: isDragging ? 'none' : 'transform 0.05s linear',
+          filter: `drop-shadow(0 20px 30px rgba(0,0,0,0.6)) drop-shadow(0 0 20px ${color}40)`,
+        }}
+        draggable={false}
+      />
+
+      {/* Controls */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 16 }}>
+        <button
+          onClick={() => { setAutoRotate(r => !r); }}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: autoRotate ? 'rgba(124,58,237,0.3)' : 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(124,58,237,0.4)', borderRadius: 8,
+            color: autoRotate ? '#a78bfa' : '#64748b', padding: '6px 12px',
+            fontSize: 11, fontWeight: 700, cursor: 'pointer', letterSpacing: '0.05em',
+          }}
+        >
+          <Icon.Rotate /> {autoRotate ? 'GIRANDO' : 'ARRASTAR'}
+        </button>
+        <span style={{ fontSize: 11, color: '#475569', fontWeight: 600 }}>360° VIEW</span>
+      </div>
+    </div>
+  );
+};
+
+/* ═══════════════════════════════════════════════════════════
+   PRODUCT CARD COMPONENT
+═══════════════════════════════════════════════════════════ */
+const ProductCard: React.FC<{
+  p: Product;
+  favorites: Set<string>;
+  onFav: (id: string) => void;
+  onView: (p: Product) => void;
+  onAdd: (p: Product) => void;
+}> = ({ p, favorites, onFav, onView, onAdd }) => (
+  <div className="product-card" style={{ position: 'relative' }}>
+    {/* Badge */}
+    {p.badge && (
+      <span style={{ position: 'absolute', top: 12, left: 12, zIndex: 2, background: 'rgba(124,58,237,0.9)', color: 'white', fontSize: 9, fontWeight: 800, padding: '4px 8px', borderRadius: 6, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+        {p.badge}
+      </span>
+    )}
+    {/* Fav */}
+    <button className={`fav-btn ${favorites.has(p.id) ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); onFav(p.id); }}>
+      <Icon.Heart filled={favorites.has(p.id)} />
+    </button>
+
+    {/* Image */}
+    <div
+      style={{ background: `linear-gradient(135deg, rgba(13,15,23,1), ${p.color}10)`, padding: '30px 20px', cursor: 'pointer', textAlign: 'center', minHeight: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      onClick={() => onView(p)}
+    >
+      <img src={IMGS[p.imgKey]} alt={p.title} className="product-img" style={{ maxHeight: 180, maxWidth: '100%', objectFit: 'contain' }} />
+    </div>
+
+    {/* Info */}
+    <div style={{ padding: '16px 16px 20px' }}>
+      <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: p.color || '#a78bfa', background: `${p.color || '#7c3aed'}15`, padding: '3px 8px', borderRadius: 5, display: 'inline-block', marginBottom: 8 }}>
+        {p.category}
+      </span>
+      <h3 style={{ fontSize: 13, fontWeight: 800, color: 'white', lineHeight: 1.3, marginBottom: 4, cursor: 'pointer' }} onClick={() => onView(p)}>{p.title}</h3>
+      <p style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>{p.subtitle}</p>
+
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
+        <span style={{ fontSize: 20, fontWeight: 900, color: 'white' }}>R$ {p.price.toFixed(2).replace('.', ',')}</span>
+      </div>
+      <p className="installment-tag">Em até 3x sem juros</p>
+
+      <button
+        onClick={() => onAdd(p)}
+        style={{ marginTop: 14, width: '100%', padding: '10px', background: 'linear-gradient(135deg, rgba(124,58,237,0.2), rgba(79,70,229,0.2))', border: '1px solid rgba(124,58,237,0.3)', borderRadius: 10, color: '#a78bfa', fontWeight: 700, fontSize: 11, cursor: 'pointer', letterSpacing: '0.05em', textTransform: 'uppercase', transition: 'all 0.2s' }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(124,58,237,0.5), rgba(79,70,229,0.5))'; e.currentTarget.style.color = 'white'; }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(124,58,237,0.2), rgba(79,70,229,0.2))'; e.currentTarget.style.color = '#a78bfa'; }}
+      >
+        Solicitar Orçamento
+      </button>
+    </div>
+  </div>
+);
+
+/* ═══════════════════════════════════════════════════════════
+   HERO SLIDER
+═══════════════════════════════════════════════════════════ */
+const HeroSlider: React.FC<{ onCTA: () => void }> = ({ onCTA }) => {
+  const slides = [
+    { tag: 'NBA', title: 'REGATAS', subtitle: 'NBA', desc: 'Estilo e liberdade para jogar\nou para o dia a dia.', features: ['Qualidade Premium', 'Design Exclusivo', 'Sublimação Total', 'Tecido Respirável'], imgKey: 'regata-lakers', color: '#7c3aed', glow: 'rgba(124,58,237,0.4)' },
+    { tag: 'MANGA CURTA', title: 'CAMISETAS', subtitle: 'MANGA CURTA', desc: 'Conforto e estilo para te\nacompanhar em qualquer momento.', features: ['Tecido Premium', 'Respirável', 'Cores Vibrantes', 'Alta Durabilidade'], imgKey: 'camiseta-roxa', color: '#9333ea', glow: 'rgba(147,51,234,0.4)' },
+    { tag: 'UV+50', title: 'MANGA LONGA', subtitle: 'UV+50', desc: 'Proteção, conforto e performance\npara qualquer aventura.', features: ['Proteção UV+50', 'Tecido Leve', 'Secagem Rápida', 'Alta Durabilidade'], imgKey: 'manga-longa-azul', color: '#0ea5e9', glow: 'rgba(14,165,233,0.4)' },
+    { tag: 'DTF', title: 'OVERSIZED', subtitle: 'STREETWEAR', desc: 'Estão urbanos com estampas de\nalta qualidade e toque premium.', features: ['100% Algodão', 'DTF Touchless', 'Modelagem Solta', 'Ultra Vibrante'], imgKey: 'oversized-bear', color: '#ec4899', glow: 'rgba(236,72,153,0.4)' },
+  ];
+
+  const [current, setCurrent] = useState(0);
+  const [prev, setPrev] = useState<number | null>(null);
+  const [animating, setAnimating] = useState(false);
+
+  const goTo = (idx: number) => {
+    if (animating || idx === current) return;
+    setPrev(current); setCurrent(idx); setAnimating(true);
+    setTimeout(() => setAnimating(false), 600);
+  };
+  const next = () => goTo((current + 1) % slides.length);
+  const prevSlide = () => goTo((current - 1 + slides.length) % slides.length);
+
+  useEffect(() => {
+    const t = setInterval(next, 5000);
+    return () => clearInterval(t);
+  }, [current]);
+
+  const s = slides[current];
+
+  return (
+    <section style={{ position: 'relative', overflow: 'hidden', background: '#04050a', minHeight: 520, display: 'flex', alignItems: 'center' }}>
+      {/* Animated background glow */}
+      <div style={{ position: 'absolute', top: '50%', right: '10%', transform: 'translateY(-50%)', width: 600, height: 600, borderRadius: '50%', background: `radial-gradient(circle, ${s.glow}, transparent 70%)`, filter: 'blur(80px)', transition: 'all 0.8s ease', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: 'linear-gradient(rgba(124,58,237,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(124,58,237,0.03) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
+
+      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '60px 40px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center', width: '100%', position: 'relative', zIndex: 1 }}>
+        {/* Text */}
+        <div style={{ opacity: animating ? 0 : 1, transform: animating ? 'translateX(-20px)' : 'translateX(0)', transition: 'all 0.5s ease' }}>
+          <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em', color: s.color, background: `${s.color}20`, border: `1px solid ${s.color}30`, padding: '6px 14px', borderRadius: 8, display: 'inline-block', marginBottom: 20 }}>
+            {s.tag}
+          </span>
+          <h2 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 'clamp(52px, 8vw, 90px)', fontWeight: 900, color: 'white', lineHeight: 0.9, textTransform: 'uppercase', marginBottom: 8, letterSpacing: '-0.01em' }}>
+            {s.title}
+          </h2>
+          <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 'clamp(52px, 8vw, 90px)', fontWeight: 900, lineHeight: 0.9, textTransform: 'uppercase', marginBottom: 24, letterSpacing: '-0.01em', background: `linear-gradient(to right, ${s.color}, #818cf8)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            {s.subtitle}
+          </h3>
+          <p style={{ fontSize: 15, color: '#94a3b8', lineHeight: 1.7, marginBottom: 32, whiteSpace: 'pre-line' }}>{s.desc}</p>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 36 }}>
+            {s.features.map(f => (
+              <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>
+                <div style={{ width: 20, height: 20, borderRadius: 6, background: `${s.color}20`, border: `1px solid ${s.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color, flexShrink: 0 }}>
+                  <Icon.Check />
+                </div>
+                <span style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>{f}</span>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+            <button className="btn-primary" onClick={onCTA} style={{ background: `linear-gradient(135deg, ${s.color}, #4f46e5)`, boxShadow: `0 4px 25px ${s.glow}` }}>
+              Ver modelos <Icon.Arrow />
+            </button>
+            <button className="btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: `${s.color}20`, border: `1px solid ${s.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color }}>
+                <Icon.Play />
+              </div>
+              Ver coleção
+            </button>
+          </div>
+        </div>
+
+        {/* Jersey Image */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
+          {/* Neon circle */}
+          <div style={{ position: 'absolute', width: '90%', height: '90%', borderRadius: '50%', border: '2px solid rgba(124,58,237,0.15)', boxShadow: `0 0 80px ${s.glow}, inset 0 0 80px ${s.glow}`, transition: 'all 0.8s ease', pointerEvents: 'none' }} />
+
+          <img
+            src={IMGS[s.imgKey]}
+            alt={s.title}
+            className="animate-float"
+            style={{ maxHeight: 380, objectFit: 'contain', position: 'relative', zIndex: 1, filter: `drop-shadow(0 30px 40px rgba(0,0,0,0.7)) drop-shadow(0 0 30px ${s.glow})`, opacity: animating ? 0 : 1, transform: animating ? 'scale(0.9)' : 'scale(1)', transition: 'all 0.5s ease' }}
+          />
+
+          {/* Slide counter */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 24 }}>
+            <button onClick={prevSlide} style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon.ChevLeft />
+            </button>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {slides.map((_, i) => (
+                <button key={i} onClick={() => goTo(i)} style={{ width: i === current ? 24 : 8, height: 8, borderRadius: 4, background: i === current ? s.color : 'rgba(255,255,255,0.15)', border: 'none', cursor: 'pointer', transition: 'all 0.3s ease' }} />
+              ))}
+            </div>
+            <span style={{ fontSize: 12, color: '#475569', fontWeight: 700 }}>
+              0{current + 1} / 0{slides.length}
+            </span>
+            <button onClick={next} style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon.ChevRight />
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+/* ═══════════════════════════════════════════════════════════
+   MAIN APP
+═══════════════════════════════════════════════════════════ */
+export default function App() {
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set(['regata-lakers', 'camiseta-roxa']));
+  const [activeModal, setActiveModal] = useState<Product | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [filterCat, setFilterCat] = useState('TODOS');
+  const [customName, setCustomName] = useState('');
+  const [customNumber, setCustomNumber] = useState('');
+  const [selectedSize, setSelectedSize] = useState('M');
+  const productsRef = useRef<HTMLDivElement>(null);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  const toggleFav = (id: string) => {
+    setFavorites(prev => {
+      const n = new Set(prev);
+      if (n.has(id)) { n.delete(id); showToast('Removido dos favoritos'); }
+      else { n.add(id); showToast('❤️ Adicionado aos favoritos!'); }
+      return n;
+    });
+  };
+
+  const addToCart = (p: Product, qty = 1) => {
+    setCart(prev => [...prev, { id: `${p.id}-${Date.now()}`, product: p, qty, size: selectedSize, name: customName || 'ATLETA', number: customNumber || '10' }]);
+    showToast(`✓ ${p.title} adicionado!`);
+    setCartOpen(true);
+    setActiveModal(null);
+  };
+
+  const removeFromCart = (id: string) => setCart(prev => prev.filter(i => i.id !== id));
+
+  const totalItems = cart.reduce((s, i) => s + i.qty, 0);
+  const totalPrice = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
+
+  const filteredProducts = filterCat === 'TODOS' ? PRODUCTS : PRODUCTS.filter(p => p.category === filterCat);
+
+  const scrollToProducts = () => {
+    productsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#040507', color: '#e2e8f0', fontFamily: "'Inter', sans-serif" }}>
+      {/* Toast */}
+      <div className={`toast ${toast ? 'show' : ''}`}>{toast}</div>
+
+      {/* Cart Overlay */}
+      <div className={`cart-overlay ${cartOpen ? 'open' : ''}`} onClick={() => setCartOpen(false)} />
+
+      {/* Cart Drawer */}
+      <div className={`cart-drawer ${cartOpen ? 'open' : ''}`}>
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(139,92,246,0.15)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(13,15,23,0.8)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Icon.Cart />
+            <span style={{ fontWeight: 800, fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Orçamento ({totalItems})</span>
+          </div>
+          <button onClick={() => setCartOpen(false)} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 6, borderRadius: 8 }}>
+            <Icon.X />
+          </button>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
+          {cart.length === 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60%', gap: 16, color: '#475569' }}>
+              <Icon.Cart />
+              <p style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Carrinho Vazio</p>
+              <p style={{ fontSize: 12, textAlign: 'center', color: '#334155' }}>Adicione produtos para começar seu orçamento</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {cart.map(item => (
+                <div key={item.id} style={{ display: 'flex', gap: 16, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(139,92,246,0.1)', borderRadius: 16, padding: '14px' }}>
+                  <img src={IMGS[item.product.imgKey]} alt={item.product.title} style={{ width: 60, height: 60, objectFit: 'contain', background: 'rgba(0,0,0,0.3)', borderRadius: 10 }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <p style={{ fontSize: 12, fontWeight: 800, color: 'white', lineHeight: 1.3 }}>{item.product.title}</p>
+                      <button onClick={() => removeFromCart(item.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: 2 }}>
+                        <Icon.Trash />
+                      </button>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
+                      <span style={{ fontSize: 9, fontWeight: 700, background: 'rgba(124,58,237,0.15)', color: '#a78bfa', padding: '2px 7px', borderRadius: 5, textTransform: 'uppercase' }}>{item.product.category}</span>
+                      <span style={{ fontSize: 9, fontWeight: 700, background: 'rgba(255,255,255,0.05)', color: '#64748b', padding: '2px 7px', borderRadius: 5 }}>Tam. {item.size}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 11, color: '#64748b' }}>
+                        {item.name !== 'ATLETA' && `Nome: ${item.name} • `}N°{item.number}
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 13, fontWeight: 900, color: 'white' }}>R$ {(item.product.price * item.qty).toFixed(2).replace('.', ',')}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {cart.length > 0 && (
+          <div style={{ padding: '20px 24px', borderTop: '1px solid rgba(139,92,246,0.15)', background: 'rgba(13,15,23,0.8)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+              <span style={{ fontSize: 13, color: '#94a3b8' }}>Total estimado:</span>
+              <span style={{ fontSize: 20, fontWeight: 900, color: 'white' }}>R$ {totalPrice.toFixed(2).replace('.', ',')}</span>
+            </div>           <a
+              href={`https://wa.me/5521920116800?text=${encodeURIComponent(`Olá! Quero fazer um pedido:\n${cart.map(i => `• ${i.product.title} (${i.qty}x, Tam ${i.size}, Nome: ${i.name}, N°${i.number}) - R$${(i.product.price * i.qty).toFixed(2)}`).join('\n')}\n\nTotal: R$${totalPrice.toFixed(2)}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary"
+              style={{ width: '100%', justifyContent: 'center', textDecoration: 'none' }}
+            >
+              Finalizar via WhatsApp <Icon.Arrow />
+            </a>
+            <p style={{ fontSize: 11, color: '#475569', textAlign: 'center', marginTop: 10 }}>Você será redirecionado ao WhatsApp para confirmar</p>
+          </div>
+        )}
+      </div>
+
+      {/* Product Detail Modal */}
+      <div className={`modal-overlay ${activeModal ? 'open' : ''}`} onClick={() => setActiveModal(null)}>
+        {activeModal && (
+          <div className="modal-box" onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '16px 20px 0' }}>
+              <button onClick={() => setActiveModal(null)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 8, borderRadius: 10 }}>
+                <Icon.X />
+              </button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
+              {/* 360 viewer */}
+              <div style={{ padding: '20px 30px 30px', background: `linear-gradient(135deg, #07090d, ${activeModal.color}10)`, borderRadius: '0 0 0 28px' }}>
+                <div style={{ textAlign: 'center', marginBottom: 12 }}>
+                  <span style={{ fontSize: 10, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Arraste para girar</span>
+                </div>
+                <Viewer360 imgKey={activeModal.imgKey} color={activeModal.color || '#7c3aed'} />
+              </div>
+
+              {/* Info */}
+              <div style={{ padding: '30px 30px 30px 20px' }}>
+                <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: activeModal.color || '#a78bfa', background: `${activeModal.color || '#7c3aed'}20`, padding: '4px 10px', borderRadius: 6, display: 'inline-block', marginBottom: 12 }}>
+                  {activeModal.category}
+                </span>
+                <h2 style={{ fontSize: 20, fontWeight: 900, color: 'white', marginBottom: 8, lineHeight: 1.2 }}>{activeModal.title}</h2>
+                <p style={{ fontSize: 13, color: '#64748b', marginBottom: 16, lineHeight: 1.6 }}>{activeModal.description}</p>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 20 }}>
+                  {activeModal.features.map(f => (
+                    <span key={f} style={{ fontSize: 10, fontWeight: 700, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '4px 10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      {f}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Size */}
+                <div style={{ marginBottom: 16 }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748b', marginBottom: 8 }}>Tamanho</p>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {['PP', 'P', 'M', 'G', 'GG', 'XG'].map(s => (
+                      <button key={s} onClick={() => setSelectedSize(s)} style={{ width: 38, height: 38, borderRadius: 10, border: `1px solid ${selectedSize === s ? (activeModal.color || '#7c3aed') : 'rgba(255,255,255,0.1)'}`, background: selectedSize === s ? `${activeModal.color || '#7c3aed'}20` : 'transparent', color: selectedSize === s ? (activeModal.color || '#a78bfa') : '#64748b', fontWeight: 800, fontSize: 11, cursor: 'pointer', transition: 'all 0.2s' }}>
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Custom */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: 6, letterSpacing: '0.05em' }}>Nome nas costas</label>
+                    <input className="input-field" style={{ fontSize: 13 }} placeholder="Ex: ATLETA" value={customName} onChange={e => setCustomName(e.target.value)} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: 6, letterSpacing: '0.05em' }}>Número</label>
+                    <input className="input-field" style={{ fontSize: 13 }} placeholder="Ex: 10" value={customNumber} onChange={e => setCustomNumber(e.target.value)} />
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: 16 }}>
+                  <span style={{ fontSize: 26, fontWeight: 900, color: 'white' }}>R$ {activeModal.price.toFixed(2).replace('.', ',')}</span>
+                  <p style={{ fontSize: 11, color: '#4ade80', marginTop: 2 }}>Em até 3x sem juros</p>
+                </div>
+
+                <button className="btn-primary" onClick={() => addToCart(activeModal)} style={{ width: '100%', justifyContent: 'center' }}>
+                  Adicionar ao Orçamento <Icon.Arrow />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── HEADER ── */}
+      <header style={{ background: 'rgba(7,9,13,0.9)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(139,92,246,0.12)', padding: '0 40px', height: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+          <div style={{ width: 38, height: 38, background: 'linear-gradient(135deg, #7c3aed, #4f46e5)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(124,58,237,0.4)', fontSize: 18 }}>
+            ⚡
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 900, color: 'white', letterSpacing: '-0.01em', lineHeight: 1 }}>GMZ</div>
+            <div style={{ fontSize: 9, fontWeight: 700, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.15em' }}>Performance</div>
+          </div>
+        </div>
+
+        {/* Nav */}
+        <nav className="hide-tablet" style={{ display: 'flex', gap: 4 }}>
+          {[
+            { label: 'Início', action: () => window.scrollTo({ top: 0, behavior: 'smooth' }) },
+            { label: 'Coleções', action: scrollToProducts },
+            { label: 'Todos os produtos', action: scrollToProducts },
+            { label: 'Personalize', action: () => document.getElementById('personalize')?.scrollIntoView({ behavior: 'smooth' }) },
+            { label: 'Como funciona', action: () => document.getElementById('como-funciona')?.scrollIntoView({ behavior: 'smooth' }) },
+            { label: 'Contato', action: () => window.open('https://wa.me/5511999999999', '_blank') },
+          ].map((item, i) => (
+            <button key={i} onClick={item.action} style={{ padding: '8px 14px', background: 'none', border: 'none', color: '#64748b', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', cursor: 'pointer', borderRadius: 8, transition: 'all 0.2s' }}
+              onMouseEnter={e => { e.currentTarget.style.color = 'white'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+              onMouseLeave={e => { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.background = 'none'; }}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+
+        {/* Right actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '8px', color: '#64748b', cursor: 'pointer' }}>
+            <Icon.Search />
+          </button>
+          <button
+            onClick={() => setCartOpen(true)}
+            style={{ position: 'relative', background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)', borderRadius: 10, padding: '8px 10px', color: '#a78bfa', cursor: 'pointer', display: 'flex' }}
+          >
+            <Icon.Cart />
+            {totalItems > 0 && (
+              <span style={{ position: 'absolute', top: -6, right: -6, width: 18, height: 18, background: '#7c3aed', borderRadius: '50%', fontSize: 10, fontWeight: 900, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #040507' }}>
+                {totalItems}
+              </span>
+            )}
+          </button>
+          <a
+            href="https://wa.me/5511999999999"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-primary hide-mobile"
+            style={{ padding: '9px 20px', fontSize: 11, textDecoration: 'none' }}
+          >
+            Fale conosco <Icon.Arrow />
+          </a>
+        </div>
+      </header>
+
+      {/* ── HERO SLIDER ── */}
+      <HeroSlider onCTA={scrollToProducts} />
+
+      {/* ── TICKER ── */}
+      <div className="ticker-wrap" style={{ padding: '14px 0', background: 'rgba(7,9,13,0.6)', overflow: 'hidden' }}>
+        <div className="ticker-tape animate-ticker" style={{ display: 'flex', gap: 60 }}>
+          {[...Array(3)].flatMap(() => [
+            '⚡ SUBLIMAÇÃO PREMIUM', '🏆 +10K CLIENTES', '🚀 ENTREGA RÁPIDA', '✨ PERSONALIZAÇÃO TOTAL', '🛡️ QUALIDADE GARANTIDA', '📦 PARA TODO O BRASIL', '⚡ TECNOLOGIA UV+50', '🎨 CORES VIBRANTES',
+          ]).map((item, i) => (
+            <span key={i} className="ticker-item">
+              <span className="ticker-dot" />
+              {item}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* ── STATS ── */}
+      <section style={{ padding: '60px 40px', background: 'rgba(7,9,13,0.4)', borderBottom: '1px solid rgba(139,92,246,0.1)' }}>
+        <div style={{ maxWidth: 1400, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 40, alignItems: 'center' }}>
+          {[
+            { n: '+5', label: 'anos de mercado', icon: '🏆' },
+            { n: '+10K', label: 'clientes atendidos', icon: '👥' },
+            { n: '+50K', label: 'peças produzidas', icon: '👕' },
+          ].map((s, i) => (
+            <div key={i} style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 32, marginBottom: 4 }}>{s.icon}</div>
+              <div style={{ fontSize: 'clamp(32px, 4vw, 52px)', fontWeight: 900, color: 'white', letterSpacing: '-0.03em', lineHeight: 1 }}>{s.n}</div>
+              <div style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#475569', marginTop: 4 }}>{s.label}</div>
+            </div>
+          ))}
+          <div style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.15)', borderRadius: 20, padding: '20px 24px', display: 'flex', gap: 16, alignItems: 'center' }}>
+            <div style={{ display: 'flex' }}>
+              {['👤', '👤', '👤'].map((a, i) => (
+                <div key={i} style={{ width: 36, height: 36, borderRadius: '50%', background: `hsl(${260 + i * 20}, 60%, 40%)`, marginLeft: i > 0 ? -10 : 0, border: '2px solid #040507', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>{a}</div>
+              ))}
+            </div>
+            <div>
+              <div style={{ display: 'flex', gap: 2, marginBottom: 4 }}>
+                {[...Array(5)].map((_, i) => <Icon.Star key={i} />)}
+              </div>
+              <p style={{ fontSize: 12, fontStyle: 'italic', color: '#94a3b8', lineHeight: 1.4 }}>"A qualidade é absurda!"</p>
+              <p style={{ fontSize: 10, fontWeight: 700, color: '#64748b', marginTop: 4 }}>Júlio C. – SP</p>
+            </div>
+          </div>
+          <a
+            href="https://wa.me/5511999999999"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-primary"
+            style={{ justifyContent: 'center', textDecoration: 'none', padding: '14px' }}
+          >
+            Ver Todas <Icon.Arrow />
+          </a>
+        </div>
+      </section>
+
+      {/* ── COLLECTIONS ── */}
+      <section id="colecoes" style={{ padding: '80px 40px', maxWidth: 1400, margin: '0 auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 36 }}>
+          <h2 className="section-title">Coleções <span>em destaque</span></h2>
+          <button onClick={scrollToProducts} style={{ background: 'none', border: 'none', color: '#7c3aed', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, letterSpacing: '0.05em' }}>
+            Ver todas as coleções <Icon.Arrow />
+          </button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+          {CATEGORIES.map(cat => (
+            <div
+              key={cat.id}
+              onClick={() => setFilterCat(cat.tag)}
+              style={{ borderRadius: 24, overflow: 'hidden', cursor: 'pointer', position: 'relative', minHeight: 340, background: 'linear-gradient(to bottom, #0d0f17, #07090d)', border: '1px solid rgba(139,92,246,0.1)', transition: 'all 0.3s ease' }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-6px)'; e.currentTarget.style.borderColor = 'rgba(124,58,237,0.4)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'rgba(139,92,246,0.1)'; }}
+            >
+              {/* Category bg jersey image */}
+              <div style={{ position: 'absolute', right: -10, bottom: 0, width: '65%', display: 'flex', justifyContent: 'center' }}>
+                <img src={IMGS[cat.imgKey]} alt={cat.label} style={{ maxHeight: 240, objectFit: 'contain', filter: 'drop-shadow(0 0 30px rgba(0,0,0,0.8))' }} />
+              </div>
+
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(7,9,13,0.95) 50%, transparent 90%)' }} />
+
+              <div style={{ position: 'relative', zIndex: 1, padding: '32px 28px' }}>
+                <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#7c3aed', background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.2)', padding: '4px 10px', borderRadius: 6, display: 'inline-block', marginBottom: 12 }}>
+                  {cat.tag}
+                </span>
+                <h3 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 38, fontWeight: 900, color: 'white', textTransform: 'uppercase', lineHeight: 0.95, marginBottom: 12, letterSpacing: '-0.01em' }}>
+                  {cat.label}
+                </h3>
+                <p style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.6, marginBottom: 24, maxWidth: 200 }}>{cat.desc}</p>
+                <button style={{ background: 'none', border: 'none', color: '#7c3aed', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, letterSpacing: '0.05em' }}>
+                  Ver coleção <Icon.Arrow />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── PRODUCTS ── */}
+      <section ref={productsRef} id="produtos" style={{ padding: '0 40px 80px', maxWidth: 1400, margin: '0 auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
+          <h2 className="section-title">Produtos <span>em destaque</span></h2>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {['TODOS', 'NBA', 'UV+50', 'MANGA CURTA', 'DTF'].map(cat => (
+              <button
+                key={cat}
+                onClick={() => setFilterCat(cat)}
+                style={{ padding: '7px 14px', borderRadius: 10, border: `1px solid ${filterCat === cat ? '#7c3aed' : 'rgba(255,255,255,0.08)'}`, background: filterCat === cat ? 'rgba(124,58,237,0.2)' : 'transparent', color: filterCat === cat ? '#a78bfa' : '#64748b', fontSize: 11, fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.05em', transition: 'all 0.2s' }}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 20 }}>
+          {filteredProducts.map(p => (
+            <ProductCard key={p.id} p={p} favorites={favorites} onFav={toggleFav} onView={setActiveModal} onAdd={addToCart} />
+          ))}
+        </div>
+      </section>
+
+      {/* ── FEATURES STRIP ── */}
+      <section style={{ background: 'rgba(7,9,13,0.6)', borderTop: '1px solid rgba(139,92,246,0.1)', borderBottom: '1px solid rgba(139,92,246,0.1)', padding: '40px 40px' }}>
+        <div style={{ maxWidth: 1400, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
+          {[
+            { icon: '⚡', title: 'Tecnologia Premium', desc: 'Estampas com cores vivas e alta durabilidade' },
+            { icon: '🧵', title: 'Tecidos Selecionados', desc: 'Conforto, leveza e máximo desempenho' },
+            { icon: '✂️', title: 'Acabamento Premium', desc: 'Costuras reforçadas e caimento perfeito' },
+            { icon: '🔒', title: 'Compra Segura', desc: 'Seus dados protegidos do início ao fim' },
+            { icon: '💬', title: 'Atendimento Humanizado', desc: 'Estamos prontos para te ajudar sempre' },
+          ].map((f, i) => (
+            <div key={i} className="feature-badge">
+              <div className="feature-badge-icon">
+                <span style={{ fontSize: 20 }}>{f.icon}</span>
+              </div>
+              <div>
+                <p style={{ fontSize: 12, fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>{f.title}</p>
+                <p style={{ fontSize: 11, color: '#475569', lineHeight: 1.4 }}>{f.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── PERSONALIZE CTA ── */}
+      <section id="personalize" style={{ padding: '80px 40px', maxWidth: 1400, margin: '0 auto' }}>
+        <div style={{ background: 'linear-gradient(135deg, rgba(13,15,23,0.9), rgba(124,58,237,0.05))', border: '1px solid rgba(124,58,237,0.15)', borderRadius: 32, padding: '60px', position: 'relative', overflow: 'hidden', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center' }}>
+          <div style={{ position: 'absolute', top: -100, right: -100, width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(124,58,237,0.15), transparent 70%)', pointerEvents: 'none' }} />
+
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ width: 60, height: 60, background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)', borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, marginBottom: 24 }}>
+              🎨
+            </div>
+            <h2 className="section-title" style={{ marginBottom: 12 }}>Personalize <span>do seu jeito</span></h2>
+            <p style={{ fontSize: 15, color: '#94a3b8', lineHeight: 1.7, marginBottom: 32 }}>
+              Adicione nome, número e monte sua peça exclusiva<br />como você sempre imaginou.
+            </p>
+            <a
+              href="https://wa.me/5511999999999?text=Olá! Quero personalizar um uniforme"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary"
+              style={{ textDecoration: 'none', display: 'inline-flex' }}
+            >
+              Personalizar agora <Icon.Arrow />
+            </a>
+          </div>
+
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr auto 1fr', alignItems: 'center', gap: 12 }}>
+              {[
+                { step: '1', icon: '👕', label: 'Escolha o modelo' },
+                null,
+                { step: '2', icon: '✏️', label: 'Personalize' },
+                null,
+                { step: '3', icon: '📦', label: 'Receba em casa' },
+              ].map((item, i) => {
+                if (!item) return <div key={i} style={{ textAlign: 'center', color: '#475569', fontSize: 20, fontWeight: 100 }}>→</div>;
+                return (
+                  <div key={i} style={{ textAlign: 'center' }}>
+                    <div style={{ width: 56, height: 56, borderRadius: 18, background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, margin: '0 auto 10px' }}>{item.icon}</div>
+                    <p style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: 1.3 }}>{item.label}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── COMO FUNCIONA ── */}
+      <section id="como-funciona" style={{ padding: '0 40px 80px', maxWidth: 1400, margin: '0 auto' }}>
+        <h2 className="section-title" style={{ marginBottom: 48, textAlign: 'center' }}>Como <span>funciona</span></h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 24 }}>
+          {[
+            { n: '01', icon: '💬', title: 'Entre em contato', desc: 'Fale com nossa equipe via WhatsApp e conte sobre seu projeto ou time.' },
+            { n: '02', icon: '🎨', title: 'Criação do design', desc: 'Nossos artistas criam o design exclusivo do seu uniforme personalizado.' },
+            { n: '03', icon: '✅', title: 'Aprovação', desc: 'Você aprova o arte-final antes da produção começar.' },
+            { n: '04', icon: '🚀', title: 'Produção e entrega', desc: 'Produzimos com tecnologia de sublimação e entregamos para todo o Brasil.' },
+          ].map((step, i) => (
+            <div key={i} style={{ background: 'rgba(13,15,23,0.6)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 20, padding: '28px 24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 48, fontWeight: 900, color: 'rgba(124,58,237,0.3)', lineHeight: 1 }}>{step.n}</div>
+                <div style={{ fontSize: 32 }}>{step.icon}</div>
+              </div>
+              <h3 style={{ fontSize: 16, fontWeight: 800, color: 'white', marginBottom: 8 }}>{step.title}</h3>
+              <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.7 }}>{step.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer style={{ background: 'rgba(7,9,13,0.8)', borderTop: '1px solid rgba(139,92,246,0.1)', padding: '60px 40px 30px' }}>
+        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 40, marginBottom: 48 }}>
+            {/* Brand */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <div style={{ width: 36, height: 36, background: 'linear-gradient(135deg, #7c3aed, #4f46e5)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>⚡</div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: 'white' }}>GMZ</div>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.15em' }}>Performance</div>
+                </div>
+              </div>
+              <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.7, marginBottom: 20 }}>A GMZ Performance nasceu da paixão pelo esporte e do compromisso com a qualidade.</p>
+              <div style={{ display: 'flex', gap: 10 }}>
+                {['📷', '📘', '🎵'].map((s, i) => (
+                  <a key={i} href="#" style={{ width: 36, height: 36, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, textDecoration: 'none' }}>{s}</a>
+                ))}
+              </div>
+            </div>
+
+            {/* Links */}
+            <div>
+              <h4 style={{ fontSize: 13, fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 20 }}>Links Rápidos</h4>
+              {['Início', 'Coleções', 'Todos os produtos', 'Personalize', 'Como funciona', 'Contato'].map((l, i) => (
+                <div key={i} style={{ marginBottom: 10 }}>
+                  <a href="#" style={{ fontSize: 13, color: '#475569', textDecoration: 'none', transition: 'color 0.2s' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#a78bfa')}
+                    onMouseLeave={e => (e.currentTarget.style.color = '#475569')}
+                  >{l}</a>
+                </div>
+              ))}
+            </div>
+
+            {/* Atendimento */}
+            <div>
+              <h4 style={{ fontSize: 13, fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 20 }}>Atendimento</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {[
+                  { icon: '💬', text: 'Fale conosco no WhatsApp' },
+                  { icon: '📞', text: '(11) 99999-9999' },
+                  { icon: '🕐', text: 'Seg à Sex, 9h às 18h' },
+                  { icon: '📧', text: 'contato@gmzperformance.com.br' },
+                ].map((item, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#475569' }}>
+                    <span>{item.icon}</span> {item.text}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Payment */}
+            <div>
+              <h4 style={{ fontSize: 13, fontWeight: 800, color: 'white', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 20 }}>Formas de Pagamento</h4>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+                {['VISA', 'Master', 'Elo', 'Pix', 'Boleto'].map((p, i) => (
+                  <span key={i} style={{ padding: '6px 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, fontSize: 11, fontWeight: 700, color: '#64748b' }}>{p}</span>
+                ))}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px', background: 'rgba(74,222,128,0.05)', border: '1px solid rgba(74,222,128,0.15)', borderRadius: 12 }}>
+                <span style={{ fontSize: 18 }}>🔒</span>
+                <div>
+                  <p style={{ fontSize: 11, fontWeight: 800, color: '#4ade80', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Site 100% Seguro</p>
+                  <p style={{ fontSize: 10, color: '#475569' }}>Seus dados protegidos com criptografia SSL</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="divider" style={{ marginBottom: 24 }} />
+          <p style={{ textAlign: 'center', fontSize: 12, color: '#334155' }}>
+            © 2024 GMZ Performance. Todos os direitos reservados.
+          </p>
+        </div>
+      </footer>
+
+      {/* WhatsApp Float */}
+      <a href="https://wa.me/5511999999999" target="_blank" rel="noopener noreferrer" className="wa-float" title="Fale conosco">
+        <Icon.WA />
+      </a>
+    </div>
+  );
+}

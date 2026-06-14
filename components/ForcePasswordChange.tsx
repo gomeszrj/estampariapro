@@ -1,0 +1,120 @@
+
+import React, { useState } from 'react';
+import { supabase } from '../services/supabase';
+import { KeyRound, ShieldCheck, Eye, EyeOff, CheckCircle2, AlertCircle } from 'lucide-react';
+import { notify } from './ui/toast';
+
+interface ForcePasswordChangeProps {
+  onComplete: () => void;
+}
+
+export const ForcePasswordChange: React.FC<ForcePasswordChangeProps> = ({ onComplete }) => {
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPass, setShowPass] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleUpdate = async () => {
+    setError('');
+    if (newPassword.length < 6) { setError('A senha deve ter pelo menos 6 caracteres.'); return; }
+    if (newPassword !== confirmPassword) { setError('As senhas não conferem.'); return; }
+
+    setLoading(true);
+    try {
+      const { error: authError } = await supabase.auth.updateUser({ password: newPassword });
+      if (authError) throw authError;
+
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ require_password_change: false })
+        .eq('id', user?.id);
+      
+      if (profileError) throw profileError;
+
+      notify.success('Senha atualizada! Bem-vindo ao sistema.');
+      onComplete();
+    } catch (e: any) {
+      setError('Erro ao atualizar senha: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-[#0b1221] z-[10000] flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-[#0f172a] rounded-[3rem] border border-[#1e293b] p-10 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-1 bg-white"></div>
+        
+        <div className="text-center space-y-4 mb-8">
+            <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center border border-[#1e293b] text-white mx-auto mb-4">
+                <KeyRound className="w-8 h-8" />
+            </div>
+            <h2 className="text-2xl font-black text-white uppercase tracking-tight">Segurança Exigida</h2>
+            <p className="text-slate-400 text-sm font-medium">Este é seu primeiro acesso. Para proteger sua conta, você deve definir uma senha definitiva.</p>
+        </div>
+
+        <div className="space-y-6">
+            <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-2">Nova Senha</label>
+                <div className="relative">
+                    <input 
+                        type={showPass ? "text" : "password"}
+                        value={newPassword}
+                        onChange={e => setNewPassword(e.target.value)}
+                        placeholder="Mínimo 6 caracteres"
+                        className="w-full bg-[#1C1C26] border border-[#1e293b] rounded-2xl p-4 text-white font-bold focus:ring-1 focus:ring-slate-700/50 outline-none"
+                    />
+                    <button onClick={() => setShowPass(!showPass)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">
+                        {showPass ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                </div>
+            </div>
+
+            <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-2">Confirmar Senha</label>
+                <input 
+                    type={showPass ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    placeholder="Repita a nova senha"
+                    className="w-full bg-[#1C1C26] border border-[#1e293b] rounded-2xl p-4 text-white font-bold focus:ring-1 focus:ring-slate-700/50 outline-none"
+                />
+            </div>
+
+            <ul className="space-y-2">
+                <li className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                    <CheckCircle2 size={12} className={newPassword.length >= 6 ? 'text-emerald-500' : 'text-slate-700'} />
+                    Mínimo 6 caracteres
+                </li>
+                <li className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                    <CheckCircle2 size={12} className={confirmPassword.length > 0 && newPassword === confirmPassword ? 'text-emerald-500' : 'text-slate-700'} />
+                    Senhas conferem
+                </li>
+            </ul>
+
+            {error && (
+              <div className="flex items-start gap-2 bg-red-950/50 border border-red-900/50 rounded-xl p-3">
+                <AlertCircle size={14} className="text-red-400 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-red-300 font-medium">{error}</p>
+              </div>
+            )}
+
+            <button 
+                onClick={handleUpdate}
+                disabled={loading}
+                className="w-full py-5 bg-white hover:bg-white/90 disabled:bg-slate-800 text-slate-950 rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all shadow-xl shadow-white/5 flex items-center justify-center gap-3"
+            >
+                {loading ? 'Atualizando...' : 'Definir Senha e Entrar'}
+            </button>
+        </div>
+
+        <div className="mt-8 flex items-center justify-center gap-2 text-emerald-500/50">
+            <ShieldCheck size={16} />
+            <span className="text-[10px] font-black uppercase tracking-widest">Sua conta será ativada instantaneamente</span>
+        </div>
+      </div>
+    </div>
+  );
+};
