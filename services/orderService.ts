@@ -123,7 +123,19 @@ export const orderService = {
                 .from('order_items')
                 .insert(dbItems);
 
-            if (itemsError) throw itemsError;
+            if (itemsError) {
+                if (itemsError.message && itemsError.message.includes('supplier_id')) {
+                    console.warn("[Fallback] Supabase missing supplier_id. Saving without it.");
+                    const safeItems = dbItems.map((item: any) => {
+                        const { supplier_id, unit_cost, ...rest } = item;
+                        return rest;
+                    });
+                    const { error: fallbackError } = await supabase.from('order_items').insert(safeItems);
+                    if (fallbackError) throw fallbackError;
+                } else {
+                    throw itemsError;
+                }
+            }
 
             // NEW: Deduct stock from physical products
             for (const item of order.items) {
@@ -307,7 +319,19 @@ export const orderService = {
                     .from('order_items')
                     .insert(dbItems);
 
-                if (insertError) throw insertError;
+                if (insertError) {
+                    if (insertError.message && insertError.message.includes('supplier_id')) {
+                        console.warn("[Fallback] Supabase missing supplier_id. Updating without it.");
+                        const safeItems = dbItems.map((item: any) => {
+                            const { supplier_id, unit_cost, ...rest } = item;
+                            return rest;
+                        });
+                        const { error: fallbackError } = await supabase.from('order_items').insert(safeItems);
+                        if (fallbackError) throw fallbackError;
+                    } else {
+                        throw insertError;
+                    }
+                }
             }
         }
 
