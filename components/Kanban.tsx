@@ -32,7 +32,7 @@ const getInitials = (name: string) => {
   return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 };
 
-const KanbanCard: React.FC<KanbanCardProps> = ({ order, onMove }) => {
+const KanbanCard: React.FC<KanbanCardProps> = React.memo(({ order, onMove }) => {
   const isLate = new Date(order.deliveryDate) < new Date() && order.status !== OrderStatus.FINISHED;
   const currentStatusIndex = statuses.indexOf(order.status);
 
@@ -196,7 +196,7 @@ const KanbanCard: React.FC<KanbanCardProps> = ({ order, onMove }) => {
       </div>
     </div>
   );
-};
+});
 
 interface KanbanColumnProps {
   status: OrderStatus;
@@ -394,7 +394,7 @@ const Kanban: React.FC<KanbanProps> = ({ orders, setOrders, setActiveView }) => 
     clientService.getAll().then(setClients).catch(console.error);
   }, []);
 
-  const handleMove = async (id: string, newStatus: OrderStatus) => {
+  const handleMove = React.useCallback(async (id: string, newStatus: OrderStatus) => {
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
     try {
       await orderService.update(id, { status: newStatus });
@@ -402,14 +402,16 @@ const Kanban: React.FC<KanbanProps> = ({ orders, setOrders, setActiveView }) => 
       console.error("Failed to update status:", error);
       notify.error('Erro ao mover pedido.');
     }
-  };
+  }, [setOrders]);
 
-  const filteredOrders = orders.filter(order => {
-    const matchesSearch =
-      (order.clientName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (order.orderNumber || '').toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
-  });
+  const filteredOrders = React.useMemo(() => {
+    return orders.filter(order => {
+      const matchesSearch =
+        (order.clientName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (order.orderNumber || '').toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesSearch;
+    });
+  }, [orders, searchTerm]);
 
   // Calculate Metrics
   const emProducao = orders.filter(o => o.status === OrderStatus.IN_PRODUCTION).length;

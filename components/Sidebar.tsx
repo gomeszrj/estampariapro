@@ -52,11 +52,11 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
   const loadPermissions = async () => {
     let resolved = false;
 
-    // Safety timeout: if Supabase query hangs for more than 1.5 seconds, force proceed with default full access
+    // Safety timeout: if Supabase query hangs for more than 1.5 seconds, force proceed with NO access for safety
     const timeoutId = setTimeout(() => {
       if (!resolved) {
-        console.warn("Sidebar permissions load timed out - defaulting to full access");
-        setPermissions(null); // null = default full access
+        console.warn("Sidebar permissions load timed out - defaulting to NO access (Fail-Closed)");
+        setPermissions({}); // {} = no permissions, fail-closed
         setPermsLoaded(true);
         resolved = true;
       }
@@ -87,7 +87,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
     } catch (err) {
       console.error("Sidebar: Error loading permissions:", err);
       if (!resolved) {
-        setPermissions(null);
+        setPermissions({}); // {} = fail-closed
         setPermsLoaded(true);
         resolved = true;
         clearTimeout(timeoutId);
@@ -109,8 +109,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
     if (isMasterAdmin) return true;
     if (!permsLoaded) return false;
 
-    // If permissions object is null, undefined, or empty, default to full access (true)
-    if (!permissions || Object.keys(permissions).length === 0) return true;
+    // If permissions object is undefined or null, default to no access (fail-closed)
+    // Core features still remain accessible if empty object is returned without those keys but we must avoid null.
+    if (!permissions) return false;
 
     // If the specific permission key doesn't exist in the object, default to true for core features
     if (!(permKey in permissions)) {

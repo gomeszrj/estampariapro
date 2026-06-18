@@ -131,12 +131,18 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
   const totalRevenue = incomeTransactions.reduce((acc, curr) => acc + curr.amount, 0);
 
   // 2. Production Costs (Custos dos pedidos do mês)
+  const productMap = React.useMemo(() => {
+    const map = new Map<string, Product>();
+    products.forEach(p => map.set(p.id, p));
+    return map;
+  }, [products]);
+
   const productionCosts = currentMonthOrders.reduce((acc, order) => {
     return acc + order.items.reduce((itemAcc, item) => {
       // Use frozen unitCost from order if available, else fallback to current product cost
       let cost = item.unitCost;
       if (cost === undefined || cost === null) {
-        const product = products.find(p => p.id === item.productId);
+        const product = productMap.get(item.productId);
         cost = product?.costPrice || 0;
       }
       return itemAcc + (cost * item.quantity);
@@ -158,7 +164,11 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
   // 5. Chart Data (Últimos 6 meses, ignorando o filtro atual)
   const monthlyData: Record<string, { revenue: number, expense: number, cost: number, profit: number }> = {};
 
-  transactions.forEach(t => {
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  const cutoffDate = sixMonthsAgo.toISOString();
+
+  transactions.filter(t => t.date >= cutoffDate).forEach(t => {
     const key = t.date.slice(0, 7);
     if (!monthlyData[key]) monthlyData[key] = { revenue: 0, expense: 0, cost: 0, profit: 0 };
     if (t.type === 'income') {
@@ -168,14 +178,14 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
     }
   });
 
-  revenueOrders.forEach(o => {
+  revenueOrders.filter(o => o.createdAt && o.createdAt >= cutoffDate).forEach(o => {
     if (!o.createdAt) return;
     const key = o.createdAt.slice(0, 7);
     if (!monthlyData[key]) monthlyData[key] = { revenue: 0, expense: 0, cost: 0, profit: 0 };
     const orderCost = o.items.reduce((acc, item) => {
       let cost = item.unitCost;
       if (cost === undefined || cost === null) {
-        const p = products.find(prod => prod.id === item.productId);
+        const p = productMap.get(item.productId);
         cost = p?.costPrice || 0;
       }
       return acc + (cost * item.quantity);

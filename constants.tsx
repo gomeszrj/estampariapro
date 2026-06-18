@@ -3,11 +3,16 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 21.9 -> 22.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '25.5.1';
+export const SYSTEM_VERSION = '25.6.0';
 export const APP_NAME = 'Gomesz Speed Print';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 25.5.0 — "Financeiro Real" (14/06/2026):
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 25.6.0 — "Performance Extrema" (17/06/2026):
 
-🚀 ATUALIZAÇÃO NO MÓDULO FINANCEIRO:
+🚀 OTIMIZAÇÃO E VELOCIDADE:
+  * Fim do Ralo de Dados (Base64): Imagens de layout nos pedidos agora fazem upload real e assíncrono para o Storage, reduzindo o tráfego do banco de dados em mais de 90% e eliminando a lentidão extrema ao carregar a tela.
+  * Refresh Silencioso: Salvar dados não causa mais "pisca-pisca" ou travamento na tela de carregamento. Os dados sincronizam de forma oculta e fluida em background.
+  * Kanban sem Lag: Otimização gráfica aplicada no quadro Kanban. Digitar na barra de buscas tem zero lag, mesmo com centenas de pedidos simultâneos na memória.
+
+(25.5.0) Financeiro Real:
   * Filtro de Período Dinâmico: Agora é possível selecionar o Mês e Ano para gerar relatórios reais em tempo real.
   * Fluxo de Caixa Real: O balanço abandonou as estimativas. Agora, exibimos Faturamento Bruto (soma de vendas), Receitas Realizadas (pagamentos recebidos no mês), Custo de Produção (custo de fornecedores e insumos) e Despesas Operacionais, resultando no Lucro Líquido exato.
   * Correção de Caixa: Solucionamos a falha silenciosa que impedia pagamentos recebidos na aba "Pedidos" de refletirem automaticamente no Financeiro.

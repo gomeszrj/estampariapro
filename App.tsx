@@ -83,8 +83,8 @@ const AuthenticatedApp: React.FC = () => {
     // Skip data loading if no session and not in public mode
     if (!session && !isPublicCatalog && !isClientPortal) return;
 
-    const loadData = async () => {
-      setLoading(true);
+    const loadData = async (silent = false) => {
+      if (!silent) setLoading(true);
       try {
         if (isPublicCatalog) {
           // If public, ONLY load products to be faster and safer
@@ -108,7 +108,11 @@ const AuthenticatedApp: React.FC = () => {
             clientService.getAll(),
             productService.getAll(),
             orderService.getAll(),
-            inventoryService.getAll().catch(() => [])
+            inventoryService.getAll().catch((e) => {
+              console.error("Erro ao carregar estoque (Possível falha de RLS ou Banco):", e);
+              notify.error("Falha ao carregar dados do estoque.");
+              return [];
+            })
           ]);
           setClients(fetchedClients);
           setProducts(fetchedProducts);
@@ -138,15 +142,15 @@ const AuthenticatedApp: React.FC = () => {
       } catch (error) {
         console.error("Failed to load data:", error);
       } finally {
-        setLoading(false);
+        if (!silent) setLoading(false);
       }
     };
 
     // Initial Load
     loadData();
 
-    // Listen for updates (simplified refresh for now)
-    const handleRefresh = () => loadData();
+    // Listen for updates (silent refresh)
+    const handleRefresh = () => loadData(true);
     window.addEventListener('refreshData', handleRefresh);
     return () => window.removeEventListener('refreshData', handleRefresh);
   }, [isPublicCatalog, session]);

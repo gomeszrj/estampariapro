@@ -5,37 +5,7 @@ import { inventoryService } from './inventoryService';
 import { clientService } from './clientService';
 import { whatsappService } from './whatsappService';
 
-// ============================
-// LOCAL SUPPLIER CACHE
-// Stores supplier/cost data per order item in localStorage
-// as a permanent fallback when the DB column doesn't exist.
-// ============================
-const SUPPLIER_CACHE_KEY = 'estamparia_supplier_cache';
 
-type SupplierCacheEntry = { supplierId?: string; unitCost?: number };
-type SupplierCache = Record<string, SupplierCacheEntry[]>; // key = orderId
-
-function readSupplierCache(): SupplierCache {
-    try {
-        return JSON.parse(localStorage.getItem(SUPPLIER_CACHE_KEY) || '{}');
-    } catch { return {}; }
-}
-
-function saveSupplierCache(cache: SupplierCache) {
-    try {
-        localStorage.setItem(SUPPLIER_CACHE_KEY, JSON.stringify(cache));
-    } catch { /* ignore quota errors */ }
-}
-
-export function cacheOrderSuppliers(orderId: string, items: OrderItem[]) {
-    const cache = readSupplierCache();
-    cache[orderId] = items.map(i => ({ supplierId: i.supplierId, unitCost: i.unitCost }));
-    saveSupplierCache(cache);
-}
-
-export function getCachedOrderSuppliers(orderId: string): SupplierCacheEntry[] {
-    return readSupplierCache()[orderId] || [];
-}
 
 export const orderService = {
   async uploadFile(file: File, path: string): Promise<string> {
@@ -155,25 +125,7 @@ export const orderService = {
                 .from('order_items')
                 .insert(dbItems);
 
-            if (itemsError) {
-                // If the column is missing in the DB, save without it and cache locally
-                if (itemsError.message && (itemsError.message.includes('supplier_id') || itemsError.message.includes('unit_cost') || itemsError.message.includes('schema cache'))) {
-                    console.warn("[Fallback] Saving order_items without supplier/cost columns — run SQL migration to enable permanently.");
-                    const safeItems = dbItems.map((item: any) => {
-                        const { supplier_id, unit_cost, ...rest } = item;
-                        return rest;
-                    });
-                    const { error: fallbackError } = await supabase.from('order_items').insert(safeItems);
-                    if (fallbackError) throw fallbackError;
-                    // Cache supplier data locally so it can be restored on edit
-                    cacheOrderSuppliers(orderData.id, order.items);
-                } else {
-                    throw itemsError;
-                }
-            } else {
-                // Save to cache as well for consistency
-                cacheOrderSuppliers(orderData.id, order.items);
-            }
+            if (itemsError) throw itemsError;
 
             // NEW: Deduct stock from physical products
             for (const item of order.items) {
@@ -336,46 +288,35 @@ export const orderService = {
             }
         }
 
-        // --- NEW: Update Items ---
+        // --- NEW: Update Items (Selective Delete and Upsert) ---
         if (updates.items) {
-            // First, delete old items
-            const { error: deleteError } = await supabase
-                .from('order_items')
-                .delete()
-                .eq('order_id', id);
+            const currentOrderItems = (await this.getById(id)).items || [];
+            const newIds = updates.items.map(i => i.id).filter(Boolean) as string[];
+            const idsToDelete = currentOrderItems.map(i => i.id).filter(itemId => itemId && !newIds.includes(itemId)) as string[];
 
-            if (deleteError) throw deleteError;
-
-            // Then insert new ones
-            if (updates.items.length > 0) {
-                const dbItems = updates.items.map(item => ({
-                    ...mapOrderItemToDB(item),
-                    order_id: id
-                }));
-
-                const { error: insertError } = await supabase
+            if (idsToDelete.length > 0) {
+                const { error: deleteError } = await supabase
                     .from('order_items')
-                    .insert(dbItems);
+                    .delete()
+                    .in('id', idsToDelete);
+                if (deleteError) throw deleteError;
+            }
 
-                if (insertError) {
-                    // If the column is missing in the DB, save without it and cache locally
-                    if (insertError.message && (insertError.message.includes('supplier_id') || insertError.message.includes('unit_cost') || insertError.message.includes('schema cache'))) {
-                        console.warn("[Fallback] Updating order_items without supplier/cost columns — run SQL migration to enable permanently.");
-                        const safeItems = dbItems.map((item: any) => {
-                            const { supplier_id, unit_cost, ...rest } = item;
-                            return rest;
-                        });
-                        const { error: fallbackError } = await supabase.from('order_items').insert(safeItems);
-                        if (fallbackError) throw fallbackError;
-                        // Cache supplier data locally
-                        cacheOrderSuppliers(id, updates.items!);
-                    } else {
-                        throw insertError;
+            if (updates.items.length > 0) {
+                const dbItems = updates.items.map(item => {
+                    const mapped = mapOrderItemToDB(item);
+                    const dbItem: any = { ...mapped, order_id: id };
+                    if (item.id && !item.id.toString().startsWith('temp-')) {
+                        dbItem.id = item.id;
                     }
-                } else {
-                    // Cache supplier data even when save was successful
-                    cacheOrderSuppliers(id, updates.items!);
-                }
+                    return dbItem;
+                });
+
+                const { error: upsertError } = await supabase
+                    .from('order_items')
+                    .upsert(dbItems);
+
+                if (upsertError) throw upsertError;
             }
         }
 

@@ -354,8 +354,8 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
     setIsAdding(true);
   };
 
-  const resizeImageToDataUrl = (file: File): Promise<string> =>
-    new Promise((resolve) => {
+  const resizeImageToBlob = (file: File): Promise<Blob> =>
+    new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (event) => {
         const img = new Image();
@@ -372,7 +372,10 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
           canvas.width = width;
           canvas.height = height;
           canvas.getContext('2d')?.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', 0.8));
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error('Canvas vazio'));
+          }, 'image/jpeg', 0.8);
         };
         img.src = event.target?.result as string;
       };
@@ -384,8 +387,24 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
     if (files.length === 0) return;
     // Reset input so same file can be re-added if needed
     e.target.value = '';
-    const dataUrls = await Promise.all(files.map(resizeImageToDataUrl));
-    setLayoutUrls(prev => [...prev, ...dataUrls]);
+    
+    setIsUploading(true);
+    const successUrls: string[] = [];
+    
+    for (const file of files) {
+       try {
+          const blob = await resizeImageToBlob(file);
+          const resizedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", { type: 'image/jpeg' });
+          const url = await orderService.uploadFile(resizedFile, `layout-images/${Date.now()}`);
+          successUrls.push(url);
+       } catch (err) {
+          console.error("Erro ao subir layout otimizado", err);
+          notify.error(`Falha ao subir imagem: ${file.name}`);
+       }
+    }
+    
+    setLayoutUrls(prev => [...prev, ...successUrls]);
+    setIsUploading(false);
   };
 
   const removeLayoutImage = (index: number) => {
@@ -481,9 +500,16 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
 
   const doDelete = async (id: string) => {
     try {
+      // 1. Delete linked financial transactions first (cascade to Finance module)
+      try {
+        await financeService.deleteByOrderId(id);
+      } catch (finErr) {
+        console.warn('[Finance] Could not delete linked transactions for order', id, finErr);
+      }
+      // 2. Delete the order itself
       await orderService.delete(id);
       window.dispatchEvent(new Event('refreshData'));
-      notify.success('Pedido excluído.');
+      notify.success('Pedido excluído e lançamentos financeiros removidos.');
     } catch (error) {
       console.error("Error deleting order", error);
       notify.error('Erro ao excluir pedido.');

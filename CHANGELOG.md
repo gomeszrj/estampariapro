@@ -4,6 +4,14 @@ Registro de todas as alterações relevantes e marcos de versão do ERP Multi-Te
 
 ---
 
+## [v25.6.0] — 2026-06-17
+### Adicionado & Melhorado
+- **Upload Real para Imagens de Layout**: Remoção completa da conversão destrutiva de imagens para Strings Base64 no \`Orders.tsx\`. Agora os anexos visuais são comprimidos via \`canvas.toBlob\` no navegador e enviados nativamente para o Supabase Storage, gerando links minúsculos e desafogando totalmente a rede e o banco de dados.
+- **Sincronização Assíncrona e Silenciosa**: O gatilho global \`refreshData\` do \`App.tsx\` foi reprogramado para injetar atualizações sem engatilhar os _spinners_ do componente \`setLoading(true)\`, eliminando os congelamentos contínuos de tela na criação ou atualização de pedidos.
+- **Reatividade Nível 0-Lag no Kanban**: A aplicação de memoização gráfica avançada (\`React.memo\`, \`useMemo\` e \`useCallback\`) bloqueou o loop de re-renderização massivo (O(N)) do Kanban durante interações de texto na barra de busca, anulando o Input Lag ao gerenciar centenas de cards.
+
+---
+
 ## [v25.5.0] — 2026-06-14
 ### Adicionado & Melhorado
 - **Módulo Financeiro Real**: O painel "Financeiro" foi totalmente reformulado, abandonando métricas estáticas e "previsões" ilusórias em prol de dados consolidados em tempo real baseados nas entradas/saídas do banco.

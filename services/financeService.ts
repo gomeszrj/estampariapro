@@ -41,6 +41,24 @@ export const financeService = {
         }, 0);
 
         return balance;
+    },
+
+    // Remove all transactions linked to a specific order (called when order is deleted)
+    async deleteByOrderId(orderId: string) {
+        const { error } = await supabase
+            .from('transactions')
+            .delete()
+            .eq('order_id', orderId);
+        if (error) throw error;
+    },
+
+    // Delete ALL transactions for the current tenant (for testing/reset purposes)
+    async deleteAll() {
+        const { error } = await supabase
+            .from('transactions')
+            .delete()
+            .neq('id', '00000000-0000-0000-0000-000000000000'); // match all rows
+        if (error) throw error;
     }
 };
 
