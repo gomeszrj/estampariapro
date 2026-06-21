@@ -24,6 +24,12 @@ const ClientPortal: React.FC = () => {
         const session = localStorage.getItem('client_session');
         if (session) {
             const parsed = JSON.parse(session);
+            // FIX SEC-402: Verificar expiração da sessão do cliente
+            if (parsed.expires_at && new Date(parsed.expires_at) < new Date()) {
+                localStorage.removeItem('client_session');
+                setLoading(false);
+                return;
+            }
             setClientSession(parsed);
         } else {
             setLoading(false); // Done checking session

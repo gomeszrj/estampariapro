@@ -26,7 +26,8 @@ import {
   ArrowUp,
   MoreVertical,
   Download,
-  Printer
+  Printer,
+  Trash2
 } from 'lucide-react';
 import { Order, OrderStatus, OrderType, Product, Transaction } from '../types';
 import { financeService } from '../services/financeService';
@@ -90,6 +91,19 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
     loadTransactions();
   }, []);
 
+  const handleDeleteTransaction = async (id: string) => {
+    if (window.confirm("Deseja realmente excluir este lançamento? O valor será removido do saldo do seu caixa.")) {
+      try {
+        await financeService.delete(id);
+        notify.success("Lançamento removido com sucesso.");
+        loadTransactions();
+      } catch (error) {
+        console.error(error);
+        notify.error("Falha ao remover lançamento.");
+      }
+    }
+  };
+
   const handleSaveTransaction = async () => {
     if (!newTransaction.amount || !newTransaction.description) return;
     setSaving(true);
@@ -122,13 +136,26 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
     return date.getMonth() + 1 === selectedMonth && date.getFullYear() === selectedYear;
   };
 
+  // Helper: verifica se uma data pertence ao mês anterior ao selecionado
+  const isPreviousMonth = (dateString: string | undefined) => {
+    if (!dateString) return false;
+    const date = new Date(dateString);
+    let prevMonth = selectedMonth - 1;
+    let prevYear = selectedYear;
+    if (prevMonth === 0) { prevMonth = 12; prevYear--; }
+    return date.getMonth() + 1 === prevMonth && date.getFullYear() === prevYear;
+  };
+
   const revenueOrders = orders.filter(o => o.orderType !== OrderType.BUDGET);
   const currentMonthTransactions = transactions.filter(t => isCurrentMonth(t.date));
   const currentMonthOrders = revenueOrders.filter(o => isCurrentMonth(o.createdAt));
+  const prevMonthTransactions = transactions.filter(t => isPreviousMonth(t.date));
+  const prevMonthOrders = revenueOrders.filter(o => isPreviousMonth(o.createdAt));
 
   // 1. Revenue (Realizada no mês)
   const incomeTransactions = currentMonthTransactions.filter(t => t.type === 'income');
   const totalRevenue = incomeTransactions.reduce((acc, curr) => acc + curr.amount, 0);
+  const prevRevenue = prevMonthTransactions.filter(t => t.type === 'income').reduce((acc, curr) => acc + curr.amount, 0);
 
   // 2. Production Costs (Custos dos pedidos do mês)
   const productMap = React.useMemo(() => {
@@ -148,10 +175,21 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
       return itemAcc + (cost * item.quantity);
     }, 0);
   }, 0);
+  const prevProductionCosts = prevMonthOrders.reduce((acc, order) => {
+    return acc + order.items.reduce((itemAcc, item) => {
+      let cost = item.unitCost;
+      if (cost === undefined || cost === null) {
+        const product = productMap.get(item.productId);
+        cost = product?.costPrice || 0;
+      }
+      return itemAcc + (cost * item.quantity);
+    }, 0);
+  }, 0);
 
   // 3. Operating Expenses (Despesas do mês)
   const expenseTransactions = currentMonthTransactions.filter(t => t.type === 'expense');
   const operatingExpenses = expenseTransactions.reduce((acc, curr) => acc + curr.amount, 0);
+  const prevOperatingExpenses = prevMonthTransactions.filter(t => t.type === 'expense').reduce((acc, curr) => acc + curr.amount, 0);
 
   // 4. Total Outflow & Net Profit (Mensal)
   const totalOutflow = operatingExpenses + productionCosts;
@@ -160,8 +198,23 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
 
   // Faturamento Bruto (Pedidos realizados no mês)
   const totalFaturamento = currentMonthOrders.reduce((acc, order) => acc + (order.totalValue || 0), 0);
+  const prevFaturamento = prevMonthOrders.reduce((acc, order) => acc + (order.totalValue || 0), 0);
+
+  // FIX LOGIC-203: Calcular percentuais de tendência reais comparando mês atual vs mês anterior
+  const calcTrend = (current: number, previous: number): { value: number; isPositive: boolean } | undefined => {
+    if (previous === 0) return undefined; // Não exibir tendência se não há dado anterior
+    const pct = ((current - previous) / previous) * 100;
+    return { value: Math.abs(Math.round(pct * 10) / 10), isPositive: pct >= 0 };
+  };
+
+  const trendFaturamento = calcTrend(totalFaturamento, prevFaturamento);
+  const trendRevenue = calcTrend(totalRevenue, prevRevenue);
+  const trendExpense = calcTrend(totalOutflow, prevOperatingExpenses + prevProductionCosts);
+  const prevNetProfit = prevRevenue - (prevOperatingExpenses + prevProductionCosts);
+  const trendProfit = calcTrend(netProfit, prevNetProfit);
 
   // 5. Chart Data (Últimos 6 meses, ignorando o filtro atual)
+
   const monthlyData: Record<string, { revenue: number, expense: number, cost: number, profit: number }> = {};
 
   const sixMonthsAgo = new Date();
@@ -377,8 +430,8 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
           icon={DollarSign}
           iconBg="bg-purple-500/10"
           iconColor="text-purple-400"
-          trendValue={12}
-          trendIsPositive={true}
+          trendValue={trendFaturamento?.value}
+          trendIsPositive={trendFaturamento?.isPositive ?? true}
         />
         <FinanceStat
           title="Receitas (Mês)"
@@ -386,8 +439,8 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
           icon={ArrowDown}
           iconBg="bg-emerald-500/10"
           iconColor="text-emerald-400"
-          trendValue={9}
-          trendIsPositive={true}
+          trendValue={trendRevenue?.value}
+          trendIsPositive={trendRevenue?.isPositive ?? true}
         />
         <FinanceStat
           title="Despesas (Mês)"
@@ -395,8 +448,8 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
           icon={ArrowUp}
           iconBg="bg-rose-500/10"
           iconColor="text-rose-400"
-          trendValue={4}
-          trendIsPositive={false}
+          trendValue={trendExpense?.value}
+          trendIsPositive={!(trendExpense?.isPositive ?? false)}
         />
         <FinanceStat
           title="Lucro Líquido (Mês)"
@@ -404,8 +457,8 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
           icon={TrendingUp}
           iconBg="bg-blue-500/10"
           iconColor="text-blue-400"
-          trendValue={18}
-          trendIsPositive={true}
+          trendValue={trendProfit?.value}
+          trendIsPositive={trendProfit?.isPositive ?? true}
         />
         <FinanceStat
           title="Margem de Lucro"
@@ -413,8 +466,6 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
           icon={Wallet}
           iconBg="bg-orange-500/10"
           iconColor="text-orange-400"
-          trendValue={3.2}
-          trendIsPositive={true}
         />
       </div>
 
@@ -474,7 +525,9 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
                        <span className="text-[9px] text-slate-500 mb-0.5">{new Date(t.date).toLocaleDateString('pt-BR')}</span>
                        <span className="text-xs font-bold text-emerald-400 whitespace-nowrap">R$ {formatMoney(t.amount)}</span>
                     </div>
-                    <MoreVertical className="w-3 h-3 text-slate-600 opacity-0 group-hover:opacity-100 cursor-pointer" />
+                    <button onClick={() => handleDeleteTransaction(t.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-rose-500/20 rounded" title="Excluir lançamento">
+                      <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                    </button>
                   </div>
                 </div>
               ))
@@ -511,7 +564,9 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
                        <span className="text-[9px] text-slate-500 mb-0.5">{new Date(t.date).toLocaleDateString('pt-BR')}</span>
                        <span className="text-xs font-bold text-rose-400 whitespace-nowrap">R$ {formatMoney(t.amount)}</span>
                     </div>
-                    <MoreVertical className="w-3 h-3 text-slate-600 opacity-0 group-hover:opacity-100 cursor-pointer" />
+                    <button onClick={() => handleDeleteTransaction(t.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-rose-500/20 rounded" title="Excluir lançamento">
+                      <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                    </button>
                   </div>
                 </div>
               ))

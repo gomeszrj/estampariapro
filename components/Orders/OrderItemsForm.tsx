@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShoppingCart, Plus, Trash2, AlertTriangle, Truck } from 'lucide-react';
+import { ShoppingCart, Plus, Trash2, AlertTriangle, Truck, Layers } from 'lucide-react';
 import { Product, Supplier } from '../../types';
 import { ParsedOrderItem } from '../../services/aiService';
 import { GRADES } from '../../constants';
@@ -256,6 +256,40 @@ const OrderItemsForm: React.FC<OrderItemsFormProps> = ({
                     )}
                   </div>
                 </div>
+
+                {/* Linha 3: Variações Customizáveis de Material */}
+                {selectedProduct?.materialVariations && selectedProduct.materialVariations.length > 0 && (
+                  <div className="pt-4 mt-4 border-t border-[#1e293b]/60">
+                    <label className="text-[8px] font-black text-indigo-400 uppercase tracking-wider ml-1 flex items-center gap-1 mb-2">
+                        <Layers className="w-3 h-3" /> Especificações do Produto
+                    </label>
+                    <div className="flex flex-wrap gap-4">
+                        {selectedProduct.materialVariations.map(variation => {
+                            const selectedVal = (item.selectedVariations || {})[variation.name] || (variation.required && variation.options[0] ? variation.options[0].label : '');
+                            return (
+                                <div key={variation.id} className="flex-1 min-w-[150px] space-y-1">
+                                    <label className="text-[8px] font-black text-slate-500 uppercase tracking-wider ml-1">
+                                        {variation.name} {variation.required ? '*' : ''}
+                                    </label>
+                                    <select
+                                        className="w-full bg-[#1C1C26] border border-[#1e293b] rounded-xl px-3 py-2 text-xs font-bold text-slate-300 outline-none"
+                                        value={selectedVal}
+                                        onChange={e => {
+                                            const currentVars = item.selectedVariations || {};
+                                            updateItem(idx, 'selectedVariations', { ...currentVars, [variation.name]: e.target.value });
+                                        }}
+                                    >
+                                        {!variation.required && <option value="">Padrão / Não especificar</option>}
+                                        {variation.options.map(opt => (
+                                            <option key={opt.id} value={opt.label}>{opt.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            );
+                        })}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })

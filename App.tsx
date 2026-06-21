@@ -58,7 +58,21 @@ const OrderTracker = React.lazy(() => import('./components/OrderTracker'));
 const AuthenticatedApp: React.FC = () => {
   const { session, user, isMasterAdmin, signOut } = useAuth(); // SEC-002: isMasterAdmin from context
   const isPublicCatalog = new URLSearchParams(window.location.search).get('view') === 'public_catalog' || window.location.pathname === '/catalogo';
-  const isClientPortal = new URLSearchParams(window.location.search).get('view') === 'client_portal' || !!localStorage.getItem('client_session');
+
+  // FIX SEC-402: Verificar expiração da sessão do cliente antes de ativar o portal
+  const checkClientSession = () => {
+    const raw = localStorage.getItem('client_session');
+    if (!raw) return false;
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed.expires_at && new Date(parsed.expires_at) < new Date()) {
+        localStorage.removeItem('client_session');
+        return false; // Expirada
+      }
+      return true;
+    } catch { return false; }
+  };
+  const isClientPortal = new URLSearchParams(window.location.search).get('view') === 'client_portal' || checkClientSession();
 
   const [activeView, setActiveView] = useState('dashboard');
   const [isChangelogOpen, setIsChangelogOpen] = useState(false);
@@ -334,7 +348,8 @@ const AuthenticatedApp: React.FC = () => {
           <ErrorBoundary>
             {/* Dashboard rendered eagerly — always in DOM */}
             <ViewPanel active={activeView === 'dashboard'}>
-              <Dashboard orders={orders} setOrders={setOrders} products={products} />
+              {/* FIX UX-502: pass userName from userProfile for personalized greeting */}
+              <Dashboard orders={orders} setOrders={setOrders} products={products} userName={userProfile?.full_name || user?.email} />
             </ViewPanel>
 
             {/* All other views: lazy on first load, then kept alive for instant switching */}

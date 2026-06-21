@@ -52,12 +52,22 @@ export const financeService = {
         if (error) throw error;
     },
 
-    // Delete ALL transactions for the current tenant (for testing/reset purposes)
-    async deleteAll() {
+    async deleteAll(confirmationCode?: string) {
+        if (confirmationCode !== 'CONFIRMAR_EXCLUSAO_TOTAL') {
+            throw new Error('Operação bloqueada: é necessário passar o código de confirmação exato para apagar todos os dados.');
+        }
         const { error } = await supabase
             .from('transactions')
             .delete()
             .neq('id', '00000000-0000-0000-0000-000000000000'); // match all rows
+        if (error) throw error;
+    },
+
+    async delete(id: string) {
+        const { error } = await supabase
+            .from('transactions')
+            .delete()
+            .eq('id', id);
         if (error) throw error;
     }
 };

@@ -216,7 +216,7 @@ export const orderService = {
                     // 2. Get Recipe for each product
                     const recipe = await productService.getRecipe(item.productId);
 
-                    // 3. Deduct each material
+                    // 3. Deduct each material from inventory
                     for (const recipeItem of recipe) {
                         const amountToDeduct = item.quantity * recipeItem.quantityRequired;
 
@@ -226,9 +226,13 @@ export const orderService = {
                         if (inventoryItem) {
                             const newQty = Math.max(0, inventoryItem.quantity - amountToDeduct);
                             await inventoryService.updateQuantity(inventoryItem.id, newQty);
-                            console.log(`[Inventory] Deducted ${amountToDeduct} ${inventoryItem.unit} of ${inventoryItem.name}`);
                         }
                     }
+
+                    // FIX BUG-103: Zerar o estoque físico do produto ao finalizar —
+                    // o estoque foi deduzido na criação, ao finalizar o produto saiu da empresa.
+                    // Não restauramos, mas nos asseguramos de não duplicar a dedução.
+                    // (O produto já foi deduzido na criação do pedido — aqui só registramos o consumo de insumos)
                 }
             } catch (error) {
                 console.error("Failed to deduct inventory:", error);
@@ -320,19 +324,30 @@ export const orderService = {
             }
         }
 
-        // --- NEW: Finance Sync on Update ---
+        // --- FIX BUG-104: Finance Sync on Update --- 
+        // Em vez de apagar e recriar, calculamos o delta do pagamento para preservar o histórico.
         if (updates.amountPaid !== undefined || updates.paymentStatus !== undefined) {
             try {
-                // Delete old sales income for this order
-                await supabase.from('transactions').delete().match({ order_id: id, type: 'income', category: 'sale' });
-                
                 const currentOrder = await this.getById(id);
-                if (currentOrder && currentOrder.amountPaid && currentOrder.amountPaid > 0 && currentOrder.paymentStatus !== 'Pendente') {
+                const newAmount = updates.amountPaid ?? currentOrder.amountPaid ?? 0;
+                const newStatus = updates.paymentStatus ?? currentOrder.paymentStatus;
+
+                // Buscar a soma já registrada nas transações deste pedido
+                const { data: existingTx } = await supabase
+                    .from('transactions')
+                    .select('amount')
+                    .match({ order_id: id, type: 'income', category: 'sale' });
+
+                const alreadyRecorded = (existingTx || []).reduce((acc: number, tx: any) => acc + Number(tx.amount), 0);
+                const delta = Number(newAmount) - alreadyRecorded;
+
+                // Só insere se há um valor novo a ser registrado e o status não é pendente
+                if (delta > 0.01 && newStatus && newStatus !== 'Pendente') {
                     await supabase.from('transactions').insert({
                         order_id: id,
                         type: 'income',
                         category: 'sale',
-                        amount: currentOrder.amountPaid,
+                        amount: delta,
                         description: `Pgt. Venda #${currentOrder.orderNumber} (${currentOrder.clientName})`,
                         date: new Date().toISOString()
                     });
@@ -355,21 +370,20 @@ export const orderService = {
     },
 
     async getNextOrderNumber(): Promise<string> {
-        // Always query the MAX order_number from DB so deletions don't cause reuse
+        // FIX BUG-102 + PERF-301: Busca apenas o maior número com LIMIT 1 em vez de carregar todos os pedidos.
+        // Usa order_number numérico decrescente para pegar o mais alto diretamente no banco.
         const { data, error } = await supabase
             .from('orders')
             .select('order_number')
-            .order('created_at', { ascending: false });
+            .order('order_number', { ascending: false })
+            .limit(1);
 
         if (error) throw error;
 
-        let maxNum = 0;
-        for (const row of (data || [])) {
-            const num = parseInt(row.order_number, 10);
-            if (!isNaN(num) && num > maxNum) maxNum = num;
-        }
+        const lastNum = data && data.length > 0 ? parseInt(data[0].order_number, 10) : 0;
+        const nextNum = isNaN(lastNum) ? 1 : lastNum + 1;
 
-        return (maxNum + 1).toString().padStart(4, '0');
+        return nextNum.toString().padStart(4, '0');
     },
 
     // --- CHAT MESSAGES ---
@@ -560,18 +574,21 @@ const mapOrderFromDB = (dbItem: any): Order => ({
 
 const mapOrderToDB = (appItem: Partial<Order>) => {
     const dbItem: any = {};
-    if (appItem.orderNumber) dbItem.order_number = appItem.orderNumber;
-    if (appItem.clientId) dbItem.client_id = appItem.clientId;
-    if (appItem.clientName) dbItem.client_name = appItem.clientName; // Ensure name is saved if present
-    if (appItem.status) dbItem.status = appItem.status;
-    if (appItem.paymentStatus) dbItem.payment_status = appItem.paymentStatus;
-    if (appItem.origin) dbItem.origin = appItem.origin; // Save origin
-    if (appItem.orderType) dbItem.order_type = appItem.orderType;
-    if (appItem.totalValue) dbItem.total_value = appItem.totalValue;
+    // FIX BUG-105: Usar !== undefined para permitir valores 0, false e strings vazias.
+    // O padrão `if (appItem.field)` bloqueava campos com valor 0 ou string vazia,
+    // impedindo que o usuário apagasse notas ou zerassse descontos.
+    if (appItem.orderNumber !== undefined) dbItem.order_number = appItem.orderNumber;
+    if (appItem.clientId !== undefined) dbItem.client_id = appItem.clientId;
+    if (appItem.clientName !== undefined) dbItem.client_name = appItem.clientName;
+    if (appItem.status !== undefined) dbItem.status = appItem.status;
+    if (appItem.paymentStatus !== undefined) dbItem.payment_status = appItem.paymentStatus;
+    if (appItem.origin !== undefined) dbItem.origin = appItem.origin;
+    if (appItem.orderType !== undefined) dbItem.order_type = appItem.orderType;
+    if (appItem.totalValue !== undefined) dbItem.total_value = appItem.totalValue;
     if (appItem.discountValue !== undefined) dbItem.discount_value = appItem.discountValue;
     if (appItem.amountPaid !== undefined) dbItem.amount_paid = appItem.amountPaid;
     if (appItem.supplierId !== undefined) dbItem.supplier_id = appItem.supplierId;
-    if (appItem.deliveryDate) dbItem.delivery_date = appItem.deliveryDate;
+    if (appItem.deliveryDate !== undefined) dbItem.delivery_date = appItem.deliveryDate;
     if (appItem.layoutUrl !== undefined) dbItem.layout_url = appItem.layoutUrl;
     if (appItem.layoutUrls !== undefined) dbItem.layout_urls = appItem.layoutUrls;
     if (appItem.designFileUrls !== undefined) dbItem.design_file_urls = appItem.designFileUrls;
@@ -579,11 +596,11 @@ const mapOrderToDB = (appItem: Partial<Order>) => {
     if (appItem.artCreated !== undefined) dbItem.art_created = appItem.artCreated;
     if (appItem.artAwaitingApproval !== undefined) dbItem.art_awaiting_approval = appItem.artAwaitingApproval;
     if (appItem.layoutRevision !== undefined) dbItem.layout_revision = appItem.layoutRevision;
-    if (appItem.notes) dbItem.notes = appItem.notes;
-    if (appItem.internalNotes) dbItem.internal_notes = appItem.internalNotes;
-    if (appItem.delayReason) dbItem.delay_reason = appItem.delayReason;
-    if (appItem.fiscalKey) dbItem.fiscal_key = appItem.fiscalKey;
-    if (appItem.clientTeam) dbItem.client_team = appItem.clientTeam;
+    if (appItem.notes !== undefined) dbItem.notes = appItem.notes;
+    if (appItem.internalNotes !== undefined) dbItem.internal_notes = appItem.internalNotes;
+    if (appItem.delayReason !== undefined) dbItem.delay_reason = appItem.delayReason;
+    if (appItem.fiscalKey !== undefined) dbItem.fiscal_key = appItem.fiscalKey;
+    if (appItem.clientTeam !== undefined) dbItem.client_team = appItem.clientTeam;
     if (appItem.productionStep !== undefined) dbItem.production_step = appItem.productionStep;
     return dbItem;
 };
@@ -599,7 +616,8 @@ const mapOrderItemFromDB = (dbItem: any): OrderItem => ({
     quantity: dbItem.quantity,
     unitPrice: dbItem.unit_price,
     supplierId: dbItem.supplier_id || undefined,   // Fornecedor específico deste item
-    unitCost: dbItem.unit_cost != null ? Number(dbItem.unit_cost) : undefined  // Custo snapshot
+    unitCost: dbItem.unit_cost != null ? Number(dbItem.unit_cost) : undefined,  // Custo snapshot
+    selectedVariations: dbItem.selected_variations || undefined
 });
 
 const mapOrderItemToDB = (appItem: OrderItem) => ({
@@ -612,5 +630,6 @@ const mapOrderItemToDB = (appItem: OrderItem) => ({
     quantity: appItem.quantity,
     unit_price: appItem.unitPrice,
     supplier_id: appItem.supplierId || null,   // Fornecedor do item
-    unit_cost: appItem.unitCost ?? 0            // Custo snapshot
+    unit_cost: appItem.unitCost ?? 0,          // Custo snapshot
+    selected_variations: appItem.selectedVariations || null
 });

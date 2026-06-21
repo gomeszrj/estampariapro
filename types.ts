@@ -45,6 +45,7 @@ export interface OrderItem {
   unitPrice: number;
   supplierId?: string;  // Fornecedor específico deste item
   unitCost?: number;    // Custo snapshot (do product_suppliers) no momento do pedido
+  selectedVariations?: Record<string, string>; // { categoryName: optionLabel }
   notes?: string;
 }
 
@@ -100,6 +101,26 @@ export interface ProductSupplier {
   is_default: boolean;
 }
 
+/**
+ * Uma opção dentro de uma categoria de material (ex: 'Dry Fit Premium' dentro de 'Tecido')
+ */
+export interface MaterialOption {
+  id: string;   // uuid local
+  label: string; // Nome da opção
+  costDelta?: number; // Custo adicional desta opção (opcional)
+}
+
+/**
+ * Uma categoria de material customizável por produto
+ * Exemplos: 'Tecido', 'Cor do Fio', 'Espessura', 'Acabamento'
+ */
+export interface MaterialVariation {
+  id: string;       // uuid local
+  name: string;     // Nome da categoria
+  required: boolean; // Se é obrigatório selecionar no pedido
+  options: MaterialOption[];
+}
+
 export interface Product {
   id: string;
   sku: string;
@@ -116,6 +137,7 @@ export interface Product {
   measurements?: Record<string, { height: string; width: string }>; // Size measurements
   published?: boolean; // Controls visibility in Public Store
   suppliers?: ProductSupplier[]; // Associated suppliers
+  materialVariations?: MaterialVariation[]; // Variações de material customizáveis por produto
 }
 
 export interface Supplier {

@@ -326,7 +326,8 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
       grade: (i.gradeLabel || 'Unidade') as any,
       size: i.size || 'UN',
       quantity: i.quantity,
-      fabric: i.fabricName
+      fabric: i.fabricName,
+      selectedVariations: i.selectedVariations
     })) : [{ product: '', grade: 'Masculino', size: 'G', quantity: 1 }]);
 
     // Set Custom Amount if exists
@@ -616,7 +617,8 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
             quantity: item.quantity || 0,
             unitPrice: prod ? prod.basePrice : 35,
             supplierId: itemSupplierIds[idx] || undefined,  // fornecedor deste item
-            unitCost: itemUnitCosts[idx] ?? 0               // custo snapshot
+            unitCost: itemUnitCosts[idx] ?? 0,              // custo snapshot
+            selectedVariations: item.selectedVariations
           };
         })
       };

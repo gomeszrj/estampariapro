@@ -261,7 +261,8 @@ const mapProductFromDB = (dbItem: any): Product => ({
     allowedGrades: dbItem.allowed_grades,
     measurements: dbItem.measurements,
     published: dbItem.published,
-    stock: dbItem.stock || 0
+    stock: dbItem.stock || 0,
+    materialVariations: dbItem.material_variations || [], // Variações de material
 });
 
 const mapProductToDB = (appItem: Partial<Product>) => {
@@ -287,6 +288,10 @@ const mapProductToDB = (appItem: Partial<Product>) => {
     if (appItem.allowedGrades !== undefined) {
         dbItem.allowed_grades = appItem.allowedGrades;
         delete dbItem.allowedGrades;
+    }
+    if (appItem.materialVariations !== undefined) {
+        dbItem.material_variations = appItem.materialVariations;
+        delete dbItem.materialVariations;
     }
     if (appItem.stock !== undefined) {
         dbItem.stock = appItem.stock;

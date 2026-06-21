@@ -14,6 +14,7 @@ interface DashboardProps {
   orders: Order[];
   setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
   products: Product[];
+  userName?: string; // FIX UX-502: nome real do usuário para saudação personalizada
 }
 
 const SummaryCard = ({ title, count, subtitle, icon: Icon, colorClass, borderClass, textClass }: any) => (
@@ -48,7 +49,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) => {
+const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products, userName }) => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [tempData, setTempData] = useState({
@@ -155,7 +156,10 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) =>
     <div className="space-y-6 animate-in fade-in duration-150 pb-10">
       <header className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-2">
         <div>
-          <p className="text-slate-400 text-sm font-bold mb-1">Olá, Admin!</p>
+          {/* FIX UX-502: Saudação com nome real do usuário */}
+          <p className="text-slate-400 text-sm font-bold mb-1">
+            Olá, {userName ? userName.split(' ')[0] : 'Admin'}! 👋
+          </p>
           <h2 className="text-3xl font-black text-white tracking-tight mb-1">Dashboard</h2>
           <p className="text-slate-500 text-xs font-medium">Visão geral da sua estamparia em tempo real.</p>
         </div>
@@ -351,7 +355,7 @@ const Dashboard: React.FC<DashboardProps> = ({ orders, setOrders, products }) =>
                   const month = item.deliveryDate ? item.deliveryDate.split('-')[1] : '--';
 
                   return (
-                    <div key={item.id} onClick={() => handleOrderClick(item)} className={`border border-[#1e293b] rounded-2xl p-4 flex flex-col gap-3 cursor-pointer hover:border-slate-500 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(0,0,0,0.4)] group ${bgCard}`}>
+                    <div key={item.id} onClick={() => handleOrderClick(item)} className={`border rounded-2xl p-4 flex flex-col gap-3 cursor-pointer hover:border-slate-500 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(0,0,0,0.4)] group ${bgCard} ${isLate && item.status !== OrderStatus.FINISHED ? 'border-rose-500/40 animate-[pulse_2s_ease-in-out_infinite]' : 'border-[#1e293b]'}`}>
                       {/* Top Header: Date & Status */}
                       <div className="flex justify-between items-start">
                         <div className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center shrink-0 border border-current/10 ${isLate ? 'bg-rose-500/10 shadow-[0_0_10px_rgba(244,63,94,0.1)]' : isSoon ? 'bg-amber-500/10 shadow-[0_0_10px_rgba(245,158,11,0.1)]' : 'bg-[#0b1221]'} ${dateColor}`}>

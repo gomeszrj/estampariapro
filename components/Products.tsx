@@ -2,17 +2,167 @@ import React, { useState, useEffect } from 'react';
 import { 
   Package, Search, Plus, Trash2, Edit2, Save, X, AlertCircle, Check, Image as ImageIcon, 
   Ruler, Eye, EyeOff, Download, Folder, LayoutGrid, List, MoreVertical, ChevronLeft, ChevronRight,
-  TrendingUp, Box, XCircle
+  TrendingUp, Box, XCircle, Layers, PlusCircle, Tag, ToggleLeft, ToggleRight
 } from 'lucide-react';
 import { productService } from '../services/productService';
 import { supplierService } from '../services/supplierService';
 import { inventoryService } from '../services/inventoryService';
 import { orderService } from '../services/orderService';
-import { Product, Supplier, ProductSupplier } from '../types';
+import { Product, Supplier, ProductSupplier, MaterialVariation, MaterialOption } from '../types';
 import { FABRICS, GRADES } from '../constants';
 import { notify } from './ui/toast';
 import { ConfirmModal } from './ui/ConfirmModal';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// VariationCategoryCard — Card editável de uma categoria de material
+// ─────────────────────────────────────────────────────────────────────────────
+interface VCCardProps {
+    variation: import('../types').MaterialVariation;
+    index: number;
+    onUpdateName: (name: string) => void;
+    onToggleRequired: () => void;
+    onRemove: () => void;
+    onAddOption: (label: string) => void;
+    onRemoveOption: (optId: string) => void;
+    suggestedOptions?: string[];
+}
+
+const VariationCategoryCard: React.FC<VCCardProps> = ({
+    variation, index, onUpdateName, onToggleRequired, onRemove, onAddOption, onRemoveOption, suggestedOptions = []
+}) => {
+    const [newOptionLabel, setNewOptionLabel] = useState('');
+    const [isNewMode, setIsNewMode] = useState(false);
+
+    const handleAdd = () => {
+        if (newOptionLabel.trim()) {
+            onAddOption(newOptionLabel.trim());
+            setNewOptionLabel('');
+        }
+    };
+
+    return (
+        <div className="bg-[#0f172a] border border-[#1e293b] rounded-2xl overflow-hidden">
+            {/* Category Header */}
+            <div className="bg-[#151B2B] px-5 py-3 flex items-center gap-3 border-b border-[#1e293b]">
+                <div className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 text-[10px] font-black flex-shrink-0">
+                    {index + 1}
+                </div>
+                <input
+                    type="text"
+                    value={variation.name}
+                    onChange={e => onUpdateName(e.target.value)}
+                    placeholder="Nome da categoria (ex: Tecido, Cor, Acabamento...)"
+                    className="flex-1 bg-transparent text-white font-black text-sm outline-none placeholder:text-slate-600 placeholder:font-normal"
+                />
+                <div className="flex items-center gap-3">
+                    {/* Toggle Obrigatório */}
+                    <button
+                        type="button"
+                        onClick={onToggleRequired}
+                        title={variation.required ? 'Campo obrigatório' : 'Campo opcional'}
+                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase border transition-all ${
+                            variation.required
+                                ? 'bg-amber-500/15 border-amber-500/30 text-amber-400'
+                                : 'bg-slate-800 border-slate-700 text-slate-500 hover:text-slate-300'
+                        }`}
+                    >
+                        {variation.required ? <ToggleRight className="w-3 h-3" /> : <ToggleLeft className="w-3 h-3" />}
+                        {variation.required ? 'Obrigatório' : 'Opcional'}
+                    </button>
+                    {/* Remove Category */}
+                    <button
+                        type="button"
+                        onClick={onRemove}
+                        className="w-7 h-7 rounded-lg hover:bg-rose-500/20 flex items-center justify-center text-slate-500 hover:text-rose-400 transition-all"
+                        title="Remover categoria"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+            </div>
+
+            {/* Options */}
+            <div className="p-4 space-y-3">
+                {/* Options chips */}
+                <div className="flex flex-wrap gap-2 min-h-[32px]">
+                    {variation.options.length === 0 && (
+                        <span className="text-xs text-slate-600 italic">Nenhuma opção adicionada ainda...</span>
+                    )}
+                    {variation.options.map(opt => (
+                        <div
+                            key={opt.id}
+                            className="group flex items-center gap-1.5 bg-[#1e293b] border border-slate-700 text-slate-200 text-xs font-bold px-3 py-1.5 rounded-xl hover:border-rose-500/50 transition-all"
+                        >
+                            <Tag className="w-3 h-3 text-indigo-400 flex-shrink-0" />
+                            <span>{opt.label}</span>
+                            <button
+                                type="button"
+                                onClick={() => onRemoveOption(opt.id)}
+                                className="w-3.5 h-3.5 rounded-full bg-slate-700 hover:bg-rose-500 flex items-center justify-center text-slate-400 hover:text-white transition-all ml-0.5"
+                                title="Remover opção"
+                            >
+                                <X className="w-2 h-2" />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Add new option */}
+                <div className="flex gap-2 mt-2">
+                    {!isNewMode && suggestedOptions.length > 0 ? (
+                        <select 
+                            value={newOptionLabel}
+                            onChange={e => {
+                                if (e.target.value === '__NEW__') {
+                                    setIsNewMode(true);
+                                    setNewOptionLabel('');
+                                } else {
+                                    setNewOptionLabel(e.target.value);
+                                }
+                            }}
+                            className="flex-1 bg-[#1e293b] border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none transition-all cursor-pointer"
+                        >
+                            <option value="">Selecione da lista...</option>
+                            {suggestedOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                            <option value="__NEW__">➕ Cadastrar Novo Material...</option>
+                        </select>
+                    ) : (
+                        <div className="flex-1 relative">
+                            <input
+                                type="text"
+                                value={newOptionLabel}
+                                onChange={e => setNewOptionLabel(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAdd(); setIsNewMode(false); } }}
+                                placeholder="Digitar nova opção e pressionar Enter..."
+                                className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-600 focus:border-indigo-500/50 outline-none transition-all pr-8"
+                            />
+                            {suggestedOptions.length > 0 && (
+                                <button 
+                                    type="button" 
+                                    onClick={() => { setIsNewMode(false); setNewOptionLabel(''); }}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+                                    title="Cancelar novo e voltar à lista"
+                                >
+                                    <X className="w-4 h-4"/>
+                                </button>
+                            )}
+                        </div>
+                    )}
+                    <button
+                        type="button"
+                        onClick={() => { handleAdd(); setIsNewMode(false); }}
+                        disabled={!newOptionLabel.trim()}
+                        className="px-4 py-2 bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/30 rounded-xl text-xs font-black uppercase tracking-widest transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                    >
+                        <Plus className="w-3.5 h-3.5" /> Adicionar
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 const Products: React.FC = () => {
     const [products, setProducts] = useState<Product[]>([]);
     const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
@@ -46,6 +196,25 @@ const Products: React.FC = () => {
         });
     }, [products, searchTerm, categoryFilter, statusFilter]);
 
+    // Opções Globais Extraídas dos Produtos Existentes
+    const globalVariationOptions = React.useMemo(() => {
+        const map: Record<string, Set<string>> = {};
+        map['Tecido'] = new Set(FABRICS.map(f => f.name));
+        
+        products.forEach(p => {
+            (p.materialVariations || []).forEach(v => {
+                if (!map[v.name]) map[v.name] = new Set();
+                v.options.forEach(o => map[v.name].add(o.label));
+            });
+        });
+        
+        const result: Record<string, string[]> = {};
+        Object.keys(map).forEach(k => {
+            result[k] = Array.from(map[k]).sort();
+        });
+        return result;
+    }, [products]);
+
     // Derived KPIs
     const totalProducts = products.length;
     const activeProducts = products.filter(p => p.published).length;
@@ -67,7 +236,7 @@ const Products: React.FC = () => {
             
             setProducts(data);
             setAllSuppliers(suppliersData);
-            setTotalStock((inventoryData as any[]).reduce((acc: number, item: any) => acc + (Number(item.quantity) || 0), 0));
+            setTotalStock(data.reduce((acc: number, p: Product) => acc + (p.stock || 0), 0));
             setInProductionCount(ordersData.filter((o: any) => o.status === 'IN_PRODUCTION').length);
 
             if (data.length > 0) {
@@ -183,8 +352,125 @@ const Products: React.FC = () => {
         }
     };
 
-    // --- Render Helpers ---
+    // --- Material Variations Helpers ---
+    const genId = () => Math.random().toString(36).substring(2, 10);
 
+    const addVariationCategory = () => {
+        const current = editingProduct?.materialVariations || [];
+        const newVar: MaterialVariation = {
+            id: genId(),
+            name: '',
+            required: false,
+            options: []
+        };
+        setEditingProduct({ ...editingProduct!, materialVariations: [...current, newVar] });
+    };
+
+    const removeVariationCategory = (varId: string) => {
+        setEditingProduct({
+            ...editingProduct!,
+            materialVariations: (editingProduct?.materialVariations || []).filter(v => v.id !== varId)
+        });
+    };
+
+    const updateVariationCategory = (varId: string, field: keyof MaterialVariation, value: any) => {
+        setEditingProduct({
+            ...editingProduct!,
+            materialVariations: (editingProduct?.materialVariations || []).map(v =>
+                v.id === varId ? { ...v, [field]: value } : v
+            )
+        });
+    };
+
+    const addOption = (varId: string, label: string) => {
+        if (!label.trim()) return;
+        setEditingProduct({
+            ...editingProduct!,
+            materialVariations: (editingProduct?.materialVariations || []).map(v =>
+                v.id === varId
+                    ? { ...v, options: [...v.options, { id: genId(), label: label.trim() }] }
+                    : v
+            )
+        });
+    };
+
+    const removeOption = (varId: string, optId: string) => {
+        setEditingProduct({
+            ...editingProduct!,
+            materialVariations: (editingProduct?.materialVariations || []).map(v =>
+                v.id === varId
+                    ? { ...v, options: v.options.filter(o => o.id !== optId) }
+                    : v
+            )
+        });
+    };
+
+    // Importa os tecidos padrão do sistema como uma categoria "Tecido"
+    const importDefaultFabrics = () => {
+        const current = editingProduct?.materialVariations || [];
+        const alreadyHas = current.some(v => v.name.toLowerCase() === 'tecido');
+        if (alreadyHas) { notify.warning('Categoria "Tecido" já existe.'); return; }
+        const newVar: MaterialVariation = {
+            id: genId(),
+            name: 'Tecido',
+            required: true,
+            options: FABRICS.map(f => ({ id: f.id, label: f.name }))
+        };
+        setEditingProduct({ ...editingProduct!, materialVariations: [...current, newVar] });
+        notify.success('Tecidos padrão importados!');
+    };
+
+    const renderMaterialVariationsPanel = () => {
+        const variations = editingProduct?.materialVariations || [];
+
+        return (
+            <div className="space-y-6">
+                {/* Header com ações */}
+                <div className="flex flex-wrap gap-3">
+                    <button
+                        type="button"
+                        onClick={addVariationCategory}
+                        className="flex items-center gap-2 px-4 py-2 bg-[#6366F1]/15 border border-[#6366F1]/30 text-[#818cf8] hover:bg-[#6366F1]/25 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+                    >
+                        <PlusCircle className="w-4 h-4" /> Nova Categoria
+                    </button>
+                    <button
+                        type="button"
+                        onClick={importDefaultFabrics}
+                        className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+                    >
+                        <Layers className="w-4 h-4" /> Importar Tecidos Padrão
+                    </button>
+                </div>
+
+                {variations.length === 0 && (
+                    <div className="border-2 border-dashed border-[#1e293b] rounded-2xl p-10 text-center">
+                        <div className="w-14 h-14 rounded-2xl bg-[#1e293b] flex items-center justify-center mx-auto mb-4">
+                            <Layers className="w-7 h-7 text-slate-500" />
+                        </div>
+                        <p className="text-sm font-black text-slate-400 mb-1">Nenhuma variação cadastrada</p>
+                        <p className="text-xs text-slate-600 max-w-xs mx-auto">Crie categorias como <span className="text-slate-400 font-bold">Tecido</span>, <span className="text-slate-400 font-bold">Cor</span> ou <span className="text-slate-400 font-bold">Tamanho Especial</span> e adicione as opções disponíveis.</p>
+                    </div>
+                )}
+
+                {variations.map((variation, idx) => (
+                    <VariationCategoryCard
+                        key={variation.id}
+                        variation={variation}
+                        index={idx}
+                        suggestedOptions={globalVariationOptions[variation.name] || []}
+                        onUpdateName={(v) => updateVariationCategory(variation.id, 'name', v)}
+                        onToggleRequired={() => updateVariationCategory(variation.id, 'required', !variation.required)}
+                        onRemove={() => removeVariationCategory(variation.id)}
+                        onAddOption={(label) => addOption(variation.id, label)}
+                        onRemoveOption={(optId) => removeOption(variation.id, optId)}
+                    />
+                ))}
+            </div>
+        );
+    };
+
+    // --- Grade Matrix ---
     const renderGradeMatrix = () => {
         if (!editingProduct) return null;
 
@@ -296,7 +582,7 @@ const Products: React.FC = () => {
                         onClick={() => {
                             setEditingProduct({
                                 name: '', sku: '', category: 'Dry-Fit', basePrice: 0, costPrice: 0, status: 'active', published: true,
-                                imageUrl: '', allowedGrades: {}, measurements: {}
+                                imageUrl: '', allowedGrades: {}, measurements: {}, materialVariations: []
                             });
                             setIsEditing(true);
                         }}
@@ -573,10 +859,35 @@ const Products: React.FC = () => {
                                     </div>
                                 </div>
                             )}
-                            {sidebarTab === 'variacoes' && (
-                                <div className="text-center py-6">
-                                    <p className="text-xs text-slate-500 font-bold">Grade de tamanhos cadastrada:</p>
-                                    <div className="flex flex-wrap gap-2 mt-4 justify-center">
+                            {(sidebarTab === 'variacoes' || sidebarTab === 'variações') && (
+                                <div className="space-y-4">
+                                    {/* Material Variations */}
+                                    {(selectedProduct.materialVariations || []).length > 0 && (
+                                        <div className="space-y-3">
+                                            <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-1">
+                                                <Layers className="w-3 h-3" /> Variações de Material
+                                            </p>
+                                            {(selectedProduct.materialVariations || []).map(v => (
+                                                <div key={v.id} className="bg-[#0b1221] border border-[#1e293b] rounded-xl p-3">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <span className="text-xs font-black text-white">{v.name}</span>
+                                                        {v.required && <span className="text-[8px] text-amber-400 border border-amber-400/30 px-1.5 py-0.5 rounded font-black uppercase">Obrigatório</span>}
+                                                    </div>
+                                                    <div className="flex flex-wrap gap-1.5">
+                                                        {v.options.map(opt => (
+                                                            <span key={opt.id} className="bg-[#1e293b] text-slate-300 text-[9px] font-bold px-2 py-1 rounded-lg border border-slate-700">
+                                                                {opt.label}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Grade de tamanhos */}
+                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Grade de Tamanhos</p>
+                                    <div className="flex flex-wrap gap-2">
                                         {Object.entries(selectedProduct.allowedGrades || {}).map(([group, sizes]) => (
                                             sizes.map(size => (
                                                 <span key={`${group}-${size}`} className="bg-[#1e293b] text-white text-[10px] font-bold px-2 py-1 rounded border border-slate-700">
@@ -588,6 +899,13 @@ const Products: React.FC = () => {
                                             <span className="text-xs text-rose-400">Nenhuma grade definida.</span>
                                         )}
                                     </div>
+
+                                    {(selectedProduct.materialVariations || []).length === 0 && Object.keys(selectedProduct.allowedGrades || {}).length === 0 && (
+                                        <div className="text-center py-4">
+                                            <p className="text-xs text-slate-500">Nenhuma variação cadastrada ainda.</p>
+                                            <p className="text-[10px] text-slate-600 mt-1">Clique em Editar para configurar tecidos, cores e tamanhos.</p>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                             {sidebarTab === 'fornecedores' && (
@@ -837,14 +1155,28 @@ const Products: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {/* 2. Grade Matrix */}
+                                {/* 3. Material Variations */}
+                                <div className="border-t border-[#1e293b] pt-8">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="p-2 bg-indigo-500/10 rounded-lg">
+                                            <Layers className="w-5 h-5 text-indigo-400" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-bold text-white uppercase tracking-tight">Variações de Material</h3>
+                                            <p className="text-xs text-slate-500">Crie categorias personalizadas (Tecido, Cor, Acabamento...) e defina as opções disponíveis para este produto.</p>
+                                        </div>
+                                    </div>
+                                    {renderMaterialVariationsPanel()}
+                                </div>
+
+                                {/* 4. Grade Matrix */}
                                 <div className="border-t border-[#1e293b] pt-8">
                                     <div className="flex items-center gap-3 mb-6">
                                         <div className="p-2 bg-white/10 rounded-lg">
                                             <Ruler className="w-5 h-5 text-white" />
                                         </div>
                                         <div>
-                                            <h3 className="text-lg font-bold text-white uppercase tracking-tight">Grade & Medidas</h3>
+                                            <h3 className="text-lg font-bold text-white uppercase tracking-tight">Grade &amp; Medidas</h3>
                                             <p className="text-xs text-slate-500">Selecione os tamanhos disponíveis e defina as medidas (opcional).</p>
                                         </div>
                                     </div>

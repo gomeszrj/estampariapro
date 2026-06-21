@@ -75,11 +75,16 @@ export const LATEST_RELEASE_NOTES = `Novidades da Versão 25.6.0 — "Performanc
 
 // --- FABRIC TYPES ---
 export const FABRICS: Fabric[] = [
-  { id: 'f1', name: 'Dry Fit Premium', type: 'premium', costPerMeter: 25.5, compatibility: 'Sublimação Total', leadTimeImpact: 0 },
-  { id: 'f2', name: 'Ponto de Arroz', type: 'técnico', costPerMeter: 22.0, compatibility: 'Sublimação', leadTimeImpact: 1 },
-  { id: 'f3', name: 'Colmeia', type: 'técnico', costPerMeter: 20.0, compatibility: 'Sublimação', leadTimeImpact: 2 },
-  { id: 'f4', name: 'Dry Liso', type: 'econômico', costPerMeter: 15.0, compatibility: 'Silk/Sublimação', leadTimeImpact: 0 },
-  { id: 'f5', name: 'Dry Fit UV+', type: 'premium', costPerMeter: 30.0, compatibility: 'Sublimação', leadTimeImpact: 1 },
+  { id: 'f1', name: 'DRI FIT LISO', type: 'econômico', costPerMeter: 15.0, compatibility: 'Sublimação/Silk', leadTimeImpact: 0 },
+  { id: 'f2', name: 'DRI FIT COLMEIA', type: 'técnico', costPerMeter: 20.0, compatibility: 'Sublimação', leadTimeImpact: 1 },
+  { id: 'f3', name: 'DRI FIT FURADINHO', type: 'técnico', costPerMeter: 22.0, compatibility: 'Sublimação', leadTimeImpact: 1 },
+  { id: 'f4', name: 'DRI FIT PONTO ARROZ', type: 'premium', costPerMeter: 25.0, compatibility: 'Sublimação', leadTimeImpact: 2 },
+  { id: 'f5', name: 'HELANCA LIGHT', type: 'econômico', costPerMeter: 12.0, compatibility: 'Sublimação', leadTimeImpact: 0 },
+  { id: 'f6', name: 'ENERGY', type: 'técnico', costPerMeter: 28.0, compatibility: 'Sublimação', leadTimeImpact: 1 },
+  { id: 'f7', name: 'NBA', type: 'premium', costPerMeter: 35.0, compatibility: 'Sublimação', leadTimeImpact: 2 },
+  { id: 'f8', name: 'ROGBY', type: 'premium', costPerMeter: 32.0, compatibility: 'Sublimação', leadTimeImpact: 2 },
+  { id: 'f9', name: 'DRI FIT 3D', type: 'premium', costPerMeter: 28.0, compatibility: 'Sublimação', leadTimeImpact: 2 },
+  { id: 'f10', name: 'MICROFIBRA', type: 'técnico', costPerMeter: 18.0, compatibility: 'Sublimação', leadTimeImpact: 0 }
 ];
 
 export const GRADES: SizeGrade[] = [
@@ -94,10 +99,12 @@ export const STATUS_CONFIG = {
   [OrderStatus.RECEIVED]: { label: 'Pedido Recebido', color: 'bg-[#0f172a] text-purple-400 border-purple-900/50' },
   [OrderStatus.IN_PRODUCTION]: { label: 'Em Produção', color: 'bg-[#0f172a] text-blue-400 border-blue-900/50' },
   [OrderStatus.SUBLIMATION]: { label: 'Sublimação', color: 'bg-[#0f172a] text-orange-400 border-orange-900/50' },
-  [OrderStatus.FINALIZATION]: { label: 'Conferido', color: 'bg-[#0f172a] text-emerald-400 border-emerald-900/50' },
+  [OrderStatus.FINALIZATION]: { label: 'Arte / Finalização', color: 'bg-[#0f172a] text-emerald-400 border-emerald-900/50' },
   [OrderStatus.FINISHED]: { label: 'Concluído', color: 'bg-[#0f172a] text-emerald-500 border-emerald-500/50' },
+  [OrderStatus.CANCELLED]: { label: 'Cancelado', color: 'bg-rose-950/50 text-rose-400 border-rose-900/50' },
   // Store Flow
   [OrderStatus.STORE_REQUEST]: { label: 'Solicitação Nova', color: 'bg-pink-900/30 text-pink-400 border-pink-900/50' },
   [OrderStatus.STORE_CONFERENCE]: { label: 'Em Conferência', color: 'bg-violet-900/30 text-violet-400 border-violet-900/50' },
   [OrderStatus.STORE_CHECKED]: { label: 'Conferido (Aguardando Aprovação)', color: 'bg-teal-900/30 text-teal-400 border-teal-900/50' },
 };
+

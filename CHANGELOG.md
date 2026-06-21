@@ -4,6 +4,17 @@ Registro de todas as alterações relevantes e marcos de versão do ERP Multi-Te
 
 ---
 
+## [v25.7.0] — 2026-06-21
+### Adicionado & Melhorado
+- **Módulo Financeiro Real**: Opção de exclusão manual de lançamentos financeiros para limpeza de valores e testes irreais (ícone de lixeira no grid de contas a pagar e receber).
+- **Variações de Produtos Dinâmicas**: Tela de produtos agora permite seleção em caixa de todas as categorias base ('Tecido', 'Gola', etc) e aprende os materiais inseridos, exibindo-os nas variações dos próximos produtos sem vazamentos entre tenants.
+- **Lista Global de Tecidos**: Inserida a matriz de tecidos base padrão na plataforma (DRI FIT, HELANCA LIGHT, NBA, ENERGY, MICROFIBRA).
+
+### Corrigido
+- **Correção de Totalizador de Estoque**: Painel principal de produtos corrigido para não somar o estoque do Almoxarifado/Insumos com o estoque de Produtos finais.
+
+---
+
 ## [v25.6.0] — 2026-06-17
 ### Adicionado & Melhorado
 - **Upload Real para Imagens de Layout**: Remoção completa da conversão destrutiva de imagens para Strings Base64 no \`Orders.tsx\`. Agora os anexos visuais são comprimidos via \`canvas.toBlob\` no navegador e enviados nativamente para o Supabase Storage, gerando links minúsculos e desafogando totalmente a rede e o banco de dados.

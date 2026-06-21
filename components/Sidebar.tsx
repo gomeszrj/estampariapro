@@ -55,7 +55,6 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
     // Safety timeout: if Supabase query hangs for more than 1.5 seconds, force proceed with NO access for safety
     const timeoutId = setTimeout(() => {
       if (!resolved) {
-        console.warn("Sidebar permissions load timed out - defaulting to NO access (Fail-Closed)");
         setPermissions({}); // {} = no permissions, fail-closed
         setPermsLoaded(true);
         resolved = true;
@@ -63,9 +62,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
     }, 1500);
 
     try {
-      console.log("Sidebar: Loading user session...");
       const { data: { user } } = await supabase.auth.getUser();
-      console.log("Sidebar: User session loaded:", user?.email);
       if (!user) {
         if (!resolved) {
           setPermsLoaded(true);
@@ -75,9 +72,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
         return;
       }
 
-      console.log("Sidebar: Fetching permissions from DB...");
       const perms = await tenantService.getMyPermissions();
-      console.log("Sidebar: Permissions fetched:", perms);
       if (!resolved) {
         setPermissions(perms || null);
         setPermsLoaded(true);
@@ -274,11 +269,14 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
         <div className="p-4 border-t border-[#1e293b] space-y-3 bg-[#05080E]">
           <div className="flex items-center justify-between p-3 rounded-xl bg-[#0b1221] border border-[#1e293b] cursor-pointer hover:border-slate-600 transition-colors">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-800 border border-[#1e293b]">
-                <img src="https://i.pravatar.cc/150?u=admin" alt="User" className="w-full h-full object-cover" />
+              {/* FIX LOGIC-204: Avatar com iniciais geradas localmente — sem dependência de serviço externo */}
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-[#4f46e5]/20 border border-[#4f46e5]/30 flex items-center justify-center">
+                <span className="text-[#818cf8] text-[11px] font-black">
+                  {(userProfile?.full_name || userProfile?.name || 'U').trim().split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()}
+                </span>
               </div>
               <div className="flex flex-col">
-                <span className="text-white text-xs font-bold">{userProfile?.full_name || 'Usuário'}</span>
+                <span className="text-white text-xs font-bold">{userProfile?.full_name || userProfile?.name || 'Usuário'}</span>
                 <span className="text-[#6366f1] text-[9px] font-black tracking-widest uppercase mt-0.5">{isMasterAdmin ? 'ADMIN MASTER' : (userProfile?.role?.toUpperCase() || 'ADMINISTRADOR')}</span>
               </div>
             </div>
@@ -287,14 +285,21 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
             </span>
           </div>
 
+          {/* FIX LOGIC-205: Usar dados reais do tenant em vez de valores hardcoded */}
           <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-[#1e1b4b] to-[#1e1b4b]/50 border border-[#4f46e5]/30 cursor-pointer group hover:border-[#4f46e5]/60 transition-colors">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full flex items-center justify-center bg-[#4f46e5]/20 text-[#818cf8] group-hover:bg-[#4f46e5]/30 transition-colors">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
               </div>
               <div className="flex flex-col">
-                <span className="text-white text-[11px] font-bold tracking-wide">Plano Profissional</span>
-                <span className="text-slate-400 text-[9px] mt-0.5">Ativo até 15/07/2026</span>
+                <span className="text-white text-[11px] font-bold tracking-wide">{userProfile?.plan || 'Plano Profissional'}</span>
+                {userProfile?.subscription_end_date ? (
+                  <span className="text-slate-400 text-[9px] mt-0.5">
+                    Ativo até {new Date(userProfile.subscription_end_date).toLocaleDateString('pt-BR')}
+                  </span>
+                ) : (
+                  <span className="text-slate-400 text-[9px] mt-0.5">Plano Ativo</span>
+                )}
               </div>
             </div>
             <span className="text-[#818cf8] group-hover:translate-x-1 transition-transform">
