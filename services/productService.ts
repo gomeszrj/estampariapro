@@ -50,27 +50,37 @@ export const productService = {
         let dbProduct = mapProductToDB(product);
         let res = await supabase.from('products').insert([dbProduct]).select().single();
         
-        // AUTO-HEALING: Tenta salvar e se o Supabase reclamar que uma coluna não existe,
-        // ele entra num loop e vai arrancando essas colunas do payload uma a uma até o banco aceitar.
+        // AUTO-HEALING & POLYFILL: Se faltar coluna, injeta ela dentro do JSONB 'allowed_grades' que já existe
         let retries = 0;
         while (res.error && retries < 5) {
             const errMsg = res.error.message;
             const match = errMsg.match(/Could not find the '(.*?)' column/);
             
             if (match && match[1]) {
-                console.warn(`⚠️ Auto-Fix: Coluna '${match[1]}' não existe no banco! Removendo para forçar salvamento.`);
-                delete dbProduct[match[1]];
+                const col = match[1];
+                console.warn(`⚠️ Auto-Fix: Salvando '${col}' no Polyfill...`);
+                
+                if (!dbProduct.allowed_grades) dbProduct.allowed_grades = {};
+                if (!dbProduct.allowed_grades.__extensions) dbProduct.allowed_grades.__extensions = {};
+                dbProduct.allowed_grades.__extensions[col] = dbProduct[col];
+                
+                delete dbProduct[col];
                 res = await supabase.from('products').insert([dbProduct]).select().single();
                 retries++;
             } else if (errMsg.includes('does not exist')) {
-                // Fallback genérico se o regex não pegar
+                if (!dbProduct.allowed_grades) dbProduct.allowed_grades = {};
+                if (!dbProduct.allowed_grades.__extensions) dbProduct.allowed_grades.__extensions = {};
+                dbProduct.allowed_grades.__extensions['addons'] = dbProduct.addons;
+                dbProduct.allowed_grades.__extensions['categories'] = dbProduct.categories;
+                dbProduct.allowed_grades.__extensions['material_variations'] = dbProduct.material_variations;
+                
                 delete dbProduct.addons;
                 delete dbProduct.categories;
                 delete dbProduct.material_variations;
                 res = await supabase.from('products').insert([dbProduct]).select().single();
                 break;
             } else {
-                break; // Se for outro tipo de erro (ex: falha de rede), sai do loop
+                break; 
             }
         }
 
@@ -88,11 +98,29 @@ export const productService = {
             const match = errMsg.match(/Could not find the '(.*?)' column/);
             
             if (match && match[1]) {
-                console.warn(`⚠️ Auto-Fix: Coluna '${match[1]}' não existe no banco! Omitindo do update.`);
-                delete dbUpdates[match[1]];
+                const col = match[1];
+                console.warn(`⚠️ Auto-Fix Update: Salvando '${col}' no Polyfill...`);
+                
+                // Fetch current allowed_grades to preserve existing extensions
+                const { data: currentProduct } = await supabase.from('products').select('allowed_grades').eq('id', id).single();
+                let grades = currentProduct?.allowed_grades || {};
+                if (!grades.__extensions) grades.__extensions = {};
+                grades.__extensions[col] = dbUpdates[col];
+                dbUpdates.allowed_grades = grades;
+                
+                delete dbUpdates[col];
                 res = await supabase.from('products').update(dbUpdates).eq('id', id).select().single();
                 retries++;
             } else if (errMsg.includes('does not exist')) {
+                const { data: currentProduct } = await supabase.from('products').select('allowed_grades').eq('id', id).single();
+                let grades = currentProduct?.allowed_grades || {};
+                if (!grades.__extensions) grades.__extensions = {};
+                
+                if (dbUpdates.addons !== undefined) grades.__extensions['addons'] = dbUpdates.addons;
+                if (dbUpdates.categories !== undefined) grades.__extensions['categories'] = dbUpdates.categories;
+                if (dbUpdates.material_variations !== undefined) grades.__extensions['material_variations'] = dbUpdates.material_variations;
+                dbUpdates.allowed_grades = grades;
+
                 delete dbUpdates.addons;
                 delete dbUpdates.categories;
                 delete dbUpdates.material_variations;
@@ -283,25 +311,35 @@ export const productService = {
 };
 
 // Helpers to map between DB (snake_case) and App (camelCase)
-const mapProductFromDB = (dbItem: any): Product => ({
-    id: dbItem.id,
-    sku: dbItem.sku,
-    name: dbItem.name,
-    category: dbItem.category,
-    categories: dbItem.categories || (dbItem.category ? [dbItem.category] : []), // migra na UI
-    status: dbItem.status,
-    imageUrl: dbItem.image_url,
-    backImageUrl: dbItem.back_image_url,
-    basePrice: dbItem.base_price,
-    costPrice: dbItem.cost_price || 0,
-    description: dbItem.description,
-    allowedGrades: dbItem.allowed_grades,
-    measurements: dbItem.measurements,
-    published: dbItem.published,
-    stock: dbItem.stock || 0,
-    materialVariations: dbItem.material_variations || [], // Variações de material
-    addons: dbItem.addons || [], // Adicionais de produto (ex: Nome, Número)
-});
+const mapProductFromDB = (dbItem: any): Product => {
+    const exts = dbItem.allowed_grades?.__extensions || {};
+    
+    // Clean up extensions from allowed_grades so it doesn't pollute the actual UI
+    const cleanedAllowedGrades = dbItem.allowed_grades ? { ...dbItem.allowed_grades } : undefined;
+    if (cleanedAllowedGrades && cleanedAllowedGrades.__extensions) {
+        delete cleanedAllowedGrades.__extensions;
+    }
+
+    return {
+        id: dbItem.id,
+        sku: dbItem.sku,
+        name: dbItem.name,
+        category: dbItem.category,
+        categories: dbItem.categories || exts.categories || (dbItem.category ? [dbItem.category] : []),
+        status: dbItem.status,
+        imageUrl: dbItem.image_url,
+        backImageUrl: dbItem.back_image_url || exts.back_image_url,
+        basePrice: dbItem.base_price,
+        costPrice: dbItem.cost_price || 0,
+        description: dbItem.description,
+        allowedGrades: cleanedAllowedGrades,
+        measurements: dbItem.measurements,
+        published: dbItem.published,
+        stock: dbItem.stock || 0,
+        materialVariations: dbItem.material_variations || exts.material_variations || [],
+        addons: dbItem.addons || exts.addons || [],
+    };
+};
 
 const mapProductToDB = (appItem: Partial<Product>) => {
     const dbItem: any = { ...appItem };

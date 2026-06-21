@@ -121,11 +121,42 @@ export const orderService = {
                 order_id: orderData.id
             }));
 
-            const { error: itemsError } = await supabase
-                .from('order_items')
-                .insert(dbItems);
+            let itemsRes = await supabase.from('order_items').insert(dbItems);
+            
+            // AUTO-HEALING & POLYFILL for Order Items
+            let itemsRetries = 0;
+            while (itemsRes.error && itemsRetries < 5) {
+                const errMsg = itemsRes.error.message;
+                const match = errMsg.match(/Could not find the '(.*?)' column/);
+                
+                if (match && match[1]) {
+                    const col = match[1];
+                    console.warn(`⚠️ Auto-Fix OrderItems: Salvando '${col}' no Polyfill...`);
+                    
+                    dbItems.forEach(dbItem => {
+                        if (!dbItem.selected_variations) dbItem.selected_variations = {};
+                        if (!dbItem.selected_variations.__extensions) dbItem.selected_variations.__extensions = {};
+                        dbItem.selected_variations.__extensions[col] = dbItem[col];
+                        delete dbItem[col];
+                    });
+                    
+                    itemsRes = await supabase.from('order_items').insert(dbItems);
+                    itemsRetries++;
+                } else if (errMsg.includes('does not exist')) {
+                    dbItems.forEach(dbItem => {
+                        if (!dbItem.selected_variations) dbItem.selected_variations = {};
+                        if (!dbItem.selected_variations.__extensions) dbItem.selected_variations.__extensions = {};
+                        if (dbItem.selected_addons !== undefined) dbItem.selected_variations.__extensions['selected_addons'] = dbItem.selected_addons;
+                        delete dbItem.selected_addons;
+                    });
+                    itemsRes = await supabase.from('order_items').insert(dbItems);
+                    break;
+                } else {
+                    break;
+                }
+            }
 
-            if (itemsError) throw itemsError;
+            if (itemsRes.error) throw itemsRes.error;
 
             // NEW: Deduct stock from physical products
             for (const item of order.items) {
@@ -605,21 +636,32 @@ const mapOrderToDB = (appItem: Partial<Order>) => {
     return dbItem;
 };
 
-const mapOrderItemFromDB = (dbItem: any): OrderItem => ({
-    id: dbItem.id,
-    productId: dbItem.product_id,
-    productName: dbItem.product_name,
-    fabricId: dbItem.fabric_id,
-    fabricName: dbItem.fabric_name,
-    gradeLabel: dbItem.grade_label,
-    size: dbItem.size,
-    quantity: dbItem.quantity,
-    unitPrice: dbItem.unit_price,
-    supplierId: dbItem.supplier_id || undefined,   // Fornecedor específico deste item
-    unitCost: dbItem.unit_cost != null ? Number(dbItem.unit_cost) : undefined,  // Custo snapshot
-    selectedVariations: dbItem.selected_variations || undefined,
-    selectedAddons: dbItem.selected_addons || undefined
-});
+const mapOrderItemFromDB = (dbItem: any): OrderItem => {
+    const exts = dbItem.selected_variations?.__extensions || {};
+    
+    // Clean up extensions from selected_variations
+    let cleanedVariations = dbItem.selected_variations ? { ...dbItem.selected_variations } : undefined;
+    if (cleanedVariations && cleanedVariations.__extensions) {
+        delete cleanedVariations.__extensions;
+        if (Object.keys(cleanedVariations).length === 0) cleanedVariations = undefined;
+    }
+
+    return {
+        id: dbItem.id,
+        productId: dbItem.product_id,
+        productName: dbItem.product_name,
+        fabricId: dbItem.fabric_id,
+        fabricName: dbItem.fabric_name,
+        gradeLabel: dbItem.grade_label,
+        size: dbItem.size,
+        quantity: dbItem.quantity,
+        unitPrice: dbItem.unit_price,
+        supplierId: dbItem.supplier_id || undefined,
+        unitCost: dbItem.unit_cost != null ? Number(dbItem.unit_cost) : undefined,
+        selectedVariations: cleanedVariations,
+        selectedAddons: dbItem.selected_addons || exts.selected_addons || undefined
+    };
+};
 
 const mapOrderItemToDB = (appItem: OrderItem) => ({
     product_id: appItem.productId === 'p-custom' ? null : appItem.productId, // Handle ad-hoc items
