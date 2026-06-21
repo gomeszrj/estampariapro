@@ -293,7 +293,12 @@ const Products: React.FC = () => {
             notify.success('Produto salvo com sucesso!');
         } catch (error) {
             console.error("Error saving product", error);
-            notify.error('Erro ao salvar produto.');
+            const errMsg = (error as any)?.message || (error as any)?.details || 'Erro interno no banco de dados.';
+            if (errMsg.includes('does not exist')) {
+                notify.error(`Falta a coluna no banco! Por favor rode as Migrations no Supabase. Erro exato: ${errMsg}`);
+            } else {
+                notify.error(`Erro ao salvar produto: ${errMsg}`);
+            }
         }
     };
 
