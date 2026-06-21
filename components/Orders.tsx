@@ -46,7 +46,7 @@ import { ParsedOrderItem } from '../services/aiService';
 import { FABRICS, STATUS_CONFIG, GRADES } from '../constants';
 import { Order, OrderStatus, OrderType, Product, Client, OrderItem, PaymentStatus, OrderMessage } from '../types';
 import { printServiceOrder, printInvoice } from '../utils/printUtils';
-import { orderService, getCachedOrderSuppliers } from '../services/orderService';
+import { orderService } from '../services/orderService';
 import { supabase } from '../services/supabase';
 import { clientService } from '../services/clientService';
 import { financeService } from '../services/financeService';
@@ -338,19 +338,10 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
       : (order.layoutUrl ? [order.layoutUrl] : []));
     setDesignFileUrls(order.designFileUrls || []);
 
-    // Restaurar fornecedor e custo por item ao editar:
-    // Prioridade 1: dado no banco (supplier_id/unit_cost do DB)
-    // Prioridade 2: cache local (localStorage) quando o DB ainda não tem a coluna
+    // Restaurar fornecedor e custo por item ao editar a partir do banco de dados (DB)
     const orderItems = (order.items || []).length > 0 ? order.items : [];
-    const cached = getCachedOrderSuppliers(order.id);
-    setItemSupplierIds(orderItems.map((i, idx) => {
-      if (i.supplierId) return i.supplierId; // DB has the value
-      return cached[idx]?.supplierId || '';    // fallback to cache
-    }));
-    setItemUnitCosts(orderItems.map((i, idx) => {
-      if (i.unitCost !== undefined && i.unitCost !== null) return i.unitCost; // DB has the value
-      return cached[idx]?.unitCost;                                            // fallback to cache
-    }));
+    setItemSupplierIds(orderItems.map((i) => i.supplierId || ''));
+    setItemUnitCosts(orderItems.map((i) => (i.unitCost !== undefined && i.unitCost !== null ? i.unitCost : undefined)));
 
     setIsAdding(true);
   };
