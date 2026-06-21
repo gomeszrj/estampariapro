@@ -47,19 +47,31 @@ export const productService = {
     },
 
     async create(product: Omit<Product, 'id'>) {
-        const dbProduct = mapProductToDB(product);
-        
+        let dbProduct = mapProductToDB(product);
         let res = await supabase.from('products').insert([dbProduct]).select().single();
         
-        // AUTO-FALLBACK: Se o Supabase recusar a inserção por não ter as colunas novas (addons/categories),
-        // ele remove essas colunas dinamicamente e tenta salvar de novo, garantindo que o cliente não fique com o sistema quebrado
-        if (res.error && (res.error.message.includes('addons') || res.error.message.includes('categories') || res.error.message.includes('does not exist'))) {
-            console.warn("⚠️ Banco desatualizado detectado! Removendo propriedades novas para forçar a gravação segura...");
-            const fallbackDbProduct = { ...dbProduct };
-            delete fallbackDbProduct.addons;
-            delete fallbackDbProduct.categories;
+        // AUTO-HEALING: Tenta salvar e se o Supabase reclamar que uma coluna não existe,
+        // ele entra num loop e vai arrancando essas colunas do payload uma a uma até o banco aceitar.
+        let retries = 0;
+        while (res.error && retries < 5) {
+            const errMsg = res.error.message;
+            const match = errMsg.match(/Could not find the '(.*?)' column/);
             
-            res = await supabase.from('products').insert([fallbackDbProduct]).select().single();
+            if (match && match[1]) {
+                console.warn(`⚠️ Auto-Fix: Coluna '${match[1]}' não existe no banco! Removendo para forçar salvamento.`);
+                delete dbProduct[match[1]];
+                res = await supabase.from('products').insert([dbProduct]).select().single();
+                retries++;
+            } else if (errMsg.includes('does not exist')) {
+                // Fallback genérico se o regex não pegar
+                delete dbProduct.addons;
+                delete dbProduct.categories;
+                delete dbProduct.material_variations;
+                res = await supabase.from('products').insert([dbProduct]).select().single();
+                break;
+            } else {
+                break; // Se for outro tipo de erro (ex: falha de rede), sai do loop
+            }
         }
 
         if (res.error) throw res.error;
@@ -67,18 +79,28 @@ export const productService = {
     },
 
     async update(id: string, updates: Partial<Product>) {
-        const dbUpdates = mapProductToDB(updates as Product);
-        
+        let dbUpdates = mapProductToDB(updates as Product);
         let res = await supabase.from('products').update(dbUpdates).eq('id', id).select().single();
         
-        // AUTO-FALLBACK na Atualização
-        if (res.error && (res.error.message.includes('addons') || res.error.message.includes('categories') || res.error.message.includes('does not exist'))) {
-            console.warn("⚠️ Banco desatualizado detectado! Omitindo colunas novas no update...");
-            const fallbackDbUpdates = { ...dbUpdates };
-            delete fallbackDbUpdates.addons;
-            delete fallbackDbUpdates.categories;
+        let retries = 0;
+        while (res.error && retries < 5) {
+            const errMsg = res.error.message;
+            const match = errMsg.match(/Could not find the '(.*?)' column/);
             
-            res = await supabase.from('products').update(fallbackDbUpdates).eq('id', id).select().single();
+            if (match && match[1]) {
+                console.warn(`⚠️ Auto-Fix: Coluna '${match[1]}' não existe no banco! Omitindo do update.`);
+                delete dbUpdates[match[1]];
+                res = await supabase.from('products').update(dbUpdates).eq('id', id).select().single();
+                retries++;
+            } else if (errMsg.includes('does not exist')) {
+                delete dbUpdates.addons;
+                delete dbUpdates.categories;
+                delete dbUpdates.material_variations;
+                res = await supabase.from('products').update(dbUpdates).eq('id', id).select().single();
+                break;
+            } else {
+                break;
+            }
         }
 
         if (res.error) throw res.error;
