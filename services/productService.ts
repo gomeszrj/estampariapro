@@ -252,6 +252,7 @@ const mapProductFromDB = (dbItem: any): Product => ({
     sku: dbItem.sku,
     name: dbItem.name,
     category: dbItem.category,
+    categories: dbItem.categories || (dbItem.category ? [dbItem.category] : []), // migra na UI
     status: dbItem.status,
     imageUrl: dbItem.image_url,
     backImageUrl: dbItem.back_image_url,
@@ -263,6 +264,7 @@ const mapProductFromDB = (dbItem: any): Product => ({
     published: dbItem.published,
     stock: dbItem.stock || 0,
     materialVariations: dbItem.material_variations || [], // Variações de material
+    addons: dbItem.addons || [], // Adicionais de produto (ex: Nome, Número)
 });
 
 const mapProductToDB = (appItem: Partial<Product>) => {
@@ -292,6 +294,23 @@ const mapProductToDB = (appItem: Partial<Product>) => {
     if (appItem.materialVariations !== undefined) {
         dbItem.material_variations = appItem.materialVariations;
         delete dbItem.materialVariations;
+    }
+    if (appItem.category !== undefined) {
+        dbItem.category = appItem.category;
+    }
+    if (appItem.categories !== undefined) {
+        dbItem.categories = appItem.categories;
+        // fallback para query
+        if (appItem.categories.length > 0) {
+            dbItem.category = appItem.categories[0];
+        } else {
+            dbItem.category = '';
+        }
+        delete dbItem.categories; // remove camelCase to prevent conflict
+        dbItem.categories = appItem.categories; // re-add for JSONB if snake_case wasn't needed, but it matches 'categories'
+    }
+    if (appItem.addons !== undefined) {
+        dbItem.addons = appItem.addons;
     }
     if (appItem.stock !== undefined) {
         dbItem.stock = appItem.stock;

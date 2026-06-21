@@ -47,7 +47,8 @@ const OrderItemsForm: React.FC<OrderItemsFormProps> = ({
 
   const totalRevenue = parsedItems.reduce((acc, curr) => {
     const prod = productsByName.get((curr.product || '').trim().toLowerCase());
-    return acc + (curr.quantity || 0) * (prod ? prod.basePrice : 35);
+    const addonsPrice = (curr.selectedAddons || []).reduce((sum, a) => sum + (Number(a.price) || 0), 0);
+    return acc + (curr.quantity || 0) * ((prod ? prod.basePrice : 35) + addonsPrice);
   }, 0);
 
   const parsedDiscount = typeof discountValue === 'number'
@@ -287,6 +288,41 @@ const OrderItemsForm: React.FC<OrderItemsFormProps> = ({
                                 </div>
                             );
                         })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Linha 4: Adicionais de Personalização */}
+                {selectedProduct?.addons && selectedProduct.addons.length > 0 && (
+                  <div className="pt-4 mt-4 border-t border-[#1e293b]/60">
+                    <label className="text-[8px] font-black text-emerald-400 uppercase tracking-wider ml-1 flex items-center gap-1 mb-2">
+                      <Plus className="w-3 h-3" /> Adicionais / Personalização
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedProduct.addons.map(addon => {
+                        const currentAddons = item.selectedAddons || [];
+                        const isSelected = currentAddons.some(a => a.id === addon.id);
+                        return (
+                          <label key={addon.id} className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-all cursor-pointer select-none ${isSelected ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : 'bg-[#1e293b]/50 border-slate-700 text-slate-400 hover:border-slate-500'}`}>
+                            <input 
+                              type="checkbox" 
+                              className="hidden" 
+                              checked={isSelected}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  updateItem(idx, 'selectedAddons', [...currentAddons, addon]);
+                                } else {
+                                  updateItem(idx, 'selectedAddons', currentAddons.filter(a => a.id !== addon.id));
+                                }
+                              }}
+                            />
+                            <span className="text-[10px] font-bold">{addon.name}</span>
+                            <span className={`text-[9px] font-black uppercase ml-1 px-1.5 py-0.5 rounded ${isSelected ? 'bg-emerald-500/20 text-emerald-300' : 'bg-black/20 text-slate-500'}`}>
+                                + R$ {addon.price.toFixed(2)}
+                            </span>
+                          </label>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

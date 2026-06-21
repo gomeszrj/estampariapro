@@ -10,6 +10,7 @@ export interface ParsedOrderItem {
   layoutNumber?: number; // Added layout number
   names?: string[];
   selectedVariations?: Record<string, string>; // { categoryName: optionLabel }
+  selectedAddons?: { id: string; name: string; price: number }[]; // Adicionais escolhidos
 }
 
 export async function parseOrderText(text: string, availableProducts: { id: string, name: string }[] = []): Promise<ParsedOrderItem[]> {

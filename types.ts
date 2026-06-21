@@ -46,6 +46,7 @@ export interface OrderItem {
   supplierId?: string;  // Fornecedor específico deste item
   unitCost?: number;    // Custo snapshot (do product_suppliers) no momento do pedido
   selectedVariations?: Record<string, string>; // { categoryName: optionLabel }
+  selectedAddons?: ProductAddon[]; // New: Adicionais selecionados (ex: Nome +R$ 10)
   notes?: string;
 }
 
@@ -121,11 +122,18 @@ export interface MaterialVariation {
   options: MaterialOption[];
 }
 
+export interface ProductAddon {
+  id: string;
+  name: string;
+  price: number;
+}
+
 export interface Product {
   id: string;
   sku: string;
   name: string;
-  category: string;
+  category?: string; // Legado (pode ser usado como fallback)
+  categories?: string[]; // Novo: múltiplas escolhas de categoria
   status: 'active' | 'inactive';
   imageUrl: string;
   backImageUrl?: string; // New: Back side image
@@ -138,6 +146,7 @@ export interface Product {
   published?: boolean; // Controls visibility in Public Store
   suppliers?: ProductSupplier[]; // Associated suppliers
   materialVariations?: MaterialVariation[]; // Variações de material customizáveis por produto
+  addons?: ProductAddon[]; // Adicionais cobrados à parte (ex: Nome, Número)
 }
 
 export interface Supplier {

@@ -190,7 +190,7 @@ const Products: React.FC = () => {
         const safeProducts = Array.isArray(products) ? products : [];
         return safeProducts.filter(p => {
             const matchesSearch = (p.name || '').toLowerCase().includes(searchLower) || (p.sku || '').toLowerCase().includes(searchLower);
-            const matchesCat = categoryFilter === 'Todas as categorias' || p.category === categoryFilter;
+            const matchesCat = categoryFilter === 'Todas as categorias' || p.category === categoryFilter || (p.categories && p.categories.includes(categoryFilter));
             const matchesStatus = statusFilter === 'Todos' || (statusFilter === 'Ativos' ? p.published : !p.published);
             return matchesSearch && matchesCat && matchesStatus;
         });
@@ -470,6 +470,84 @@ const Products: React.FC = () => {
         );
     };
 
+    // --- Addons Helpers ---
+    const addAddon = () => {
+        const current = editingProduct?.addons || [];
+        setEditingProduct({
+            ...editingProduct!,
+            addons: [...current, { id: genId(), name: '', price: 0 }]
+        });
+    };
+
+    const removeAddon = (id: string) => {
+        setEditingProduct({
+            ...editingProduct!,
+            addons: (editingProduct?.addons || []).filter(a => a.id !== id)
+        });
+    };
+
+    const updateAddon = (id: string, field: 'name' | 'price', value: any) => {
+        setEditingProduct({
+            ...editingProduct!,
+            addons: (editingProduct?.addons || []).map(a =>
+                a.id === id ? { ...a, [field]: value } : a
+            )
+        });
+    };
+
+    const renderAddonsPanel = () => {
+        const addons = editingProduct?.addons || [];
+
+        return (
+            <div className="space-y-4">
+                {addons.length === 0 && (
+                    <div className="border-2 border-dashed border-[#1e293b] rounded-2xl p-8 text-center">
+                        <Tag className="w-8 h-8 text-slate-600 mx-auto mb-3" />
+                        <p className="text-xs font-bold text-slate-400">Nenhuma personalização extra</p>
+                        <p className="text-[10px] text-slate-500 mt-1 max-w-xs mx-auto">Adicione opções como "Nome", "Número" e defina o valor cobrado à parte por elas.</p>
+                    </div>
+                )}
+                
+                {addons.map((addon, idx) => (
+                    <div key={addon.id} className="flex items-center gap-3 bg-[#0b1221] border border-[#1e293b] p-3 rounded-xl">
+                        <div className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 text-[10px] font-black flex-shrink-0">
+                            {idx + 1}
+                        </div>
+                        <div className="flex-1">
+                            <input 
+                                type="text" 
+                                value={addon.name}
+                                onChange={e => updateAddon(addon.id, 'name', e.target.value)}
+                                placeholder="Nome do Adicional (Ex: Nome + Número)" 
+                                className="w-full bg-transparent text-xs font-bold text-white outline-none placeholder:text-slate-600"
+                            />
+                        </div>
+                        <div className="w-32 flex items-center bg-[#1e293b] rounded-lg px-2 border border-slate-700">
+                            <span className="text-[10px] text-slate-500 font-bold mr-1">R$</span>
+                            <input 
+                                type="number" 
+                                value={addon.price}
+                                onChange={e => updateAddon(addon.id, 'price', parseFloat(e.target.value) || 0)}
+                                className="w-full bg-transparent text-xs font-black text-emerald-400 py-2 outline-none"
+                            />
+                        </div>
+                        <button type="button" onClick={() => removeAddon(addon.id)} className="p-2 text-slate-500 hover:text-rose-400 transition-colors">
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+                ))}
+
+                <button 
+                    type="button" 
+                    onClick={addAddon}
+                    className="w-full border-2 border-dashed border-[#1e293b] hover:border-indigo-500/30 bg-[#0f172a] hover:bg-indigo-500/5 text-indigo-400 rounded-xl py-3 text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                >
+                    <PlusCircle className="w-4 h-4" /> Adicionar Personalização Extra
+                </button>
+            </div>
+        );
+    };
+
     // --- Grade Matrix ---
     const renderGradeMatrix = () => {
         if (!editingProduct) return null;
@@ -644,8 +722,9 @@ const Products: React.FC = () => {
                         className="bg-[#151B2B] border border-[#1e293b] rounded-xl px-4 py-3 text-xs font-bold text-slate-300 outline-none shadow-lg cursor-pointer min-w-max"
                     >
                         <option value="Todas as categorias">Todas as categorias</option>
-                        {FABRICS.map(f => <option key={f.id} value={f.name}>{f.name}</option>)}
-                        <option value="Outro">Outro</option>
+                        {Array.from(new Set([...FABRICS.map(f => f.name), ...products.flatMap(p => p.categories || [p.category || '']).filter(Boolean)])).map(opt => (
+                            <option key={opt} value={opt}>{opt}</option>
+                        ))}
                     </select>
                     <select 
                         value={statusFilter} 
@@ -703,8 +782,10 @@ const Products: React.FC = () => {
                                         <div className="mt-1 flex items-center gap-2">
                                             <span className="bg-[#1e293b] text-slate-300 text-[9px] font-bold px-2 py-0.5 rounded uppercase">{product.sku || 'S/N'}</span>
                                         </div>
-                                        <div className="mt-2">
-                                            <span className="text-[10px] font-bold text-slate-500 block truncate">{product.category}</span>
+                                        <div className="mt-2 flex flex-wrap gap-1">
+                                            {(product.categories && product.categories.length > 0 ? product.categories : [product.category]).filter(Boolean).map((cat, idx) => (
+                                                <span key={idx} className="text-[9px] font-bold text-slate-400 bg-[#1e293b] px-1.5 py-0.5 rounded truncate">{cat}</span>
+                                            ))}
                                         </div>
                                         <div className="mt-auto pt-2 flex items-end justify-between">
                                             <span className="text-sm font-black text-white">R$ {product.basePrice.toFixed(2)}</span>
@@ -767,9 +848,11 @@ const Products: React.FC = () => {
                         {/* Product Header Info */}
                         <div className="p-5 pb-0">
                             <h2 className="text-xl font-black text-white leading-tight">{selectedProduct.name}</h2>
-                            <div className="flex items-center gap-3 mt-2">
-                                <span className="bg-[#1e293b] text-slate-300 text-[10px] font-bold px-2 py-0.5 rounded uppercase">{selectedProduct.sku || 'S/N'}</span>
-                                <span className="text-[11px] font-bold text-slate-500">{selectedProduct.category}</span>
+                            <div className="flex flex-wrap items-center gap-2 mt-2">
+                                        <span className="bg-[#1e293b] text-slate-300 text-[10px] font-bold px-2 py-0.5 rounded uppercase">{selectedProduct.sku || 'S/N'}</span>
+                                        {(selectedProduct.categories && selectedProduct.categories.length > 0 ? selectedProduct.categories : [selectedProduct.category]).filter(Boolean).map((cat, idx) => (
+                                            <span key={idx} className="text-[10px] font-bold text-slate-400 bg-[#1e293b] border border-slate-700 px-2 py-0.5 rounded uppercase">{cat}</span>
+                                        ))}
                             </div>
                             <div className="mt-4 space-y-2">
                                 <div className="flex items-end justify-between">
@@ -805,11 +888,11 @@ const Products: React.FC = () => {
 
                         {/* Tabs */}
                         <div className="flex px-5 mt-6 border-b border-[#1e293b]">
-                            {['detalhes', 'variações', 'fornecedores', 'estoque', 'histórico'].map((tab) => (
+                            {['detalhes', 'fornecedores', 'estoque', 'histórico'].map((tab) => (
                                 <button 
                                     key={tab}
                                     onClick={() => setSidebarTab(tab as any)}
-                                    className={`flex-1 pb-2 text-[10px] font-black uppercase tracking-widest transition-colors ${sidebarTab === tab || (tab === 'variações' && sidebarTab === 'variacoes') || (tab === 'histórico' && sidebarTab === 'historico') ? 'text-white border-b-2 border-[#6366F1]' : 'text-slate-500 hover:text-slate-300'}`}
+                                    className={`flex-1 pb-2 text-[10px] font-black uppercase tracking-widest transition-colors ${sidebarTab === tab || (tab === 'histórico' && sidebarTab === 'historico') ? 'text-white border-b-2 border-[#6366F1]' : 'text-slate-500 hover:text-slate-300'}`}
                                 >
                                     {tab}
                                 </button>
@@ -825,8 +908,12 @@ const Products: React.FC = () => {
                                         <div className="w-2/3 text-xs text-slate-300">{selectedProduct.description || 'Nenhuma descrição fornecida.'}</div>
                                     </div>
                                     <div className="flex">
-                                        <div className="w-1/3 text-[10px] text-slate-500 font-bold uppercase flex items-center gap-2"><Box className="w-3 h-3" /> Categoria</div>
-                                        <div className="w-2/3 text-xs text-slate-300">{selectedProduct.category}</div>
+                                        <div className="w-1/3 text-[10px] text-slate-500 font-bold uppercase flex items-center gap-2"><Box className="w-3 h-3" /> Categorias</div>
+                                        <div className="w-2/3 text-xs text-slate-300 flex flex-wrap gap-1">
+                                            {(selectedProduct.categories && selectedProduct.categories.length > 0 ? selectedProduct.categories : [selectedProduct.category]).filter(Boolean).map((cat, idx) => (
+                                                <span key={idx} className="bg-[#1e293b] px-1.5 py-0.5 rounded font-bold">{cat}</span>
+                                            ))}
+                                        </div>
                                     </div>
                                     <div className="flex">
                                         <div className="w-1/3 text-[10px] text-slate-500 font-bold uppercase flex items-center gap-2"><Box className="w-3 h-3" /> Estoque Físico</div>
@@ -861,29 +948,7 @@ const Products: React.FC = () => {
                             )}
                             {(sidebarTab === 'variacoes' || sidebarTab === 'variações') && (
                                 <div className="space-y-4">
-                                    {/* Material Variations */}
-                                    {(selectedProduct.materialVariations || []).length > 0 && (
-                                        <div className="space-y-3">
-                                            <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-1">
-                                                <Layers className="w-3 h-3" /> Variações de Material
-                                            </p>
-                                            {(selectedProduct.materialVariations || []).map(v => (
-                                                <div key={v.id} className="bg-[#0b1221] border border-[#1e293b] rounded-xl p-3">
-                                                    <div className="flex items-center justify-between mb-2">
-                                                        <span className="text-xs font-black text-white">{v.name}</span>
-                                                        {v.required && <span className="text-[8px] text-amber-400 border border-amber-400/30 px-1.5 py-0.5 rounded font-black uppercase">Obrigatório</span>}
-                                                    </div>
-                                                    <div className="flex flex-wrap gap-1.5">
-                                                        {v.options.map(opt => (
-                                                            <span key={opt.id} className="bg-[#1e293b] text-slate-300 text-[9px] font-bold px-2 py-1 rounded-lg border border-slate-700">
-                                                                {opt.label}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
+                                    {/* Grade de tamanhos movida pra cima */}
 
                                     {/* Grade de tamanhos */}
                                     <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Grade de Tamanhos</p>
@@ -1070,16 +1135,45 @@ const Products: React.FC = () => {
                                                     placeholder="Ex: Camiseta Dry-Fit Pro"
                                                 />
                                             </div>
-                                            <div>
-                                                <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Categoria</label>
-                                                <select
-                                                    value={editingProduct?.category}
-                                                    onChange={e => setEditingProduct({ ...editingProduct!, category: e.target.value })}
-                                                    className="w-full bg-[#151B2B] border border-[#1e293b] rounded-xl px-4 py-3 text-white focus:border-[#6366F1] outline-none"
-                                                >
-                                                    {FABRICS.map(f => <option key={f.id} value={f.name}>{f.name}</option>)}
-                                                    <option value="Outro">Outro</option>
-                                                </select>
+                                            <div className="col-span-2">
+                                                <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Categorias / Variações</label>
+                                                <div className="bg-[#151B2B] border border-[#1e293b] rounded-xl p-3 min-h-[50px] flex flex-wrap gap-2 items-center">
+                                                    {(editingProduct?.categories || (editingProduct?.category ? [editingProduct.category] : [])).filter(Boolean).map((cat, idx) => (
+                                                        <span key={idx} className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
+                                                            {cat}
+                                                            <button type="button" onClick={(e) => { e.preventDefault(); setEditingProduct(prev => ({ ...prev!, categories: (prev?.categories || [prev?.category || '']).filter((_, i) => i !== idx) })); }} className="hover:text-white transition-colors ml-1"><X className="w-3 h-3" /></button>
+                                                        </span>
+                                                    ))}
+                                                    <select 
+                                                        className="bg-transparent text-slate-400 text-xs font-bold outline-none cursor-pointer border-none"
+                                                        value=""
+                                                        onChange={e => {
+                                                            const val = e.target.value;
+                                                            if (val === 'Outro') {
+                                                                const newCat = window.prompt("Digite a nova categoria/variação (Ex: NBA, Manga Longa):");
+                                                                if (newCat && newCat.trim() !== '') {
+                                                                    setEditingProduct(prev => {
+                                                                        const arr = (prev?.categories && prev.categories.length > 0) ? prev.categories : (prev?.category ? [prev.category] : []);
+                                                                        if (!arr.includes(newCat.trim())) return { ...prev!, categories: [...arr, newCat.trim()] };
+                                                                        return prev!;
+                                                                    });
+                                                                }
+                                                            } else if (val) {
+                                                                setEditingProduct(prev => {
+                                                                    const arr = (prev?.categories && prev.categories.length > 0) ? prev.categories : (prev?.category ? [prev.category] : []);
+                                                                    if (!arr.includes(val)) return { ...prev!, categories: [...arr, val] };
+                                                                    return prev!;
+                                                                });
+                                                            }
+                                                        }}
+                                                    >
+                                                        <option value="" disabled>+ Adicionar variação...</option>
+                                                        {Array.from(new Set([...FABRICS.map(f => f.name), ...products.flatMap(p => p.categories || [p.category || '']).filter(Boolean)])).map(opt => (
+                                                            <option key={opt} value={opt}>{opt}</option>
+                                                        ))}
+                                                        <option value="Outro">➕ Nova Categoria...</option>
+                                                    </select>
+                                                </div>
                                             </div>
                                             <div>
                                                 <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">SKU / Ref</label>
@@ -1155,18 +1249,20 @@ const Products: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {/* 3. Material Variations */}
+
+
+                                {/* 3. Personalização Adicional */}
                                 <div className="border-t border-[#1e293b] pt-8">
                                     <div className="flex items-center gap-3 mb-6">
                                         <div className="p-2 bg-indigo-500/10 rounded-lg">
-                                            <Layers className="w-5 h-5 text-indigo-400" />
+                                            <Tag className="w-5 h-5 text-indigo-400" />
                                         </div>
                                         <div>
-                                            <h3 className="text-lg font-bold text-white uppercase tracking-tight">Variações de Material</h3>
-                                            <p className="text-xs text-slate-500">Crie categorias personalizadas (Tecido, Cor, Acabamento...) e defina as opções disponíveis para este produto.</p>
+                                            <h3 className="text-lg font-bold text-white uppercase tracking-tight">Personalização (Add-ons)</h3>
+                                            <p className="text-xs text-slate-500">Ofereça serviços cobrados à parte (Ex: colocar o Nome, colocar o Número na camisa).</p>
                                         </div>
                                     </div>
-                                    {renderMaterialVariationsPanel()}
+                                    {renderAddonsPanel()}
                                 </div>
 
                                 {/* 4. Grade Matrix */}

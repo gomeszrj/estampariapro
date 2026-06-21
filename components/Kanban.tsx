@@ -126,6 +126,13 @@ const KanbanCard: React.FC<KanbanCardProps> = React.memo(({ order, onMove }) => 
             <p className="text-[9px] font-medium text-slate-400 truncate leading-tight">
               {primaryItem ? primaryItem.productName : 'Diversos'}
             </p>
+            {primaryItem?.selectedAddons && primaryItem.selectedAddons.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1">
+                {primaryItem.selectedAddons.map(a => (
+                   <span key={a.id} className="text-[7.5px] font-black uppercase text-indigo-400 bg-indigo-500/10 px-1 py-0.5 rounded border border-indigo-500/20">{a.name}</span>
+                ))}
+              </div>
+            )}
             <p className="text-[9px] font-bold text-slate-300 mt-0.5">
               {totalQuantity > 0 ? `${totalQuantity} un.` : 'Qtd não def.'}
             </p>

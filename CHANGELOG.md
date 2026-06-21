@@ -4,6 +4,15 @@ Registro de todas as alterações relevantes e marcos de versão do ERP Multi-Te
 
 ---
 
+## [v25.8.0] — 2026-06-21
+### Adicionado & Melhorado
+- **Adicionais de Personalização em Produtos (Add-ons)**: Inclusão da opção de configurar serviços extras como "Nome" e "Número" com valores adicionais (ativação/desativação) diretamente no cadastro de Produtos.
+- **Cobrança Dinâmica na Venda**: Integrada a opção de cobrar Add-ons durante a criação do Pedido/Ordem de Serviço, atualizando dinamicamente o valor final do pedido (Revenue e Subtotal).
+- **Acompanhamento no Kanban**: Agora a ficha de produção no Painel Kanban exibe ativamente as tags de adicionais de personalização (Ex: "Nome", "Número") escolhidas pelo cliente, facilitando a vida do setor de arte para identificar essas variações na peça de forma imediata.
+- **Múltiplas Categorias para Produtos**: Concluída a integração completa de múltiplas categorias nos produtos, atualizando não apenas a UI, mas ajustando a engine de filtragem principal do catálogo para encontrar o produto independente de qual das suas categorias seja pesquisada.
+
+---
+
 ## [v25.7.0] — 2026-06-21
 ### Adicionado & Melhorado
 - **Módulo Financeiro Real**: Opção de exclusão manual de lançamentos financeiros para limpeza de valores e testes irreais (ícone de lixeira no grid de contas a pagar e receber).

@@ -617,7 +617,8 @@ const mapOrderItemFromDB = (dbItem: any): OrderItem => ({
     unitPrice: dbItem.unit_price,
     supplierId: dbItem.supplier_id || undefined,   // Fornecedor específico deste item
     unitCost: dbItem.unit_cost != null ? Number(dbItem.unit_cost) : undefined,  // Custo snapshot
-    selectedVariations: dbItem.selected_variations || undefined
+    selectedVariations: dbItem.selected_variations || undefined,
+    selectedAddons: dbItem.selected_addons || undefined
 });
 
 const mapOrderItemToDB = (appItem: OrderItem) => ({
@@ -631,5 +632,6 @@ const mapOrderItemToDB = (appItem: OrderItem) => ({
     unit_price: appItem.unitPrice,
     supplier_id: appItem.supplierId || null,   // Fornecedor do item
     unit_cost: appItem.unitCost ?? 0,          // Custo snapshot
-    selected_variations: appItem.selectedVariations || null
+    selected_variations: appItem.selectedVariations || null,
+    selected_addons: appItem.selectedAddons || null
 });
