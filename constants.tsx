@@ -3,14 +3,19 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 21.9 -> 22.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '25.6.0';
+export const SYSTEM_VERSION = '25.8.0';
 export const APP_NAME = 'Gomesz Speed Print';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 25.6.0 — "Performance Extrema" (17/06/2026):
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 25.8.0 — "Personalização Avançada" (21/06/2026):
 
-🚀 OTIMIZAÇÃO E VELOCIDADE:
-  * Fim do Ralo de Dados (Base64): Imagens de layout nos pedidos agora fazem upload real e assíncrono para o Storage, reduzindo o tráfego do banco de dados em mais de 90% e eliminando a lentidão extrema ao carregar a tela.
-  * Refresh Silencioso: Salvar dados não causa mais "pisca-pisca" ou travamento na tela de carregamento. Os dados sincronizam de forma oculta e fluida em background.
-  * Kanban sem Lag: Otimização gráfica aplicada no quadro Kanban. Digitar na barra de buscas tem zero lag, mesmo com centenas de pedidos simultâneos na memória.
+🛍️ ADICIONAIS & CATÁLOGO:
+  * Add-ons na Peça: Cadastre adicionais como "Colocar Nome" ou "Número" e ative-os por produto.
+  * Cobrança Inteligente: O valor dos Add-ons no pedido são somados em tempo real ao subtotal e repassados ao faturamento.
+  * Kanban Dinâmico: A ficha do pedido de produção estampa a tag de adicionais escolhida ("Nome") facilitando muito a vida da Equipe de Arte.
+  * Multi-Categorias no Filtro: A correção total do banco agora permite achar um produto independente de por qual de suas categorias cadastradas for pesquisada na lupa ou nos filtros laterais.
+
+(25.7.0) Correções Gerais:
+  * Exclusão Manual de Vendas no Financeiro para limpar testes irreais que sujariam a contabilidade.
+  * Divisão visual da contagem de Estoque e Matéria-Prima no painel principal de Produtos.
 
 (25.5.0) Financeiro Real:
   * Filtro de Período Dinâmico: Agora é possível selecionar o Mês e Ano para gerar relatórios reais em tempo real.
