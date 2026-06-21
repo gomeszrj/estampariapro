@@ -48,27 +48,41 @@ export const productService = {
 
     async create(product: Omit<Product, 'id'>) {
         const dbProduct = mapProductToDB(product);
-        const { data, error } = await supabase
-            .from('products')
-            .insert([dbProduct])
-            .select()
-            .single();
+        
+        let res = await supabase.from('products').insert([dbProduct]).select().single();
+        
+        // AUTO-FALLBACK: Se o Supabase recusar a inserção por não ter as colunas novas (addons/categories),
+        // ele remove essas colunas dinamicamente e tenta salvar de novo, garantindo que o cliente não fique com o sistema quebrado
+        if (res.error && (res.error.message.includes('addons') || res.error.message.includes('categories') || res.error.message.includes('does not exist'))) {
+            console.warn("⚠️ Banco desatualizado detectado! Removendo propriedades novas para forçar a gravação segura...");
+            const fallbackDbProduct = { ...dbProduct };
+            delete fallbackDbProduct.addons;
+            delete fallbackDbProduct.categories;
+            
+            res = await supabase.from('products').insert([fallbackDbProduct]).select().single();
+        }
 
-        if (error) throw error;
-        return mapProductFromDB(data);
+        if (res.error) throw res.error;
+        return mapProductFromDB(res.data);
     },
 
     async update(id: string, updates: Partial<Product>) {
-        const dbUpdates = mapProductToDB(updates as Product); // Partial mapping helper needed ideally
-        const { data, error } = await supabase
-            .from('products')
-            .update(dbUpdates)
-            .eq('id', id)
-            .select()
-            .single();
+        const dbUpdates = mapProductToDB(updates as Product);
+        
+        let res = await supabase.from('products').update(dbUpdates).eq('id', id).select().single();
+        
+        // AUTO-FALLBACK na Atualização
+        if (res.error && (res.error.message.includes('addons') || res.error.message.includes('categories') || res.error.message.includes('does not exist'))) {
+            console.warn("⚠️ Banco desatualizado detectado! Omitindo colunas novas no update...");
+            const fallbackDbUpdates = { ...dbUpdates };
+            delete fallbackDbUpdates.addons;
+            delete fallbackDbUpdates.categories;
+            
+            res = await supabase.from('products').update(fallbackDbUpdates).eq('id', id).select().single();
+        }
 
-        if (error) throw error;
-        return mapProductFromDB(data);
+        if (res.error) throw res.error;
+        return mapProductFromDB(res.data);
     },
 
     async delete(id: string) {
