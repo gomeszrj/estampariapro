@@ -338,10 +338,14 @@ export const orderService = {
             }
 
             if (updates.items.length > 0) {
+                // UUID regex: formato xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
                 const dbItems = updates.items.map(item => {
                     const mapped = mapOrderItemToDB(item);
                     const dbItem: any = { ...mapped, order_id: id };
-                    if (item.id && !item.id.toString().startsWith('temp-')) {
+                    // Somente incluir o id se for um UUID real do banco (não temporário)
+                    // IDs temporários: gerados por Math.random() ("0.xxx"), prefixo 'temp-', ou não-UUID
+                    if (item.id && UUID_REGEX.test(item.id.toString())) {
                         dbItem.id = item.id;
                     }
                     return dbItem;

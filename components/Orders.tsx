@@ -321,13 +321,17 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
     setOrderType(order.orderType || OrderType.SALE);
     setPaymentStatus(order.paymentStatus || PaymentStatus.PENDING);
     setSupplierId(order.supplierId || '');
+    // FIX BUG: Preservar id e unitPrice originais dos itens para o upsert funcionar corretamente
     setParsedItems((order.items || []).length > 0 ? (order.items || []).map(i => ({
+      _dbId: i.id,           // ID real do banco — necessário para upsert no update
+      _unitPrice: i.unitPrice, // Preço unitário salvo — evita sobrescrever com basePrice
       product: i.productName,
       grade: (i.gradeLabel || 'Unidade') as any,
       size: i.size || 'UN',
       quantity: i.quantity,
       fabric: i.fabricName,
-      selectedVariations: i.selectedVariations
+      selectedVariations: i.selectedVariations,
+      selectedAddons: i.selectedAddons
     })) : [{ product: '', grade: 'Masculino', size: 'G', quantity: 1 }]);
 
     // Set Custom Amount if exists
@@ -514,10 +518,16 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
     setIsSaving(true);
 
     try {
+      // FIX BUG: Respeitar unitPrice original do item; usar basePrice do produto apenas como fallback;
+      // NUNCA sobrescrever preço salvo com R$35 fixo
       const calculatedTotal = parsedItems.reduce((acc, curr) => {
         const prod = productsByName.get((curr.product || '').trim().toLowerCase());
-        const price = prod ? prod.basePrice : 35;
-        return acc + (curr.quantity || 0) * price;
+        const addonsPrice = (curr.selectedAddons || []).reduce((sum, a) => sum + (Number(a.price) || 0), 0);
+        // Prioridade: 1) unitPrice salvo do item (_unitPrice), 2) basePrice do produto, 3) 35 fallback
+        const price = (curr as any)._unitPrice != null
+          ? (curr as any)._unitPrice
+          : (prod ? prod.basePrice : 35);
+        return acc + (curr.quantity || 0) * (price + addonsPrice);
       }, 0);
 
       const parsedDiscount = typeof discountValue === 'number' ? discountValue : (parseFloat((discountValue || "0").toString()) || 0);
@@ -597,8 +607,19 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
             finalSize = 'UN';
           }
 
+          // FIX BUG: Respeitar unitPrice original do item ao editar;
+          // usar basePrice do produto apenas para itens NOVOS sem preço definido
+          const savedUnitPrice = (item as any)._unitPrice;
+          const finalUnitPrice = savedUnitPrice != null
+            ? savedUnitPrice
+            : (prod ? prod.basePrice : 35);
+
+          // FIX BUG: Preservar o id real do banco para o upsert funcionar;
+          // itens novos (sem _dbId) ficam sem id e serão inseridos como novos
+          const savedDbId = (item as any)._dbId;
+
           return {
-            id: Math.random().toString(),
+            id: savedDbId || Math.random().toString(),
             productId: prod ? prod.id : 'p-custom',
             productName: item.product || 'Personalizado',
             fabricId: 'f-custom',
@@ -606,10 +627,11 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
             gradeLabel: finalGrade,
             size: finalSize,
             quantity: item.quantity || 0,
-            unitPrice: prod ? prod.basePrice : 35,
+            unitPrice: finalUnitPrice,
             supplierId: itemSupplierIds[idx] || undefined,  // fornecedor deste item
             unitCost: itemUnitCosts[idx] ?? 0,              // custo snapshot
-            selectedVariations: item.selectedVariations
+            selectedVariations: item.selectedVariations,
+            selectedAddons: item.selectedAddons
           };
         })
       };
