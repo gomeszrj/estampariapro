@@ -619,7 +619,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
           const savedDbId = (item as any)._dbId;
 
           return {
-            id: savedDbId || Math.random().toString(),
+            id: savedDbId || `temp-${Math.random().toString()}`,
             productId: prod ? prod.id : 'p-custom',
             productName: item.product || 'Personalizado',
             fabricId: 'f-custom',

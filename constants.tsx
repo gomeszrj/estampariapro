@@ -3,9 +3,13 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 21.9 -> 22.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '25.8.1';
+export const SYSTEM_VERSION = '25.8.2';
 export const APP_NAME = 'Gomesz Speed Print';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 25.8.1 — "Correção de Pedidos" (25/07/2026):
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 25.8.2 — "Auto-Healing de Pedidos" (25/07/2026):
+
+🚑 CORREÇÃO DE EMERGÊNCIA — SALVAMENTO DE ITENS:
+  * Novo Motor de Auto-Healing: Foi reescrito o motor de salvamento de itens do banco de dados (OrderService). Quando a estrutura do banco de dados está defasada e recusa uma coluna nova (ex: \`selected_addons\`), o sistema agora isola essa coluna, salva no polyfill JSON (\`__extensions\`) e prossegue com o salvamento de forma transparente.
+  * Correção de Falhas Silenciosas: Corrigido o bug catastrófico onde tentar criar ou editar pedidos não salvava os itens (e não exibia erro) devido a falhas estritas no schema do PostgreSQL durante o Upsert.
 
 🐛 CORREÇÕES CRÍTICAS — MÓDULO DE PEDIDOS:
   * Itens do Pedido: Resolvido bug que impedia os produtos adicionados ao pedido de serem salvos corretamente ao editar. O sistema agora preserva o ID real de cada item no banco, garantindo que edições sejam aplicadas sem duplicação ou perda de dados.

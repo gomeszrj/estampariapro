@@ -103,6 +103,44 @@ export const orderService = {
         };
     },
 
+    // Helper robusto para auto-healing de banco de dados
+    async _safeDbOperation(operation: 'insert' | 'upsert', dbItems: any[]) {
+        if (!dbItems || dbItems.length === 0) return null;
+        
+        let res = await supabase.from('order_items')[operation](dbItems as any);
+        let retries = 0;
+        
+        while (res.error && retries < 5) {
+            const errMsg = res.error.message || '';
+            // Catch BOTH PostgREST schema cache error and Postgres missing column error
+            const matchCache = errMsg.match(/Could not find the '(.*?)' column/);
+            const matchPg = errMsg.match(/column "(.*?)" of relation/);
+            
+            const col = matchCache ? matchCache[1] : (matchPg ? matchPg[1] : null);
+            
+            if (col) {
+                console.warn(`⚠️ Auto-Fix OrderItems: Movendo coluna '${col}' (faltante) para o Polyfill...`);
+                
+                dbItems.forEach(dbItem => {
+                    if (!dbItem.selected_variations) dbItem.selected_variations = {};
+                    if (!dbItem.selected_variations.__extensions) dbItem.selected_variations.__extensions = {};
+                    if (dbItem[col] !== undefined) {
+                        dbItem.selected_variations.__extensions[col] = dbItem[col];
+                        delete dbItem[col];
+                    }
+                });
+                
+                res = await supabase.from('order_items')[operation](dbItems as any);
+                retries++;
+            } else {
+                break;
+            }
+        }
+        
+        if (res.error) throw res.error;
+        return res;
+    },
+
     async create(order: Omit<Order, 'id'>) {
         // 1. Create Order
         const dbOrder = mapOrderToDB(order);
@@ -121,42 +159,8 @@ export const orderService = {
                 order_id: orderData.id
             }));
 
-            let itemsRes = await supabase.from('order_items').insert(dbItems);
-            
-            // AUTO-HEALING & POLYFILL for Order Items
-            let itemsRetries = 0;
-            while (itemsRes.error && itemsRetries < 5) {
-                const errMsg = itemsRes.error.message;
-                const match = errMsg.match(/Could not find the '(.*?)' column/);
-                
-                if (match && match[1]) {
-                    const col = match[1];
-                    console.warn(`⚠️ Auto-Fix OrderItems: Salvando '${col}' no Polyfill...`);
-                    
-                    dbItems.forEach(dbItem => {
-                        if (!dbItem.selected_variations) dbItem.selected_variations = {};
-                        if (!dbItem.selected_variations.__extensions) dbItem.selected_variations.__extensions = {};
-                        dbItem.selected_variations.__extensions[col] = dbItem[col];
-                        delete dbItem[col];
-                    });
-                    
-                    itemsRes = await supabase.from('order_items').insert(dbItems);
-                    itemsRetries++;
-                } else if (errMsg.includes('does not exist')) {
-                    dbItems.forEach(dbItem => {
-                        if (!dbItem.selected_variations) dbItem.selected_variations = {};
-                        if (!dbItem.selected_variations.__extensions) dbItem.selected_variations.__extensions = {};
-                        if (dbItem.selected_addons !== undefined) dbItem.selected_variations.__extensions['selected_addons'] = dbItem.selected_addons;
-                        delete dbItem.selected_addons;
-                    });
-                    itemsRes = await supabase.from('order_items').insert(dbItems);
-                    break;
-                } else {
-                    break;
-                }
-            }
-
-            if (itemsRes.error) throw itemsRes.error;
+            // Usando o helper com auto-healing
+            await this._safeDbOperation('insert', dbItems);
 
             // NEW: Deduct stock from physical products
             for (const item of order.items) {
@@ -338,10 +342,7 @@ export const orderService = {
             }
 
             if (updates.items.length > 0) {
-                // UUID regex: formato xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-                const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-                // Separar itens existentes (com UUID real) de itens novos (sem UUID)
+                // Separar itens existentes (com UUID real ou ID antigo armazenado) de itens novos (temp-)
                 const existingItems: any[] = [];
                 const newItems: any[] = [];
 
@@ -349,7 +350,7 @@ export const orderService = {
                     const mapped = mapOrderItemToDB(item);
                     const dbItem: any = { ...mapped, order_id: id };
                     
-                    if (item.id && UUID_REGEX.test(item.id.toString())) {
+                    if (item.id && !item.id.toString().startsWith('temp-')) {
                         // Item existente: inclui o id para upsert atualizar o registro correto
                         dbItem.id = item.id;
                         existingItems.push(dbItem);
@@ -359,20 +360,14 @@ export const orderService = {
                     }
                 });
 
-                // Upsert apenas os items que já existem no banco
+                // Upsert apenas os items que já existem no banco (com auto-healing)
                 if (existingItems.length > 0) {
-                    const { error: upsertError } = await supabase
-                        .from('order_items')
-                        .upsert(existingItems);
-                    if (upsertError) throw upsertError;
+                    await this._safeDbOperation('upsert', existingItems);
                 }
 
-                // Insert para items novos (deixa o banco gerar o UUID)
+                // Insert para items novos (deixa o banco gerar o UUID, com auto-healing)
                 if (newItems.length > 0) {
-                    const { error: insertError } = await supabase
-                        .from('order_items')
-                        .insert(newItems);
-                    if (insertError) throw insertError;
+                    await this._safeDbOperation('insert', newItems);
                 }
             }
         }
