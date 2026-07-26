@@ -340,22 +340,40 @@ export const orderService = {
             if (updates.items.length > 0) {
                 // UUID regex: formato xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
                 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-                const dbItems = updates.items.map(item => {
+
+                // Separar itens existentes (com UUID real) de itens novos (sem UUID)
+                const existingItems: any[] = [];
+                const newItems: any[] = [];
+
+                updates.items.forEach(item => {
                     const mapped = mapOrderItemToDB(item);
                     const dbItem: any = { ...mapped, order_id: id };
-                    // Somente incluir o id se for um UUID real do banco (não temporário)
-                    // IDs temporários: gerados por Math.random() ("0.xxx"), prefixo 'temp-', ou não-UUID
+                    
                     if (item.id && UUID_REGEX.test(item.id.toString())) {
+                        // Item existente: inclui o id para upsert atualizar o registro correto
                         dbItem.id = item.id;
+                        existingItems.push(dbItem);
+                    } else {
+                        // Item novo: sem id para o banco gerar um UUID automaticamente
+                        newItems.push(dbItem);
                     }
-                    return dbItem;
                 });
 
-                const { error: upsertError } = await supabase
-                    .from('order_items')
-                    .upsert(dbItems);
+                // Upsert apenas os items que já existem no banco
+                if (existingItems.length > 0) {
+                    const { error: upsertError } = await supabase
+                        .from('order_items')
+                        .upsert(existingItems);
+                    if (upsertError) throw upsertError;
+                }
 
-                if (upsertError) throw upsertError;
+                // Insert para items novos (deixa o banco gerar o UUID)
+                if (newItems.length > 0) {
+                    const { error: insertError } = await supabase
+                        .from('order_items')
+                        .insert(newItems);
+                    if (insertError) throw insertError;
+                }
             }
         }
 

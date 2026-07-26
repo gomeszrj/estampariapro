@@ -3,11 +3,16 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 21.9 -> 22.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '25.8.0';
+export const SYSTEM_VERSION = '25.8.1';
 export const APP_NAME = 'Gomesz Speed Print';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 25.8.0 — "Personalização Avançada" (21/06/2026):
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 25.8.1 — "Correção de Pedidos" (25/07/2026):
 
-🛍️ ADICIONAIS & CATÁLOGO:
+🐛 CORREÇÕES CRÍTICAS — MÓDULO DE PEDIDOS:
+  * Itens do Pedido: Resolvido bug que impedia os produtos adicionados ao pedido de serem salvos corretamente ao editar. O sistema agora preserva o ID real de cada item no banco, garantindo que edições sejam aplicadas sem duplicação ou perda de dados.
+  * Preços e Descontos: Eliminado o bug que aplicava descontos e alterava valores sem autorização ao finalizar um pedido. O sistema agora respeita o preço unitário original de cada item ao recalcular totais, usando o preço do produto apenas como referência para itens novos.
+  * Adicionais (Add-ons): Os adicionais de personalização (Nome, Número, etc.) selecionados nos itens agora são corretamente carregados ao abrir um pedido para edição e persistidos ao salvar.
+
+(25.8.0) Personalização Avançada:
   * Add-ons na Peça: Cadastre adicionais como "Colocar Nome" ou "Número" e ative-os por produto.
   * Cobrança Inteligente: O valor dos Add-ons no pedido são somados em tempo real ao subtotal e repassados ao faturamento.
   * Kanban Dinâmico: A ficha do pedido de produção estampa a tag de adicionais escolhida ("Nome") facilitando muito a vida da Equipe de Arte.
