@@ -4,6 +4,30 @@ Registro de todas as alterações relevantes e marcos de versão do ERP Multi-Te
 
 ---
 
+## [v25.9.0] — 2026-07-31
+### ✅ Correções Críticas de Persistência
+- **Grade de Produto salva corretamente:** O mapper do banco de dados (`mapProductToDB`) foi reescrito do zero como mapper explícito, eliminando conflito de colunas que impedia os tamanhos selecionados (P, M, G, etc.) de serem salvos.
+- **Custo de Fornecedor salva corretamente:** O mecanismo de `upsert` com constraint incompleta (sem `tenant_id`) foi substituído por lógica explícita de `SELECT → UPDATE ou INSERT`, compatível com as políticas de RLS do Supabase.
+- **Botão Salvar Produto corrigido:** O botão "Salvar Alterações" estava posicionado fora da tag `<form>`. Corrigido com `id="product-edit-form"` no form e atributo `form=` no botão, usando HTML5 nativo.
+- **Auto-Healing seguro:** O mecanismo de polyfill JSON (`__extensions`) foi corrigido para não mais sobrescrever as chaves reais de grades de tamanho ao salvar extensões.
+
+### 🆕 Nova Funcionalidade — Fornecedor no Card do Pedido
+- Cada card de pedido agora exibe visualmente o fornecedor vinculado aos itens.
+- **1 fornecedor:** exibe o nome completo (badge azul/índigo).
+- **Múltiplos fornecedores:** exibe a contagem (badge roxo).
+- **Fallback:** se apenas o fornecedor padrão do pedido estiver configurado, ele também é exibido.
+
+### 🐛 Correções Gerais
+- **Cor do lucro:** A cor do campo de lucro no card agora reflete o valor real (`profit >= 0`), não mais o status de pagamento.
+- **`total_cost` persistido:** Custo total do pedido agora é gravado e lido corretamente do banco de dados (nova coluna + mapeamento bidirecional).
+- **Cálculo de receita na edição:** A tela de Itens do Pedido agora respeita o preço original de cada item ao calcular o subtotal, em vez de usar o preço do catálogo como substituto.
+- **Log de erros de fornecedor:** Erros ao salvar custos de fornecedores agora aparecem no console para facilitar diagnóstico.
+
+### 🗄️ Migração SQL
+- **`20260731000000_add_order_total_cost.sql`:** Nova migração que adiciona a coluna `total_cost NUMERIC(12,2)` na tabela `orders`.
+
+---
+
 ## [v25.8.0] — 2026-06-21
 ### Adicionado & Melhorado
 - **Adicionais de Personalização em Produtos (Add-ons)**: Inclusão da opção de configurar serviços extras como "Nome" e "Número" com valores adicionais (ativação/desativação) diretamente no cadastro de Produtos.

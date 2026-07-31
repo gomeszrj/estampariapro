@@ -175,14 +175,35 @@ export const supplierService = {
   }) {
     const tenantId = await getMyTenantId();
 
-    // Inclui tenant_id no payload — garante correto isolamento no upsert
-    const payload = { ...supplierProduct, tenant_id: tenantId };
-
-    const { data, error } = await supabase
+    // Verifica se já existe um registro para esse fornecedor + produto + tenant
+    const { data: existing } = await supabase
       .from('product_suppliers')
-      .upsert(payload, { onConflict: 'supplier_id, product_id' })
-      .select()
-      .single();
+      .select('id')
+      .eq('supplier_id', supplierProduct.supplier_id)
+      .eq('product_id', supplierProduct.product_id)
+      .eq('tenant_id', tenantId)
+      .maybeSingle();
+
+    let data: any;
+    let error: any;
+
+    if (existing?.id) {
+      // UPDATE: registro já existe
+      ({ data, error } = await supabase
+        .from('product_suppliers')
+        .update({ cost_price: supplierProduct.cost_price, is_default: supplierProduct.is_default })
+        .eq('id', existing.id)
+        .eq('tenant_id', tenantId)
+        .select()
+        .single());
+    } else {
+      // INSERT: novo registro
+      ({ data, error } = await supabase
+        .from('product_suppliers')
+        .insert([{ ...supplierProduct, tenant_id: tenantId }])
+        .select()
+        .single());
+    }
 
     if (error) {
       console.error('Error saving supplier product:', error);

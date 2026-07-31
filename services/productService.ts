@@ -68,11 +68,15 @@ export const productService = {
                 res = await supabase.from('products').insert([dbProduct]).select().single();
                 retries++;
             } else if (errMsg.includes('does not exist')) {
-                if (!dbProduct.allowed_grades) dbProduct.allowed_grades = {};
-                if (!dbProduct.allowed_grades.__extensions) dbProduct.allowed_grades.__extensions = {};
-                dbProduct.allowed_grades.__extensions['addons'] = dbProduct.addons;
-                dbProduct.allowed_grades.__extensions['categories'] = dbProduct.categories;
-                dbProduct.allowed_grades.__extensions['material_variations'] = dbProduct.material_variations;
+                // Preserva o valor real de allowed_grades (grade de tamanhos)
+                // e guarda apenas as colunas inexistentes em __extensions
+                const realGrades = dbProduct.allowed_grades || {};
+                const extensions = realGrades.__extensions || {};
+                extensions['addons'] = dbProduct.addons;
+                extensions['categories'] = dbProduct.categories;
+                extensions['material_variations'] = dbProduct.material_variations;
+                // Mantém as chaves de tamanho existentes, apenas adiciona __extensions
+                dbProduct.allowed_grades = { ...realGrades, __extensions: extensions };
                 
                 delete dbProduct.addons;
                 delete dbProduct.categories;
@@ -113,13 +117,15 @@ export const productService = {
                 retries++;
             } else if (errMsg.includes('does not exist')) {
                 const { data: currentProduct } = await supabase.from('products').select('allowed_grades').eq('id', id).single();
-                let grades = currentProduct?.allowed_grades || {};
-                if (!grades.__extensions) grades.__extensions = {};
+                // Preserva o valor real de allowed_grades (grade de tamanhos)
+                const realGrades = currentProduct?.allowed_grades || {};
+                const extensions = realGrades.__extensions || {};
                 
-                if (dbUpdates.addons !== undefined) grades.__extensions['addons'] = dbUpdates.addons;
-                if (dbUpdates.categories !== undefined) grades.__extensions['categories'] = dbUpdates.categories;
-                if (dbUpdates.material_variations !== undefined) grades.__extensions['material_variations'] = dbUpdates.material_variations;
-                dbUpdates.allowed_grades = grades;
+                if (dbUpdates.addons !== undefined) extensions['addons'] = dbUpdates.addons;
+                if (dbUpdates.categories !== undefined) extensions['categories'] = dbUpdates.categories;
+                if (dbUpdates.material_variations !== undefined) extensions['material_variations'] = dbUpdates.material_variations;
+                // Mantém as chaves de tamanho existentes, apenas atualiza __extensions
+                dbUpdates.allowed_grades = { ...realGrades, __extensions: extensions };
 
                 delete dbUpdates.addons;
                 delete dbUpdates.categories;
@@ -342,53 +348,41 @@ const mapProductFromDB = (dbItem: any): Product => {
 };
 
 const mapProductToDB = (appItem: Partial<Product>) => {
-    const dbItem: any = { ...appItem };
+    // MAPPER EXPLÍCITO: só inclui colunas que existem no banco.
+    // Evita erros de "column does not exist" causados pelo spread-and-delete.
+    const dbItem: any = {};
 
-    // Map camelCase to snake_case for DB
-    if (appItem.imageUrl !== undefined) {
-        dbItem.image_url = appItem.imageUrl;
-        delete dbItem.imageUrl;
-    }
-    if (appItem.backImageUrl !== undefined) {
-        dbItem.back_image_url = appItem.backImageUrl;
-        delete dbItem.backImageUrl;
-    }
-    if (appItem.basePrice !== undefined) {
-        dbItem.base_price = appItem.basePrice;
-        delete dbItem.basePrice;
-    }
-    if (appItem.costPrice !== undefined) {
-        dbItem.cost_price = appItem.costPrice;
-        delete dbItem.costPrice;
-    }
-    if (appItem.allowedGrades !== undefined) {
-        dbItem.allowed_grades = appItem.allowedGrades;
-        delete dbItem.allowedGrades;
-    }
-    if (appItem.materialVariations !== undefined) {
-        dbItem.material_variations = appItem.materialVariations;
-        delete dbItem.materialVariations;
-    }
-    if (appItem.category !== undefined) {
-        dbItem.category = appItem.category;
-    }
+    if (appItem.sku !== undefined)       dbItem.sku = appItem.sku;
+    if (appItem.name !== undefined)      dbItem.name = appItem.name;
+    if (appItem.status !== undefined)    dbItem.status = appItem.status;
+    if (appItem.description !== undefined) dbItem.description = appItem.description;
+    if (appItem.published !== undefined) dbItem.published = appItem.published;
+    if (appItem.stock !== undefined)     dbItem.stock = appItem.stock;
+
+    // Preços
+    if (appItem.basePrice !== undefined)  dbItem.base_price = appItem.basePrice;
+    if (appItem.costPrice !== undefined)  dbItem.cost_price = appItem.costPrice;
+
+    // Imagens
+    if (appItem.imageUrl !== undefined)     dbItem.image_url = appItem.imageUrl;
+    if (appItem.backImageUrl !== undefined) dbItem.back_image_url = appItem.backImageUrl;
+
+    // Grade de tamanhos e medidas
+    if (appItem.allowedGrades !== undefined) dbItem.allowed_grades = appItem.allowedGrades;
+    if (appItem.measurements !== undefined)  dbItem.measurements = appItem.measurements;
+
+    // Categorias (legado + novo JSONB)
     if (appItem.categories !== undefined) {
         dbItem.categories = appItem.categories;
-        // fallback para query
-        if (appItem.categories.length > 0) {
-            dbItem.category = appItem.categories[0];
-        } else {
-            dbItem.category = '';
-        }
-        delete dbItem.categories; // remove camelCase to prevent conflict
-        dbItem.categories = appItem.categories; // re-add for JSONB if snake_case wasn't needed, but it matches 'categories'
+        // campo legado 'category' como fallback para queries antigas
+        dbItem.category = appItem.categories.length > 0 ? appItem.categories[0] : '';
+    } else if (appItem.category !== undefined) {
+        dbItem.category = appItem.category;
     }
-    if (appItem.addons !== undefined) {
-        dbItem.addons = appItem.addons;
-    }
-    if (appItem.stock !== undefined) {
-        dbItem.stock = appItem.stock;
-    }
-    // delete other camelCase props if they were copied
+
+    // Variações de material e adicionais
+    if (appItem.materialVariations !== undefined) dbItem.material_variations = appItem.materialVariations;
+    if (appItem.addons !== undefined)              dbItem.addons = appItem.addons;
+
     return dbItem;
 };

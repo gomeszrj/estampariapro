@@ -48,7 +48,11 @@ const OrderItemsForm: React.FC<OrderItemsFormProps> = ({
   const totalRevenue = parsedItems.reduce((acc, curr) => {
     const prod = productsByName.get((curr.product || '').trim().toLowerCase());
     const addonsPrice = (curr.selectedAddons || []).reduce((sum, a) => sum + (Number(a.price) || 0), 0);
-    return acc + (curr.quantity || 0) * ((prod ? prod.basePrice : 35) + addonsPrice);
+    // Respeita o preço unitário salvo no item (_unitPrice) se existir
+    const unitPrice = (curr as any)._unitPrice != null
+      ? (curr as any)._unitPrice
+      : (prod ? prod.basePrice : 35);
+    return acc + (curr.quantity || 0) * (unitPrice + addonsPrice);
   }, 0);
 
   const parsedDiscount = typeof discountValue === 'number'

@@ -121,6 +121,7 @@ export const Suppliers: React.FC = () => {
       setSelectedProductId('');
       setCostPrice('');
     } catch (e) {
+      console.error('Erro ao adicionar custo de fornecedor:', e);
       toast.error('Erro ao adicionar custo');
     }
   };

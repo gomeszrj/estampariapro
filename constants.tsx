@@ -3,18 +3,31 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 21.9 -> 22.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '25.8.2';
+export const SYSTEM_VERSION = '25.9.0';
 export const APP_NAME = 'Gomesz Speed Print';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 25.8.2 — "Auto-Healing de Pedidos" (25/07/2026):
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 25.9.0 — "Estabilidade e Fornecedor no Card" (31/07/2026):
 
-🚑 CORREÇÃO DE EMERGÊNCIA — SALVAMENTO DE ITENS:
-  * Novo Motor de Auto-Healing: Foi reescrito o motor de salvamento de itens do banco de dados (OrderService). Quando a estrutura do banco de dados está defasada e recusa uma coluna nova (ex: \`selected_addons\`), o sistema agora isola essa coluna, salva no polyfill JSON (\`__extensions\`) e prossegue com o salvamento de forma transparente.
-  * Correção de Falhas Silenciosas: Corrigido o bug catastrófico onde tentar criar ou editar pedidos não salvava os itens (e não exibia erro) devido a falhas estritas no schema do PostgreSQL durante o Upsert.
+✅ CORREÇÕES CRÍTICAS DE PERSISTÊNCIA:
+  * Grade de Produto: Corrigido bug que impedia os tamanhos selecionados (P, M, G...) de serem salvos. O mapper do banco foi reescrito do zero para evitar conflitos de colunas.
+  * Custo de Fornecedor: Corrigido bug que impedia o valor de custo cadastrado por fornecedor de ser salvo. O upsert com constraint incompleta foi substituído por lógica explícita de INSERT/UPDATE com validação de tenant.
+  * Botão Salvar Produto: Corrigido problema onde o botão "Salvar Alterações" não acionava o envio do formulário por estar posicionado fora da tag <form>.
+  * Auto-Healing Seguro: O mecanismo de compatibilidade com banco desatualizado foi corrigido para não mais sobrescrever a grade de tamanhos ao salvar extensões.
 
-🐛 CORREÇÕES CRÍTICAS — MÓDULO DE PEDIDOS:
-  * Itens do Pedido: Resolvido bug que impedia os produtos adicionados ao pedido de serem salvos corretamente ao editar. O sistema agora preserva o ID real de cada item no banco, garantindo que edições sejam aplicadas sem duplicação ou perda de dados.
-  * Preços e Descontos: Eliminado o bug que aplicava descontos e alterava valores sem autorização ao finalizar um pedido. O sistema agora respeita o preço unitário original de cada item ao recalcular totais, usando o preço do produto apenas como referência para itens novos.
-  * Adicionais (Add-ons): Os adicionais de personalização (Nome, Número, etc.) selecionados nos itens agora são corretamente carregados ao abrir um pedido para edição e persistidos ao salvar.
+🆕 NOVA FUNCIONALIDADE — FORNECEDOR NO CARD:
+  * Cada card de pedido agora exibe o nome do fornecedor vinculado aos itens.
+  * Pedido com 1 fornecedor: exibe o nome completo (badge azul).
+  * Pedido com múltiplos fornecedores: exibe a contagem (badge roxo).
+  * Fallback: se apenas o fornecedor padrão do pedido estiver definido, ele também aparece.
+
+🐛 CORREÇÕES GERAIS:
+  * Lucro no card: A cor do lucro agora reflete o valor real (verde = lucro, vermelho = prejuízo), independente do status de pagamento.
+  * Custo total do pedido (total_cost) agora é salvo e lido corretamente do banco, garantindo cálculo de lucro preciso nos cards.
+  * Cálculo de receita na tela de Itens do Pedido: ao editar um pedido existente, o subtotal exibido agora respeita o preço original de cada item em vez de usar o preço do catálogo como substituto.
+
+(25.8.2) Auto-Healing de Pedidos:
+  * Novo Motor de Auto-Healing: reescrita do motor de salvamento de itens com polyfill JSON (__extensions).
+  * Preços e Descontos: Eliminado bug que aplicava descontos sem autorização ao finalizar pedido.
+  * Adicionais (Add-ons): corretamente salvos e carregados na edição.
 
 (25.8.0) Personalização Avançada:
   * Add-ons na Peça: Cadastre adicionais como "Colocar Nome" ou "Número" e ative-os por produto.

@@ -1360,22 +1360,47 @@ value={internalNotes}
                     {order.deliveryDate ? order.deliveryDate.split('-').reverse().join('/') : '--/--'}
                   </div>
                 </div>
-                <p className="text-[10px] text-slate-500 mb-4 truncate">{mainProductName}</p>
+                <p className="text-[10px] text-slate-500 mb-3 truncate">{mainProductName}</p>
 
-                {/* Badge de múltiplos fornecedores */}
-                {hasMultipleSuppliers && (
-                  <div className="flex items-center gap-1.5 mb-3 bg-purple-500/10 border border-purple-500/20 rounded-lg px-2.5 py-1.5 w-fit">
-                    <Truck className="w-3 h-3 text-purple-400" />
-                    <span className="text-[9px] font-black text-purple-400 uppercase tracking-widest">
-                      {distinctSupplierIds.length} fornecedores
-                    </span>
+                {/* Fornecedor do Pedido */}
+                {distinctSupplierIds.length > 0 && (
+                  <div className="flex items-center gap-1.5 mb-3">
+                    {hasMultipleSuppliers ? (
+                      <div className="flex items-center gap-1.5 bg-purple-500/10 border border-purple-500/20 rounded-lg px-2.5 py-1.5 w-fit">
+                        <Truck className="w-3 h-3 text-purple-400 shrink-0" />
+                        <span className="text-[9px] font-black text-purple-400 uppercase tracking-widest">
+                          {distinctSupplierIds.length} fornecedores
+                        </span>
+                      </div>
+                    ) : (
+                      (() => {
+                        const sup = suppliers.find((s: any) => s.id === distinctSupplierIds[0]);
+                        return sup ? (
+                          <div className="flex items-center gap-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-lg px-2.5 py-1.5 w-fit max-w-full overflow-hidden">
+                            <Truck className="w-3 h-3 text-indigo-400 shrink-0" />
+                            <span className="text-[9px] font-black text-indigo-300 uppercase tracking-widest truncate">
+                              {sup.name}
+                            </span>
+                          </div>
+                        ) : null;
+                      })()
+                    )}
                   </div>
                 )}
+                {distinctSupplierIds.length === 0 && order.supplierId && (() => {
+                  const sup = suppliers.find((s: any) => s.id === order.supplierId);
+                  return sup ? (
+                    <div className="flex items-center gap-1.5 mb-3 bg-slate-700/20 border border-slate-700/30 rounded-lg px-2.5 py-1.5 w-fit max-w-full overflow-hidden">
+                      <Truck className="w-3 h-3 text-slate-400 shrink-0" />
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate">{sup.name}</span>
+                    </div>
+                  ) : null;
+                })()}
 
                 {/* Metrics Grid */}
-                <div className="grid grid-cols-4 gap-2 mb-6">
+                <div className="grid grid-cols-3 gap-2 mb-6">
                   <div>
-                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Quantidade</p>
+                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Qtd</p>
                     <p className="text-xs font-bold text-slate-300">{totalQuantity} un.</p>
                   </div>
                   <div>
@@ -1387,10 +1412,10 @@ value={internalNotes}
                     <p className={`text-xs font-bold ${isPaid ? 'text-emerald-500' : 'text-rose-500'}`}>
                       R$ {(order.amountPaid || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </p>
-                    <p className={`text-[8px] font-black mt-0.5 uppercase tracking-widest ${isPaid ? 'text-emerald-500/70' : 'text-rose-500/70'}`}>
+                    <p className={`text-[8px] font-black mt-0.5 uppercase tracking-widest ${profit >= 0 ? 'text-emerald-500/70' : 'text-rose-500/70'}`}>
                       Lucro
                     </p>
-                    <p className={`text-[10px] font-bold ${isPaid ? 'text-emerald-500' : 'text-rose-500'}`}>
+                    <p className={`text-[10px] font-bold ${profit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                       R$ {(profit || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </p>
                   </div>

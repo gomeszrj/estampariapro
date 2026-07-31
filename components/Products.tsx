@@ -1086,7 +1086,7 @@ const Products: React.FC = () => {
 
                         {/* Modal Body */}
                         <div className="flex-1 overflow-y-auto custom-scrollbar">
-                            <form className="p-8 space-y-10">
+                            <form id="product-edit-form" className="p-8 space-y-10" onSubmit={handleSave}>
                                 {/* 1. Basic Info & Image */}
                                 <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
                                     {/* Image */}
@@ -1290,7 +1290,7 @@ const Products: React.FC = () => {
                             <button onClick={() => setIsEditing(false)} className="px-6 py-3 rounded-2xl font-black uppercase text-xs tracking-widest text-slate-500 hover:text-white hover:bg-[#1e293b] transition-colors">
                                 Cancelar
                             </button>
-                            <button onClick={handleSave} className="px-8 py-3 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-indigo-900/20 transition-all flex items-center gap-2">
+                            <button type="submit" form="product-edit-form" className="px-8 py-3 bg-[#6366F1] hover:bg-[#4F46E5] text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-indigo-900/20 transition-all flex items-center gap-2">
                                 <Save className="w-4 h-4" /> Salvar Alterações
                             </button>
                         </div>
