@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Package, Search, Plus, Trash2, Edit2, Save, X, AlertCircle, Check, Image as ImageIcon, 
   Ruler, Eye, EyeOff, Download, Folder, LayoutGrid, List, MoreVertical, ChevronLeft, ChevronRight,
-  TrendingUp, Box, XCircle, Layers, PlusCircle, Tag, ToggleLeft, ToggleRight
+  TrendingUp, Box, XCircle, CheckCircle, Layers, PlusCircle, Tag, ToggleLeft, ToggleRight
 } from 'lucide-react';
 import { productService } from '../services/productService';
 import { supplierService } from '../services/supplierService';
@@ -315,9 +315,14 @@ const Products: React.FC = () => {
                 setSelectedProduct(null);
             }
             notify.success('Produto excluído.');
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error deleting product", error);
-            notify.error('Erro ao excluir produto.');
+            const errMsg = error.message || error.details || '';
+            if (errMsg.includes('violates foreign key constraint') || errMsg.includes('linked') || errMsg.includes('order_items') || errMsg.includes('product_suppliers')) {
+                notify.error('Este produto já possui vendas vinculadas e não pode ser excluído para não quebrar o financeiro. Por favor, desative-o em vez de excluí-lo.');
+            } else {
+                notify.error('Erro ao excluir produto.');
+            }
         }
     };
 
@@ -1114,16 +1119,30 @@ const Products: React.FC = () => {
                                         </div>
                                         <div className="bg-[#151B2B] p-4 rounded-xl border border-[#1e293b]">
                                             <div className="flex items-center justify-between mb-2">
-                                                <span className="text-xs font-bold text-slate-400 uppercase">Visibilidade</span>
+                                                <span className="text-xs font-bold text-slate-400 uppercase">Visibilidade na Loja</span>
                                                 <div
                                                     onClick={() => setEditingProduct({ ...editingProduct, published: !editingProduct?.published })}
-                                                    className={`cursor-pointer px-3 py-1 rounded-full border text-[10px] font-black uppercase flex items-center gap-2 ${editingProduct?.published ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}
+                                                    className={`cursor-pointer px-3 py-1 rounded-full border text-[10px] font-black uppercase flex items-center gap-2 ${editingProduct?.published ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-slate-500/10 border-slate-500/20 text-slate-400'}`}
                                                 >
                                                     {editingProduct?.published ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
                                                     {editingProduct?.published ? 'Visível na Loja' : 'Oculto na Loja'}
                                                 </div>
                                             </div>
                                             <p className="text-[10px] text-slate-500 leading-tight">Define se o produto aparece para clientes no link público.</p>
+                                            
+                                            <div className="h-px w-full bg-[#1e293b] my-4"></div>
+
+                                            <div className="flex items-center justify-between mb-2 mt-4">
+                                                <span className="text-xs font-bold text-slate-400 uppercase">Status no Sistema</span>
+                                                <div
+                                                    onClick={() => setEditingProduct({ ...editingProduct, status: editingProduct?.status === 'active' ? 'inactive' : 'active' })}
+                                                    className={`cursor-pointer px-3 py-1 rounded-full border text-[10px] font-black uppercase flex items-center gap-2 ${editingProduct?.status === 'active' ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}
+                                                >
+                                                    {editingProduct?.status === 'active' ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                                                    {editingProduct?.status === 'active' ? 'Ativo (Venda Disponível)' : 'Desativado (Não Temos)'}
+                                                </div>
+                                            </div>
+                                            <p className="text-[10px] text-slate-500 leading-tight">Se desativado, o produto não aparecerá na busca de novos pedidos internos.</p>
                                         </div>
                                     </div>
 

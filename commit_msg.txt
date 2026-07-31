@@ -1,4 +1,5 @@
-fix: grades de produto descartadas no update  
+feat: toggle de status e prevencao de exclusao  
   
-- Corrigido Auto-Healing em productService.ts que descartava a nova grade editada pelo usuario e restaurava a grade antiga.  
-- Corrigido OrderItemsForm.tsx que falhava ao carregar as grades do produto se houvessem espacos invisiveis  
+- Adicionado toggle Ativo/Desativado dentro do modal do Produto.  
+- Ocultados produtos desativados da busca (datalist) na hora de montar pedidos.  
+- Tratamento de erro customizado (FK Constraint) ao tentar excluir produto em uso.  

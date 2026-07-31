@@ -159,7 +159,7 @@ const OrderItemsForm: React.FC<OrderItemsFormProps> = ({
                       placeholder="Busque..."
                     />
                     <datalist id={`prod-list-${idx}`}>
-                      {(products || []).map(p => <option key={p.id} value={p.name} />)}
+                      {(products || []).filter(p => p.status !== 'inactive').map(p => <option key={p.id} value={p.name} />)}
                     </datalist>
                   </div>
                   <div className="md:col-span-8 flex gap-4">
