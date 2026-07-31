@@ -1,0 +1,4 @@
+fix: grades de produto descartadas no update  
+  
+- Corrigido Auto-Healing em productService.ts que descartava a nova grade editada pelo usuario e restaurava a grade antiga.  
+- Corrigido OrderItemsForm.tsx que falhava ao carregar as grades do produto se houvessem espacos invisiveis  

@@ -117,15 +117,22 @@ export const productService = {
                 retries++;
             } else if (errMsg.includes('does not exist')) {
                 const { data: currentProduct } = await supabase.from('products').select('allowed_grades').eq('id', id).single();
-                // Preserva o valor real de allowed_grades (grade de tamanhos)
-                const realGrades = currentProduct?.allowed_grades || {};
-                const extensions = realGrades.__extensions || {};
+                
+                const oldGrades = currentProduct?.allowed_grades || {};
+                const extensions = oldGrades.__extensions || {};
                 
                 if (dbUpdates.addons !== undefined) extensions['addons'] = dbUpdates.addons;
                 if (dbUpdates.categories !== undefined) extensions['categories'] = dbUpdates.categories;
                 if (dbUpdates.material_variations !== undefined) extensions['material_variations'] = dbUpdates.material_variations;
-                // Mantém as chaves de tamanho existentes, apenas atualiza __extensions
-                dbUpdates.allowed_grades = { ...realGrades, __extensions: extensions };
+                
+                // Se o usuário alterou a grade, usamos a nova. Senão, mantemos a antiga.
+                const newGrades = dbUpdates.allowed_grades !== undefined ? dbUpdates.allowed_grades : oldGrades;
+                
+                // Limpa __extensions do objeto base para evitar duplicação ou sujeira
+                const finalGrades = { ...newGrades };
+                if (finalGrades.__extensions) delete finalGrades.__extensions;
+
+                dbUpdates.allowed_grades = { ...finalGrades, __extensions: extensions };
 
                 delete dbUpdates.addons;
                 delete dbUpdates.categories;

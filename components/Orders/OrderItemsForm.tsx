@@ -93,7 +93,7 @@ const OrderItemsForm: React.FC<OrderItemsFormProps> = ({
           </div>
         ) : (
           parsedItems.map((item, idx) => {
-            const selectedProduct = productsByName.get((item.product || '').toLowerCase());
+            const selectedProduct = productsByName.get((item.product || '').trim().toLowerCase());
 
             let allowedGradesObj: Record<string, string[]> | undefined;
             if (selectedProduct?.allowedGrades) {
