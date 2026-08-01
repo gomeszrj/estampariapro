@@ -258,7 +258,6 @@ const Login: React.FC = () => {
                                 <Sparkles className="w-12 h-12 text-[#48C6EF]" />
                             </div>
                         </div>
-                    </div>
                     
                     <h1 className="text-5xl font-black tracking-widest text-white uppercase mb-1">ESTAMPARIA</h1>
                     <span className="text-3xl font-black bg-gradient-to-r from-[#48C6EF] to-[#8B5CF6] bg-clip-text text-transparent uppercase tracking-widest">PRO</span>
