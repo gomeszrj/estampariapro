@@ -732,6 +732,11 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
   const [statusTab, setStatusTab] = useState<OrderStatus | 'ALL'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+  
+  // Filtros avançados
+  const [showFilters, setShowFilters] = useState(false);
+  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
+  const [paymentFilter, setPaymentFilter] = useState<'all' | 'pending' | 'full'>('all');
 
   const tabCounts = {
     todos: contextOrders.length,
@@ -743,12 +748,37 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
   };
 
   const displayOrders = contextOrders.filter(o => {
+    // Status Filter
     if (statusTab !== 'ALL' && o.status !== statusTab) return false;
+    
+    // Search Filter
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
-      return (o.clientName?.toLowerCase().includes(q)) ||
-             (o.orderNumber?.toLowerCase().includes(q));
+      if (!(o.clientName?.toLowerCase().includes(q) || o.orderNumber?.toLowerCase().includes(q))) {
+        return false;
+      }
     }
+    
+    // Payment Filter
+    if (paymentFilter !== 'all') {
+      if (paymentFilter === 'pending' && o.paymentStatus === PaymentStatus.FULL) return false;
+      if (paymentFilter === 'full' && o.paymentStatus !== PaymentStatus.FULL) return false;
+    }
+    
+    // Date Filter (CreatedAt)
+    if (dateFilter !== 'all') {
+      const orderDate = new Date(o.createdAt);
+      const now = new Date();
+      if (dateFilter === 'today') {
+        if (orderDate.toDateString() !== now.toDateString()) return false;
+      } else if (dateFilter === 'week') {
+        const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        if (orderDate < oneWeekAgo) return false;
+      } else if (dateFilter === 'month') {
+        if (orderDate.getMonth() !== now.getMonth() || orderDate.getFullYear() !== now.getFullYear()) return false;
+      }
+    }
+    
     return true;
   }).sort((a, b) => {
     const da = new Date(a.createdAt).getTime();
@@ -809,13 +839,61 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
             <Plus className="w-4 h-4" />
             Novo pedido
           </button>
-          <button
-            onClick={() => {}}
-            className="bg-transparent border border-slate-700 hover:border-slate-500 text-slate-300 px-6 py-2.5 rounded-xl flex items-center gap-2 font-black transition-all text-[10px] tracking-widest uppercase"
-          >
-            <Settings2 className="w-4 h-4" />
-            Filtros
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`bg-transparent border ${dateFilter !== 'all' || paymentFilter !== 'all' ? 'border-emerald-500 text-emerald-400' : 'border-slate-700 hover:border-slate-500 text-slate-300'} px-6 py-2.5 rounded-xl flex items-center gap-2 font-black transition-all text-[10px] tracking-widest uppercase`}
+            >
+              <Settings2 className="w-4 h-4" />
+              Filtros
+              {(dateFilter !== 'all' || paymentFilter !== 'all') && <span className="bg-emerald-500 w-2 h-2 rounded-full absolute -top-1 -right-1 animate-pulse"></span>}
+            </button>
+            
+            {showFilters && (
+              <div className="absolute right-0 top-14 w-64 bg-[#0f172a] border border-[#1e293b] shadow-2xl shadow-black/80 rounded-2xl p-5 z-50 animate-in slide-in-from-top-2">
+                <div className="flex justify-between items-center mb-4 border-b border-[#1e293b] pb-2">
+                  <h4 className="text-white font-black uppercase text-[10px] tracking-widest">Filtros Avançados</h4>
+                  <button onClick={() => setShowFilters(false)} className="text-slate-500 hover:text-white"><X className="w-4 h-4"/></button>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[9px] font-bold text-slate-500 uppercase block mb-1">Período de Criação</label>
+                    <select 
+                      value={dateFilter} 
+                      onChange={(e) => setDateFilter(e.target.value as any)}
+                      className="w-full bg-[#151B2B] border border-[#1e293b] text-slate-300 text-xs rounded-lg px-3 py-2 outline-none"
+                    >
+                      <option value="all">Todo o período</option>
+                      <option value="today">Apenas Hoje</option>
+                      <option value="week">Últimos 7 dias</option>
+                      <option value="month">Este Mês</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="text-[9px] font-bold text-slate-500 uppercase block mb-1">Status de Pagamento</label>
+                    <select 
+                      value={paymentFilter} 
+                      onChange={(e) => setPaymentFilter(e.target.value as any)}
+                      className="w-full bg-[#151B2B] border border-[#1e293b] text-slate-300 text-xs rounded-lg px-3 py-2 outline-none"
+                    >
+                      <option value="all">Todos</option>
+                      <option value="pending">Apenas Pendentes (Fiado)</option>
+                      <option value="full">Apenas Pagos</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <button 
+                  onClick={() => { setDateFilter('all'); setPaymentFilter('all'); }}
+                  className="mt-4 w-full text-[9px] uppercase tracking-widest font-black text-slate-500 hover:text-rose-400 py-2 transition-colors"
+                >
+                  Limpar Filtros
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 

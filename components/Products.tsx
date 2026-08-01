@@ -898,11 +898,11 @@ const Products: React.FC = () => {
 
                         {/* Tabs */}
                         <div className="flex px-5 mt-6 border-b border-[#1e293b]">
-                            {['detalhes', 'fornecedores', 'estoque', 'histórico'].map((tab) => (
+                            {['detalhes', 'fornecedores'].map((tab) => (
                                 <button 
                                     key={tab}
                                     onClick={() => setSidebarTab(tab as any)}
-                                    className={`flex-1 pb-2 text-[10px] font-black uppercase tracking-widest transition-colors ${sidebarTab === tab || (tab === 'histórico' && sidebarTab === 'historico') ? 'text-white border-b-2 border-[#6366F1]' : 'text-slate-500 hover:text-slate-300'}`}
+                                    className={`flex-1 pb-2 text-[10px] font-black uppercase tracking-widest transition-colors ${sidebarTab === tab ? 'text-white border-b-2 border-[#6366F1]' : 'text-slate-500 hover:text-slate-300'}`}
                                 >
                                     {tab}
                                 </button>
@@ -1035,16 +1035,6 @@ const Products: React.FC = () => {
                                             <p className="text-[9px] text-slate-600 mt-1">Cadastre custos de fornecedores na aba Fornecedores do sistema.</p>
                                         </div>
                                     )}
-                                </div>
-                            )}
-                            {sidebarTab === 'estoque' && (
-                                <div className="text-center py-8 text-xs text-slate-500 font-bold">
-                                    Módulo de gestão de estoque físico em construção.
-                                </div>
-                            )}
-                            {sidebarTab === 'historico' && (
-                                <div className="text-center py-8 text-xs text-slate-500 font-bold">
-                                    Nenhum histórico de alterações.
                                 </div>
                             )}
                         </div>

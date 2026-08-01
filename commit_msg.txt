@@ -1,5 +1,0 @@
-feat: toggle de status e prevencao de exclusao  
-  
-- Adicionado toggle Ativo/Desativado dentro do modal do Produto.  
-- Ocultados produtos desativados da busca (datalist) na hora de montar pedidos.  
-- Tratamento de erro customizado (FK Constraint) ao tentar excluir produto em uso.  

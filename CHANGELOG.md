@@ -1,3 +1,10 @@
+## [v26.0.0] - 2026-07-31  
+### MAJOR UPDATE - Estabilizacao Total  
+- feat: Implementado menu Avancado de Filtros de Pedidos (Filtro por status de pagamento e periodo de criacao).  
+- feat: Remocao de abas inativas do modal de produtos.  
+- fix: Substituicao de alertas nativos na Loja Publica por Toasts elegantes.  
+- fix: Corrigido UX de erros no StoreControl.  
+  
 # CHANGELOG — EstampariaPro
 
 Registro de todas as alterações relevantes e marcos de versão do ERP Multi-Tenant SaaS EstampariaPro.

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { gmzStoreService, GmzProduct, GmzStoreSettings, GmzBanner, getTenantId } from '../services/gmzStoreService';
+import { notify } from './ui/toast';
 
 /* ═══════════════════════════════════════════════════════════
    TYPES
@@ -443,7 +444,7 @@ const CartCheckout: React.FC<{ cart: CartItem[], totalPrice: number, storeName: 
 
   const handleSubmit = async () => {
     if (!name || !phone) {
-      alert("Preencha nome e telefone!");
+      notify.error("Preencha nome e telefone!");
       return;
     }
     
@@ -509,7 +510,7 @@ const CartCheckout: React.FC<{ cart: CartItem[], totalPrice: number, storeName: 
       
       if (uploadFailed) {
         msg += `\n*Atenção:* Tentei enviar o arquivo da arte, mas o tamanho excedeu o limite. Estou enviando a arte diretamente aqui pelo WhatsApp!\n`;
-        alert("O seu arquivo era muito grande ou houve um erro no upload da arte. Seu pedido foi gerado com sucesso, mas por favor, envie o arquivo da sua arte aqui pelo WhatsApp logo em seguida!");
+        notify.warning("O arquivo era muito grande ou houve erro. Pedido gerado, mas envie a arte via WhatsApp logo em seguida!", { duration: 8000 });
       }
 
       window.open(`https://wa.me/${whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`, '_blank');
@@ -517,7 +518,7 @@ const CartCheckout: React.FC<{ cart: CartItem[], totalPrice: number, storeName: 
       
     } catch(err) {
       console.error(err);
-      alert("Erro ao enviar pedido. Tente novamente.");
+      notify.error("Erro ao enviar pedido. Tente novamente.");
     } finally {
       setSubmitting(false);
     }
