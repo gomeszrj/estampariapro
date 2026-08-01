@@ -3,9 +3,26 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 21.9 -> 22.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '26.0.0';
+export const SYSTEM_VERSION = '26.1.0';
 export const APP_NAME = 'Gomesz Speed Print';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 25.9.0 — "Estabilidade e Fornecedor no Card" (31/07/2026):
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 26.1.0 — "Login Glassmorphic e Saída de Caixa de Fornecedores" (01/08/2026):
+
+✅ DESIGN & ESTÉTICA FRONTEND (LOGIN PREMIUM):
+  * Logo Remodelada: A arte abstrata antiga foi totalmente removida, dando lugar a uma marca limpa, elegante com estilo "Sparkle" envolvida num círculo glassmorphic (Efeito Vidro).
+  * Otimização de Interface: As telas de registro, login e senhas perdidas agora possuem animações fluídas e textos mais amigáveis, gerando um efeito "WOW" imediato.
+  
+🆕 NOVAS FUNCIONALIDADES (LOGIN & FINANCEIRO):
+  * Registro Automático: Agora, no menu de login, é possível clicar em "Crie sua conta" e realizar um cadastro de administrador (SignUp) interligado ao painel do Supabase, destravando a função que estava inativa.
+  * Autenticação via Google (OAuth): O botão de login via Google foi ativado para integração direta, agilizando acessos.
+  * Controle Financeiro de Fornecedores: Foi introduzido o campo "Pago ao Fornecedor" manualmente na tela de edição do Pedido! O sistema agora armazena e lê essa saída de caixa permanentemente.
+
+🛡️ SEGURANÇA E CRIPTOGRAFIA (INVIOLÁVEL):
+  * Implementação da Base Criptográfica SHA-256 nativa via Web Crypto API (cryptoUtils.ts). Pronta para encriptar dados protegidos de integrações sem deixar rastros expostos no Frontend.
+
+Novidades da Versão 26.0.0 — "Estabilidade Total de Persistência" (31/07/2026):
+  * Mapeador Refatorado: O banco agora suporta ler até mesmo antigas strings JSON bugadas do passado (ex: Manga Curta Feminina) renderizando as grades intactas no frontend.
+
+Novidades da Versão 25.9.0 — "Estabilidade e Fornecedor no Card" (31/07/2026):
 
 ✅ CORREÇÕES CRÍTICAS DE PERSISTÊNCIA:
   * Grade de Produto: Corrigido bug que impedia os tamanhos selecionados (P, M, G...) de serem salvos. O mapper do banco foi reescrito do zero para evitar conflitos de colunas.

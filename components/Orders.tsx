@@ -124,6 +124,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
   const [orderType, setOrderType] = useState<OrderType>(OrderType.SALE);
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(PaymentStatus.PENDING);
   const [customAmountPaid, setCustomAmountPaid] = useState<number | string>('');
+  const [supplierPaidAmount, setSupplierPaidAmount] = useState<number | string>('');
   const [discountValue, setDiscountValue] = useState<number | string>('');
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const [isPartialEditMode, setIsPartialEditMode] = useState(false);
@@ -315,11 +316,13 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
 
     setEditingOrderId(order.id);
     setClientName(order.clientName);
-    setDeliveryDate(order.deliveryDate);
+    setDeliveryDate(order.deliveryDate.split('T')[0]);
     setInternalNotes(order.internalNotes || '');
     setDelayReason(order.delayReason || '');
     setOrderType(order.orderType || OrderType.SALE);
     setPaymentStatus(order.paymentStatus || PaymentStatus.PENDING);
+    setCustomAmountPaid(order.amountPaid || '');
+    setSupplierPaidAmount(order.supplierPaidAmount || '');
     setSupplierId(order.supplierId || '');
     // FIX BUG: Preservar id e unitPrice originais dos itens para o upsert funcionar corretamente
     setParsedItems((order.items || []).length > 0 ? (order.items || []).map(i => ({
@@ -477,8 +480,10 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
     setInternalNotes('');
     setDelayReason('');
     setParsedItems([]);
+    setOrderType(OrderType.SALE);
     setPaymentStatus(PaymentStatus.PENDING);
     setCustomAmountPaid('');
+    setSupplierPaidAmount('');
     setDiscountValue('');
     setNewOrderBriefing('');
     setLayoutUrls([]);
@@ -559,6 +564,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
           return acc + (cost !== undefined ? cost * (curr.quantity || 0) : 0);
         }, 0),
         amountPaid: calculatedAmountPaid,
+        supplierPaidAmount: Number(supplierPaidAmount) || 0,
         supplierId: supplierId || undefined, // mantido para referência do fornecedor padrão
         createdAt: new Date().toISOString(),
         deliveryDate: deliveryDate,
@@ -661,6 +667,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
           delayReason,
           orderType,
           paymentStatus,
+          supplierPaidAmount: orderData.supplierPaidAmount,
           supplierId: supplierId || undefined,
           clientId: clientIdToUse,
           amountPaid: orderData.amountPaid,
@@ -960,7 +967,7 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                     <div className={`bg-[#0b1221] p-6 rounded-3xl border border-[#1e293b] space-y-6 ${isPartialEditMode ? 'opacity-60 pointer-events-none' : ''}`}>
                       <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Configuração do Pedido</h4>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div>
                           <label className="text-[9px] font-bold text-slate-500 uppercase block mb-2">Tipo</label>
                           <div className="flex gap-2">
@@ -1001,6 +1008,16 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
                             value={discountValue}
                             onChange={(e) => setDiscountValue(e.target.value)}
                             className="w-full bg-[#0f172a] border border-emerald-900/50 rounded-xl px-3 py-3 text-[10px] font-black text-emerald-400 focus:ring-1 focus:ring-emerald-500 outline-none transition-all"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[9px] font-bold text-rose-500 uppercase block mb-2" title="Valor já pago ao fornecedor">Pago ao Fornecedor</label>
+                          <input
+                            type="number"
+                            placeholder="Pago (R$)"
+                            value={supplierPaidAmount}
+                            onChange={(e) => setSupplierPaidAmount(e.target.value)}
+                            className="w-full bg-[#0f172a] border border-rose-900/50 rounded-xl px-3 py-3 text-[10px] text-rose-400 font-mono focus:ring-1 focus:ring-rose-500 outline-none"
                           />
                         </div>
                       </div>

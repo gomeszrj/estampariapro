@@ -54,35 +54,37 @@ export const productService = {
         let retries = 0;
         while (res.error && retries < 5) {
             const errMsg = res.error.message;
-            const match = errMsg.match(/Could not find the '(.*?)' column/);
-            
-            if (match && match[1]) {
-                const col = match[1];
-                console.warn(`⚠️ Auto-Fix: Salvando '${col}' no Polyfill...`);
+            if (errMsg.includes('does not exist') || errMsg.includes('Could not find')) {
+                const match = errMsg.match(/Could not find the '(.*?)' column/);
+                const col = match ? match[1] : null;
+                console.warn(`⚠️ Auto-Fix Create: Salvando colunas faltantes no Polyfill... ${col ? `(Missing: ${col})` : ''}`);
                 
-                if (!dbProduct.allowed_grades) dbProduct.allowed_grades = {};
-                if (!dbProduct.allowed_grades.__extensions) dbProduct.allowed_grades.__extensions = {};
-                dbProduct.allowed_grades.__extensions[col] = dbProduct[col];
-                
-                delete dbProduct[col];
-                res = await supabase.from('products').insert([dbProduct]).select().single();
-                retries++;
-            } else if (errMsg.includes('does not exist')) {
-                // Preserva o valor real de allowed_grades (grade de tamanhos)
-                // e guarda apenas as colunas inexistentes em __extensions
                 const realGrades = dbProduct.allowed_grades || {};
                 const extensions = realGrades.__extensions || {};
-                extensions['addons'] = dbProduct.addons;
-                extensions['categories'] = dbProduct.categories;
-                extensions['material_variations'] = dbProduct.material_variations;
+                
+                // Add known new columns to extensions
+                if (dbProduct.addons !== undefined) extensions['addons'] = dbProduct.addons;
+                if (dbProduct.categories !== undefined) extensions['categories'] = dbProduct.categories;
+                if (dbProduct.material_variations !== undefined) extensions['material_variations'] = dbProduct.material_variations;
+                
+                // If it's a specific column, add it too
+                if (col && dbProduct[col] !== undefined) {
+                    extensions[col] = dbProduct[col];
+                    delete dbProduct[col];
+                }
+
                 // Mantém as chaves de tamanho existentes, apenas adiciona __extensions
-                dbProduct.allowed_grades = { ...realGrades, __extensions: extensions };
+                const finalGrades = { ...realGrades };
+                if (finalGrades.__extensions) delete finalGrades.__extensions;
+
+                dbProduct.allowed_grades = { ...finalGrades, __extensions: extensions };
                 
                 delete dbProduct.addons;
                 delete dbProduct.categories;
                 delete dbProduct.material_variations;
+                
                 res = await supabase.from('products').insert([dbProduct]).select().single();
-                break;
+                retries++;
             } else {
                 break; 
             }
@@ -99,31 +101,29 @@ export const productService = {
         let retries = 0;
         while (res.error && retries < 5) {
             const errMsg = res.error.message;
-            const match = errMsg.match(/Could not find the '(.*?)' column/);
-            
-            if (match && match[1]) {
-                const col = match[1];
-                console.warn(`⚠️ Auto-Fix Update: Salvando '${col}' no Polyfill...`);
+            if (errMsg.includes('does not exist') || errMsg.includes('Could not find')) {
+                const match = errMsg.match(/Could not find the '(.*?)' column/);
+                const col = match ? match[1] : null;
+                console.warn(`⚠️ Auto-Fix Update: Salvando colunas faltantes no Polyfill... ${col ? `(Missing: ${col})` : ''}`);
                 
-                // Fetch current allowed_grades to preserve existing extensions
-                const { data: currentProduct } = await supabase.from('products').select('allowed_grades').eq('id', id).single();
-                let grades = currentProduct?.allowed_grades || {};
-                if (!grades.__extensions) grades.__extensions = {};
-                grades.__extensions[col] = dbUpdates[col];
-                dbUpdates.allowed_grades = grades;
-                
-                delete dbUpdates[col];
-                res = await supabase.from('products').update(dbUpdates).eq('id', id).select().single();
-                retries++;
-            } else if (errMsg.includes('does not exist')) {
                 const { data: currentProduct } = await supabase.from('products').select('allowed_grades').eq('id', id).single();
                 
-                const oldGrades = currentProduct?.allowed_grades || {};
+                // Trata possiveis strings do banco
+                let dbOldGrades = currentProduct?.allowed_grades;
+                if (typeof dbOldGrades === 'string') {
+                    try { dbOldGrades = JSON.parse(dbOldGrades); } catch (e) { dbOldGrades = {}; }
+                }
+                const oldGrades = dbOldGrades || {};
                 const extensions = oldGrades.__extensions || {};
                 
                 if (dbUpdates.addons !== undefined) extensions['addons'] = dbUpdates.addons;
                 if (dbUpdates.categories !== undefined) extensions['categories'] = dbUpdates.categories;
                 if (dbUpdates.material_variations !== undefined) extensions['material_variations'] = dbUpdates.material_variations;
+                
+                if (col && dbUpdates[col] !== undefined) {
+                    extensions[col] = dbUpdates[col];
+                    delete dbUpdates[col];
+                }
                 
                 // Se o usuário alterou a grade, usamos a nova. Senão, mantemos a antiga.
                 const newGrades = dbUpdates.allowed_grades !== undefined ? dbUpdates.allowed_grades : oldGrades;
@@ -137,8 +137,9 @@ export const productService = {
                 delete dbUpdates.addons;
                 delete dbUpdates.categories;
                 delete dbUpdates.material_variations;
+                
                 res = await supabase.from('products').update(dbUpdates).eq('id', id).select().single();
-                break;
+                retries++;
             } else {
                 break;
             }
@@ -325,10 +326,20 @@ export const productService = {
 
 // Helpers to map between DB (snake_case) and App (camelCase)
 const mapProductFromDB = (dbItem: any): Product => {
-    const exts = dbItem.allowed_grades?.__extensions || {};
+    // Tratamento robusto para strings residuais de JSON
+    let parsedGrades = dbItem.allowed_grades;
+    if (typeof parsedGrades === 'string') {
+        try {
+            parsedGrades = JSON.parse(parsedGrades);
+        } catch (e) {
+            parsedGrades = {};
+        }
+    }
+
+    const exts = parsedGrades?.__extensions || {};
     
     // Clean up extensions from allowed_grades so it doesn't pollute the actual UI
-    const cleanedAllowedGrades = dbItem.allowed_grades ? { ...dbItem.allowed_grades } : undefined;
+    const cleanedAllowedGrades = parsedGrades ? { ...parsedGrades } : undefined;
     if (cleanedAllowedGrades && cleanedAllowedGrades.__extensions) {
         delete cleanedAllowedGrades.__extensions;
     }

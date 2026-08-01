@@ -191,7 +191,7 @@ const Products: React.FC = () => {
         return safeProducts.filter(p => {
             const matchesSearch = (p.name || '').toLowerCase().includes(searchLower) || (p.sku || '').toLowerCase().includes(searchLower);
             const matchesCat = categoryFilter === 'Todas as categorias' || p.category === categoryFilter || (p.categories && p.categories.includes(categoryFilter));
-            const matchesStatus = statusFilter === 'Todos' || (statusFilter === 'Ativos' ? p.published : !p.published);
+            const matchesStatus = statusFilter === 'Todos' || (statusFilter === 'Ativos' ? p.status === 'active' : p.status !== 'active');
             return matchesSearch && matchesCat && matchesStatus;
         });
     }, [products, searchTerm, categoryFilter, statusFilter]);
@@ -217,7 +217,7 @@ const Products: React.FC = () => {
 
     // Derived KPIs
     const totalProducts = products.length;
-    const activeProducts = products.filter(p => p.published).length;
+    const activeProducts = products.filter(p => p.status === 'active').length;
     const disabledProducts = totalProducts - activeProducts;
 
     const loadProducts = async () => {
@@ -806,11 +806,17 @@ const Products: React.FC = () => {
                                         </div>
 
                                         {/* Status Badge */}
-                                        <div className="absolute top-3 right-8">
-                                            {product.published ? (
-                                                <span className="text-[8px] font-black uppercase text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded">Ativo</span>
+                                        <div className="absolute top-3 right-8 flex flex-col items-end gap-1">
+                                            {product.status === 'active' ? (
+                                                <span className="text-[8px] font-black uppercase text-indigo-400 border border-indigo-500/30 px-1.5 py-0.5 rounded shadow-lg bg-[#0b1221]">Ativo (Venda)</span>
                                             ) : (
-                                                <span className="text-[8px] font-black uppercase text-rose-400 border border-rose-500/30 px-1.5 py-0.5 rounded">Inativo</span>
+                                                <span className="text-[8px] font-black uppercase text-rose-400 border border-rose-500/30 px-1.5 py-0.5 rounded shadow-lg bg-[#0b1221]">Inativo</span>
+                                            )}
+                                            
+                                            {product.published ? (
+                                                <span className="text-[8px] font-black uppercase text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded shadow-lg bg-[#0b1221] flex items-center gap-1"><Eye className="w-2 h-2"/> Loja</span>
+                                            ) : (
+                                                <span className="text-[8px] font-black uppercase text-slate-500 border border-slate-500/30 px-1.5 py-0.5 rounded shadow-lg bg-[#0b1221] flex items-center gap-1"><EyeOff className="w-2 h-2"/> Oculto</span>
                                             )}
                                         </div>
                                     </div>

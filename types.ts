@@ -74,6 +74,7 @@ export interface Order {
   totalCost?: number; // Total cost based on supplier prices
   discountValue?: number; // New: Value of discount applied
   amountPaid?: number; // New: Custom partial payment amount
+  supplierPaidAmount?: number; // Custo pago ao fornecedor (controle de saída de caixa)
   supplierId?: string; // Selected supplier for margin calculation
   createdAt: string;
   deliveryDate: string;
