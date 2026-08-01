@@ -12,8 +12,8 @@ import { notify } from './ui/toast';
 
 const statuses = [
   OrderStatus.RECEIVED,
-  OrderStatus.IN_PRODUCTION,
   OrderStatus.FINALIZATION,
+  OrderStatus.IN_PRODUCTION,
   OrderStatus.FINISHED,
 ];
 

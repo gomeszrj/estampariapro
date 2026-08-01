@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../services/supabase';
-import { Lock, Mail, AlertCircle, Search, Truck, Package, ArrowRight, Phone, User, Store, Sparkles } from 'lucide-react';
+import { Lock, Mail, AlertCircle, Search, Truck, Package, ArrowRight, Phone, User, Store, Shirt } from 'lucide-react';
 import { STATUS_CONFIG } from '../constants';
 import { Order } from '../types';
 import { clientService } from '../services/clientService';
@@ -251,11 +251,12 @@ const Login: React.FC = () => {
                 
                 {/* Center Logo Area */}
                 <div className="flex flex-col items-center mb-16 relative">
-                        {/* Clean Logo: Sparkles inside a glassmorphic circle */}
+                        {/* Clean Logo: Shirt inside a glassmorphic circle */}
                         <div className="relative flex items-center justify-center h-32 w-32 mb-4">
                             <div className="absolute inset-0 bg-gradient-to-br from-[#48C6EF]/20 to-[#8B5CF6]/20 rounded-full blur-2xl pointer-events-none" />
-                            <div className="w-24 h-24 rounded-full bg-white/5 border border-white/10 backdrop-blur-md flex items-center justify-center shadow-[0_0_40px_rgba(139,92,246,0.3)]">
-                                <Sparkles className="w-12 h-12 text-[#48C6EF]" />
+                            <div className="w-24 h-24 rounded-full bg-white/5 border border-white/10 backdrop-blur-md flex items-center justify-center shadow-[0_0_40px_rgba(139,92,246,0.3)] relative overflow-hidden">
+                                <Shirt className="w-12 h-12 text-[#48C6EF] z-10" strokeWidth={1.5} />
+                                <div className="absolute bottom-4 right-4 w-4 h-4 bg-[#8B5CF6] rounded-full blur-sm"></div>
                             </div>
                         </div>
                     
@@ -582,36 +583,11 @@ const Login: React.FC = () => {
                                     </button>
                                 </form>
 
-                                {/* Divider */}
-                                <div className="my-6 flex items-center gap-3 opacity-60">
-                                    <div className="flex-1 h-[1px] bg-slate-700/50" />
-                                    <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">OU</span>
-                                    <div className="flex-1 h-[1px] bg-slate-700/50" />
-                                </div>
 
-                                {/* Google Login Button */}
-                                {(mode === 'login' || mode === 'register') && (
-                                    <button
-                                        type="button"
-                                        onClick={handleGoogleLogin}
-                                        className="w-full bg-[#13141C] border border-[#1e293b] hover:bg-[#1A1C26] text-white text-sm font-medium py-3 rounded-xl transition-all flex items-center justify-center gap-3 mb-8"
-                                    >
-                                        <svg className="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" /><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" /><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" /><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" /></svg>
-                                        {mode === 'register' ? 'Criar conta com Google' : 'Entrar com Google'}
-                                    </button>
-                                )}
 
                                 {/* Secondary Actions Navigation (Footer) */}
                                 <div className="text-center text-[13px] text-slate-400 flex flex-col gap-3 font-medium">
-                                    {mode === 'login' ? (
-                                        <div>
-                                            Ainda não tem uma conta? <button type="button" onClick={() => { setMode('register'); setError(null); }} className="text-transparent bg-clip-text bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6] hover:opacity-80 transition-opacity font-semibold">Crie sua conta</button>
-                                        </div>
-                                    ) : mode === 'register' ? (
-                                        <div>
-                                            Já tem uma conta? <button type="button" onClick={() => { setMode('login'); setError(null); }} className="text-transparent bg-clip-text bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6] hover:opacity-80 transition-opacity font-semibold">Fazer login</button>
-                                        </div>
-                                    ) : null}
+
                                     
                                     {/* Keep existing sub-modes accessible visually separated */}
                                     <div className="flex justify-center items-center gap-4 mt-2 opacity-50 hover:opacity-100 transition-opacity text-xs">

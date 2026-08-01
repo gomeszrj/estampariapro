@@ -131,7 +131,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
       can('can_view_dashboard') && { id: 'dashboard', label: 'Agenda', icon: LayoutDashboard },
       can('can_view_orders') && { id: 'orders', label: 'Pedidos', icon: ShoppingCart },
       can('can_view_kanban') && { id: 'kanban', label: 'Fluxo', icon: Trello },
-      can('can_view_art_queue') && { id: 'art-queue', label: 'Fila de Arte', icon: Palette },
+      // can('can_view_art_queue') && { id: 'art-queue', label: 'Fila de Arte', icon: Palette },
       can('can_view_products') && { id: 'products', label: 'Produtos', icon: Package },
       can('can_view_store') && { id: 'store-manager', label: 'Admin Loja', icon: ShoppingCart },
 
