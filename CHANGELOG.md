@@ -1,3 +1,9 @@
+## [v26.4.0] — 2026-08-02
+### 🛡️ Segurança & Otimizações (Hotfix/Feature)
+- **[NEW] Camuflagem de Arquivos da Nuvem (Proxy Serverless):** Desenvolvida nova rota de API Edge (`/api/arte`) na Vercel atuando como *proxy bridge*. Agora, quando o cliente anexa uma arte e clica para enviar o pedido, o link encaminhado no WhatsApp é gerado como um link camuflado do próprio domínio da loja (ex: `https://estampariapro.vercel.app/api/arte?f=XYZ...`).
+- Isso oculta por completo o endereço do banco de dados (Supabase URL), protegendo os buckets contra *sniffing* ou exposição pública. O script possui ainda validação Server-Side Request Forgery (SSRF) e Cache automático.
+- **[FIX] Velocidade da Animação 360°:** O cálculo delta de rotação foi recalibrado (reduzido em 66%) para proporcionar uma movimentação muito mais confortável, realista e lenta quando o cliente interage com a blusa na loja pública.
+
 ## [v26.3.0] — 2026-08-02
 ### ✨ Loja Pública e Personalização de Componentes
 - **[NEW] Customização de Tema da Loja:** Integração total das cores primárias, secundárias e raio de borda, incluindo suporte ao painel administrativo (`StoreManager`) salvando as preferências em formato JSONB (`theme_config`).
