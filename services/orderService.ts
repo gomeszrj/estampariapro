@@ -191,19 +191,34 @@ export const orderService = {
         }
 
         // 4. Integrar ao Módulo Financeiro
+        // ANTI-DUPLICATE: Verificar se já existe transação para este pedido antes de inserir
         const paid = Number(orderData.amount_paid) || 0;
         if (paid > 0 && orderData.payment_status && orderData.payment_status !== 'Pendente') {
             try {
-                await supabase.from('transactions').insert({
-                    order_id: orderData.id,
-                    type: 'income',
-                    category: 'sale',
-                    amount: paid,
-                    description: `Pgt. Venda #${orderData.order_number} (${orderData.client_name})`,
-                    date: new Date().toISOString()
-                });
+                // Verificar se já existe transação vinculada a este order_id
+                const { data: existingTx } = await supabase
+                    .from('transactions')
+                    .select('id, amount')
+                    .eq('order_id', orderData.id)
+                    .eq('type', 'income')
+                    .eq('category', 'sale');
+
+                const alreadyRecorded = (existingTx || []).reduce((acc: number, tx: any) => acc + Number(tx.amount), 0);
+                const delta = paid - alreadyRecorded;
+
+                // Só insere se ainda não foi registrado (idempotente)
+                if (delta > 0.01) {
+                    await supabase.from('transactions').insert({
+                        order_id: orderData.id,
+                        type: 'income',
+                        category: 'sale',
+                        amount: delta,
+                        description: `Pgt. Venda #${orderData.order_number} (${orderData.client_name})`,
+                        date: new Date().toISOString()
+                    });
+                }
             } catch (e) {
-                console.error("Failed to sync finance", e);
+                console.error("Failed to sync finance on create", e);
             }
         }
 
@@ -372,25 +387,31 @@ export const orderService = {
             }
         }
 
-        // --- FIX BUG-104: Finance Sync on Update --- 
-        // Em vez de apagar e recriar, calculamos o delta do pagamento para preservar o histórico.
+        // --- FIX BUG-104 v2: Finance Sync on Update (Anti-Duplicate)
+        // Calcula o delta entre o valor pago TOTAL e o que já foi registrado nas transações.
+        // NUNCA insere se o valor já está 100% registrado — evita duplicatas.
         if (updates.amountPaid !== undefined || updates.paymentStatus !== undefined) {
             try {
                 const currentOrder = await this.getById(id);
-                const newAmount = updates.amountPaid ?? currentOrder.amountPaid ?? 0;
+                const newAmount = Number(updates.amountPaid ?? currentOrder.amountPaid ?? 0);
                 const newStatus = updates.paymentStatus ?? currentOrder.paymentStatus;
 
-                // Buscar a soma já registrada nas transações deste pedido
+                // Se o status for Pendente, não registra nada
+                if (!newStatus || newStatus === 'Pendente') return this.getById(id);
+
+                // Buscar TUDO que já foi registrado para este pedido
                 const { data: existingTx } = await supabase
                     .from('transactions')
                     .select('amount')
-                    .match({ order_id: id, type: 'income', category: 'sale' });
+                    .eq('order_id', id)
+                    .eq('type', 'income')
+                    .eq('category', 'sale');
 
                 const alreadyRecorded = (existingTx || []).reduce((acc: number, tx: any) => acc + Number(tx.amount), 0);
-                const delta = Number(newAmount) - alreadyRecorded;
+                const delta = newAmount - alreadyRecorded;
 
-                // Só insere se há um valor novo a ser registrado e o status não é pendente
-                if (delta > 0.01 && newStatus && newStatus !== 'Pendente') {
+                // Só insere o delta se for > R$ 0,01 (há valor novo a lançar)
+                if (delta > 0.01) {
                     await supabase.from('transactions').insert({
                         order_id: id,
                         type: 'income',
