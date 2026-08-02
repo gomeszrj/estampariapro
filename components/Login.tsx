@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { supabase } from '../services/supabase';
-import { Lock, Mail, AlertCircle, Search, Truck, Package, ArrowRight, Phone, User, Store, Shirt, Sparkles } from 'lucide-react';
+import { Lock, Mail, AlertCircle, Search, Truck, Package, ArrowRight, Phone, User, Store, Shirt, Sparkles, BarChart2, Zap, ShieldCheck } from 'lucide-react';
 import { STATUS_CONFIG } from '../constants';
 import { Order } from '../types';
 import { clientService } from '../services/clientService';
 import { notify } from './ui/toast';
+import { EstampariaProLogo } from './ui/EstampariaProLogo';
 
 const Login: React.FC = () => {
     const [email, setEmail] = useState(() => localStorage.getItem('remembered_email') || '');
@@ -154,64 +155,68 @@ const Login: React.FC = () => {
     // ── SPLASH SCREEN ─────────────────────────────────────────────────────────
     if (splashVisible && splashSettings.enabled) {
         return (
-            <div className="fixed inset-0 z-[9999] bg-[#0b1221] flex flex-col items-center justify-center p-6 select-none">
+            <div className="fixed inset-0 z-[9999] bg-[#080910] flex flex-col items-center justify-center p-6 select-none">
                 <style>{`
-                    @keyframes fillProgress {
+                    @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&display=swap');
+                    @keyframes splashFillProgress {
                         0% { width: 0%; }
                         100% { width: 100%; }
                     }
                     @keyframes splashFadeIn {
-                        0% { opacity: 0; transform: translateY(12px) scale(0.97); }
+                        0% { opacity: 0; transform: translateY(16px) scale(0.94); }
                         100% { opacity: 1; transform: translateY(0) scale(1); }
                     }
-                    @keyframes splashLogoGlow {
-                        0%, 100% { box-shadow: 0 0 0 0 rgba(189,255,63,0); }
-                        50% { box-shadow: 0 0 40px 4px rgba(189,255,63,0.08); }
+                    @keyframes splashTitleIn {
+                        0% { opacity: 0; transform: translateY(8px); }
+                        100% { opacity: 1; transform: translateY(0); }
                     }
-                    .splash-animate {
-                        animation: splashFadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+                    .splash-wrap {
+                        animation: splashFadeIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
                     }
-                    .splash-logo-glow {
-                        animation: splashLogoGlow 3s ease-in-out infinite;
+                    .splash-title {
+                        animation: splashTitleIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
                     }
                 `}</style>
 
-                <div className="flex flex-col items-center max-w-xs w-full text-center space-y-10 splash-animate">
+                <div className="flex flex-col items-center max-w-xs w-full text-center gap-8 splash-wrap">
 
-                    {/* Logo Container — CRM style: slate-900 + slate-800 border */}
-                    <div className="relative">
-                        {/* Outer glow ring */}
-                        <div className="absolute inset-0 rounded-[2.2rem] bg-[#8B5CF6]/5 blur-xl scale-125 pointer-events-none" />
-                        <div
-                            className="relative w-24 h-24 bg-[#0f172a] border border-[#1e293b] rounded-2xl flex items-center justify-center shadow-2xl overflow-hidden splash-logo-glow"
-                        >
-                            {/* Inner subtle grid texture */}
-                            <div className="absolute inset-0 opacity-[0.03]"
-                                style={{ backgroundImage: 'repeating-linear-gradient(0deg, #fff 0, #fff 1px, transparent 1px, transparent 8px), repeating-linear-gradient(90deg, #fff 0, #fff 1px, transparent 1px, transparent 8px)' }}
-                            />
-                            {splashSettings.logoUrl ? (
-                                <img src={splashSettings.logoUrl} alt="Logo" className="w-full h-full object-contain p-4 relative z-10" />
-                            ) : (
-                                <Package className="w-11 h-11 text-white relative z-10" />
-                            )}
+                    {/* Logo — usa logo customizado se disponível, senão o SVG profissional */}
+                    {splashSettings.logoUrl ? (
+                        <div className="relative w-24 h-24 bg-[#0f172a] border border-[#1a1d2e] rounded-2xl flex items-center justify-center shadow-2xl overflow-hidden">
+                            <img src={splashSettings.logoUrl} alt="Logo" className="w-full h-full object-contain p-4" />
                         </div>
-                    </div>
+                    ) : (
+                        <EstampariaProLogo size={96} animated={true} />
+                    )}
 
-                    {/* App Name & Message */}
-                    <div className="space-y-3">
-                        <h2 className="text-2xl font-black text-white uppercase tracking-[0.2em]">Estamparia Pro</h2>
-                        <p className="text-[11px] font-semibold text-slate-500 tracking-widest uppercase max-w-[220px] mx-auto leading-relaxed">
+                    {/* Nome do sistema */}
+                    <div className="splash-title space-y-1">
+                        <h2
+                            className="text-[28px] font-black text-white uppercase"
+                            style={{ fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.18em' }}
+                        >
+                            ESTAMPARIA
+                        </h2>
+                        <span
+                            className="block text-[22px] font-black uppercase"
+                            style={{ fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.35em', color: '#00CFFF' }}
+                        >
+                            PRO
+                        </span>
+                        <p className="text-[10px] font-semibold text-slate-600 tracking-[0.2em] uppercase mt-2">
                             {splashSettings.message}
                         </p>
                     </div>
 
-                    {/* Premium Progress Bar — CRM styled */}
-                    <div className="w-36 space-y-2">
-                        <div className="w-full bg-[#0f172a] border border-[#1e293b] h-[3px] rounded-full overflow-hidden">
+                    {/* Barra de progresso ciano */}
+                    <div className="w-32">
+                        <div className="w-full bg-[#0f172a] border border-[#1a1d2e] h-[2px] rounded-full overflow-hidden">
                             <div
-                                className="h-full bg-white rounded-full shadow-[0_0_10px_rgba(255,255,255,0.5)]"
+                                className="h-full rounded-full"
                                 style={{
-                                    animation: `fillProgress ${splashSettings.duration}ms cubic-bezier(0.25, 1, 0.5, 1) forwards`
+                                    background: '#00CFFF',
+                                    boxShadow: '0 0 12px #00CFFF',
+                                    animation: `splashFillProgress ${splashSettings.duration}ms cubic-bezier(0.25, 1, 0.5, 1) forwards`
                                 }}
                             />
                         </div>
@@ -222,121 +227,163 @@ const Login: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-[#05050A] text-white flex select-none font-['Inter'] relative overflow-hidden">
+        <div className="min-h-screen bg-[#080910] text-white flex select-none relative overflow-hidden">
+            <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&display=swap');
+
+                /* Textura sutil de trama de tecido na coluna esquerda */
+                .ep-left-bg::before {
+                    content: '';
+                    position: absolute;
+                    inset: 0;
+                    background-image:
+                        repeating-linear-gradient(0deg,   transparent, transparent 19px, rgba(0,207,255,0.025) 20px),
+                        repeating-linear-gradient(90deg,  transparent, transparent 19px, rgba(0,207,255,0.025) 20px);
+                    pointer-events: none;
+                    z-index: 0;
+                }
+
+                @keyframes ep-left-fade-in {
+                    from { opacity: 0; transform: translateX(-24px); }
+                    to   { opacity: 1; transform: translateX(0); }
+                }
+                @keyframes ep-feature-in {
+                    from { opacity: 0; transform: translateY(12px); }
+                    to   { opacity: 1; transform: translateY(0); }
+                }
+                .ep-branding-in  { animation: ep-left-fade-in 0.8s cubic-bezier(0.22,1,0.36,1) 0.1s both; }
+                .ep-feature-card { animation: ep-feature-in 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+                .ep-feature-card:nth-child(1) { animation-delay: 0.3s; }
+                .ep-feature-card:nth-child(2) { animation-delay: 0.45s; }
+                .ep-feature-card:nth-child(3) { animation-delay: 0.6s; }
+                .ep-feature-card:nth-child(4) { animation-delay: 0.75s; }
+            `}</style>
 
             {/* ── LEFT COLUMN - Branding (Hidden on mobile) ── */}
-            <div className="hidden lg:flex w-1/2 relative flex-col justify-center items-center p-12 z-10">
-                
-                {/* Background Wave Effect Simulation */}
-                <div className="absolute bottom-0 left-0 right-0 h-[60%] bg-gradient-to-t from-[#1A365D]/30 via-purple-900/10 to-transparent pointer-events-none" />
-                
-                <div className="absolute bottom-0 left-0 w-full h-[30%] opacity-40 pointer-events-none" 
-                     style={{ backgroundImage: 'radial-gradient(circle at 50% 100%, rgba(59, 130, 246, 0.4) 0%, transparent 50%)' }} />
+            <div className="hidden lg:flex w-1/2 relative flex-col justify-between p-12 z-10 ep-left-bg" style={{ background: '#06070D' }}>
 
-                <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-blue-600/20 blur-[100px] rounded-full pointer-events-none" />
-                <div className="absolute -bottom-40 left-20 w-96 h-96 bg-purple-600/20 blur-[100px] rounded-full pointer-events-none" />
-                
-                {/* Center Logo Area */}
-                <div className="flex flex-col items-center mb-16 relative">
-                        {/* Clean Logo: Shirt inside a glassmorphic circle */}
-                        <div className="relative flex items-center justify-center h-32 w-32 mb-4">
-                            <div className="absolute inset-0 bg-gradient-to-br from-[#48C6EF]/20 to-[#8B5CF6]/20 rounded-full blur-2xl pointer-events-none" />
-                            <div className="w-24 h-24 rounded-full bg-white/5 border border-white/10 backdrop-blur-md flex items-center justify-center shadow-[0_0_40px_rgba(139,92,246,0.3)] relative overflow-hidden">
-                                <Shirt className="w-12 h-12 text-[#48C6EF] z-10" strokeWidth={1.5} />
-                                <div className="absolute bottom-4 right-4 w-4 h-4 bg-[#8B5CF6] rounded-full blur-sm"></div>
+                {/* Glow de fundo — posicionado na parte inferior */}
+                <div className="absolute -bottom-32 -left-32 w-[500px] h-[500px] rounded-full pointer-events-none"
+                    style={{ background: 'radial-gradient(circle, rgba(0,207,255,0.07) 0%, transparent 65%)' }} />
+                <div className="absolute top-0 right-0 w-64 h-64 rounded-full pointer-events-none"
+                    style={{ background: 'radial-gradient(circle, rgba(79,70,229,0.06) 0%, transparent 70%)' }} />
+
+                {/* Linha vertical decorativa lateral direita */}
+                <div className="absolute top-0 right-0 bottom-0 w-px" style={{ background: 'linear-gradient(to bottom, transparent, rgba(0,207,255,0.15) 30%, rgba(0,207,255,0.15) 70%, transparent)' }} />
+
+                {/* Centro — Logo + Título */}
+                <div className="flex-1 flex flex-col items-start justify-center gap-10 ep-branding-in relative z-10">
+
+                    <EstampariaProLogo size={100} animated={true} />
+
+                    <div>
+                        <h1
+                            className="text-[58px] font-black text-white uppercase leading-none"
+                            style={{ fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.04em' }}
+                        >
+                            ESTAMPARIA
+                        </h1>
+                        <span
+                            className="block text-[46px] font-black uppercase leading-none"
+                            style={{ fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.12em', color: '#00CFFF' }}
+                        >
+                            PRO
+                        </span>
+                        <p className="text-slate-500 mt-4 text-[13px] font-medium leading-relaxed max-w-[300px]">
+                            O sistema <span style={{ color: '#00CFFF', fontWeight: 700 }}>inteligente</span> que transforma
+                            a gestão da sua estamparia em resultados reais.
+                        </p>
+                    </div>
+
+                    {/* Features em coluna — mais elegante */}
+                    <div className="grid grid-cols-2 gap-3 w-full max-w-[380px]">
+                        {[
+                            { icon: <Package className="w-4 h-4" />, title: 'Pedidos', desc: 'Controle total do fluxo de produção' },
+                            { icon: <BarChart2 className="w-4 h-4" />, title: 'Financeiro', desc: 'Receita, custo e lucro em tempo real' },
+                            { icon: <Zap className="w-4 h-4" />, title: 'Automação', desc: 'Bot de vendas integrado ao WhatsApp' },
+                            { icon: <ShieldCheck className="w-4 h-4" />, title: 'Segurança', desc: 'Dados encriptados e acessos por perfil' },
+                        ].map((f) => (
+                            <div key={f.title} className="ep-feature-card flex items-start gap-3 p-3 rounded-xl"
+                                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(0,207,255,0.08)' }}
+                            >
+                                <div className="mt-0.5 flex-shrink-0" style={{ color: '#00CFFF' }}>{f.icon}</div>
+                                <div>
+                                    <p className="text-white text-[11px] font-bold uppercase tracking-wider">{f.title}</p>
+                                    <p className="text-slate-600 text-[10px] mt-0.5 leading-relaxed">{f.desc}</p>
+                                </div>
                             </div>
-                        </div>
-                    
-                    <h1 className="text-5xl font-black tracking-widest text-white uppercase mb-1">ESTAMPARIA</h1>
-                    <span className="text-3xl font-black bg-gradient-to-r from-[#48C6EF] to-[#8B5CF6] bg-clip-text text-transparent uppercase tracking-widest">PRO</span>
-                    <p className="text-slate-400 mt-6 text-sm font-medium tracking-wide">
-                        O sistema <span className="bg-gradient-to-r from-[#48C6EF] to-[#8B5CF6] bg-clip-text text-transparent font-bold">inteligente</span> da sua estamparia.
-                    </p>
+                        ))}
+                    </div>
                 </div>
 
-                {/* Bottom Features */}
-                <div className="absolute bottom-12 left-0 right-0 px-12 grid grid-cols-4 gap-4 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-[#3B82F6]/10 flex items-center justify-center text-[#48C6EF] border border-[#3B82F6]/20 shadow-[0_0_15px_rgba(59,130,246,0.2)]"><Package className="w-5 h-5"/></div>
-                        <h3 className="text-[10px] font-bold text-white uppercase tracking-wider">Organize</h3>
-                        <p className="text-[9px] text-slate-500">Centralize pedidos,<br/>clientes e arquivos.</p>
-                    </div>
-                    <div className="flex flex-col items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-[#8B5CF6]/10 flex items-center justify-center text-[#A855F7] border border-[#8B5CF6]/20 shadow-[0_0_15px_rgba(139,92,246,0.2)]"><ArrowRight className="w-5 h-5"/></div>
-                        <h3 className="text-[10px] font-bold text-white uppercase tracking-wider">Automatize</h3>
-                        <p className="text-[9px] text-slate-500">Fluxos inteligentes<br/>que otimizam seu tempo.</p>
-                    </div>
-                    <div className="flex flex-col items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-[#3B82F6]/10 flex items-center justify-center text-[#48C6EF] border border-[#3B82F6]/20 shadow-[0_0_15px_rgba(59,130,246,0.2)]">
-                            <div className="flex gap-1 items-end h-5">
-                                <div className="w-1.5 h-3 bg-[#48C6EF] rounded-sm" />
-                                <div className="w-1.5 h-5 bg-[#48C6EF] rounded-sm" />
-                                <div className="w-1.5 h-4 bg-[#48C6EF] rounded-sm" />
-                            </div>
-                        </div>
-                        <h3 className="text-[10px] font-bold text-white uppercase tracking-wider">Acompanhe</h3>
-                        <p className="text-[9px] text-slate-500">Tenha controle total<br/>da produção em tempo real.</p>
-                    </div>
-                    <div className="flex flex-col items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-[#8B5CF6]/10 flex items-center justify-center text-[#A855F7] border border-[#8B5CF6]/20 shadow-[0_0_15px_rgba(139,92,246,0.2)]">
-                            <div className="w-5 h-5 rounded-full border-2 border-[#A855F7] border-t-transparent flex items-center justify-center" />
-                        </div>
-                        <h3 className="text-[10px] font-bold text-white uppercase tracking-wider">Evolua</h3>
-                        <p className="text-[9px] text-slate-500">Mais produtividade<br/>e resultados para o seu negócio.</p>
-                    </div>
+                {/* Rodapé da coluna esquerda */}
+                <div className="flex items-center gap-2 relative z-10">
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#00CFFF' }} />
+                    <span className="text-[10px] text-slate-700 font-bold uppercase tracking-[0.25em]">Gomesz Speed Print · Sistema v26</span>
                 </div>
             </div>
 
             {/* ── RIGHT COLUMN - Form ── */}
-            <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12 relative z-10">
-                <div className="absolute top-0 right-0 w-full h-full bg-[#05050A] pointer-events-none -z-10" />
+            <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-10 relative z-10" style={{ background: '#080910' }}>
 
-                <div className="w-full max-w-[480px] relative">
-                    
-                    {/* Gradient Border Wrapper */}
-                    <div className="relative p-[1.5px] rounded-2xl bg-gradient-to-br from-[#48C6EF]/80 via-[#0b1221] to-[#8B5CF6]/80 shadow-2xl">
-                        
-                        {/* Inner Glassmorphic Panel */}
-                        <div className="relative bg-[#0F111A] rounded-[1.9rem] p-8 lg:p-10 overflow-hidden h-full">
-                            
-                            {/* Top right tech decoration */}
-                            <div className="absolute top-0 right-0 w-32 h-32 opacity-30 pointer-events-none">
-                                <div className="absolute top-12 right-12 w-2 h-2 bg-[#3B82F6]" />
-                                <div className="absolute top-16 right-20 w-3 h-3 bg-[#8B5CF6]" />
-                                <div className="absolute top-20 right-10 w-1.5 h-1.5 bg-[#48C6EF]" />
-                                <div className="absolute top-16 right-12 w-8 h-[1px] bg-[#3B82F6]/50" />
-                                <div className="absolute top-12 right-20 w-[1px] h-4 bg-[#8B5CF6]/50" />
-                            </div>
+                <div className="w-full max-w-[460px] relative">
 
-                            {/* Theme Toggle (Visual Placeholder to match image) */}
-                            <div className="absolute top-6 right-8 flex items-center gap-2 text-slate-400 text-xs font-medium cursor-not-allowed opacity-60">
-                                <span>Tema</span>
-                                <div className="flex items-center gap-1 bg-[#1A1C26] rounded-full p-1 border border-[#1e293b]">
-                                    <div className="w-5 h-5 rounded-full flex items-center justify-center text-slate-500"><Sparkles className="w-3 h-3" /></div>
-                                    <div className="w-5 h-5 rounded-full bg-[#1e293b] flex items-center justify-center text-white"><div className="w-2.5 h-2.5 rounded-full border-2 border-white border-t-transparent rotate-45" /></div>
+                    {/* Card com borda ciano sutil */}
+                    <div className="relative rounded-2xl shadow-2xl"
+                        style={{ background: '#0D0F1C', border: '1px solid rgba(0,207,255,0.15)', boxShadow: '0 0 60px rgba(0,207,255,0.05), 0 24px 80px rgba(0,0,0,0.6)' }}
+                    >
+
+                        {/* Decoração: 4 crosshairs nos cantos (referência serigrafia) */}
+                        {[['top-3 left-3', 'border-t border-l'], ['top-3 right-3', 'border-t border-r'], ['bottom-3 left-3', 'border-b border-l'], ['bottom-3 right-3', 'border-b border-r']].map(([pos, border]) => (
+                            <div key={pos} className={`absolute ${pos} w-4 h-4 ${border} pointer-events-none`}
+                                style={{ borderColor: 'rgba(0,207,255,0.25)' }} />
+                        ))}
+
+                        <div className="relative p-8 lg:p-10 overflow-hidden">
+
+                            {/* Mini logo no topo — visível no mobile também */}
+                            <div className="flex items-center gap-3 mb-8">
+                                <EstampariaProLogo size={36} animated={false} />
+                                <div>
+                                    <span
+                                        className="block text-white text-[13px] font-black uppercase leading-none"
+                                        style={{ fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.08em' }}
+                                    >ESTAMPARIA</span>
+                                    <span
+                                        className="block text-[10px] font-black uppercase leading-none mt-0.5"
+                                        style={{ color: '#00CFFF', letterSpacing: '0.3em', fontFamily: "'Barlow Condensed', sans-serif" }}
+                                    >PRO</span>
                                 </div>
                             </div>
 
-                            <div className="mb-10 mt-4">
-                                <span className="text-[12px] font-medium text-slate-400 mb-2 block">
-                                    {mode === 'login' ? 'Bem-vindo de volta! 👋' : mode === 'register' ? 'NOVO ACESSO 🚀' : mode === 'client_login' ? 'PORTAL DO CLIENTE 👋' : mode === 'forgot_password' ? 'RECUPERAR ACESSO 🔑' : 'RASTREAMENTO 👋'}
+                            {/* Header do modo */}
+                            <div className="mb-8">
+                                <span className="text-[10px] font-bold text-slate-600 mb-1.5 block uppercase tracking-[0.2em]">
+                                    {mode === 'login' ? 'Bem-vindo de volta' : mode === 'register' ? 'Novo Acesso' : mode === 'client_login' ? 'Portal do Cliente' : mode === 'forgot_password' ? 'Recuperar Acesso' : 'Rastreamento'}
                                 </span>
-                                <h2 className="text-[32px] font-bold text-white mb-3">
-                                    {mode === 'login' ? 'Acesse ' : mode === 'register' ? 'Criar ' : mode === 'client_login' ? 'Seu ' : mode === 'forgot_password' ? 'Recuperar ' : 'Buscar '}
-                                    <span className="bg-gradient-to-r from-[#48C6EF] to-[#8B5CF6] bg-clip-text text-transparent">
-                                        {mode === 'login' ? 'sua conta' : mode === 'register' ? 'sua conta' : mode === 'client_login' ? 'espaço' : mode === 'forgot_password' ? 'senha' : 'pedido'}
+                                <h2
+                                    className="font-black text-white leading-tight"
+                                    style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '32px', letterSpacing: '0.03em' }}
+                                >
+                                    {mode === 'login' ? 'Acesse sua '
+                                        : mode === 'register' ? 'Crie sua '
+                                        : mode === 'client_login' ? 'Seu '
+                                        : mode === 'forgot_password' ? 'Recuperar '
+                                        : 'Buscar '}
+                                    <span style={{ color: '#00CFFF' }}>
+                                        {mode === 'login' ? 'conta'
+                                            : mode === 'register' ? 'conta'
+                                            : mode === 'client_login' ? 'espaço'
+                                            : mode === 'forgot_password' ? 'senha'
+                                            : 'pedido'}
                                     </span>
                                 </h2>
-                                <p className="text-sm text-slate-400 font-medium">
-                                    {mode === 'login' ? 'Entre com suas credenciais para acessar' : 
-                                     mode === 'register' ? 'Preencha os dados abaixo para iniciar sua jornada no' :
-                                     mode === 'client_login' ? 'Acesse com seu documento ou telefone' :
-                                     mode === 'forgot_password' ? 'Informe seu e-mail e enviaremos um link para redefinir sua senha.' :
-                                     'Digite o número do seu pedido para ver o status.'}
-                                     <br/>
-                                     {(mode === 'login' || mode === 'register') && (
-                                         <>o sistema <span className="text-[#3B82F6]">Estamparia</span> <span className="text-[#8B5CF6]">Pro.</span></>
-                                     )}
+                                <p className="text-[12px] text-slate-500 font-medium mt-2 leading-relaxed">
+                                    {mode === 'login' ? 'Entre com suas credenciais para acessar o sistema.'
+                                     : mode === 'register' ? 'Preencha os dados abaixo para começar.'
+                                     : mode === 'client_login' ? 'Acesse com seu e-mail, WhatsApp ou documento.'
+                                     : mode === 'forgot_password' ? 'Informe seu e-mail e enviaremos um link de recuperação.'
+                                     : 'Digite o número do seu pedido para ver o status.'}
                                 </p>
                             </div>
 
@@ -590,7 +637,8 @@ const Login: React.FC = () => {
                             </>
                             )}
                         </div>
-                    </div>
+                    </div>{/* /inner p-8 */}
+                    </div>{/* /rounded-2xl card */}
                 </div>
             </div>
         </div>

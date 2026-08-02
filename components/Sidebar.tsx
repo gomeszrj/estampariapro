@@ -10,6 +10,7 @@ import { tenantService } from '../services/tenantService';
 import { supabase } from '../services/supabase';
 import { SYSTEM_VERSION } from '../constants';
 import { notify } from './ui/toast';
+import { EstampariaProLogo } from './ui/EstampariaProLogo';
 
 interface SidebarProps {
   activeView: string;
@@ -161,17 +162,15 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, se
 
       <aside className={`w-72 bg-[#05080E] border-r border-[#1e293b] h-screen fixed md:sticky top-0 left-0 z-50 flex flex-col transition-transform duration-300 print:hidden ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
         {/* Logo */}
-        <div className="p-6 border-b border-[#1e293b] flex items-center justify-center">
-          <h1 className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-transparent flex items-center justify-center relative">
-              <div className="absolute inset-0 bg-[#6366f1]/20 rounded-xl blur-md"></div>
-              <span className="text-[#6366f1] text-2xl font-black relative z-10 font-mono tracking-tighter" style={{ textShadow: '0 0 10px #6366f1, 0 0 20px #6366f1' }}>EP</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-white text-lg font-black tracking-tight leading-none">ESTAMPARIA</span>
-              <span className="text-[#6366f1] text-[10px] font-black uppercase tracking-[0.3em] leading-none mt-1">PRO</span>
-            </div>
-          </h1>
+        <div className="px-6 py-5 border-b border-[#1e293b] flex items-center gap-4">
+          <EstampariaProLogo size={44} animated={true} />
+          <div className="flex flex-col">
+            <span className="text-white text-[15px] font-black tracking-tight leading-none" style={{ fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.05em' }}>ESTAMPARIA</span>
+            <span
+              className="text-[11px] font-black uppercase leading-none mt-1"
+              style={{ color: '#00CFFF', letterSpacing: '0.35em', fontFamily: "'Barlow Condensed', sans-serif" }}
+            >PRO</span>
+          </div>
         </div>
 
         {/* Nav */}
