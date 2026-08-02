@@ -600,8 +600,9 @@ const CartCheckout: React.FC<{ cart: CartItem[], totalPrice: number, storeName: 
       });
       
       msg += `\n*Total Estimado:* R${totalPrice.toFixed(2)}\n`;
-      if (hasArtwork && !uploadFailed) {
-        msg += `\n*Arte em anexo:* ${artworkUrl}\n`;
+      if (hasArtwork && !uploadFailed && artworkUrl) {
+        const camouflagedUrl = `${window.location.origin}/api/arte?f=${btoa(artworkUrl)}`;
+        msg += `\n*Arte em anexo:* ${camouflagedUrl}\n`;
       }
       
       if (uploadFailed) {
