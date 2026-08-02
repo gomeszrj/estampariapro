@@ -167,12 +167,6 @@ const Viewer360: React.FC<{ product: GmzProduct | null; color: string }> = ({ pr
   };
 
   // Smoother depth and rotation effect (easing out the extremes to avoid looking squashed and robotic)
-  // Instead of a simple cos which looks flat, we use a slightly dampened curve
-  const angleRad = (rotation * Math.PI) / 180;
-  const rawScaleX = Math.cos(angleRad);
-  const scaleX = Math.abs(rawScaleX) * 0.7 + 0.3; 
-  const isBack = Math.abs(rotation % 360) > 90 && Math.abs(rotation % 360) < 270;
-
   const images = product?.image_url ? product.image_url.split('|||') : [];
   const front = images[0] || getProductImg(product);
   const back = images[1] || product?.image_url_back || '';
@@ -183,18 +177,31 @@ const Viewer360: React.FC<{ product: GmzProduct | null; color: string }> = ({ pr
   const hasBackImage = !!back;
 
   let currentImage = front;
-  let currentScaleX = scaleX;
+  let currentScaleX = 1;
 
   if (hasAllAngles) {
     const angle = Math.abs(rotation % 360);
-    if (angle >= 45 && angle < 135) currentImage = right;
-    else if (angle >= 135 && angle < 225) currentImage = back;
-    else if (angle >= 225 && angle < 315) currentImage = left;
-    else currentImage = front;
-    currentScaleX = 1; // Don't squash if we have all 4 images
+    let diff = 0;
+    if (angle >= 315 || angle < 45) {
+      currentImage = front;
+      diff = angle > 180 ? angle - 360 : angle;
+    } else if (angle >= 45 && angle < 135) {
+      currentImage = right;
+      diff = angle - 90;
+    } else if (angle >= 135 && angle < 225) {
+      currentImage = back;
+      diff = angle - 180;
+    } else {
+      currentImage = left;
+      diff = angle - 270;
+    }
+    currentScaleX = Math.cos(diff * 2 * Math.PI / 180);
   } else if (hasBackImage) {
+    const angleRad = (rotation * Math.PI) / 180;
+    const rawScale = Math.cos(angleRad);
+    const isBack = Math.abs(rotation % 360) > 90 && Math.abs(rotation % 360) < 270;
     if (isBack) currentImage = back;
-    currentScaleX = isBack ? -scaleX : scaleX;
+    currentScaleX = isBack ? -rawScale : rawScale;
   }
 
   return (
@@ -280,48 +287,125 @@ const ProductCard: React.FC<{
   onFav: (id: string) => void;
   onView: (p: GmzProduct) => void;
   onAdd: (p: GmzProduct) => void;
-}> = ({ p, favorites, onFav, onView, onAdd }) => (
-  <div className="bg-[#0b0e17] rounded-2xl overflow-hidden border border-purple-500/10 transition-transform duration-300 hover:-translate-y-2 relative group flex flex-col" style={{ WebkitTapHighlightColor: 'transparent', userSelect: 'none' }}>
-    {p.badge && (
-      <span style={{ position: 'absolute', top: 12, left: 12, zIndex: 2, background: 'rgba(124,58,237,0.9)', color: 'white', fontSize: 9, fontWeight: 800, padding: '4px 8px', borderRadius: 6, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-        {p.badge}
-      </span>
-    )}
-    <button className={`absolute top-3 right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all bg-black/20 backdrop-blur-md border border-white/10 hover:bg-black/40 hover:scale-110 ${favorites.has(p.id) ? 'text-red-500' : 'text-white'}`} onClick={(e) => { e.stopPropagation(); onFav(p.id); }}>
-      <Icon.Heart filled={favorites.has(p.id)} />
-    </button>
+}> = ({ p, favorites, onFav, onView, onAdd }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const [rotation, setRotation] = useState(0);
+  const animRef = useRef<number | undefined>(undefined);
 
-    <div
-      style={{ background: `linear-gradient(135deg, rgba(13,15,23,1), ${p.color_hex || '#7c3aed'}10)`, cursor: 'pointer', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', aspectRatio: '4/5', width: '100%', overflow: 'hidden' }}
-      onClick={() => onView(p)}
+  useEffect(() => {
+    if (!isHovered) {
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+      setRotation(0);
+      return;
+    }
+    let lastTime = performance.now();
+    const spin = (time: number) => {
+      const delta = time - lastTime;
+      lastTime = time;
+      setRotation(r => (r + delta * 0.15) % 360);
+      animRef.current = requestAnimationFrame(spin);
+    };
+    animRef.current = requestAnimationFrame(spin);
+    return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
+  }, [isHovered]);
+
+  const images = p.image_url ? p.image_url.split('|||') : [];
+  const front = images[0] || getProductImg(p);
+  const back = images[1] || p.image_url_back || '';
+  const right = images[2] || '';
+  const left = images[3] || '';
+
+  const hasAllAngles = front && back && right && left;
+  const hasBackImage = !!back;
+
+  let currentImage = front;
+  let currentScaleX = 1;
+
+  if (isHovered) {
+    if (hasAllAngles) {
+      const angle = Math.abs(rotation % 360);
+      let diff = 0;
+      if (angle >= 315 || angle < 45) {
+        currentImage = front;
+        diff = angle > 180 ? angle - 360 : angle;
+      } else if (angle >= 45 && angle < 135) {
+        currentImage = right;
+        diff = angle - 90;
+      } else if (angle >= 135 && angle < 225) {
+        currentImage = back;
+        diff = angle - 180;
+      } else {
+        currentImage = left;
+        diff = angle - 270;
+      }
+      currentScaleX = Math.cos(diff * 2 * Math.PI / 180);
+    } else if (hasBackImage) {
+      const angleRad = (rotation * Math.PI) / 180;
+      const rawScale = Math.cos(angleRad);
+      const isBack = Math.abs(rotation % 360) > 90 && Math.abs(rotation % 360) < 270;
+      if (isBack) currentImage = back;
+      currentScaleX = isBack ? -rawScale : rawScale;
+    }
+  }
+
+  return (
+    <div 
+      className="bg-[#0b0e17] rounded-2xl overflow-hidden border border-purple-500/10 transition-transform duration-300 hover:-translate-y-2 relative group flex flex-col" 
+      style={{ WebkitTapHighlightColor: 'transparent', userSelect: 'none' }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-        <img src={getProductImg(p)} alt={p.title} className="product-img drop-shadow-2xl" style={{ width: '100%', height: '100%', objectFit: 'contain', transition: 'transform 0.5s ease' }} draggable={false} />
-      </div>
-    </div>
-
-    <div style={{ padding: '16px 16px 20px' }}>
-      <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: p.color_hex || '#a78bfa', background: `${p.color_hex || '#7c3aed'}15`, padding: '3px 8px', borderRadius: 5, display: 'inline-block', marginBottom: 8 }}>
-        {p.category || 'GERAL'}
-      </span>
-      <h3 style={{ fontSize: 13, fontWeight: 800, color: 'white', lineHeight: 1.3, marginBottom: 4, cursor: 'pointer' }} onClick={() => onView(p)}>{p.title}</h3>
-      <p style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>{p.subtitle}</p>
-
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
-        <span style={{ fontSize: 20, fontWeight: 900, color: 'white' }}>R$ {Number(p.price).toFixed(2).replace('.', ',')}</span>
-      </div>
-
-      <button
-        onClick={() => onAdd(p)}
-        style={{ marginTop: 14, width: '100%', padding: '10px', background: 'linear-gradient(135deg, rgba(124,58,237,0.2), rgba(79,70,229,0.2))', border: '1px solid rgba(124,58,237,0.3)', borderRadius: 10, color: '#a78bfa', fontWeight: 700, fontSize: 11, cursor: 'pointer', letterSpacing: '0.05em', textTransform: 'uppercase', transition: 'all 0.2s' }}
-        onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(124,58,237,0.5), rgba(79,70,229,0.5))'; e.currentTarget.style.color = 'white'; }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(124,58,237,0.2), rgba(79,70,229,0.2))'; e.currentTarget.style.color = '#a78bfa'; }}
-      >
-        Solicitar Orçamento
+      {p.badge && (
+        <span style={{ position: 'absolute', top: 12, left: 12, zIndex: 2, background: 'rgba(124,58,237,0.9)', color: 'white', fontSize: 9, fontWeight: 800, padding: '4px 8px', borderRadius: 6, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          {p.badge}
+        </span>
+      )}
+      <button className={`absolute top-3 right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all bg-black/20 backdrop-blur-md border border-white/10 hover:bg-black/40 hover:scale-110 ${favorites.has(p.id) ? 'text-red-500' : 'text-white'}`} onClick={(e) => { e.stopPropagation(); onFav(p.id); }}>
+        <Icon.Heart filled={favorites.has(p.id)} />
       </button>
+  
+      <div
+        style={{ background: `linear-gradient(135deg, rgba(13,15,23,1), ${p.color_hex || '#7c3aed'}10)`, cursor: 'pointer', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', aspectRatio: '4/5', width: '100%', overflow: 'hidden' }}
+        onClick={() => onView(p)}
+      >
+        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <img 
+            src={currentImage} 
+            alt={p.title} 
+            className="product-img drop-shadow-2xl" 
+            style={{ 
+              width: '100%', height: '100%', objectFit: 'contain', 
+              transform: `scaleX(${currentScaleX})`, 
+              transition: isHovered ? 'none' : 'transform 0.5s ease' 
+            }} 
+            draggable={false} 
+          />
+        </div>
+      </div>
+  
+      <div style={{ padding: '16px 16px 20px' }}>
+        <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: p.color_hex || '#a78bfa', background: `${p.color_hex || '#7c3aed'}15`, padding: '3px 8px', borderRadius: 5, display: 'inline-block', marginBottom: 8 }}>
+          {p.category || 'GERAL'}
+        </span>
+        <h3 style={{ fontSize: 13, fontWeight: 800, color: 'white', lineHeight: 1.3, marginBottom: 4, cursor: 'pointer' }} onClick={() => onView(p)}>{p.title}</h3>
+        <p style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>{p.subtitle}</p>
+  
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
+          <span style={{ fontSize: 20, fontWeight: 900, color: 'white' }}>R$ {Number(p.price).toFixed(2).replace('.', ',')}</span>
+        </div>
+  
+        <button
+          onClick={() => onAdd(p)}
+          style={{ marginTop: 14, width: '100%', padding: '10px', background: 'linear-gradient(135deg, rgba(124,58,237,0.2), rgba(79,70,229,0.2))', border: '1px solid rgba(124,58,237,0.3)', borderRadius: 10, color: '#a78bfa', fontWeight: 700, fontSize: 11, cursor: 'pointer', letterSpacing: '0.05em', textTransform: 'uppercase', transition: 'all 0.2s' }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(124,58,237,0.5), rgba(79,70,229,0.5))'; e.currentTarget.style.color = 'white'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(124,58,237,0.2), rgba(79,70,229,0.2))'; e.currentTarget.style.color = '#a78bfa'; }}
+        >
+          Solicitar Orçamento
+        </button>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 /* ═══════════════════════════════════════════════════════════
    HERO SLIDER
