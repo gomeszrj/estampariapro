@@ -136,8 +136,11 @@ const Viewer360: React.FC<{ product: GmzProduct | null; color: string }> = ({ pr
 
   useEffect(() => {
     if (!autoRotate) return;
-    const spin = () => {
-      setRotation(r => (r + 0.3) % 360);
+    let lastTime = performance.now();
+    const spin = (time: number) => {
+      const delta = time - lastTime;
+      lastTime = time;
+      setRotation(r => (r + delta * 0.05) % 360);
       animRef.current = requestAnimationFrame(spin);
     };
     animRef.current = requestAnimationFrame(spin);
@@ -302,7 +305,7 @@ const ProductCard: React.FC<{
     const spin = (time: number) => {
       const delta = time - lastTime;
       lastTime = time;
-      setRotation(r => (r + delta * 0.15) % 360);
+      setRotation(r => (r + delta * 0.05) % 360);
       animRef.current = requestAnimationFrame(spin);
     };
     animRef.current = requestAnimationFrame(spin);
