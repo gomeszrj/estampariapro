@@ -6,6 +6,7 @@ import { notify } from './ui/toast';
    TYPES
 ═══════════════════════════════════════════════════════════ */
 interface CartItemDetail {
+  size: string;
   name: string;
   number: string;
 }
@@ -291,11 +292,11 @@ const ProductCard: React.FC<{
     </button>
 
     <div
-      style={{ background: `linear-gradient(135deg, rgba(13,15,23,1), ${p.color_hex || '#7c3aed'}10)`, cursor: 'pointer', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', aspectRatio: '4/3', width: '100%', overflow: 'hidden' }}
+      style={{ background: `linear-gradient(135deg, rgba(13,15,23,1), ${p.color_hex || '#7c3aed'}10)`, cursor: 'pointer', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', aspectRatio: '4/5', width: '100%', overflow: 'hidden' }}
       onClick={() => onView(p)}
     >
-      <div style={{ width: '80%', height: '80%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <img src={getProductImg(p)} alt={p.title} className="product-img drop-shadow-2xl" style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', transition: 'transform 0.5s ease' }} draggable={false} />
+      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+        <img src={getProductImg(p)} alt={p.title} className="product-img drop-shadow-2xl" style={{ width: '100%', height: '100%', objectFit: 'contain', transition: 'transform 0.5s ease' }} draggable={false} />
       </div>
     </div>
 
@@ -493,12 +494,16 @@ const CartCheckout: React.FC<{ cart: CartItem[], totalPrice: number, storeName: 
       msg += `\n*Itens:*\n`;
       
       cart.forEach(c => {
-        const ps = parseSize(c.size);
-        const sizeLabel = ps.category !== 'Geral' ? `${ps.category} ${ps.label}` : ps.label;
-        msg += `• ${c.product.title} (${c.qty}x, Tam ${sizeLabel}) - R${(Number(c.product.price) * c.qty).toFixed(2)}\n`;
-        if (c.personalizationType !== 'none') {
+        if (c.personalizationType === 'none') {
+          const ps = parseSize(c.size);
+          const sizeLabel = ps.category !== 'Geral' ? `${ps.category} ${ps.label}` : ps.label;
+          msg += `• ${c.product.title} (${c.qty}x, Tam ${sizeLabel}) - R${(Number(c.product.price) * c.qty).toFixed(2)}\n`;
+        } else {
+          msg += `• ${c.product.title} (${c.qty}x) - R${(Number(c.product.price) * c.qty).toFixed(2)}\n`;
           c.details.forEach((d, i) => {
-             msg += `  - Item ${i+1}: ${d.name ? d.name : 'Sem nome'} ${c.personalizationType === 'name_number' ? '(Nº ' + d.number + ')' : ''}\n`;
+             const ps = parseSize(d.size || c.size);
+             const sizeLabel = ps.category !== 'Geral' ? `${ps.category} ${ps.label}` : ps.label;
+             msg += `  - Item ${i+1}: Tam ${sizeLabel} - ${d.name ? d.name : 'Sem nome'} ${c.personalizationType === 'name_number' ? '(Nº ' + d.number + ')' : ''}\n`;
           });
         }
       });
@@ -587,8 +592,9 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
     if (activeModal) {
       setQuantity(1);
       setPersType('none');
-      setPersDetails([{ name: '', number: '' }]);
-      setSelectedSize(activeModal.sizes && activeModal.sizes.length > 0 ? parseSize(activeModal.sizes[0]).raw : 'M');
+      const defaultSize = activeModal.sizes && activeModal.sizes.length > 0 ? parseSize(activeModal.sizes[0]).raw : 'M';
+      setPersDetails([{ size: defaultSize, name: '', number: '' }]);
+      setSelectedSize(defaultSize);
     }
   }, [activeModal]);
 
@@ -625,13 +631,24 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
   const primaryColor = settings?.primary_color || '#7c3aed';
 
   useEffect(() => {
+    const theme = settings?.theme_config || {};
+    const fontFamily = theme.font_family || 'Inter';
+    const borderRadiusProduct = theme.border_radius === 'rounded-none' ? '0px' : theme.border_radius === 'rounded-sm' ? '8px' : theme.border_radius === 'rounded-[32px]' ? '32px' : '20px';
+    const borderRadiusBtn = theme.border_radius === 'rounded-none' ? '0px' : theme.border_radius === 'rounded-sm' ? '4px' : theme.border_radius === 'rounded-[32px]' ? '24px' : '12px';
+    
+    let bg900 = '#040507', bg800 = '#07090d', bg700 = '#0d0f17';
+    if (theme.bg_mode === 'pure-black') { bg900 = '#000000'; bg800 = '#050505'; bg700 = '#0a0a0a'; }
+    if (theme.bg_mode === 'dark-gray') { bg900 = '#111827'; bg800 = '#1f2937'; bg700 = '#374151'; }
+
     const style = document.createElement('style');
     style.innerHTML = `
+      @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,700;0,900&family=Inter:wght@400;500;700;800;900&family=Montserrat:wght@400;700;900&family=Poppins:wght@400;700;900&family=Roboto:wght@400;700;900&display=swap');
+      
       .gmz-store {
-        --bg-900: #040507;
-        --bg-800: #07090d;
-        --bg-700: #0d0f17;
-        font-family: 'Inter', sans-serif;
+        --bg-900: ${bg900};
+        --bg-800: ${bg800};
+        --bg-700: ${bg700};
+        font-family: '${fontFamily}', sans-serif;
         background: var(--bg-900);
         color: #e2e8f0;
       }
@@ -640,7 +657,7 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
         padding: 14px 28px; background: linear-gradient(135deg, ${primaryColor}, ${settings?.accent_color || '#4f46e5'});
         color: white; font-weight: 700; font-size: 12px;
         text-transform: uppercase; letter-spacing: 0.1em;
-        border-radius: 12px; border: none; cursor: pointer;
+        border-radius: ${borderRadiusBtn}; border: none; cursor: pointer;
         box-shadow: 0 4px 25px ${primaryColor}59;
         transition: all 0.2s ease; text-decoration: none;
       }
@@ -649,7 +666,7 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
       .gmz-store .section-title span { color: ${primaryColor}; }
       .gmz-store .product-card {
         background: rgba(13,15,23,0.8); border: 1px solid rgba(139,92,246,0.1);
-        border-radius: 20px; overflow: hidden; transition: all 0.3s ease;
+        border-radius: ${borderRadiusProduct}; overflow: hidden; transition: all 0.3s ease;
       }
       .gmz-store .product-card:hover { border-color: rgba(139,92,246,0.4); transform: translateY(-8px); box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 40px rgba(139,92,246,0.15); }
       .gmz-store .product-card:hover .product-img { transform: scale(1.05) translateY(-5px); filter: drop-shadow(0 20px 20px rgba(139,92,246,0.3)); }
@@ -673,7 +690,7 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
       }
       .gmz-store .modal-overlay.open { opacity: 1; pointer-events: all; }
       .gmz-store .modal-box {
-        background: var(--bg-700); border: 1px solid rgba(139,92,246,0.15); border-radius: 28px;
+        background: var(--bg-700); border: 1px solid rgba(139,92,246,0.15); border-radius: ${borderRadiusProduct};
         max-width: 560px; width: 100%; max-height: 90vh; overflow-y: auto;
         transform: scale(0.95) translateY(20px); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
       }
@@ -795,11 +812,15 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
     </div>
     {item.personalizationType !== 'none' && item.details.length > 0 && (
       <div className="mt-2 bg-black/30 rounded p-2 text-[10px] text-slate-400 max-h-20 overflow-y-auto">
-        {item.details.map((d, i) => (
-          <div key={i}>
-            • {d.name || 'Sem nome'} {item.personalizationType === 'name_number' ? `(Nº ${d.number})` : ''}
-          </div>
-        ))}
+        {item.details.map((d, i) => {
+          const ps = parseSize(d.size || item.size);
+          const sizeLabel = ps.category !== 'Geral' ? `${ps.category} ${ps.label}` : ps.label;
+          return (
+            <div key={i}>
+              • Tam {sizeLabel} - {d.name || 'Sem nome'} {item.personalizationType === 'name_number' ? `(Nº ${d.number})` : ''}
+            </div>
+          );
+        })}
       </div>
     )}
   </div>
@@ -864,23 +885,19 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
                   {(() => {
                     const rawSizes = activeModal.sizes && activeModal.sizes.length > 0 ? activeModal.sizes : ['PP', 'P', 'M', 'G', 'GG'];
                     const parsedSizes = rawSizes.map(parseSize);
-                    
-                    // Deduplicate: If there are detailed sizes (Masculino/Feminino), hide the 'Geral' duplicates
                     const hasDetailed = parsedSizes.some(ps => ps.category !== 'Geral');
                     let finalSizes = parsedSizes;
                     if (hasDetailed) {
                       finalSizes = parsedSizes.filter(ps => {
                         if (ps.category !== 'Geral') return true;
-                        // For 'Geral', keep it only if no detailed category has this same label
                         const isDuplicated = parsedSizes.some(other => other.category !== 'Geral' && other.label === ps.label);
                         return !isDuplicated;
                       });
                     }
-
-                    // Also remove exact duplicates
                     const uniqueSizes = Array.from(new Map(finalSizes.map(item => [item.raw, item])).values());
-
+                    
                     const grouped: Record<string, ParsedSize[]> = {};
+
                     uniqueSizes.forEach(ps => {
                       const catName = ps.category === 'Geral' ? 'Tamanhos' : ps.category;
                       if (!grouped[catName]) grouped[catName] = [];
@@ -948,7 +965,7 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
         <span className="w-6 text-center text-sm font-bold">{quantity}</span>
         <button className="w-8 h-8 rounded-md bg-white/5 hover:bg-white/10 flex items-center justify-center text-white" onClick={() => {
           setQuantity(q => q + 1);
-          setPersDetails(prev => [...prev, { name: '', number: '' }]);
+          setPersDetails(prev => [...prev, { size: selectedSize, name: '', number: '' }]);
         }}>+</button>
       </div>
     </div>
@@ -974,21 +991,37 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
       <div className="space-y-3 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
         {Array.from({ length: quantity }).map((_, idx) => (
           <div key={idx} className="bg-black/30 p-3 rounded-lg border border-white/5 flex gap-3">
+            <div className="w-[100px] flex-shrink-0">
+              <label className="text-[10px] font-bold text-slate-500 uppercase">Tam.</label>
+              <select className="input-field mt-1 px-2" value={persDetails[idx]?.size || selectedSize} onChange={e => {
+                const newD = [...persDetails];
+                if (!newD[idx]) newD[idx] = { size: selectedSize, name: '', number: '' };
+                newD[idx].size = e.target.value;
+                setPersDetails(newD);
+              }}>
+                {(() => {
+                  const rawSizes = activeModal.sizes && activeModal.sizes.length > 0 ? activeModal.sizes : ['PP', 'P', 'M', 'G', 'GG'];
+                  return rawSizes.map(parseSize).map(ps => (
+                    <option key={ps.raw} value={ps.raw}>{ps.category !== 'Geral' ? `${ps.category} ${ps.label}` : ps.label}</option>
+                  ));
+                })()}
+              </select>
+            </div>
             <div className="flex-1">
               <label className="text-[10px] font-bold text-slate-500 uppercase">Nome {idx + 1}</label>
               <input className="input-field mt-1" value={persDetails[idx]?.name || ''} onChange={e => {
                 const newD = [...persDetails];
-                if (!newD[idx]) newD[idx] = { name: '', number: '' };
+                if (!newD[idx]) newD[idx] = { size: selectedSize, name: '', number: '' };
                 newD[idx].name = e.target.value;
                 setPersDetails(newD);
               }} />
             </div>
             {persType === 'name_number' && (
-              <div className="w-20">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Número {idx + 1}</label>
-                <input className="input-field mt-1 text-center" value={persDetails[idx]?.number || ''} onChange={e => {
+              <div className="w-16 flex-shrink-0">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Nº</label>
+                <input className="input-field mt-1 text-center px-1" value={persDetails[idx]?.number || ''} onChange={e => {
                   const newD = [...persDetails];
-                  if (!newD[idx]) newD[idx] = { name: '', number: '' };
+                  if (!newD[idx]) newD[idx] = { size: selectedSize, name: '', number: '' };
                   newD[idx].number = e.target.value;
                   setPersDetails(newD);
                 }} />

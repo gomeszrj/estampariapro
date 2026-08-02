@@ -1309,6 +1309,50 @@ export const StoreManager: React.FC = () => {
                     </div>
                   </div>
                 </div>
+                
+                {/* NOVOS ESTILOS DO THEME CONFIG */}
+                <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                  <div>
+                    <label style={labelStyle}>Fonte Padrão</label>
+                    <select
+                      style={inputStyle}
+                      value={settings.theme_config?.font_family || 'Inter'}
+                      onChange={e => setSettings(s => ({ ...s, theme_config: { ...(s.theme_config || {}), font_family: e.target.value } }))}
+                    >
+                      <option value="Inter">Inter (Padrão)</option>
+                      <option value="Poppins">Poppins (Redonda e Moderna)</option>
+                      <option value="Roboto">Roboto (Clássica)</option>
+                      <option value="Montserrat">Montserrat (Larga)</option>
+                      <option value="Barlow Condensed">Barlow Condensed (Impacto)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Estilo de Bordas</label>
+                    <select
+                      style={inputStyle}
+                      value={settings.theme_config?.border_radius || 'rounded-2xl'}
+                      onChange={e => setSettings(s => ({ ...s, theme_config: { ...(s.theme_config || {}), border_radius: e.target.value } }))}
+                    >
+                      <option value="rounded-2xl">Arredondadas (Padrão)</option>
+                      <option value="rounded-sm">Quase Quadrado</option>
+                      <option value="rounded-none">Quadrado Total</option>
+                      <option value="rounded-[32px]">Muito Arredondado (Apple)</option>
+                    </select>
+                  </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={labelStyle}>Tom do Fundo Escuro</label>
+                    <select
+                      style={inputStyle}
+                      value={settings.theme_config?.bg_mode || 'dark-blue'}
+                      onChange={e => setSettings(s => ({ ...s, theme_config: { ...(s.theme_config || {}), bg_mode: e.target.value } }))}
+                    >
+                      <option value="dark-blue">Azul Escuro Intenso (Padrão)</option>
+                      <option value="pure-black">Preto Absoluto (Minimalista)</option>
+                      <option value="dark-gray">Cinza Escuro (Industrial)</option>
+                    </select>
+                  </div>
+                </div>
+
               </div>
 
               <div style={{ background: 'rgba(13,15,23,0.8)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 20, padding: 24 }}>

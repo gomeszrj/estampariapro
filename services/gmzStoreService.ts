@@ -73,6 +73,7 @@ export interface GmzStoreSettings {
   installments: number;
   personalization_name_price?: number;
   personalization_name_number_price?: number;
+  theme_config?: any; // JSONB
 }
 
 export const getTenantId = async () => {
