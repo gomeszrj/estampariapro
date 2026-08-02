@@ -637,8 +637,8 @@ const Login: React.FC = () => {
                             </>
                             )}
                         </div>
-                    </div>{/* /inner p-8 */}
-                    </div>{/* /rounded-2xl card */}
+                    </div>
+                    </div>
                 </div>
             </div>
         </div>
