@@ -123,19 +123,6 @@ const Login: React.FC = () => {
         }
     };
 
-    const handleGoogleLogin = async () => {
-        try {
-            const { error } = await supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: {
-                    redirectTo: `${window.location.origin}/`
-                }
-            });
-            if (error) throw error;
-        } catch (err: any) {
-            notify.error('Erro ao conectar com Google: ' + err.message);
-        }
-    };
 
     const handleForgotPassword = async (e: React.FormEvent) => {
         e.preventDefault();
