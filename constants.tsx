@@ -3,9 +3,24 @@ import React from 'react';
 
 // Versioning Rule: Minor versions go 0-9. When reaching .9, increment major version (e.g., 21.9 -> 22.0)
 // --- SYSTEM CONFIG ---
-export const SYSTEM_VERSION = '26.1.0';
+export const SYSTEM_VERSION = '26.2.0';
 export const APP_NAME = 'Gomesz Speed Print';
-export const LATEST_RELEASE_NOTES = `Novidades da Versão 26.1.0 — "Login Glassmorphic e Saída de Caixa de Fornecedores" (01/08/2026):
+export const LATEST_RELEASE_NOTES = `Novidades da Versão 26.2.0 — "Identidade Visual Profissional: Stamp Mark" (02/08/2026):
+
+🎨 REDESIGN DE IDENTIDADE VISUAL (LOGO & BRANDING):
+  * Novo Logo "C3 Stamp Mark": Componente SVG vetorial inline EstampariaProLogo — anel orbital ciano, letra E geométrica e 4 pontos de registro nos eixos (referência à serigrafia). Animado, escalável, sem dependência de arquivo externo.
+  * Splash Screen Profissional: Logo animado (96px) com anel orbital girando e glow pulsante ciano. Barra de progresso neon. Tipografia Barlow Condensed bold.
+  * Favicon SVG: Atualizado para o logo C3 inline — funciona em todos os browsers. Título da aba: "EstampariaPro · Sistema de Gestão".
+
+✅ REDESIGN COMPLETO DO LOGIN:
+  * Coluna Esquerda: Logo grande (100px) animado como peça central, título Barlow Condensed 58px, textura de trama de tecido no fundo, linha ciano lateral, grid 2x2 de feature cards com animação escalonada.
+  * Card do Formulário: Substituído degradê genérico por card escuro com borda ciano sutil e 4 crosshairs nos cantos (marcas de registro de serigrafia). Mini logo (36px) no topo do card — visível no mobile.
+  * Removido toggle "Tema" (era placeholder inativo). Header em Barlow Condensed com acento ciano.
+
+🏠 SIDEBAR ATUALIZADA:
+  * Logo "EP" texto substituído pelo novo logo C3 animado (44px) com tipografia Barlow Condensed e acento ciano.
+
+Novidades da Versão 26.1.0 — "Login Glassmorphic e Saída de Caixa de Fornecedores" (01/08/2026):
 
 ✅ DESIGN & ESTÉTICA FRONTEND (LOGIN PREMIUM):
   * Logo Remodelada: A arte abstrata antiga foi totalmente removida, dando lugar a uma marca limpa, elegante com estilo "Sparkle" envolvida num círculo glassmorphic (Efeito Vidro).

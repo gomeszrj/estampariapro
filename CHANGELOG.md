@@ -1,3 +1,12 @@
+## [v26.2.0] — 2026-08-02
+### 🎨 Identidade Visual Profissional: Stamp Mark
+- **[NEW] `EstampariaProLogo.tsx`:** Novo componente SVG vetorial inline — logo C3 "Stamp Mark" com anel orbital ciano, letra E geométrica e 4 pontos de registro nos eixos (referência à serigrafia). Props: `size` e `animated`. Zero dependência de arquivo externo.
+- **Splash Screen redesenhada:** Logo animado (96px) com anel orbital girando e glow pulsante ciano. Barra de progresso neon ciano. Tipografia Barlow Condensed bold. Animação de entrada suave.
+- **Favicon SVG inline:** Favicon atualizado para o logo C3 — sem arquivo externo, funciona em todos os browsers modernos. Título da aba: `EstampariaPro · Sistema de Gestão`.
+- **Login — Coluna Esquerda reformulada:** Logo grande (100px) animado, título ESTAMPARIA/PRO em Barlow Condensed 58px, textura sutil de trama de tecido no fundo, linha divisória ciano lateral, grid 2×2 de feature cards com animação escalonada.
+- **Login — Card do Formulário redesenhado:** Substituído degradê roxo/azul genérico por card escuro com borda ciano sutil e 4 crosshairs nos cantos. Mini logo (36px) visível no mobile. Toggle "Tema" (placeholder inativo) removido.
+- **Sidebar atualizada:** Logo "EP" texto com blur indigo substituído pelo logo C3 animado (44px) com tipografia Barlow Condensed.
+
 ## [v26.0.0] - 2026-07-31  
 ### MAJOR UPDATE - Estabilizacao Total  
 - feat: Implementado menu Avancado de Filtros de Pedidos (Filtro por status de pagamento e periodo de criacao).  
