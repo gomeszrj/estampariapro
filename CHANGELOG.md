@@ -1,3 +1,11 @@
+## [v26.3.0] — 2026-08-02
+### ✨ Loja Pública e Personalização de Componentes
+- **[NEW] Customização de Tema da Loja:** Integração total das cores primárias, secundárias e raio de borda, incluindo suporte ao painel administrativo (`StoreManager`) salvando as preferências em formato JSONB (`theme_config`).
+- **[NEW] Padronização Inteligente de Imagens:** As imagens do catálogo passam a utilizar a proporção `4/5` e `object-fit: contain`, garantindo um grid uniforme e acabando com a diferença de tamanho de caixas de produtos independentemente das dimensões da foto carregada.
+- **[NEW] Rotação 3D de Produtos (360°):** Refatorado o comportamento dos cartões da loja (`ProductCard`). Ao passar o cursor do mouse num produto, ele realiza automaticamente um giro suave 360 graus utilizando as fotos frente/costas/laterais, com transições em cálculo vetorial de crossfade dinâmico para uma transição lisa e natural, dando aspecto muito mais profissional (evitando stutters/cortes).
+- **[NEW] Interação E-mail Fallback:** Se um arquivo enviado na finalização da loja pública for grande demais para a nuvem da loja, a UI de `CartCheckout` exibirá agora automaticamente a opção "Enviar Arte por E-Mail". Clicando nela, ele utilizará automaticamente a tag `mailto:` vinculada ao e-mail da empresa e abrirá a janela de e-mail do cliente, preenchendo o número do pedido no assunto e já informando de qual cliente se trata.
+- **[FIX] Dados Institucionais Reais da Empresa:** O sistema de checkout da loja e o validador de contato de confirmação no painel (Via Whatsapp) não utilizará mais texto genérico ("Estamparia Pro"). Agora busca, reconhece e exibe o Nome da Empresa (Razão/Fantasia), CNPJ e e-mail parametrizado na página "Ajustes / Dados da Empresa" do administrador.
+
 ## [v26.2.0] — 2026-08-02
 ### 🎨 Identidade Visual Profissional: Stamp Mark
 - **[NEW] `EstampariaProLogo.tsx`:** Novo componente SVG vetorial inline — logo C3 "Stamp Mark" com anel orbital ciano, letra E geométrica e 4 pontos de registro nos eixos (referência à serigrafia). Props: `size` e `animated`. Zero dependência de arquivo externo.
