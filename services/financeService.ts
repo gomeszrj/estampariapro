@@ -43,6 +43,17 @@ export const financeService = {
         return balance;
     },
 
+    async getByOrderId(orderId: string): Promise<Transaction | null> {
+        const { data, error } = await supabase
+            .from('transactions')
+            .select('*')
+            .eq('order_id', orderId)
+            .maybeSingle();
+        
+        if (error) throw error;
+        return data ? mapTransactionFromDB(data) : null;
+    },
+
     // Remove all transactions linked to a specific order (called when order is deleted)
     async deleteByOrderId(orderId: string) {
         const { error } = await supabase

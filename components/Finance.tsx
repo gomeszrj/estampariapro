@@ -32,6 +32,8 @@ import {
 import { Order, OrderStatus, OrderType, Product, Transaction } from '../types';
 import { financeService } from '../services/financeService';
 import { notify } from './ui/toast';
+import { useNotification } from './NotificationProvider';
+import { printFinanceReport } from '../utils/financePrintUtils';
 
 interface FinanceProps {
   orders: Order[];
@@ -406,7 +408,7 @@ const Finance: React.FC<FinanceProps> = ({ orders, products }) => {
              </select>
            </div>
            <button
-             onClick={() => window.print()}
+             onClick={() => printFinanceReport(currentMonthTransactions, selectedMonth, selectedYear)}
              className="bg-[#0f172a] hover:bg-slate-800 text-slate-300 border border-[#1e293b] px-4 py-2.5 rounded-xl font-bold text-xs shadow-lg transition-all flex items-center gap-2"
            >
              <Printer className="w-4 h-4" />

@@ -7,7 +7,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!fileQuery) return res.status(400).send('Arquivo não especificado.');
 
   try {
-    const url = Buffer.from(fileQuery, 'base64').toString('utf-8');
+    const decodedQuery = decodeURIComponent(fileQuery);
+    const url = Buffer.from(decodedQuery, 'base64').toString('utf-8');
     
     // Prevents SSRF attacks (Server-Side Request Forgery) by strictly limiting domains
     if (!url.includes('supabase.co/storage/')) {
@@ -23,6 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const buffer = Buffer.from(arrayBuffer);
     
     res.setHeader('Content-Type', imageRes.headers.get('content-type') || 'application/octet-stream');
+    res.setHeader('Content-Disposition', 'inline');
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     res.status(200).send(buffer);
   } catch(e) {

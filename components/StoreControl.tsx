@@ -351,7 +351,8 @@ const StoreControl: React.FC<CatalogProps> = ({ products, setProducts, readOnly 
         category: 'sale',
         amount: cartTotal,
         description: `Venda Loja #${newOrder.orderNumber} - ${client?.name}`,
-        date: today
+        date: today,
+        orderId: newOrder.id
       });
 
       // 3. Clear

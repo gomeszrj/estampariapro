@@ -527,7 +527,8 @@ const CartCheckout: React.FC<{ cart: CartItem[], totalPrice: number, storeName: 
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [hasArtwork, setHasArtwork] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [observations, setObservations] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [uploadError, setUploadError] = useState(false);
   const [pendingWaMsg, setPendingWaMsg] = useState('');
@@ -544,19 +545,26 @@ const CartCheckout: React.FC<{ cart: CartItem[], totalPrice: number, storeName: 
     let uploadFailed = false;
 
     try {
-      if (hasArtwork && file) {
+      if (hasArtwork && files.length > 0) {
         try {
-          artworkUrl = await gmzStoreService.uploadArtwork(file);
+          const uploadedUrls = await Promise.all(
+            files.map(f => gmzStoreService.uploadArtwork(f))
+          );
+          artworkUrl = uploadedUrls.join(' ||| ');
         } catch (uploadErr) {
           console.error("Erro no upload da arte:", uploadErr);
           uploadFailed = true;
         }
       }
       
+      const orderNotes = [];
+      if (address) orderNotes.push(`Endereço: ${address}`);
+      if (observations) orderNotes.push(`Observações: ${observations}`);
+
       const orderData = {
         customer_name: name,
         customer_phone: phone,
-        notes: address ? "Endereço: " + address : "",
+        notes: orderNotes.join(' | '),
         status: 'novo',
         source: 'loja_publica',
         total_price: totalPrice,
@@ -600,9 +608,16 @@ const CartCheckout: React.FC<{ cart: CartItem[], totalPrice: number, storeName: 
       });
       
       msg += `\n*Total Estimado:* R${totalPrice.toFixed(2)}\n`;
+      if (observations) {
+        msg += `\n*Observações do Cliente:* ${observations}\n`;
+      }
       if (hasArtwork && !uploadFailed && artworkUrl) {
-        const camouflagedUrl = `${window.location.origin}/api/arte?f=${btoa(artworkUrl)}`;
-        msg += `\n*Arte em anexo:* ${camouflagedUrl}\n`;
+        const urls = artworkUrl.split(' ||| ');
+        urls.forEach((url, idx) => {
+           const camouflagedUrl = `${window.location.origin}/api/arte?f=${encodeURIComponent(btoa(url))}`;
+           msg += `\n*Arte em anexo ${urls.length > 1 ? idx + 1 : ''}:* ${camouflagedUrl}`;
+        });
+        msg += '\n';
       }
       
       if (uploadFailed) {
@@ -623,8 +638,25 @@ const CartCheckout: React.FC<{ cart: CartItem[], totalPrice: number, storeName: 
     }
   };
 
+  const modelsCount = cart.reduce((acc, item) => {
+    acc[item.product.id] = (acc[item.product.id] || 0) + item.qty;
+    return acc;
+  }, {} as Record<string, number>);
+  const underMinimumModels = Object.entries(modelsCount).filter(([_, qty]) => qty < 10);
+  const showMinWarning = underMinimumModels.length > 0;
+
   return (
     <div className="p-5 border-t border-purple-500/15 bg-[#0d0f17]/90">
+      {showMinWarning && (
+        <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
+          <p className="text-sm font-bold flex items-center gap-2">
+            ⚠️ Pedido Mínimo de 10 Peças
+          </p>
+          <p className="text-[11px] mt-1 text-amber-500/80 leading-relaxed">
+            Seu carrinho possui modelos com menos de 10 peças. Nosso pedido mínimo é de 10 peças <strong>do mesmo modelo</strong> (não importa se é masculino, feminino ou infantil, desde que seja o mesmo modelo). Seu pedido será enviado para a loja, mas passará por uma avaliação.
+          </p>
+        </div>
+      )}
       <div className="mb-4">
         <label className="text-[10px] font-bold text-slate-500 uppercase">Seu Nome</label>
         <input className="input-field mt-1" value={name} onChange={e=>setName(e.target.value)} placeholder="João Silva" />
@@ -638,15 +670,19 @@ const CartCheckout: React.FC<{ cart: CartItem[], totalPrice: number, storeName: 
         <input className="input-field mt-1" value={address} onChange={e=>setAddress(e.target.value)} placeholder="Rua, Número, Bairro" />
       </div>
       <div className="mb-4">
+        <label className="text-[10px] font-bold text-slate-500 uppercase">Observações do Pedido (opcional)</label>
+        <textarea className="input-field mt-1 resize-none h-16" value={observations} onChange={e=>setObservations(e.target.value)} placeholder="Detalhes adicionais, cor da malha, etc..." />
+      </div>
+      <div className="mb-4">
         <label className="flex items-center gap-2 text-sm text-slate-300 font-bold">
           <input type="checkbox" checked={hasArtwork} onChange={e => setHasArtwork(e.target.checked)} className="rounded text-indigo-500 bg-black/30 border-white/10" />
           Já possui a arte?
         </label>
         {hasArtwork && (
           <div className="mt-2">
-            <input type="file" onChange={e => setFile(e.target.files?.[0] || null)} className="text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-500/20 file:text-indigo-400 hover:file:bg-indigo-500/30 w-full" />
+            <input type="file" multiple onChange={e => setFiles(e.target.files ? Array.from(e.target.files) : [])} className="text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-500/20 file:text-indigo-400 hover:file:bg-indigo-500/30 w-full" />
             <p className="text-[10px] text-slate-500 mt-2 font-medium">
-              * Tamanho máximo: 50MB. Para arquivos maiores, envie o link pelo WhatsApp.
+              * Você pode selecionar múltiplos arquivos (Ex: Imagem PNG + Vetor Corel/PDF). Tamanho máximo: 50MB. Para arquivos maiores, o sistema pedirá que envie por e-mail.
             </p>
           </div>
         )}
@@ -698,18 +734,18 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
   const [toast, setToast] = useState<string | null>(null);
   const [filterCat, setFilterCat] = useState('TODOS');
   
-  const [quantity, setQuantity] = useState(1);
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [persType, setPersType] = useState<'none'|'name'|'name_number'>('none');
-  const [persDetails, setPersDetails] = useState<CartItemDetail[]>([{ name: '', number: '' }]);
+  const [persDetailsMap, setPersDetailsMap] = useState<Record<string, CartItemDetail[]>>({});
   const [selectedSize, setSelectedSize] = useState('M');
   const productsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (activeModal) {
-      setQuantity(1);
-      setPersType('none');
       const defaultSize = activeModal.sizes && activeModal.sizes.length > 0 ? parseSize(activeModal.sizes[0]).raw : 'M';
-      setPersDetails([{ size: defaultSize, name: '', number: '' }]);
+      setQuantities({ [defaultSize]: 1 });
+      setPersType('none');
+      setPersDetailsMap({ [defaultSize]: [{ size: defaultSize, name: '', number: '' }] });
       setSelectedSize(defaultSize);
     }
   }, [activeModal]);
@@ -852,14 +888,26 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
     if (persType === 'name') finalPrice += settings?.personalization_name_price ? Number(settings.personalization_name_price) : 0;
     if (persType === 'name_number') finalPrice += settings?.personalization_name_number_price ? Number(settings.personalization_name_number_price) : 0;
 
-    setCart(prev => [...prev, {
-      id: `${p.id}-${Date.now()}`,
-      product: { ...p, price: finalPrice },
-      qty: quantity,
-      size: selectedSize,
-      personalizationType: persType,
-      details: persType === 'none' ? [] : persDetails.slice(0, quantity)
-    }]);
+    const newItems: CartItem[] = [];
+    Object.entries(quantities).forEach(([size, qty]) => {
+      if (qty > 0) {
+        newItems.push({
+          id: `${p.id}-${size}-${Date.now()}`,
+          product: { ...p, price: finalPrice },
+          qty: qty,
+          size: size,
+          personalizationType: persType,
+          details: persType === 'none' ? [] : (persDetailsMap[size] || []).slice(0, qty)
+        });
+      }
+    });
+
+    if (newItems.length === 0) {
+      showToast('Selecione pelo menos 1 unidade!');
+      return;
+    }
+
+    setCart(prev => [...prev, ...newItems]);
     showToast(`✓ ${p.title} adicionado!`);
     setCartOpen(true);
     setActiveModal(null);
@@ -1038,7 +1086,7 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
                                     onClick={() => setSelectedSize(ps.raw)} 
                                     className={`min-w-[44px] px-3 h-10 rounded-xl font-bold text-xs transition-all duration-200 border flex items-center justify-center ${
                                       isSelected 
-                                        ? 'bg-indigo-600/20 border-indigo-500 text-indigo-400 shadow-[0_0_15px_rgba(79,70,229,0.2)] scale-105' 
+                                        ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/30 scale-105' 
                                         : 'bg-slate-800/40 border-slate-700/50 text-slate-400 hover:bg-slate-800 hover:text-slate-200 hover:border-slate-600'
                                     }`}
                                   >
@@ -1075,13 +1123,14 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
 
                 <div className="mb-5 bg-white/5 border border-white/10 rounded-xl p-4">
     <div className="flex justify-between items-center mb-4">
-      <span className="text-sm font-bold text-slate-300">Quantidade</span>
+      <span className="text-sm font-bold text-slate-300">Quantidade (Tam {selectedSize})</span>
       <div className="flex items-center gap-3 bg-black/40 rounded-lg p-1 border border-white/10">
-        <button className="w-8 h-8 rounded-md bg-white/5 hover:bg-white/10 flex items-center justify-center text-white" onClick={() => setQuantity(Math.max(1, quantity - 1))}>-</button>
-        <span className="w-6 text-center text-sm font-bold">{quantity}</span>
         <button className="w-8 h-8 rounded-md bg-white/5 hover:bg-white/10 flex items-center justify-center text-white" onClick={() => {
-          setQuantity(q => q + 1);
-          setPersDetails(prev => [...prev, { size: selectedSize, name: '', number: '' }]);
+          setQuantities(prev => ({...prev, [selectedSize]: Math.max(0, (prev[selectedSize] || 0) - 1)}));
+        }}>-</button>
+        <span className="w-6 text-center text-sm font-bold">{quantities[selectedSize] || 0}</span>
+        <button className="w-8 h-8 rounded-md bg-white/5 hover:bg-white/10 flex items-center justify-center text-white" onClick={() => {
+          setQuantities(prev => ({...prev, [selectedSize]: (prev[selectedSize] || 0) + 1}));
         }}>+</button>
       </div>
     </div>
@@ -1103,44 +1152,36 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
       </div>
     </div>
 
-    {persType !== 'none' && (
+    {persType !== 'none' && (quantities[selectedSize] || 0) > 0 && (
       <div className="space-y-3 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
-        {Array.from({ length: quantity }).map((_, idx) => (
-          <div key={idx} className="bg-black/30 p-3 rounded-lg border border-white/5 flex gap-3">
-            <div className="w-[100px] flex-shrink-0">
-              <label className="text-[10px] font-bold text-slate-500 uppercase">Tam.</label>
-              <select className="input-field mt-1 px-2" value={persDetails[idx]?.size || selectedSize} onChange={e => {
-                const newD = [...persDetails];
-                if (!newD[idx]) newD[idx] = { size: selectedSize, name: '', number: '' };
-                newD[idx].size = e.target.value;
-                setPersDetails(newD);
-              }}>
-                {(() => {
-                  const rawSizes = activeModal.sizes && activeModal.sizes.length > 0 ? activeModal.sizes : ['PP', 'P', 'M', 'G', 'GG'];
-                  return rawSizes.map(parseSize).map(ps => (
-                    <option key={ps.raw} value={ps.raw}>{ps.category !== 'Geral' ? `${ps.category} ${ps.label}` : ps.label}</option>
-                  ));
-                })()}
-              </select>
-            </div>
+        {Array.from({ length: quantities[selectedSize] || 0 }).map((_, idx) => (
+          <div key={`${selectedSize}-${idx}`} className="bg-black/30 p-3 rounded-lg border border-white/5 flex gap-3">
             <div className="flex-1">
-              <label className="text-[10px] font-bold text-slate-500 uppercase">Nome {idx + 1}</label>
-              <input className="input-field mt-1" value={persDetails[idx]?.name || ''} onChange={e => {
-                const newD = [...persDetails];
-                if (!newD[idx]) newD[idx] = { size: selectedSize, name: '', number: '' };
-                newD[idx].name = e.target.value;
-                setPersDetails(newD);
-              }} />
+              <label className="text-[10px] font-bold text-slate-500 uppercase">Nome {idx + 1} (Tam {selectedSize})</label>
+              <input className="input-field mt-1" value={(persDetailsMap[selectedSize] && persDetailsMap[selectedSize][idx]?.name) || ''} onChange={e => {
+                setPersDetailsMap(prev => {
+                  const newMap = { ...prev };
+                  const arr = [...(newMap[selectedSize] || [])];
+                  if (!arr[idx]) arr[idx] = { size: selectedSize, name: '', number: '' };
+                  arr[idx].name = e.target.value;
+                  newMap[selectedSize] = arr;
+                  return newMap;
+                });
+              }} placeholder="Ex: SILVA" />
             </div>
             {persType === 'name_number' && (
-              <div className="w-16 flex-shrink-0">
+              <div className="w-[80px]">
                 <label className="text-[10px] font-bold text-slate-500 uppercase">Nº</label>
-                <input className="input-field mt-1 text-center px-1" value={persDetails[idx]?.number || ''} onChange={e => {
-                  const newD = [...persDetails];
-                  if (!newD[idx]) newD[idx] = { size: selectedSize, name: '', number: '' };
-                  newD[idx].number = e.target.value;
-                  setPersDetails(newD);
-                }} />
+                <input className="input-field mt-1 px-2 text-center" value={(persDetailsMap[selectedSize] && persDetailsMap[selectedSize][idx]?.number) || ''} onChange={e => {
+                  setPersDetailsMap(prev => {
+                    const newMap = { ...prev };
+                    const arr = [...(newMap[selectedSize] || [])];
+                    if (!arr[idx]) arr[idx] = { size: selectedSize, name: '', number: '' };
+                    arr[idx].number = e.target.value;
+                    newMap[selectedSize] = arr;
+                    return newMap;
+                  });
+                }} placeholder="10" />
               </div>
             )}
           </div>

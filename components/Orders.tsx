@@ -719,13 +719,17 @@ const Orders: React.FC<OrdersProps> = ({ orders, setOrders, products, clients, s
         paymentStatus: PaymentStatus.FULL,
         amountPaid: order.totalValue
       });
-      await financeService.create({
-        type: 'income',
-        category: 'sale',
-        amount: order.totalValue,
-        description: `Recebimento Pedido #${order.orderNumber} - ${order.clientName}`,
-        date: new Date().toISOString()
-      });
+      const existingTx = await financeService.getByOrderId(order.id);
+      if (!existingTx) {
+        await financeService.create({
+          type: 'income',
+          category: 'sale',
+          amount: order.totalValue,
+          description: `Recebimento Pedido #${order.orderNumber} - ${order.clientName}`,
+          date: new Date().toISOString(),
+          orderId: order.id
+        });
+      }
       window.dispatchEvent(new Event('refreshData'));
       notify.success('Pagamento registrado com sucesso!');
     } catch (error) {
