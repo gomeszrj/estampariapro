@@ -519,13 +519,16 @@ const HeroSlider: React.FC<{ banners: GmzBanner[], onCTA: () => void }> = ({ ban
    MAIN STORE APP
 ═══════════════════════════════════════════════════════════ */
 
-const CartCheckout: React.FC<{ cart: CartItem[], totalPrice: number, storeName: string, whatsapp: string, onClear: () => void }> = ({ cart, totalPrice, storeName, whatsapp, onClear }) => {
+const CartCheckout: React.FC<{ cart: CartItem[], totalPrice: number, storeName: string, storeEmail: string, whatsapp: string, onClear: () => void }> = ({ cart, totalPrice, storeName, storeEmail, whatsapp, onClear }) => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [hasArtwork, setHasArtwork] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadError, setUploadError] = useState(false);
+  const [pendingWaMsg, setPendingWaMsg] = useState('');
+  const [pendingOrderId, setPendingOrderId] = useState('');
 
   const handleSubmit = async () => {
     if (!name || !phone) {
@@ -569,7 +572,8 @@ const CartCheckout: React.FC<{ cart: CartItem[], totalPrice: number, storeName: 
       };
 
       // Create Order in DB
-      await gmzStoreService.submitPublicOrder(orderData);
+      const order = await gmzStoreService.submitPublicOrder(orderData);
+      if (order && order.id) setPendingOrderId(order.id);
 
       // Build WhatsApp Message
       let msg = `Olá! Quero fazer um pedido na ${storeName}:\n`;
@@ -593,13 +597,15 @@ const CartCheckout: React.FC<{ cart: CartItem[], totalPrice: number, storeName: 
       });
       
       msg += `\n*Total Estimado:* R${totalPrice.toFixed(2)}\n`;
-      if (hasArtwork) {
+      if (hasArtwork && !uploadFailed) {
         msg += `\n*Arte em anexo:* ${artworkUrl}\n`;
       }
       
       if (uploadFailed) {
-        msg += `\n*Atenção:* Tentei enviar o arquivo da arte, mas o tamanho excedeu o limite. Estou enviando a arte diretamente aqui pelo WhatsApp!\n`;
-        notify.warning("O arquivo era muito grande ou houve erro. Pedido gerado, mas envie a arte via WhatsApp logo em seguida!", { duration: 8000 });
+        msg += `\n*Atenção:* Tentei enviar o arquivo da arte, mas o tamanho excedeu o limite. Vou enviar a arte por Email!\n`;
+        setPendingWaMsg(msg);
+        setUploadError(true);
+        return; // UI stays open to show email button
       }
 
       window.open(`https://wa.me/${whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`, '_blank');
@@ -646,14 +652,36 @@ const CartCheckout: React.FC<{ cart: CartItem[], totalPrice: number, storeName: 
         <span className="text-sm text-slate-400">Total estimado:</span>
         <span className="text-xl font-black text-white">R$ {totalPrice.toFixed(2).replace('.', ',')}</span>
       </div>           
-      <button
-        onClick={handleSubmit}
-        disabled={submitting || cart.length === 0 || !name || !phone}
-        className="w-full px-6 py-5 rounded-2xl text-white font-black text-[15px] uppercase tracking-wide flex items-center justify-center gap-3 bg-[#25d366] hover:bg-[#1ebd5a] disabled:opacity-50 transition-all shadow-[0_0_25px_rgba(37,211,102,0.4)]"
-      >
-        <span className="text-2xl">💬</span>
-        {submitting ? 'PROCESSANDO PEDIDO...' : 'CONFIRMAR PEDIDO VIA WHATSAPP'}
-      </button>
+      {uploadError ? (
+        <div className="mt-6 flex flex-col gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl">
+          <p className="text-sm font-bold text-red-400">⚠️ Arquivo muito grande!</p>
+          <p className="text-xs text-slate-300">O seu pedido foi gerado com sucesso, mas a arte escolhida é muito grande para nosso sistema. Por favor, envie a arte por E-mail clicando no botão abaixo:</p>
+          <a
+            href={`mailto:${storeEmail}?subject=Arte do Pedido ${pendingOrderId || ''} - ${name}&body=Olá, segue em anexo a arte para o pedido recém gerado.`}
+            className="w-full px-6 py-4 rounded-xl text-white font-black text-[13px] uppercase tracking-wide flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 transition-all shadow-[0_0_20px_rgba(79,70,229,0.3)]"
+          >
+            <Icon.Mail /> ENVIAR ARTE POR E-MAIL
+          </a>
+          <button
+            onClick={() => {
+              window.open(`https://wa.me/${whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(pendingWaMsg)}`, '_blank');
+              onClear();
+            }}
+            className="w-full px-6 py-4 mt-2 rounded-xl text-white font-black text-[13px] uppercase tracking-wide flex items-center justify-center gap-2 bg-[#25d366] hover:bg-[#1ebd5a] transition-all shadow-[0_0_20px_rgba(37,211,102,0.2)]"
+          >
+            CONCLUIR VIA WHATSAPP
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={handleSubmit}
+          disabled={submitting || cart.length === 0 || !name || !phone}
+          className="w-full px-6 py-5 rounded-2xl text-white font-black text-[15px] uppercase tracking-wide flex items-center justify-center gap-3 bg-[#25d366] hover:bg-[#1ebd5a] disabled:opacity-50 transition-all shadow-[0_0_25px_rgba(37,211,102,0.4)]"
+        >
+          <span className="text-2xl">💬</span>
+          {submitting ? 'PROCESSANDO PEDIDO...' : 'CONFIRMAR PEDIDO VIA WHATSAPP'}
+        </button>
+      )}
     </div>
   );
 };
@@ -914,7 +942,7 @@ export const PublicStore: React.FC<{ tenantId?: string }> = ({ tenantId }) => {
           )}
         </div>
 
-        {cart.length > 0 && <CartCheckout cart={cart} totalPrice={totalPrice} storeName={storeName} whatsapp={whatsapp} onClear={() => { setCart([]); setCartOpen(false); }} />}
+        {cart.length > 0 && <CartCheckout cart={cart} totalPrice={totalPrice} storeName={settings?.store_name || storeName} storeEmail={settings?.company_email || ''} whatsapp={whatsapp} onClear={() => { setCart([]); setCartOpen(false); }} />}
       </div>
 
       {/* Modal backdrop — only rendered when activeModal exists, avoiding blue-flash */}

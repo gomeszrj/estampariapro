@@ -747,7 +747,7 @@ export const StoreManager: React.FC = () => {
   };
 
   const generateAdminWhatsappMessage = (o: GmzOrder, stLabel: string) => {
-    let msg = `Olá *${o.customer_name}*! Recebemos o seu pedido na *${tenantName || settings.store_name || 'Loja'}* com sucesso e ele está em *${stLabel}*!\n\n`;
+    let msg = `Olá *${o.customer_name}*! Recebemos o seu pedido na *${settings.store_name || tenantName || 'Loja'}* com sucesso e ele está em *${stLabel}*!\n\n`;
     msg += `*CONFIRMAÇÃO DOS DADOS:*\n`;
     msg += `👤 *Nome:* ${o.customer_name}\n`;
     msg += `📱 *Telefone:* ${o.customer_phone}\n`;

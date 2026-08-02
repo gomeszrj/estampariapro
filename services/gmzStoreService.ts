@@ -74,6 +74,9 @@ export interface GmzStoreSettings {
   personalization_name_price?: number;
   personalization_name_number_price?: number;
   theme_config?: any; // JSONB
+  company_name?: string;
+  company_email?: string;
+  company_cnpj?: string;
 }
 
 export const getTenantId = async () => {
@@ -306,6 +309,17 @@ export const gmzStoreService = {
       console.error("Error fetching public settings", error);
       return null;
     }
+    
+    // Fetch company info from settings table (if exists)
+    if (data && data.tenant_id) {
+      const { data: companyData } = await supabase.from('settings').select('name, email, cnpj, phone').eq('tenant_id', data.tenant_id).maybeSingle();
+      if (companyData) {
+        data.company_name = companyData.name;
+        data.company_email = companyData.email;
+        data.company_cnpj = companyData.cnpj;
+      }
+    }
+    
     return data;
   },
 
