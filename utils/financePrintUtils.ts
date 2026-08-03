@@ -212,15 +212,15 @@ export const printFinanceReport = (
         <!-- HEADER -->
         <div class="header">
           <div style="display: flex; gap: 20px; align-items: center;">
-            ${logoUrl ? \`<img src="\${logoUrl}" class="header-logo" />\` : ''}
+            ${logoUrl ? '<img src="' + logoUrl + '" class="header-logo" />' : ''}
             <div class="header-info">
-              <h1>\${storeName}</h1>
+              <h1>${storeName}</h1>
               <p>Relatório Gerencial Financeiro</p>
             </div>
           </div>
           <div class="badge">
             <div class="title">Período Referência</div>
-            <div class="val">\${period}</div>
+            <div class="val">${period}</div>
           </div>
         </div>
 
@@ -228,24 +228,24 @@ export const printFinanceReport = (
         <div class="summary-grid">
           <div class="summary-card">
             <div class="label">Total Entradas (Receitas)</div>
-            <div class="value text-success">\${formatCurrency(income)}</div>
+            <div class="value text-success">${formatCurrency(income)}</div>
           </div>
           <div class="summary-card">
             <div class="label">Total Saídas (Custos)</div>
-            <div class="value text-danger">\${formatCurrency(expense)}</div>
+            <div class="value text-danger">${formatCurrency(expense)}</div>
           </div>
           <div class="summary-card">
             <div class="label">Resultado Líquido</div>
-            <div class="value \${profit >= 0 ? 'text-success' : 'text-danger'}">\${formatCurrency(profit)}</div>
+            <div class="value ${profit >= 0 ? 'text-success' : 'text-danger'}">${formatCurrency(profit)}</div>
           </div>
           <div class="summary-card">
             <div class="label">Margem de Lucro</div>
-            <div class="value">\${margin}%</div>
+            <div class="value">${margin}%</div>
           </div>
         </div>
 
         <!-- TRANSACTIONS -->
-        <div class="section-title">Lançamentos do Período (\${transactions.length} registros)</div>
+        <div class="section-title">Lançamentos do Período (${transactions.length} registros)</div>
         <table>
           <thead>
             <tr>
@@ -257,7 +257,7 @@ export const printFinanceReport = (
             </tr>
           </thead>
           <tbody>
-            \${transactions.map(t => {
+            ${transactions.map(t => {
               const dt = new Date(t.date).toLocaleDateString('pt-BR');
               const typeClass = t.type === 'income' ? 'type-income' : 'type-expense';
               const typeLabel = t.type === 'income' ? 'RECEITA' : 'DESPESA';
@@ -273,28 +273,28 @@ export const printFinanceReport = (
               };
               const catStr = catMap[t.category] || t.category;
 
-              return \`
+              return `
                 <tr>
-                  <td>\${dt}</td>
-                  <td><span class="type-badge \${typeClass}">\${typeLabel}</span></td>
-                  <td><strong>\${catStr}</strong></td>
-                  <td>\${t.description}</td>
-                  <td class="td-right"><strong>\${t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></td>
+                  <td>${dt}</td>
+                  <td><span class="type-badge ${typeClass}">${typeLabel}</span></td>
+                  <td><strong>${catStr}</strong></td>
+                  <td>${t.description}</td>
+                  <td class="td-right"><strong>${t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></td>
                 </tr>
-              \`;
+              `;
             }).join('')}
           </tbody>
         </table>
 
         <!-- FOOTER -->
         <div class="footer">
-          Documento gerado automaticamente pelo sistema <strong>Estamparia Pro</strong> em \${currentDate}.<br>
-          Valores baseados no registro de movimentações do módulo financeiro (Mês \${period}).
+          Documento gerado automaticamente pelo sistema <strong>Estamparia Pro</strong> em ${currentDate}.<br>
+          Valores baseados no registro de movimentações do módulo financeiro (Mês ${period}).
         </div>
       </div>
     </body>
     </html>
-  \`;
+  `;
 
   printWindow.document.write(html);
   printWindow.document.close();
