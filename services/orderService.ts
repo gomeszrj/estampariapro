@@ -104,33 +104,46 @@ export const orderService = {
     },
 
     // Helper robusto para auto-healing de banco de dados
-    async _safeDbOperation(operation: 'insert' | 'upsert', dbItems: any[]) {
+    async _safeDbOperation(tableName: string, operation: 'insert' | 'upsert' | 'update', dbItems: any[], matchEq?: { column: string, value: any }) {
         if (!dbItems || dbItems.length === 0) return null;
         
-        let res = await supabase.from('order_items')[operation](dbItems as any);
+        let query = supabase.from(tableName)[operation](dbItems as any);
+        if (operation === 'update' && matchEq) {
+            query = query.eq(matchEq.column, matchEq.value);
+        }
+        let res = await query.select();
         let retries = 0;
         
         while (res.error && retries < 5) {
             const errMsg = res.error.message || '';
-            // Catch BOTH PostgREST schema cache error and Postgres missing column error
             const matchCache = errMsg.match(/Could not find the '(.*?)' column/);
             const matchPg = errMsg.match(/column "(.*?)" of relation/);
             
             const col = matchCache ? matchCache[1] : (matchPg ? matchPg[1] : null);
             
             if (col) {
-                console.warn(`⚠️ Auto-Fix OrderItems: Movendo coluna '${col}' (faltante) para o Polyfill...`);
+                console.warn(`⚠️ Auto-Fix ${tableName}: Removendo coluna '${col}' (faltante)... Execute o script SQL para adicioná-la.`);
                 
                 dbItems.forEach(dbItem => {
-                    if (!dbItem.selected_variations) dbItem.selected_variations = {};
-                    if (!dbItem.selected_variations.__extensions) dbItem.selected_variations.__extensions = {};
-                    if (dbItem[col] !== undefined) {
-                        dbItem.selected_variations.__extensions[col] = dbItem[col];
+                    // Para order_items nós usamos polyfill em selected_variations
+                    if (tableName === 'order_items') {
+                        if (!dbItem.selected_variations) dbItem.selected_variations = {};
+                        if (!dbItem.selected_variations.__extensions) dbItem.selected_variations.__extensions = {};
+                        if (dbItem[col] !== undefined) {
+                            dbItem.selected_variations.__extensions[col] = dbItem[col];
+                            delete dbItem[col];
+                        }
+                    } else {
+                        // Para outras tabelas, apenas removemos o campo para não dar crash
                         delete dbItem[col];
                     }
                 });
                 
-                res = await supabase.from('order_items')[operation](dbItems as any);
+                let retryQuery = supabase.from(tableName)[operation](dbItems as any);
+                if (operation === 'update' && matchEq) {
+                    retryQuery = retryQuery.eq(matchEq.column, matchEq.value);
+                }
+                res = await retryQuery.select();
                 retries++;
             } else {
                 break;
@@ -144,11 +157,9 @@ export const orderService = {
     async create(order: Omit<Order, 'id'>) {
         // 1. Create Order
         const dbOrder = mapOrderToDB(order);
-        const { data: orderData, error: orderError } = await supabase
-            .from('orders')
-            .insert([dbOrder])
-            .select()
-            .single();
+        const orderRes = await this._safeDbOperation('orders', 'insert', [dbOrder]);
+        const orderData = orderRes?.data?.[0];
+        const orderError = orderRes?.error;
 
         if (orderError) throw orderError;
 
@@ -160,7 +171,7 @@ export const orderService = {
             }));
 
             // Usando o helper com auto-healing
-            await this._safeDbOperation('insert', dbItems);
+            await this._safeDbOperation('order_items', 'insert', dbItems);
 
             // NEW: Deduct stock from physical products
             for (const item of order.items) {
@@ -308,14 +319,8 @@ export const orderService = {
         }
 
         const dbUpdates = mapOrderToDB(updates as Order);
-        const { data, error } = await supabase
-            .from('orders')
-            .update(dbUpdates)
-            .eq('id', id)
-            .select()
-            .single();
-
-        if (error) throw error;
+        const updateRes = await this._safeDbOperation('orders', 'update', [dbUpdates], { column: 'id', value: id });
+        if (updateRes.error) throw updateRes.error;
 
         // --- NEW: WhatsApp Notification on Status Change ---
         if (updates.status) {
@@ -377,12 +382,12 @@ export const orderService = {
 
                 // Upsert apenas os items que já existem no banco (com auto-healing)
                 if (existingItems.length > 0) {
-                    await this._safeDbOperation('upsert', existingItems);
+                    await this._safeDbOperation('order_items', 'upsert', existingItems);
                 }
 
                 // Insert para items novos (deixa o banco gerar o UUID, com auto-healing)
                 if (newItems.length > 0) {
-                    await this._safeDbOperation('insert', newItems);
+                    await this._safeDbOperation('order_items', 'insert', newItems);
                 }
             }
         }
